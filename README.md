@@ -10,10 +10,10 @@ MonEndoV2 est une application destinée aux personnes souffrant d'endométriose,
 - Connexion Google Calendar : Synchronisation des prochains rendez-vous médicaux.
 - Notifications : Rappels quotidiens pour ne rien oublier dans le suivi quotidien.
 
-![2025-05-27 19_21_26-Mon Endo](https://github.com/user-attachments/assets/db5a88f9-40a4-47bf-b235-b872de886cdd)
-![2025-05-27 19_16_39-Mon Endo](https://github.com/user-attachments/assets/33c300b4-6b44-4439-a1c0-8a8c82493da4)
-![2025-05-27 19_16_03-Mon Endo](https://github.com/user-attachments/assets/285023f3-9d63-4434-a9a6-83e010d97617)
-![2025-05-27 19_16_31-Mon Endo](https://github.com/user-attachments/assets/c09054ce-b59d-411b-b9cc-9bc336def8ef)
+![2025-05-27 19_21_26-Mon Endo](https://github.com/user-attachments/assets/60c809d8-6284-4538-81a9-ff8e9d4c59f0)
+![2025-05-27 19_16_39-Mon Endo](https://github.com/user-attachments/assets/10247a19-9cff-4d9d-8450-98a9ac456f2b)
+![2025-05-27 19_16_03-Mon Endo](https://github.com/user-attachments/assets/7d7af961-bba7-48e2-80c3-4b898154c6cb)
+![2025-05-27 19_15_34-Mon Endo](https://github.com/user-attachments/assets/b88da8fc-c03b-48e6-9a85-c9b9c3a72b55)
 
 ## Technologies utilisées
 
@@ -22,5 +22,6 @@ MonEndoV2 est une application destinée aux personnes souffrant d'endométriose,
 - Base de données : SQL Server
 - Outils externes : OneSignal (notifications), Google Calendar
 
-![2025-05-27 19_17_19-Mon Endo](https://github.com/user-attachments/assets/1ecfb851-9f6e-42ab-971b-3182bee081a5)
-![2025-05-27 19_15_34-Mon Endo](https://github.com/user-attachments/assets/a3d9f9fc-bef4-473f-9aa7-e810cbd6b860)
+
+![2025-05-27 19_17_19-Mon Endo](https://github.com/user-attachments/assets/8c3657a7-e029-4500-82d0-d04316c8750f)
+![2025-05-27 19_16_31-Mon Endo](https://github.com/user-attachments/assets/0c82679a-49c7-4756-9002-61574c269dae)
