@@ -1,0 +1,16 @@
+﻿{
+  "name": "MonEndo",
+  "short_name": "MonEndo",
+  "icons": [
+    {
+      "src": "https://monendoapp.fr/assets/MonEndoIconMobile-Bx93s-ND.jpg",
+      "type": "image/png",
+      "sizes": "235x235" 
+    }
+  ],
+  "description": "Application de suivi des symptômes de l'endométriose",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#4DBA87"
+}
