@@ -13,57 +13,94 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v3
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0  # Nécessaire pour SonarQube pour avoir l'historique complet
 
-    - name: Set up Node.js
-      uses: actions/setup-node@v3
-      with:
-        node-version: '20'
-        
-    - name: Cache Node.js modules
-      uses: actions/cache@v3
-      with:
-        path: ./monendovue.client/node_modules
-        key: ${{ runner.os }}-node-modules-${{ hashFiles('./monendovue.client/package-lock.json') }}
-        restore-keys: |
-          ${{ runner.os }}-node-modules-
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '20'
 
-    - name: Install dependencies
-      run: npm install
-      working-directory: ./monendovue.client
+      - name: Cache Node.js modules
+        uses: actions/cache@v3
+        with:
+          path: ./monendovue.client/node_modules
+          key: ${{ runner.os }}-node-modules-${{ hashFiles('./monendovue.client/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-modules-
 
-    - name: Install Playwright browsers
-      run: npx playwright install --with-deps
-      working-directory: ./monendovue.client
+      - name: Install dependencies
+        run: npm install
+        working-directory: ./monendovue.client
 
-    - name: Set up .NET
-      uses: actions/setup-dotnet@v3
-      with:
-        dotnet-version: '8.0.x'
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps
+        working-directory: ./monendovue.client
 
-    - name: Cache NuGet packages
-      uses: actions/cache@v3
-      with:
-        path: ~/.nuget/packages
-        key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj') }}
-        restore-keys: |
-          ${{ runner.os }}-nuget- 
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: '8.0.x'
 
-    - name: Run ESLint
-      run: npx eslint . --ext .ts,.js
-      working-directory: ./monendovue.client
-      continue-on-error: true
+      - name: Cache NuGet packages
+        uses: actions/cache@v3
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-
 
-    - name: Build .NET project
-      run: dotnet build --configuration Release
+      - name: Cache SonarQube Cloud packages
+        uses: actions/cache@v3
+        with:
+          path: ~/.sonar/cache
+          key: ${{ runner.os }}-sonar
+          restore-keys: ${{ runner.os }}-sonar
 
-    - name: Run Playwright tests
-      run: npm run test:e2e
-      working-directory: ./monendovue.client
+      - name: Cache SonarQube Cloud scanner
+        id: cache-sonar-scanner
+        uses: actions/cache@v3
+        with:
+          path: ./.sonar/scanner
+          key: ${{ runner.os }}-sonar-scanner
+          restore-keys: ${{ runner.os }}-sonar-scanner
 
-    - name: Publish build artifacts
-      uses: actions/upload-artifact@v3
-      with:
-        name: build-output
-        path: ./monendovue.client/dist
+      - name: Install SonarQube Cloud scanner
+        if: steps.cache-sonar-scanner.outputs.cache-hit != 'true'
+        run: |
+          mkdir -p ./.sonar/scanner
+          dotnet tool update dotnet-sonarscanner --tool-path ./.sonar/scanner
+
+      - name: SonarQube - Begin Analysis
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: |
+          .\.sonar\scanner\dotnet-sonarscanner begin /k:"ClementBartholome_MonEndoV2" /o:"clementbartholome" /d:sonar.token="${{ secrets.SONAR_TOKEN }}" /d:sonar.host.url="https://sonarcloud.io"
+
+      - name: Run ESLint
+        run: npx eslint . --ext .ts,.js
+        working-directory: ./monendovue.client
+        continue-on-error: true
+
+      - name: Restore .NET dependencies
+        run: dotnet restore
+
+      - name: Build .NET project
+        run: dotnet build --configuration Release --no-restore
+
+      - name: Run Playwright tests
+        run: npm run test:e2e
+        working-directory: ./monendovue.client
+
+      - name: SonarQube - End Analysis
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: ./.sonar/scanner/dotnet-sonarscanner end /d:sonar.token="${{ secrets.SONAR_TOKEN }}"
+
+      - name: Publish build artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: build-output
+          path: ./monendovue.client/dist
