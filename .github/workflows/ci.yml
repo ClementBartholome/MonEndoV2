@@ -14,17 +14,17 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0  # Nécessaire pour SonarQube pour avoir l'historique complet
 
       - name: Set up Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: '20'
 
       - name: Cache Node.js modules
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: ./monendovue.client/node_modules
           key: ${{ runner.os }}-node-modules-${{ hashFiles('./monendovue.client/package-lock.json') }}
@@ -40,12 +40,12 @@ jobs:
         working-directory: ./monendovue.client
 
       - name: Set up .NET
-        uses: actions/setup-dotnet@v3
+        uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '8.0.x'
 
       - name: Cache NuGet packages
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: ~/.nuget/packages
           key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj') }}
@@ -53,7 +53,7 @@ jobs:
             ${{ runner.os }}-nuget-
 
       - name: Cache SonarQube Cloud packages
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: ~/.sonar/cache
           key: ${{ runner.os }}-sonar
@@ -61,7 +61,7 @@ jobs:
 
       - name: Cache SonarQube Cloud scanner
         id: cache-sonar-scanner
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: ./.sonar/scanner
           key: ${{ runner.os }}-sonar-scanner
@@ -77,7 +77,7 @@ jobs:
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: |
-          .\.sonar\scanner\dotnet-sonarscanner begin /k:"ClementBartholome_MonEndoV2" /o:"clementbartholome" /d:sonar.token="${{ secrets.SONAR_TOKEN }}" /d:sonar.host.url="https://sonarcloud.io"
+          ./.sonar/scanner/dotnet-sonarscanner begin /k:"votre-project-key" /o:"votre-organization" /d:sonar.token="${{ secrets.SONAR_TOKEN }}" /d:sonar.host.url="https://sonarcloud.io"
 
       - name: Run ESLint
         run: npx eslint . --ext .ts,.js
@@ -100,7 +100,7 @@ jobs:
         run: ./.sonar/scanner/dotnet-sonarscanner end /d:sonar.token="${{ secrets.SONAR_TOKEN }}"
 
       - name: Publish build artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: build-output
           path: ./monendovue.client/dist
