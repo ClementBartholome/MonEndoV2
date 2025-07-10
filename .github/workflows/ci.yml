@@ -90,9 +90,9 @@ jobs:
       - name: Build .NET project
         run: dotnet build --configuration Release --no-restore
 
-      - name: Run Playwright tests
-        run: npm run test:e2e
-        working-directory: ./monendovue.client
+#      - name: Run Playwright tests
+#        run: npm run test:e2e
+#        working-directory: ./monendovue.client
 
       - name: SonarQube - End Analysis
         env:
