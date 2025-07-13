@@ -133,7 +133,7 @@ let calendarOptions: any = computed(() => {
     buttonText: {
       dayGridFourWeek: 'semaine'
     },
-    googleCalendarApiKey: 'AIzaSyByp9cr-Vay_inRQw_Yt3zJj95LFmG6nJc',
+    googleCalendarApiKey: import.meta.env.VITE_GOOGLE_CALENDAR_API_KEY,
     events: events.value,
     height: 850,
     locale: frLocale,
@@ -171,7 +171,7 @@ watch(events, () => {
     buttonText: {
       dayGridFourWeek: 'semaine'
     },
-    googleCalendarApiKey: 'AIzaSyByp9cr-Vay_inRQw_Yt3zJj95LFmG6nJc',
+    googleCalendarApiKey: import.meta.env.VITE_GOOGLE_CALENDAR_API_KEY,
     events: events.value,
     height: 850,
     locale: frLocale,

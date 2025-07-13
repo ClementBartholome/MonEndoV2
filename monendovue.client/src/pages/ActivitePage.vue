@@ -136,7 +136,6 @@
         <p>Durée totale ({{ entries.length }}
           {{ entries.length > 1 ? 'entrées' : 'entrée' }})</p>
         <span class="text-5xl text-highlight">{{ totalSessionDuration }}</span>
-        <!--        <i class="material-symbols-outlined text-7xl text-button">test</i>-->
       </section>
     </div>
   </div>
