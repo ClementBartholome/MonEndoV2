@@ -35,9 +35,9 @@ jobs:
         run: npm install
         working-directory: ./monendovue.client
 
-      - name: Install Playwright browsers
-        run: npx playwright install --with-deps
-        working-directory: ./monendovue.client
+#      - name: Install Playwright browsers
+#        run: npx playwright install --with-deps
+#        working-directory: ./monendovue.client
 
       - name: Set up .NET
         uses: actions/setup-dotnet@v4
@@ -104,3 +104,20 @@ jobs:
         with:
           name: build-output
           path: ./monendovue.client/dist
+
+      - name: Publish .NET project
+        run: dotnet publish --configuration Release --output ./publish
+
+      - name: Deploy publish folder via FTPS
+        env:
+          FTPS_HOST: ${{ secrets.FTPS_HOST }}
+          FTPS_USERNAME: ${{ secrets.FTPS_USERNAME }}
+          FTPS_PASSWORD: ${{ secrets.FTPS_PASSWORD }}
+        run: |
+          sudo apt-get update && sudo apt-get install -y lftp
+          lftp -u "$FTPS_USERNAME","$FTPS_PASSWORD" -e "
+            set ftp:ssl-force true;
+            set ftp:ssl-protect-data true;
+            mirror -R --delete --verbose ./publish /;
+            bye
+          " ftps://$FTPS_HOST
