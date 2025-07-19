@@ -656,7 +656,7 @@ namespace MonEndoVue.Server.Migrations
 
             modelBuilder.Entity("MonEndoVue.Server.Models.DonneesMedicament", b =>
                 {
-                    b.HasOne("MonEndoVue.Server.Models.CarnetSante", null)
+                    b.HasOne("MonEndoVue.Server.Models.CarnetSante", "CarnetSante")
                         .WithMany("DonneesMedicaments")
                         .HasForeignKey("CarnetSanteId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -665,8 +665,10 @@ namespace MonEndoVue.Server.Migrations
                     b.HasOne("MonEndoVue.Server.Models.Medicament", "Medicament")
                         .WithMany()
                         .HasForeignKey("MedicamentId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.Navigation("CarnetSante");
 
                     b.Navigation("Medicament");
                 });
@@ -691,11 +693,13 @@ namespace MonEndoVue.Server.Migrations
 
             modelBuilder.Entity("MonEndoVue.Server.Models.Medicament", b =>
                 {
-                    b.HasOne("MonEndoVue.Server.Models.CarnetSante", null)
+                    b.HasOne("MonEndoVue.Server.Models.CarnetSante", "CarnetSante")
                         .WithMany("Medicaments")
                         .HasForeignKey("CarnetSanteId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("CarnetSante");
                 });
 
             modelBuilder.Entity("MonEndoVue.Server.Models.SymptomeCycle", b =>

@@ -205,7 +205,7 @@ import {useAuthStore} from "@/store/auth";
 import {Skeleton} from "@/components/ui/skeleton";
 import type {BilanQuotidien} from "@/interfaces/bilan-quotidien";
 
-const currentStep = ref(7);
+const currentStep = ref(1);
 const isSubmitted = ref(false);
 const carnetSanteId = useAuthStore().user!.carnetSanteId;
 const isLoading = ref(true);

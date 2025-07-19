@@ -1,11 +1,13 @@
-﻿import axios, { AxiosError } from 'axios';
-import type { AxiosInstance, AxiosResponse, InternalAxiosRequestConfig } from 'axios';
+﻿import axios from 'axios';
+import type { AxiosInstance, AxiosResponse } from 'axios';
 import { useAuthStore } from '@/store/auth';
 import type { Pinia } from 'pinia';
 import { tokenService } from '@/services/tokenService';
 import router from "@/router";
 
-const API_URL = import.meta.env.MODE === 'production' ? import.meta.env.VITE_API_URL_PROD : import.meta.env.VITE_API_URL;
+const API_URL = import.meta.env.VITE_DOCKER === 'true'
+    ? '' 
+    : (import.meta.env.MODE === 'production' ? import.meta.env.VITE_API_URL_PROD : import.meta.env.VITE_API_URL);
 
 class ApiService {
     private axiosInstance: AxiosInstance;

@@ -1,7 +1,9 @@
 ﻿import axios from 'axios';
 import type { Item } from '@/models/calendar-events/item';
 
-const APP_URL = 'https://monendoapp.fr/'
+const APP_URL = import.meta.env.VITE_DOCKER === 'true'
+    ? '' // Chemin relatif pour Docker (même serveur)
+    : (import.meta.env.MODE === 'production' ? import.meta.env.VITE_API_URL_PROD : import.meta.env.VITE_API_URL);
 
 const calendarOptions = {
     googleCalendarApiKey: import.meta.env.VITE_GOOGLE_CALENDAR_API_KEY,

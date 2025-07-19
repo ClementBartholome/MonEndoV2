@@ -1,0 +1,77 @@
+﻿version: '3.8'
+name: monendovue
+
+services:
+  # Base de données SQL Server
+  db:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: monendo_database
+    environment:
+      - ACCEPT_EULA=Y
+      - SA_PASSWORD=Strong!Passw0rd
+      - MSSQL_PID=Express
+    ports:
+      - "1433:1433"
+    volumes:
+      - sqlserver_data:/var/opt/mssql
+    networks:
+      - monendo_network
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD-SHELL", "/opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P Strong!Passw0rd -d master -Q 'SELECT 1'" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+  # Application MonEndoVue
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: monendovue-app:latest
+    container_name: monendo_app
+    ports:
+      - "8080:80"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:80
+      - ConnectionStrings__DefaultConnection=Server=db,1433;Database=master;User Id=sa;Password=Strong!Passw0rd;TrustServerCertificate=true;ConnectRetryCount=3;ConnectRetryInterval=10;
+    volumes:
+      # Persister les logs
+      - ./logs:/app/Logs
+      # Persister les clés de chiffrement  
+      - ./keys:/app/keys
+    networks:
+      - monendo_network
+    depends_on:
+      - db
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD-SHELL", "curl -f http://localhost:80/ || exit 1" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Interface d'administration pour SQL Server
+  adminer:
+    image: adminer:latest
+    container_name: monendo_adminer
+    ports:
+      - "8081:8080"
+    networks:
+      - monendo_network
+    environment:
+      - ADMINER_DEFAULT_SERVER=db
+    restart: unless-stopped
+    profiles:
+      - admin
+
+volumes:
+  sqlserver_data:
+    driver: local
+
+networks:
+  monendo_network:
+    driver: bridge

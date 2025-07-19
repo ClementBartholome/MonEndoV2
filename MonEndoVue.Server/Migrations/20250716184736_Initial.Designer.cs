@@ -12,15 +12,15 @@ using MonEndoVue.Server.Data;
 namespace MonEndoVue.Server.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20241018212352_CreateTableBilansQuotidiens")]
-    partial class CreateTableBilansQuotidiens
+    [Migration("20250716184736_Initial")]
+    partial class Initial
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "8.0.6")
+                .HasAnnotation("ProductVersion", "8.0.11")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
@@ -251,6 +251,9 @@ namespace MonEndoVue.Server.Migrations
                     b.Property<DateTime>("Date")
                         .HasColumnType("datetime2");
 
+                    b.Property<int>("DouleurMoyenne")
+                        .HasColumnType("int");
+
                     b.Property<int>("Fatigue")
                         .HasColumnType("int");
 
@@ -300,9 +303,33 @@ namespace MonEndoVue.Server.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("UserId");
+                    b.HasIndex("UserId")
+                        .IsUnique();
 
                     b.ToTable("CarnetSantes");
+                });
+
+            modelBuilder.Entity("MonEndoVue.Server.Models.DeviceToken", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Token")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("DeviceTokens");
                 });
 
             modelBuilder.Entity("MonEndoVue.Server.Models.DonneesActivitePhysique", b =>
@@ -391,6 +418,9 @@ namespace MonEndoVue.Server.Migrations
                         .HasColumnType("datetime2");
 
                     b.Property<int>("MedicamentId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("NombreComprimes")
                         .HasColumnType("int");
 
                     b.HasKey("Id");
@@ -496,6 +526,37 @@ namespace MonEndoVue.Server.Migrations
                     b.ToTable("Medicaments");
                 });
 
+            modelBuilder.Entity("MonEndoVue.Server.Models.SymptomeCycle", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("CarnetSanteId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Commentaire")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("Date")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("Intensite")
+                        .HasColumnType("int");
+
+                    b.Property<string>("TypeSymptome")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CarnetSanteId");
+
+                    b.ToTable("SymptomesCycles");
+                });
+
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
                 {
                     b.HasOne("Microsoft.AspNetCore.Identity.IdentityRole", null)
@@ -559,7 +620,18 @@ namespace MonEndoVue.Server.Migrations
             modelBuilder.Entity("MonEndoVue.Server.Models.CarnetSante", b =>
                 {
                     b.HasOne("MonEndoVue.Server.Models.ApplicationUser", "User")
-                        .WithMany()
+                        .WithOne("CarnetSante")
+                        .HasForeignKey("MonEndoVue.Server.Models.CarnetSante", "UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("MonEndoVue.Server.Models.DeviceToken", b =>
+                {
+                    b.HasOne("MonEndoVue.Server.Models.ApplicationUser", "User")
+                        .WithMany("DeviceToken")
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -587,7 +659,7 @@ namespace MonEndoVue.Server.Migrations
 
             modelBuilder.Entity("MonEndoVue.Server.Models.DonneesMedicament", b =>
                 {
-                    b.HasOne("MonEndoVue.Server.Models.CarnetSante", null)
+                    b.HasOne("MonEndoVue.Server.Models.CarnetSante", "CarnetSante")
                         .WithMany("DonneesMedicaments")
                         .HasForeignKey("CarnetSanteId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -596,8 +668,10 @@ namespace MonEndoVue.Server.Migrations
                     b.HasOne("MonEndoVue.Server.Models.Medicament", "Medicament")
                         .WithMany()
                         .HasForeignKey("MedicamentId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.Navigation("CarnetSante");
 
                     b.Navigation("Medicament");
                 });
@@ -622,11 +696,29 @@ namespace MonEndoVue.Server.Migrations
 
             modelBuilder.Entity("MonEndoVue.Server.Models.Medicament", b =>
                 {
-                    b.HasOne("MonEndoVue.Server.Models.CarnetSante", null)
+                    b.HasOne("MonEndoVue.Server.Models.CarnetSante", "CarnetSante")
                         .WithMany("Medicaments")
                         .HasForeignKey("CarnetSanteId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("CarnetSante");
+                });
+
+            modelBuilder.Entity("MonEndoVue.Server.Models.SymptomeCycle", b =>
+                {
+                    b.HasOne("MonEndoVue.Server.Models.CarnetSante", null)
+                        .WithMany("SymptomesCycles")
+                        .HasForeignKey("CarnetSanteId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("MonEndoVue.Server.Models.ApplicationUser", b =>
+                {
+                    b.Navigation("CarnetSante");
+
+                    b.Navigation("DeviceToken");
                 });
 
             modelBuilder.Entity("MonEndoVue.Server.Models.CarnetSante", b =>
@@ -644,6 +736,8 @@ namespace MonEndoVue.Server.Migrations
                     b.Navigation("JourRegles");
 
                     b.Navigation("Medicaments");
+
+                    b.Navigation("SymptomesCycles");
                 });
 #pragma warning restore 612, 618
         }

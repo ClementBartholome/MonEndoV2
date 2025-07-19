@@ -143,8 +143,6 @@ let calendarOptions: any = computed(() => {
         x: info.jsEvent.clientX,
         y: info.jsEvent.clientY
       };
-      console.log(popperPosition.value)
-      console.log(info)
     },
   }
 })
@@ -181,8 +179,6 @@ watch(events, () => {
         x: window.innerWidth / 4,
         y: window.innerHeight / 2
       };
-      console.log(popperPosition.value)
-      console.log(info)
     },
   }))
 })

@@ -7,6 +7,14 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MonEndoVue.Server", "MonEnd
 EndProject
 Project("{54A90642-561A-4BB1-A94E-469ADEE60C69}") = "monendovue.client", "monendovue.client\monendovue.client.esproj", "{5B3AF86B-B2C1-4A90-934A-9EA62CCFCE54}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{0E042C41-9197-4E70-BCE8-E57B0DE65C30}"
+	ProjectSection(SolutionItems) = preProject
+		docker-compose.yml = docker-compose.yml
+		Dockerfile = Dockerfile
+		Dockerfile-debug = Dockerfile-debug
+		.dockerignore = .dockerignore
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU

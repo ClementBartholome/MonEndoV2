@@ -30,7 +30,7 @@ const modelValue = ref([5]);
         v-bind="forwarded"
         v-model="modelValue"
     >
-      <SliderTrack class="relative h-2 w-full grow overflow-hidden rounded-full bg-white">
+      <SliderTrack class="relative h-4 w-full grow overflow-hidden rounded-full bg-white">
         <SliderRange class="absolute h-full slider"/>
       </SliderTrack>
       <SliderThumb 

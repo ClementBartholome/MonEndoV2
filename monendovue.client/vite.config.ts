@@ -55,21 +55,18 @@ export default defineConfig({
     resolve: {
         alias: {
             "@": path.resolve(__dirname, "./src"),
-            'firebase/app': 'firebase/app'
         },
         extensions: ['.vue', '.ts', '.js'],
     },
     server: {
-        proxy: {
-            '^/weatherforecast': {
-                target: 'https://localhost:7206/',
-                secure: false
-            }
-        },
-        port: 5173,
+        host: '0.0.0.0',
         https: {
             key: fs.readFileSync(keyFilePath),
             cert: fs.readFileSync(certFilePath),
-        }
+        },
+        port: 5173,
+    },
+    build: {
+        outDir: 'dist',
     }
-})
+});

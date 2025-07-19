@@ -43,7 +43,7 @@ namespace MonEndoVue.Server
                 .MinimumLevel.Override("Microsoft", LogEventLevel.Information)
                 .Enrich.FromLogContext()
                 .WriteTo.Console()
-                .WriteTo.File("Logs/MonEndoVue-.log", rollingInterval: RollingInterval.Day)
+                .WriteTo.File("Logs/MonEndoVue-.log", rollingInterval: RollingInterval.Month)
                 .CreateLogger();
 
             builder.Host.UseSerilog();
@@ -81,7 +81,7 @@ namespace MonEndoVue.Server
             {
                 options.AddPolicy("CorsPolicy", policyBuilder =>
                 {
-                    policyBuilder.WithOrigins("https://localhost:7206/", "https://localhost:5173",
+                    policyBuilder.WithOrigins("https://localhost:7206/", "https://localhost:5173", "http://localhost:5173",
                             "https://monendoapp.fr")
                         .AllowAnyMethod()
                         .AllowAnyHeader()
@@ -228,11 +228,11 @@ namespace MonEndoVue.Server
             
             app.MapHub<NotificationHub>("/notificationHub");
 
-            if (app.Environment.IsDevelopment())
+            if (app.Environment.IsDevelopment() )
             {
                 using var scope = app.Services.CreateScope();
                 var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-                await dbContext.Database.MigrateAsync();
+                // await dbContext.Database.MigrateAsync();
 
                 var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
 
@@ -240,10 +240,18 @@ namespace MonEndoVue.Server
                 {
                     UserName = "coralie.owczaruk@yahoo.fr", Email = "coralie.owczaruk@yahoo.fr", EmailConfirmed = true
                 };
-
+                
                 if (await userManager.FindByNameAsync(rootUser.UserName) == null)
                 {
                     await userManager.CreateAsync(rootUser, "Password123$");
+                }
+                
+                var user = await userManager.FindByNameAsync(rootUser.UserName);
+                if (user != null && dbContext.CarnetSantes.All(c => c.UserId != user.Id))
+                {
+                    var carnet = new CarnetSante { UserId = user.Id };
+                    dbContext.CarnetSantes.Add(carnet);
+                    await dbContext.SaveChangesAsync();
                 }
             }
 

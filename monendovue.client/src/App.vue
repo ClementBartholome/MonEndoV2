@@ -66,7 +66,7 @@ const sendNotification = async () => {
 <style>
 .fade-enter-active,
 .fade-leave-active {
-  transition: opacity 1.5s ease;
+  transition: opacity 1s ease;
 }
 
 .fade-enter-from,

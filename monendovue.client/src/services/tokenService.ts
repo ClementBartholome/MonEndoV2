@@ -4,7 +4,9 @@ import type {User} from "@/models/user";
 import {useToast} from "@/components/ui/toast";
 import router from "@/router";
 
-const API_URL = import.meta.env.MODE === 'production' ? import.meta.env.VITE_API_URL_PROD : import.meta.env.VITE_API_URL;
+const API_URL = import.meta.env.VITE_DOCKER === 'true'
+    ? '' // Chemin relatif pour Docker (même serveur)
+    : (import.meta.env.MODE === 'production' ? import.meta.env.VITE_API_URL_PROD : import.meta.env.VITE_API_URL);
 
 const {toast} = useToast();
 
