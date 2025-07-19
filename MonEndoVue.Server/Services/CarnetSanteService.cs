@@ -60,7 +60,7 @@ public class CarnetSanteService
     public async Task<CarnetViewModel> GetCarnetSanteById(int carnetSanteId)
     {
         _logger.LogInformation("GetCarnetSanteById called with id: {Id}", carnetSanteId);
-        
+
         var carnetSante = await _context.CarnetSantes
             .Include(c => c.User)
             .Include(c => c.DonneesDouleurs.OrderBy(d => d.Date))
@@ -101,68 +101,82 @@ public class CarnetSanteService
 
     public async Task<CarnetHomepageViewModel> GetLastEntries(int carnetSanteId)
     {
-        _logger.LogInformation("GetLastEntries called with id: {Id}", carnetSanteId);
-
-        var cacheKey = $"CarnetSante_LastEntries_{carnetSanteId}";
-        if (_cache.TryGetValue(cacheKey, out CarnetHomepageViewModel cachedData)) return cachedData;
         var carnetSante = await _context.CarnetSantes
-            .AsSplitQuery() 
-            .Include(c => c.User)
-            .Include(c => c.DonneesDouleurs.OrderByDescending(d => d.Date).Take(1))
-            .Include(c => c.DonneesActivitePhysique.OrderByDescending(d => d.Date).Take(1))
-            .Include(c => c.DonneesMedicaments.OrderByDescending(d => d.Date).Take(1))
-            .ThenInclude(donneesMedicament => donneesMedicament.Medicament)
-            .Include(c => c.DonneesTransit.OrderByDescending(d => d.Date).Take(1))
-            .Include(c => c.JourRegles.OrderByDescending(d => d.Date).Take(1))
-            .FirstOrDefaultAsync(c => c.Id == carnetSanteId);;
+            .Where(c => c.Id == carnetSanteId)
+            .Select(c => new CarnetHomepageViewModel
+            {
+                UserName = c.User.UserName,
+                CarnetSanteId = c.Id,
+                DonneesDouleur = c.DonneesDouleurs
+                    .OrderByDescending(d => d.Date)
+                    .Select(d => new DonneesDouleurViewModel
+                    {
+                        TypeDouleur = d.TypeDouleur,
+                        Date = d.Date
+                    })
+                    .FirstOrDefault(),
+                DonneesActivitePhysique = c.DonneesActivitePhysique
+                    .OrderByDescending(a => a.Date)
+                    .Select(a => new DonneesActivitePhysiqueViewModel
+                    {
+                        TypeActivite = a.TypeActivite,
+                        Date = a.Date
+                    })
+                    .FirstOrDefault(),
+                DonneesMedicament = c.DonneesMedicaments
+                    .OrderByDescending(m => m.Date)
+                    .Select(m => new DonneesMedicamentHomepageViewModel
+                    {
+                        Id = m.Id,
+                        NomMedicament = m.Medicament.Nom,
+                        Date = m.Date,
+                    })
+                    .FirstOrDefault(),
+                DonneesTransit = c.DonneesTransit
+                    .OrderByDescending(t => t.Date)
+                    .Select(t => new DonneesTransitViewModel
+                    {
+                        TypeEvenement = t.TypeEvenement,
+                        Date = t.Date
+                    })
+                    .FirstOrDefault(),
+                JourRegle = c.JourRegles
+                    .OrderByDescending(j => j.Date)
+                    .Select(j => new JourRegleViewModel
+                    {
+                        Date = j.Date
+                    })
+                    .FirstOrDefault()
+            })
+            .FirstOrDefaultAsync();
 
         if (carnetSante == null)
-        {
             throw new Exception("Carnet de santé introuvable");
-        }
 
-        var derniereDonneesDouleur = carnetSante.DonneesDouleurs.SingleOrDefault();
-        var derniereDonneesActivitePhysique = carnetSante.DonneesActivitePhysique.SingleOrDefault();
-        var derniereDonneesMedicaments = carnetSante.DonneesMedicaments.SingleOrDefault();
-        var derniereDonneesTransit = carnetSante.DonneesTransit.SingleOrDefault();
-        var dernierJourRegle = carnetSante.JourRegles.SingleOrDefault();
-
-        cachedData = new CarnetHomepageViewModel
-        {
-            UserName = carnetSante.User?.UserName,
-            CarnetSanteId = carnetSante.Id,
-            DonneesDouleur = derniereDonneesDouleur,
-            DonneesActivitePhysique = derniereDonneesActivitePhysique,
-            DonneesMedicament = derniereDonneesMedicaments,
-            DonneesTransit = derniereDonneesTransit,
-            NomMedicament = derniereDonneesMedicaments?.Medicament?.Nom,
-            JourRegle = dernierJourRegle
-        };
-
-        var cacheEntryOptions = new MemoryCacheEntryOptions()
-            .SetSlidingExpiration(TimeSpan.FromMinutes(120));
-
-        _cache.Set(cacheKey, cachedData, cacheEntryOptions);
-
-        return cachedData;
+        return carnetSante;
     }
 
     public async Task<CarnetViewModel> GetDonneesCarnetSanteByMonth(int carnetSanteId, int month, int year)
     {
         _logger.LogInformation("GetDonneesCarnetSanteByMonth called with id: {Id}, month: {Month}, year: {Year}",
             carnetSanteId, month, year);
-        
+
         var carnetSante = await _context.CarnetSantes
             .Include(c => c.User)
-            .Include(c => c.DonneesDouleurs.Where(d => d.Date.Month == month && d.Date.Year == year).OrderBy(d => d.Date))
-            .Include(c => c.DonneesActivitePhysique.Where(d => d.Date.Month == month && d.Date.Year == year).OrderBy(d => d.Date))
+            .Include(c =>
+                c.DonneesDouleurs.Where(d => d.Date.Month == month && d.Date.Year == year).OrderBy(d => d.Date))
+            .Include(c =>
+                c.DonneesActivitePhysique.Where(d => d.Date.Month == month && d.Date.Year == year).OrderBy(d => d.Date))
             .Include(c => c.Medicaments)
-            .Include(c => c.DonneesMedicaments.Where(d => d.Date.Month == month && d.Date.Year == year).OrderBy(d => d.Date))
-            .Include(c => c.DonneesTransit.Where(d => d.Date.Month == month && d.Date.Year == year).OrderBy(d => d.Date))
+            .Include(c =>
+                c.DonneesMedicaments.Where(d => d.Date.Month == month && d.Date.Year == year).OrderBy(d => d.Date))
+            .Include(c =>
+                c.DonneesTransit.Where(d => d.Date.Month == month && d.Date.Year == year).OrderBy(d => d.Date))
             .Include(c => c.JourRegles.Where(d => d.Date.Month == month && d.Date.Year == year).OrderBy(d => d.Date))
-            .Include(c => c.BilansQuotidiens.Where(d => d.Date.Month == month && d.Date.Year == year).OrderBy(d => d.Date))
+            .Include(c =>
+                c.BilansQuotidiens.Where(d => d.Date.Month == month && d.Date.Year == year).OrderBy(d => d.Date))
             .FirstOrDefaultAsync(c => c.Id == carnetSanteId);
-        
+
         if (carnetSante == null)
         {
             throw new Exception("Carnet de santé introuvable");

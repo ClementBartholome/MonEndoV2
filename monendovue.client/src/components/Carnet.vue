@@ -260,7 +260,7 @@ const lastMedicamentEntry = computed(() => {
     const minutes = date.getMinutes().toString().padStart(2, '0');
     const time = `${hours}h${minutes}`;
     return {
-      nom: lastEntry.medicament.nom,
+      nom: lastEntry.nomMedicament,
       heure: time,
       date: date.toLocaleDateString()
     };

@@ -19,7 +19,6 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : IdentityDbCo
     
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        // Appeler la configuration de base d'Identity
         base.OnModelCreating(modelBuilder);
 
         // Configuration des relations pour éviter les cascades multiples
@@ -75,11 +74,11 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : IdentityDbCo
 
         // DonneesMedicament → CarnetSante (CASCADE OK)
         modelBuilder.Entity<DonneesMedicament>()
-            .HasOne(d => d.CarnetSante)
-            .WithMany(c => c.DonneesMedicaments)
+            .HasOne<CarnetSante>()
+            .WithMany(dm => dm.DonneesMedicaments)
             .HasForeignKey(d => d.CarnetSanteId)
             .OnDelete(DeleteBehavior.Cascade);
-
+        
         // DonneesMedicament → Medicament (NO ACTION pour éviter cascade multiple)
         modelBuilder.Entity<DonneesMedicament>()
             .HasOne(d => d.Medicament)
