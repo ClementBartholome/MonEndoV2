@@ -115,8 +115,19 @@ jobs:
           echo "=== Current directory ==="
           pwd
           
-          echo "=== Starting FTPS deployment ==="
-          lftp \
+          echo "=== Checking environment variables ==="
+          echo "Host: $FTPS_HOST"
+          echo "Username: $FTPS_USERNAME"
+          echo "Password set: ${FTPS_PASSWORD:+YES}"
+          
+          echo "=== Testing basic FTPS connection ==="
+          lftp -d \
+            -e "set ftp:ssl-allow true; set ftp:ssl-force true; set ftp:ssl-protect-data true; set ftp:ssl-auth TLS; set ssl:verify-certificate false; pwd; ls; quit" \
+            -u "$FTPS_USERNAME,$FTPS_PASSWORD" \
+            "ftps://$FTPS_HOST:990"
+          
+          echo "=== Starting full deployment ==="
+          lftp -d \
             -e "set ftp:ssl-allow true; set ftp:ssl-force true; set ftp:ssl-protect-data true; set ftp:ssl-auth TLS; set ssl:verify-certificate false; set ftp:use-site-utime2 false; set ftp:use-site-chmod false; set ftp:use-site-utime false; mirror -R --delete --verbose --ignore-time --no-perms --no-umask --exclude-glob .git/ ./publish /u117629945/; bye" \
             -u "$FTPS_USERNAME,$FTPS_PASSWORD" \
             "ftps://$FTPS_HOST:990"
