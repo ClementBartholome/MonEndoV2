@@ -115,15 +115,16 @@ jobs:
           FTPS_PASSWORD: ${{ secrets.FTPS_PASSWORD }}
         run: |
           sudo apt-get update && sudo apt-get install -y lftp
-          lftp -d -u "$FTPS_USERNAME","$FTPS_PASSWORD" -e "
-            set ftp:ssl-allow true;
-            set ftp:ssl-force true;
-            set ftp:ssl-protect-data true;
-            set ftp:ssl-auth TLS;
-            set ssl:verify-certificate false;
-            set ftp:use-site-utime2 false;
-            set ftp:use-site-chmod false;
-            open ftps://$FTPS_HOST:990;
-            mirror -R --delete --verbose ./publish /;
-            bye
-          "
+          cat > lftp_script.sh << 'EOF'
+          set ftp:ssl-allow true
+          set ftp:ssl-force true
+          set ftp:ssl-protect-data true
+          set ftp:ssl-auth TLS
+          set ssl:verify-certificate false
+          set ftp:use-site-utime2 false
+          set ftp:use-site-chmod false
+          open -u $FTPS_USERNAME,$FTPS_PASSWORD ftps://$FTPS_HOST:990
+          mirror -R --delete --verbose ./publish /
+          bye
+          EOF
+          lftp -f lftp_script.sh
