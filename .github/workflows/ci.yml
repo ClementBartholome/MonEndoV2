@@ -133,6 +133,7 @@ jobs:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USERNAME }}
           key: ${{ secrets.VPS_SSH_KEY }}
+          passphrase: ${{ secrets.VPS_SSH_PASSPHRASE }}
           script: |
             cd ~/app
             
@@ -159,5 +160,5 @@ jobs:
             docker image prune -f
             
             echo "Deployment completed successfully!"
-            echo "App: https://votre-domaine.com"
+            echo "App: https://monendoapp.fr"
             echo "Adminer: disponible via tunnel SSH sur port 8080"
