@@ -54,20 +54,6 @@ services:
       retries: 3
       start_period: 40s
 
-  # Interface d'administration pour SQL Server
-  adminer:
-    image: adminer:latest
-    container_name: monendo_adminer
-    ports:
-      - "8081:8080"
-    networks:
-      - monendo_network
-    environment:
-      - ADMINER_DEFAULT_SERVER=db
-    restart: unless-stopped
-    profiles:
-      - admin
-
 volumes:
   sqlserver_data:
     driver: local
