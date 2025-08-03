@@ -8,7 +8,7 @@ public class DonneesMedicament
     public int Id { get; set; }
     public int CarnetSanteId { get; set; }
     public int MedicamentId { get; set; }
-    public Medicament Medicament { get; set; }
+    public Medicament? Medicament { get; set; }
     public int NombreComprimes { get; set; }
     public DateTime Date { get; set; }
     [TsOptional]
