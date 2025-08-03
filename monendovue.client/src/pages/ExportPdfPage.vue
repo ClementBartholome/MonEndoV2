@@ -54,7 +54,7 @@
           <td v-for="day in daysInMonth" :key="day">
             <input type="checkbox" :checked="dataExists('jourRegles', null, day)" :data-day="day" onclick="return false;"/>          </td>
         </tr>
-        <tr class="highlight-row">
+        <tr class="highlight-row" v-if="computedDonneesCarnetSante.donneesDouleur.$values.length > 0">
           <td :colspan="daysInMonth.length + 1">Douleurs</td>
         </tr>
         <tr v-for="typeDouleur in getUniqueTypeData('donneesDouleur', 'typeDouleur')" :key="typeDouleur">
@@ -65,7 +65,7 @@
             }}
           </td>
         </tr>
-        <tr class="highlight-row">
+        <tr class="highlight-row" v-if="computedDonneesCarnetSante.donneesActivitePhysique.$values.length > 0">
           <td :colspan="daysInMonth.length + 1">Activité physique</td>
         </tr>
         <tr v-for="typeActivite in getUniqueTypeData('donneesActivitePhysique', 'typeActivite')" :key="typeActivite">
@@ -76,7 +76,7 @@
             }}
           </td>
         </tr>
-        <tr class="highlight-row">
+        <tr class="highlight-row" v-if="computedDonneesCarnetSante.donneesTransit.$values.length > 0">
           <td :colspan="daysInMonth.length + 1">Transit</td>
         </tr>
         <tr v-for="typeTransit in getUniqueTypeData('donneesTransit', 'typeEvenement')" :key="typeTransit">
@@ -106,6 +106,41 @@
           <td>Gluten</td>
           <td v-for="day in daysInMonth" :key="day">
             <input type="checkbox" :checked="dataExists('bilansQuotidiens', 'gluten', day) && dataIsTrue('bilansQuotidiens', 'gluten', day)" :data-alimentation="day" onclick="return false;"/>
+          </td>
+        </tr>
+        <tr class="highlight-row">
+          <td :colspan="daysInMonth.length + 1">Bilans quotidiens</td>
+        </tr>
+        <tr>
+          <td>Fatigue</td>
+          <td v-for="day in daysInMonth" :key="day">
+            {{ getBilanValueForDay('fatigue', day) }}
+          </td>
+        </tr>
+        <tr>
+          <td>Pas</td>
+          <td v-for="day in daysInMonth" :key="day">
+            <span :title="getBilanValueForDay('pas', day)">
+              {{ getPasIcon(getBilanValueForDay('pas', day)) }}
+            </span>
+          </td>
+        </tr>
+        <tr>
+          <td>Douleur moyenne</td>
+          <td v-for="day in daysInMonth" :key="day">
+            {{ getBilanValueForDay('douleurMoyenne', day) }}
+          </td>
+        </tr>
+        <tr>
+          <td>Hydratation (L)</td>
+          <td v-for="day in daysInMonth" :key="day">
+            {{ getBilanValueForDay('hydratation', day) }}
+          </td>
+        </tr>
+        <tr>
+          <td>Stress moyen</td>
+          <td v-for="day in daysInMonth" :key="day">
+            {{ getBilanValueForDay('stressMoyenne', day) }}
           </td>
         </tr>
         </tbody>
@@ -234,6 +269,21 @@ const calculateAverageIntensity = (dailyItems) => {
   if (dailyItems.length === 0) return '';
   const averageIntensity = dailyItems.reduce((acc, d) => acc + d.intensite, 0) / dailyItems.length;
   return averageIntensity.toFixed(1).replace(/\.0+$/, '');
+};
+
+const getBilanValueForDay = (field, day) => {
+  const bilan = computedDonneesCarnetSante.value.bilansQuotidiens.$values.find(b => {
+    const date = new Date(b.date);
+    return date.getDate() === day;
+  });
+  return bilan ? bilan[field] ?? 0 : 0;
+};
+
+const getPasIcon = (value) => {
+  if (value === undefined || value === null || value === 0) return '💤';
+  if (value < 5000) return '🚶';
+  if (value < 10000) return '🚶‍♂️';
+  return '🏃';
 };
 
 const exportToPDF = () => {
@@ -390,6 +440,22 @@ const exportToPDF = () => {
     for (let day = 1; day <= daysInMonth; day++) {
       const checkbox = document.querySelector(`input[type="checkbox"][data-alimentation="${day}"]`) as HTMLInputElement;
       row.push(checkbox && checkbox.checked && dataIsTrue('bilansQuotidiens', type, day) ? 'X' : '');    }
+    rows.push(row);
+  });
+  
+  // Ajoute une ligne pour les bilans quotidiens
+  rows.push([{
+    content: 'Bilans quotidiens',
+    colSpan: daysInMonth + 1,
+    styles: {halign: 'left', fillColor: [240, 240, 240], fontStyle: 'bold'}
+  }]);
+  
+  const bilanFields = ['fatigue', 'pas', 'douleurMoyenne', 'hydratation', 'stressMoyenne'];
+  bilanFields.forEach(field => {
+    const row = [field.charAt(0).toUpperCase() + field.slice(1)];
+    for (let day = 1; day <= daysInMonth; day++) {
+      row.push(getBilanValueForDay(field, day));
+    }
     rows.push(row);
   });
 
