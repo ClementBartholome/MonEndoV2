@@ -1,4 +1,4 @@
-name: CI
+name: CI/CD VPS Docker
 
 on:
   push:
@@ -8,15 +8,22 @@ on:
     branches:
       - main
 
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
 jobs:
-  build:
+  build-and-deploy:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # Nécessaire pour SonarQube pour avoir l'historique complet
+          fetch-depth: 0
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -34,10 +41,6 @@ jobs:
       - name: Install dependencies
         run: npm install
         working-directory: ./monendovue.client
-
-#      - name: Install Playwright browsers
-#        run: npx playwright install --with-deps
-#        working-directory: ./monendovue.client
 
       - name: Set up .NET
         uses: actions/setup-dotnet@v4
@@ -90,34 +93,72 @@ jobs:
       - name: Build .NET project
         run: dotnet build --configuration Release --no-restore
 
-#      - name: Run Playwright tests
-#        run: npm run test:e2e
-#        working-directory: ./monendovue.client
-
       - name: SonarQube - End Analysis
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: ./.sonar/scanner/dotnet-sonarscanner end /d:sonar.token="${{ secrets.SONAR_TOKEN }}"
 
-      - name: Publish build artifacts
-        uses: actions/upload-artifact@v4
+      # === DOCKER ===
+      - name: Log in to Container Registry
+        uses: docker/login-action@v3
         with:
-          name: build-output
-          path: ./monendovue.client/dist
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Publish .NET project
-        run: dotnet publish --configuration Release --output ./publish
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=sha,prefix={{branch}}-
+            type=raw,value=latest,enable={{is_default_branch}}
 
-      - name: Deploy publish folder via FTPS
-        env:
-          FTPS_HOST: ${{ secrets.FTPS_HOST }}
-          FTPS_USERNAME: ${{ secrets.FTPS_USERNAME }}
-          FTPS_PASSWORD: ${{ secrets.FTPS_PASSWORD }}
-        run: |
-          sudo apt-get update && sudo apt-get install -y lftp
-          lftp -u "$FTPS_USERNAME","$FTPS_PASSWORD" -e "
-            set ftp:ssl-force true;
-            set ftp:ssl-protect-data true;
-            mirror -R --delete --verbose ./publish /;
-            bye
-          " ftps://$FTPS_HOST
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+
+      # === DÉPLOIEMENT SUR VPS ===
+      - name: Deploy to VPS
+        if: github.ref == 'refs/heads/main'
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USERNAME }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          passphrase: ${{ secrets.VPS_SSH_PASSPHRASE }}
+          script: |
+            cd ~/app
+            
+            # Création du fichier .env pour la production
+            cat > .env << EOF
+            DB_PASSWORD=${{ secrets.DB_PASSWORD }}
+            ASPNETCORE_ENVIRONMENT=Production
+            EOF
+            
+            # Connexion au registry
+            echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+            
+            # Pull de la nouvelle image de l'app seulement
+            docker compose -f docker-compose.prod.yml pull app
+            
+            # Redémarrage des services (app sera recréée, db/adminer gardés)
+            docker compose -f docker-compose.prod.yml up -d
+            
+            # Vérification que l'app est bien démarrée
+            sleep 10
+            docker compose -f docker-compose.prod.yml ps
+            
+            # Nettoyage des anciennes images
+            docker image prune -f
+            
+            echo "Deployment completed successfully!"
+            echo "App: https://monendoapp.fr"
+            echo "Adminer: disponible via tunnel SSH sur port 8080"
