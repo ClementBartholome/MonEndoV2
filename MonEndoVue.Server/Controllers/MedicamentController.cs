@@ -3,26 +3,33 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using MonEndoVue.Server.Data;
 using MonEndoVue.Server.Models;
+using MonEndoVue.Server.Services;
 
 namespace MonEndoVue.Server.Controllers
 {
     [Route("[controller]")]
     [ApiController]
     [Authorize]
-    public class MedicamentController(AppDbContext context) : ControllerBase
+    public class MedicamentController(AppDbContext context, CarnetSanteService carnetSanteService) : ControllerBase
     {
         // GET: Medicament/ByCarnetSante/5
-        [HttpGet("by-carnet-sante/{carnetSanteId}")]
+        [HttpGet("by-carnet-sante/{carnetSanteId:int}")]
         public async Task<ActionResult<IEnumerable<Medicament>>> GetMedicaments(int carnetSanteId)
         {
+            var securityCheck = await this.ValidateCarnetAccess(carnetSanteService, carnetSanteId);
+            if (securityCheck != null) return securityCheck;
+            
             return await context.Medicaments.Where(m => m.CarnetSanteId == carnetSanteId).ToListAsync();
         }
 
         // GET: Medicament/5
-        [HttpGet("{id}")]
+        [HttpGet("{id:int}")]
         public async Task<ActionResult<Medicament>> GetMedicament(int id)
         {
             var medicament = await context.Medicaments.FindAsync(id);
+            
+            var securityCheck = await this.ValidateCarnetAccess(carnetSanteService, medicament?.CarnetSanteId ?? 0);
+            if (securityCheck != null) return securityCheck;
 
             if (medicament == null)
             {
@@ -34,9 +41,12 @@ namespace MonEndoVue.Server.Controllers
 
         // PUT: Medicament/5
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
-        [HttpPut("{id}")]
+        [HttpPut("{id:int}")]
         public async Task<IActionResult> PutMedicament(int id, Medicament medicament)
         {
+            var securityCheck = await this.ValidateCarnetAccess(carnetSanteService, medicament.CarnetSanteId);
+            if (securityCheck != null) return securityCheck;
+            
             if (id != medicament.Id)
             {
                 return BadRequest();
@@ -68,6 +78,9 @@ namespace MonEndoVue.Server.Controllers
         [HttpPost]
         public async Task<ActionResult<Medicament>> PostMedicament(Medicament medicament)
         {
+            var securityCheck = await this.ValidateCarnetAccess(carnetSanteService, medicament.CarnetSanteId);
+            if (securityCheck != null) return securityCheck;
+            
             medicament.TraitementEnCours = true;
             context.Medicaments.Add(medicament);
             await context.SaveChangesAsync();
@@ -76,7 +89,7 @@ namespace MonEndoVue.Server.Controllers
         }
 
         // DELETE: Medicament/5
-        [HttpDelete("{id}")]
+        [HttpDelete("{id:int}")]
         public async Task<IActionResult> DeleteMedicament(int id)
         {
             var medicament = await context.Medicaments.FindAsync(id);
@@ -84,6 +97,9 @@ namespace MonEndoVue.Server.Controllers
             {
                 return NotFound();
             }
+            
+            var securityCheck = await this.ValidateCarnetAccess(carnetSanteService, medicament.CarnetSanteId);
+            if (securityCheck != null) return securityCheck;
 
             context.Medicaments.Remove(medicament);
             await context.SaveChangesAsync();

@@ -12,24 +12,26 @@ namespace MonEndoVue.Server.Controllers;
 [Authorize]
 public class JourRegleController(AppDbContext context, CarnetSanteService carnetSanteService, ILogger<JourRegleController> logger) : ControllerBase
 {
-    [HttpGet("ByMonth/{carnetSanteId}/{month}/{year}/")]
-    public async Task<IEnumerable<JourRegle>> GetByMonth(int carnetSanteId, int month, int year)
+    [HttpGet("ByMonth/{carnetSanteId:int}/{month:int}/{year:int}/")]
+    public async Task<ActionResult<List<JourRegle>>> GetByMonth(int carnetSanteId, int month, int year)
     {
-        return await context.JourRegles
+        var securityCheck = await this.ValidateCarnetAccess(carnetSanteService, carnetSanteId);
+        if (securityCheck != null) return securityCheck;
+
+        var result = await context.JourRegles
             .Where(j => j.Date.Month == month && j.Date.Year == year && j.CarnetSanteId == carnetSanteId)
             .ToListAsync();
+
+        return Ok(result);
     }
 
-    [HttpGet]
-    public async Task<IEnumerable<JourRegle>> Get()
-    {
-        return await context.JourRegles.ToListAsync();
-    }
-
-    [HttpGet("{id}")]
+    [HttpGet("{id:int}")]
     public async Task<ActionResult<JourRegle>> Get(int id)
     {
         var jourRegle = await context.JourRegles.FirstOrDefaultAsync(a => a.Id == id);
+        
+        var securityCheck = await this.ValidateCarnetAccess(carnetSanteService, jourRegle?.CarnetSanteId ?? 0);
+        if (securityCheck != null) return securityCheck;
         
         if (jourRegle == null)
         {
@@ -42,6 +44,9 @@ public class JourRegleController(AppDbContext context, CarnetSanteService carnet
     [HttpPost]
     public async Task<ActionResult<JourRegle>> Post(JourRegle jourRegle)
     {
+        var securityCheck = await this.ValidateCarnetAccess(carnetSanteService, jourRegle.CarnetSanteId);
+        if (securityCheck != null) return securityCheck;
+        
         context.JourRegles.Add(jourRegle);
         await context.SaveChangesAsync();
 
@@ -53,17 +58,13 @@ public class JourRegleController(AppDbContext context, CarnetSanteService carnet
     }
 
     [HttpPut]
-    public async Task<JourRegle> Put(JourRegle jourRegle)
+    public async Task<ActionResult<JourRegle>> Put(JourRegle jourRegle)
     {
+        var securityCheck = await this.ValidateCarnetAccess(carnetSanteService, jourRegle.CarnetSanteId);
+        if (securityCheck != null) return securityCheck;
+        
         context.Entry(jourRegle).State = EntityState.Modified;
         await context.SaveChangesAsync();
         return jourRegle;
-    }
-
-    [HttpDelete("{id}")]
-    public async Task Delete(int id)
-    {
-        context.JourRegles.Remove(new JourRegle { Id = id });
-        await context.SaveChangesAsync();
     }
 }

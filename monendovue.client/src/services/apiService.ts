@@ -80,7 +80,6 @@ class ApiService {
     }
     
     // GET
-
     async getDonneesCarnetSante(carnetSanteId: number): Promise<any> {
         return this.request('GET', `CarnetSante/${carnetSanteId}`);
     }

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Claims;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -16,108 +17,174 @@ namespace MonEndoVue.Server.Controllers
     [Route("[controller]")]
     [ApiController]
     [Authorize]
-    public class CarnetSanteController : ControllerBase
+    public class CarnetSanteController(AppDbContext context, CarnetSanteService carnetSanteService)
+        : ControllerBase
     {
-        private readonly AppDbContext _context;
-        private readonly CarnetSanteService _carnetSanteService;
-
-        public CarnetSanteController(AppDbContext context, CarnetSanteService carnetSanteService)
+        [HttpGet("user/id/{userId}")]
+        public async Task<ActionResult<CarnetSante>> GetCarnetSanteByUserId(string userId)
         {
-            _context = context;
-            _carnetSanteService = carnetSanteService;
-        }
+            var currentUserId = (ClaimsPrincipal.Current ?? User).GetCurrentUserId();
+            if (string.IsNullOrEmpty(currentUserId))
+                return Unauthorized();
 
-        // PUT: api/CarnetSante/5
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
-        [HttpPut("{id}")]
-        public async Task<IActionResult> PutCarnetSante(int id, CarnetSante carnetSante)
-        {
-            if (id != carnetSante.Id)
-            {
-                return BadRequest();
-            }
-
-            _context.Entry(carnetSante).State = EntityState.Modified;
+            // Vérifier que l'utilisateur demande ses propres données
+            if (userId != currentUserId)
+                return Forbid("Accès non autorisé");
 
             try
             {
-                await _context.SaveChangesAsync();
+                var carnet = await carnetSanteService.GetCarnetSanteByUserId(userId);
+                return Ok(carnet);
             }
-            catch (DbUpdateConcurrencyException)
+            catch (Exception ex)
             {
-                if (!CarnetSanteExists(id))
-                {
-                    return NotFound();
-                }
-                else
-                {
-                    throw;
-                }
+                return NotFound(ex.Message);
             }
-
-            return NoContent();
-        }
-
-        // POST: api/CarnetSante
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
-        [HttpPost]
-        public async Task<ActionResult<CarnetSante>> PostCarnetSante(CarnetSante carnetSante)
-        {
-            _context.CarnetSantes.Add(carnetSante);
-            await _context.SaveChangesAsync();
-
-            return CreatedAtAction("GetCarnetSante", new { id = carnetSante.Id }, carnetSante);
-        }
-
-        // DELETE: api/CarnetSante/5
-        [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteCarnetSante(int id)
-        {
-            var carnetSante = await _context.CarnetSantes.FindAsync(id);
-            if (carnetSante == null)
-            {
-                return NotFound();
-            }
-
-            _context.CarnetSantes.Remove(carnetSante);
-            await _context.SaveChangesAsync();
-
-            return NoContent();
-        }
-
-        private bool CarnetSanteExists(int id)
-        {
-            return _context.CarnetSantes.Any(e => e.Id == id);
-        }
-
-        [HttpGet("user/id/{userId}")]
-        public async Task<CarnetSante> GetCarnetSanteId(string userId)
-        {
-            return await _carnetSanteService.GetCarnetSanteId(userId);
         }
 
         [HttpGet("user/name/{username}")]
-        public async Task<CarnetViewModel> GetCarnetSanteByUsername(string username)
+        public async Task<ActionResult<CarnetViewModel>> GetCarnetSanteByUsername(string username)
         {
-            return await _carnetSanteService.GetCarnetSanteByUsername(username);
+            var currentUserId = (ClaimsPrincipal.Current ?? User).GetCurrentUserId();
+            if (string.IsNullOrEmpty(currentUserId))
+                return Unauthorized();
+
+            try
+            {
+                // Vérifier que l'utilisateur demande ses propres données
+                var currentUser = await context.Users.FirstOrDefaultAsync(u => u.Id == currentUserId);
+                if (currentUser?.UserName != username)
+                    return Forbid("Accès non autorisé");
+
+                var carnet = await carnetSanteService.GetCarnetSanteByUsername(username);
+                return Ok(carnet);
+            }
+            catch (Exception ex)
+            {
+                return NotFound(ex.Message);
+            }
         }
 
         [HttpGet("{carnetSanteId}")]
-        public async Task<CarnetViewModel> GetCarnetSanteById(int carnetSanteId)
+        public async Task<ActionResult<CarnetViewModel>> GetCarnetSanteById(int carnetSanteId)
         {
-            return await _carnetSanteService.GetCarnetSanteById(carnetSanteId);
+            var userId = (ClaimsPrincipal.Current ?? User).GetCurrentUserId();
+            if (string.IsNullOrEmpty(userId))
+                return Unauthorized();
+
+            try
+            {
+                var carnet = await carnetSanteService.GetCarnetSanteById(carnetSanteId, userId);
+                return Ok(carnet);
+            }
+            catch (UnauthorizedAccessException)
+            {
+                return Forbid("Accès non autorisé à ce carnet de santé");
+            }
+            catch (Exception ex)
+            {
+                return NotFound(ex.Message);
+            }
         }
-        
+
         [HttpGet("{carnetSanteId}/{month}/{year}")]
-        public async Task<CarnetViewModel> GetDonneesCarnetSanteByMonth(int carnetSanteId, int month, int year)
+        public async Task<ActionResult<CarnetPdfExportViewModel>> GetDonneesCarnetSanteByMonth(int carnetSanteId, int month, int year)
         {
-            return await _carnetSanteService.GetDonneesCarnetSanteByMonth(carnetSanteId, month, year);
+            var userId = (ClaimsPrincipal.Current ?? User).GetCurrentUserId();
+            if (string.IsNullOrEmpty(userId))
+                return Unauthorized();
+
+            try
+            {
+                var carnet = await carnetSanteService.GetDonneesCarnetSanteByMonthForPdf(carnetSanteId, month, year, userId);
+                return Ok(carnet);
+            }
+            catch (UnauthorizedAccessException)
+            {
+                return Forbid("Accès non autorisé à ce carnet de santé");
+            }
+            catch (Exception ex)
+            {
+                return NotFound(ex.Message);
+            }
         }
-        
-        [HttpGet("last-entries/{carnetSanteId}")]
-        public async Task<CarnetHomepageViewModel> GetLastEntries(int carnetSanteId)
+
+        [HttpGet("current/{month}/{year}")]
+        public async Task<ActionResult<CarnetPdfExportViewModel>> GetCurrentUserDonneesCarnetSanteByMonth(int month, int year)
         {
-            return await _carnetSanteService.GetLastEntries(carnetSanteId);
+            var userId = (ClaimsPrincipal.Current ?? User).GetCurrentUserId();
+            if (string.IsNullOrEmpty(userId))
+                return Unauthorized();
+
+            try
+            {
+                // Récupérer d'abord le carnet de l'utilisateur
+                var carnet = await carnetSanteService.GetCarnetSanteByUserId(userId);
+                var exportData = await carnetSanteService.GetDonneesCarnetSanteByMonthForPdf(carnet.Id, month, year, userId);
+                return Ok(exportData);
+            }
+            catch (Exception ex)
+            {
+                return NotFound(ex.Message);
+            }
+        }
+
+        [HttpGet("last-entries/{carnetSanteId}")]
+        public async Task<ActionResult<CarnetHomepageViewModel>> GetLastEntries(int carnetSanteId)
+        {
+            var userId = (ClaimsPrincipal.Current ?? User).GetCurrentUserId();
+            if (string.IsNullOrEmpty(userId))
+                return Unauthorized();
+
+            try
+            {
+                var carnet = await carnetSanteService.GetLastEntries(carnetSanteId, userId);
+                return Ok(carnet);
+            }
+            catch (UnauthorizedAccessException)
+            {
+                return Forbid("Accès non autorisé à ce carnet de santé");
+            }
+            catch (Exception ex)
+            {
+                return NotFound(ex.Message);
+            }
+        }
+
+        [HttpGet("current/last-entries")]
+        public async Task<ActionResult<CarnetHomepageViewModel>> GetCurrentUserLastEntries()
+        {
+            var userId = (ClaimsPrincipal.Current ?? User).GetCurrentUserId();
+            if (string.IsNullOrEmpty(userId))
+                return Unauthorized();
+
+            try
+            {
+                var carnet = await carnetSanteService.GetLastEntriesByUserId(userId);
+                return Ok(carnet);
+            }
+            catch (Exception ex)
+            {
+                return NotFound(ex.Message);
+            }
+        }
+
+        [HttpPost("create")]
+        public async Task<ActionResult> CreateCarnetForCurrentUser()
+        {
+            var userId = (ClaimsPrincipal.Current ?? User).GetCurrentUserId();
+            if (string.IsNullOrEmpty(userId))
+                return Unauthorized();
+
+            try
+            {
+                await carnetSanteService.CreateCarnetSante(userId);
+                return Ok("Carnet de santé créé avec succès");
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, "Erreur lors de la création du carnet");
+            }
         }
     }
 }

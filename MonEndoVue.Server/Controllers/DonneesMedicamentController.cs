@@ -14,18 +14,14 @@ namespace MonEndoVue.Server.Controllers
     public class DonneesMedicamentController(AppDbContext context, CarnetSanteService carnetSanteService)
         : ControllerBase
     {
-        // GET: DonneesMedicament
-        [HttpGet]
-        public async Task<ActionResult<IEnumerable<DonneesMedicament>>> GetDonneesMedicaments()
-        {
-            return await context.DonneesMedicaments.ToListAsync();
-        }
-
         // GET: DonneesMedicament/5
-        [HttpGet("{id}")]
+        [HttpGet("{id:int}")]
         public async Task<ActionResult<DonneesMedicament>> GetDonneesMedicament(int id)
         {
             var donneesMedicament = await context.DonneesMedicaments.FindAsync(id);
+            
+            var securityCheck = await this.ValidateCarnetAccess(carnetSanteService, donneesMedicament?.CarnetSanteId ?? 0);
+            if (securityCheck != null) return securityCheck;
 
             if (donneesMedicament == null)
             {
@@ -36,10 +32,13 @@ namespace MonEndoVue.Server.Controllers
         }
 
         // GET: DonneesMedicament/ByMonth/5/2021
-        [HttpGet("{carnetSanteId}/{month}/{year}")]
+        [HttpGet("{carnetSanteId:int}/{month:int}/{year:int}")]
         public async Task<ActionResult<IEnumerable<DonneesMedicamentViewModel>>> GetDonneesMedicamentByMonth(
             int carnetSanteId, int month, int year)
         {
+            var securityCheck = await this.ValidateCarnetAccess(carnetSanteService, carnetSanteId);
+            if (securityCheck != null) return securityCheck;
+            
             var donneesMedicaments = await context.DonneesMedicaments
                 .Include(dm => dm.Medicament)
                 .Where(d => d.Date.Month == month && d.Date.Year == year && d.CarnetSanteId == carnetSanteId)
@@ -48,7 +47,7 @@ namespace MonEndoVue.Server.Controllers
             var donneesMedicamentViewModel = donneesMedicaments.Select(dm => new DonneesMedicamentViewModel
             {
                 Id = dm.Id,
-                NomMedicament = dm.Medicament?.Nom,
+                NomMedicament = dm.Medicament.Nom,
                 NombreComprimes = dm.NombreComprimes,
                 Date = dm.Date,
                 Commentaire = dm.Commentaire
@@ -59,9 +58,12 @@ namespace MonEndoVue.Server.Controllers
 
         // PUT: DonneesMedicament/5
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
-        [HttpPut("{id}")]
+        [HttpPut("{id:int}")]
         public async Task<IActionResult> PutDonneesMedicament(int id, DonneesMedicament donneesMedicament)
         {
+            var securityCheck = await this.ValidateCarnetAccess(carnetSanteService, donneesMedicament.CarnetSanteId);
+            if (securityCheck != null) return securityCheck;
+            
             if (id != donneesMedicament.Id)
             {
                 return BadRequest();
@@ -91,6 +93,9 @@ namespace MonEndoVue.Server.Controllers
         [HttpPost]
         public async Task<ActionResult<DonneesMedicament>> PostDonneesMedicament(DonneesMedicament donneesMedicament)
         {
+            var securityCheck = await this.ValidateCarnetAccess(carnetSanteService, donneesMedicament.CarnetSanteId);
+            if (securityCheck != null) return securityCheck;
+            
             context.DonneesMedicaments.Add(donneesMedicament);
             await context.SaveChangesAsync();
 
@@ -107,7 +112,7 @@ namespace MonEndoVue.Server.Controllers
         }
 
         // DELETE: DonneesMedicament/5
-        [HttpDelete("{id}")]
+        [HttpDelete("{id:int}")]
         public async Task<IActionResult> DeleteDonneesMedicament(int id)
         {
             var donneesMedicament = await context.DonneesMedicaments.FindAsync(id);
@@ -115,10 +120,12 @@ namespace MonEndoVue.Server.Controllers
             {
                 return NotFound();
             }
+            
+            var securityCheck = await this.ValidateCarnetAccess(carnetSanteService, donneesMedicament.CarnetSanteId);
+            if (securityCheck != null) return securityCheck;
 
             // Invalidate cache
-            var carnetSanteId = donneesMedicament.CarnetSanteId;
-            carnetSanteService.InvalidateCache(carnetSanteId);
+            carnetSanteService.InvalidateCache(donneesMedicament.CarnetSanteId);
 
             context.DonneesMedicaments.Remove(donneesMedicament);
             await context.SaveChangesAsync();

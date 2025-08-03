@@ -12,15 +12,8 @@ namespace MonEndoVue.Server.Controllers
     [Authorize]
     public class SymptomesCycleController(AppDbContext context, CarnetSanteService carnetSanteService) : ControllerBase
     {
-        // GET: SymptomesCycle
-        [HttpGet]
-        public async Task<ActionResult<IEnumerable<SymptomeCycle>>> GetSymptomesCycle()
-        {
-            return await context.SymptomesCycles.ToListAsync();
-        }
-        
         // GET: SymptomesCycle/5
-        [HttpGet("{id}")]
+        [HttpGet("{id:int}")]
         public async Task<ActionResult<SymptomeCycle>> GetSymptomeCycle(int id)
         {
             var symptomeCycle = await context.SymptomesCycles.FindAsync(id);
@@ -29,14 +22,20 @@ namespace MonEndoVue.Server.Controllers
             {
                 return NotFound();
             }
+            
+            var securityCheck = await this.ValidateCarnetAccess(carnetSanteService, symptomeCycle.CarnetSanteId);
+            if (securityCheck != null) return securityCheck;
 
             return symptomeCycle;
         }
         
         // GET: SymptomesCycle/ByMonth/5/2021
-        [HttpGet("{carnetSanteId}/{month}/{year}")]
+        [HttpGet("{carnetSanteId:int}/{month:int}/{year:int}")]
         public async Task<ActionResult<IEnumerable<SymptomeCycle>>> GetSymptomesCycleByMonth(int carnetSanteId, int month, int year)
         {
+            var securityCheck = await this.ValidateCarnetAccess(carnetSanteService, carnetSanteId);
+            if (securityCheck != null) return securityCheck;
+            
             return await context.SymptomesCycles
                 .Where(d => d.Date.Month == month && d.Date.Year == year && d.CarnetSanteId == carnetSanteId)
                 .ToArrayAsync();
@@ -47,6 +46,9 @@ namespace MonEndoVue.Server.Controllers
         [HttpPost]
         public async Task<ActionResult<SymptomeCycle>> PostSymptomeCycle(SymptomeCycle symptomeCycle)
         {
+            var securityCheck = await this.ValidateCarnetAccess(carnetSanteService, symptomeCycle.CarnetSanteId);
+            if (securityCheck != null) return securityCheck;
+            
             context.SymptomesCycles.Add(symptomeCycle);
             await context.SaveChangesAsync();
 
@@ -57,7 +59,7 @@ namespace MonEndoVue.Server.Controllers
         }
         
         // DELETE: SymptomesCycle/5
-        [HttpDelete("{id}")]
+        [HttpDelete("{id:int}")]
         public async Task<IActionResult> DeleteSymptomeCycle(int id)
         {
             var symptomeCycle = await context.SymptomesCycles.FindAsync(id);
@@ -65,6 +67,9 @@ namespace MonEndoVue.Server.Controllers
             {
                 return NotFound();
             }
+            
+            var securityCheck = await this.ValidateCarnetAccess(carnetSanteService, symptomeCycle.CarnetSanteId);
+            if (securityCheck != null) return securityCheck;
 
             context.SymptomesCycles.Remove(symptomeCycle);
             await context.SaveChangesAsync();

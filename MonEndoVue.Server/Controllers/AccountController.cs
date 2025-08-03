@@ -59,7 +59,7 @@ namespace MonEndoVue.Server.Controllers
             Response.Cookies.Append("accessToken", accessToken, accessTokenOptions);
             Response.Cookies.Append("refreshToken", refreshToken, refreshTokenOptions);
 
-            var carnetSante = await carnetSanteService.GetCarnetSanteId(user.Id);
+            var carnetSante = await carnetSanteService.GetCarnetSanteByUserId(user.Id);
             return Ok(new { AccessToken = accessToken, RefreshToken = refreshToken, TokenExpiry = tokenExpiry, user.UserName, CarnetSanteId = carnetSante.Id });
         }
 
@@ -104,7 +104,7 @@ namespace MonEndoVue.Server.Controllers
                 Response.Cookies.Append("accessToken", accessToken, accessTokenOptions);
                 Response.Cookies.Append("refreshToken", refreshToken, refreshTokenOptions);
 
-                var carnetSante = await carnetSanteService.GetCarnetSanteId(user.Id);
+                var carnetSante = await carnetSanteService.GetCarnetSanteByUserId(user.Id);
                 return Ok(new { AccessToken = accessToken, RefreshToken = refreshToken, TokenExpiry = tokenExpiry, user.UserName, CarnetSanteId = carnetSante.Id });
             }
             catch (Exception ex)

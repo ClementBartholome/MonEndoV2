@@ -18,18 +18,14 @@ namespace MonEndoVue.Server.Controllers
     public class DonneesActivitePhysiqueController(AppDbContext context, CarnetSanteService carnetSanteService)
         : ControllerBase
     {
-        // GET: DonneesActivitePhysique
-        [HttpGet]
-        public async Task<ActionResult<IEnumerable<DonneesActivitePhysique>>> GetDonneesActivitePhysique()
-        {
-            return await context.DonneesActivitePhysique.ToListAsync();
-        }
-
         // GET: DonneesActivitePhysique/5
         [HttpGet("{id}")]
         public async Task<ActionResult<DonneesActivitePhysique>> GetDonneesActivitePhysique(int id)
         {
             var donneesActivitePhysique = await context.DonneesActivitePhysique.FindAsync(id);
+            
+            var securityCheck = await this.ValidateCarnetAccess(carnetSanteService, donneesActivitePhysique?.CarnetSanteId ?? 0);
+            if (securityCheck != null) return securityCheck;
 
             if (donneesActivitePhysique == null)
             {
@@ -44,6 +40,9 @@ namespace MonEndoVue.Server.Controllers
         public async Task<ActionResult<IEnumerable<DonneesActivitePhysique>>> GetDonneesActivitePhysiqueByMonth(
             int carnetSanteId, int month, int year)
         {
+            var securityCheck = await this.ValidateCarnetAccess(carnetSanteService, carnetSanteId);
+            if (securityCheck != null) return securityCheck;
+            
             var donneesActivitePhysique = await context.DonneesActivitePhysique
                 .Where(d => d.Date.Month == month && d.Date.Year == year && d.CarnetSanteId == carnetSanteId)
                 .ToArrayAsync();
@@ -56,6 +55,9 @@ namespace MonEndoVue.Server.Controllers
         public async Task<IActionResult> PutDonneesActivitePhysique(int id,
             DonneesActivitePhysique donneesActivitePhysique)
         {
+            var securityCheck = await this.ValidateCarnetAccess(carnetSanteService, donneesActivitePhysique.CarnetSanteId);
+            if (securityCheck != null) return securityCheck;
+            
             if (id != donneesActivitePhysique.Id)
             {
                 return BadRequest();
@@ -86,6 +88,9 @@ namespace MonEndoVue.Server.Controllers
         public async Task<ActionResult<DonneesActivitePhysique>> PostDonneesActivitePhysique(
             DonneesActivitePhysique donneesActivitePhysique)
         {
+            var securityCheck = await this.ValidateCarnetAccess(carnetSanteService, donneesActivitePhysique.CarnetSanteId);
+            if (securityCheck != null) return securityCheck;
+            
             context.DonneesActivitePhysique.Add(donneesActivitePhysique);
             await context.SaveChangesAsync();
 
@@ -106,6 +111,9 @@ namespace MonEndoVue.Server.Controllers
             {
                 return NotFound();
             }
+            
+            var securityCheck = await this.ValidateCarnetAccess(carnetSanteService, donneesActivitePhysique.CarnetSanteId);
+            if (securityCheck != null) return securityCheck;
 
             // Invalidate cache
             var carnetSanteId = donneesActivitePhysique.CarnetSanteId;
