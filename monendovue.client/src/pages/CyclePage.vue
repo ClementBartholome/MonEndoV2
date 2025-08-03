@@ -517,6 +517,7 @@ const onSubmit = form.handleSubmit((values) => {
     toast({
       title: 'Erreur',
       description: 'Une erreur est survenue lors de l\'ajout du symptôme',
+      variant: 'custom'
     });
     console.error('Erreur lors de l\'ajout du symptôme:', error);
   });
@@ -535,6 +536,7 @@ const deleteSymptome = async (id: number) => {
     toast({
       title: 'Erreur',
       description: 'Une erreur est survenue lors de la suppression du symptôme',
+      variant: 'custom'
     });
     console.error('Erreur lors de la suppression du symptôme:', error);
   }

@@ -214,6 +214,7 @@ const deleteDonneesTransit = async (id: number) => {
     toast({
       title: 'Erreur',
       description: 'Une erreur est survenue lors de la suppression de la donnée.',
+      variant: 'custom'
     });
     console.error(error);
   }
@@ -257,6 +258,7 @@ const fetchTransitEntriesByMonth = async (month: number, year: number) => {
     toast({
       title: 'Erreur',
       description: 'Une erreur est survenue lors de la récupération des données de transit.',
+      variant: 'custom'
     });
     console.error(error);
   } finally {
@@ -338,6 +340,7 @@ const onSubmit = form.handleSubmit((values) => {
         toast({
           title: 'Erreur',
           description: 'Une erreur est survenue lors de l\'ajout des données de transit.',
+          variant: 'custom'
         });
         console.error(error);
       });

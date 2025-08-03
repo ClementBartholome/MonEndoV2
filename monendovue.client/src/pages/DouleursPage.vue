@@ -239,6 +239,7 @@ const deleteDonneesDouleurs = async (id: number) => {
     toast({
       title: 'Erreur',
       description: 'Un problème est survenu lors de la suppression de la douleur.',
+      variant: 'custom'
     });
     console.error(error);
   }
@@ -407,6 +408,7 @@ const onSubmit = form.handleSubmit((values) => {
         toast({
           title: 'Erreur',
           description: 'Un problème est survenu lors de la modification de la douleur.',
+          variant: 'custom'
         });
         console.error(error);
       });
@@ -431,6 +433,7 @@ const onSubmit = form.handleSubmit((values) => {
       toast({
         title: 'Erreur',
         description: 'Un problème est survenu lors de l\'ajout de la douleur.',
+        variant: 'custom'
       });
       console.error(error);
     });

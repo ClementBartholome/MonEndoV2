@@ -85,7 +85,7 @@
           </Dialog>
         </div>
       </div>
-      <SelectMonth v-model="selectedMonthYear" />
+      <SelectMonth v-model="selectedMonthYear"/>
       <div v-if="isLoading" class="flex flex-col space-y-3">
         <Skeleton class="h-[300px] w-full mt-4 rounded-xl"/>
       </div>
@@ -136,7 +136,8 @@
                   <FormItem>
                     <FormLabel>Date de début du traitement</FormLabel>
                     <FormControl>
-                      <Input type="date" v-bind="componentField" v-model="traitement.dateDebutTraitement" class="min-w-28"/>
+                      <Input type="date" v-bind="componentField" v-model="traitement.dateDebutTraitement"
+                             class="min-w-28"/>
                     </FormControl>
                     <FormMessage/>
                   </FormItem>
@@ -181,7 +182,8 @@
                     <FormItem>
                       <FormLabel>Date de début du traitement</FormLabel>
                       <FormControl>
-                        <Input type="date" v-bind="componentField" v-model="traitementForm.dateDebutTraitement" class="min-w-28"/>
+                        <Input type="date" v-bind="componentField" v-model="traitementForm.dateDebutTraitement"
+                               class="min-w-28"/>
                       </FormControl>
                       <FormMessage/>
                     </FormItem>
@@ -207,7 +209,8 @@
                     <FormItem>
                       <FormControl>
                         <FormLabel>Date de fin du traitement</FormLabel>
-                        <Input type="date" v-bind="componentField" v-model="traitementForm.dateFinTraitement" class="min-w-28"/>
+                        <Input type="date" v-bind="componentField" v-model="traitementForm.dateFinTraitement"
+                               class="min-w-28"/>
                       </FormControl>
                       <FormMessage/>
                     </FormItem>
@@ -237,8 +240,8 @@
             <div>
               <p class="text-headline font-bold text-xl">{{ traitement.nom }}</p>
               <p>{{ traitement.posologie }}</p>
-                            <p>Traitement pris du {{ format(traitement.dateDebutTraitement, 'dd-MM-yyyy').replace(/-/g, '/') }} au
-                              {{ format(traitement.dateFinTraitement, 'dd-MM-yyyy').replace(/-/g, '/') }}</p>
+              <p>Traitement pris du {{ format(traitement.dateDebutTraitement, 'dd-MM-yyyy').replace(/-/g, '/') }} au
+                {{ format(traitement.dateFinTraitement, 'dd-MM-yyyy').replace(/-/g, '/') }}</p>
             </div>
           </li>
         </ul>
@@ -274,7 +277,10 @@ const traitementsEnCours = ref<Medicament[]>([]);
 const medicaments = ref<Medicament[]>([]);
 const traitementsPasses = ref<Medicament[]>([]);
 const listePrises = ref<Entry[]>([]);
-const prise = ref<PriseMedicament>({nom: '', date: '', time: '', commentaire: '', medicamentId: '', nombreComprimes: 1});
+const prise = ref<PriseMedicament>({
+  nom: '', date: format(new Date(), 'yyyy-MM-dd'),
+  time: format(new Date(), 'HH:mm'), commentaire: '', medicamentId: '', nombreComprimes: 1
+});
 const traitement = ref({nom: '', posologie: '', dateDebutTraitement: ''});
 const isLoading = ref(true);
 
@@ -313,10 +319,12 @@ const deleteDonneesMedicament = async (id: number) => {
     toast({
       title: 'Erreur',
       description: 'Une erreur est survenue lors de la suppression de la prise de médicament.',
+      variant: 'custom'
     });
     console.error(error);
   }
 };
+
 interface Medicament {
   id: string;
   nom: string;
@@ -404,14 +412,12 @@ const onSubmitPriseForm = () => {
     commentaire: valuesForApi.commentaire ? valuesForApi.commentaire : 'Pas de commentaire',
     carnetSanteId: authStore.user?.carnetSanteId,
   };
-
   apiService.postDonneesPriseMedicament(valuesWithCarnetSanteId).then((response) => {
     toast({
       title: 'Succès',
       description: 'La prise de médicament a été enregistrée avec succès.',
       variant: 'custom',
     });
-    
     const medicamentName = medicaments.value.find(med => med.id === values.medicamentId)?.nom;
 
     const valuesForView = {
@@ -428,6 +434,7 @@ const onSubmitPriseForm = () => {
     toast({
       title: 'Erreur',
       description: 'Une erreur est survenue lors de l\'enregistrement de la prise de médicament.',
+      variant: 'custom'
     });
     console.error(error);
   });
@@ -459,6 +466,7 @@ const onSubmitTraitementForm = () => {
     toast({
       title: 'Erreur',
       description: 'Une erreur est survenue lors de l\'ajout du traitement.',
+      variant: 'custom'
     });
     console.error(error);
   });
@@ -545,6 +553,7 @@ const onSubmitEditTraitement = () => {
     toast({
       title: 'Erreur',
       description: 'Une erreur est survenue lors de la mise à jour du traitement.',
+      variant: 'custom'
     });
     console.error(error);
   });

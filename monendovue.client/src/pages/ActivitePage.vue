@@ -206,6 +206,7 @@ const deleteDonneesActivitePhysique = async (id: number) => {
     toast({
       title: 'Erreur',
       description: 'Une erreur est survenue lors de la suppression de la session.',
+      variant: 'custom'
     });
     console.error(error);
   }
@@ -310,6 +311,7 @@ const onSubmit = form.handleSubmit((values) => {
     toast({
       title: 'Erreur',
       description: 'Un problème est survenu lors de l\'ajout de la douleur.',
+      variant: 'custom'
     });
     console.error(error);
   });

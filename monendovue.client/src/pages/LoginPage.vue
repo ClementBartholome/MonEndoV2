@@ -68,6 +68,7 @@ const onSubmit = async (event: any) => {
     toast({
       title: 'Connexion échouée',
       description: 'Veuillez vérifier votre email et votre mot de passe.',
+      variant: 'custom'
     });
   }
 }
