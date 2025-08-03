@@ -34,10 +34,9 @@ namespace MonEndoVue.Server
                     reloadOnChange: true)
                 .AddEnvironmentVariables()
                 .AddUserSecrets<Program>();
-            
+
             // TypeGen generate --project-folder "C:\\Users\\Clementoss\\source\\repos\\MonEndoVue\\MonEndoVue.Server" --output-folder "C:\\Users\\Clementoss\\source\\repos\\MonEndoVue\\monendovue.client\\src\\interfaces"
-
-
+            
             Log.Logger = new LoggerConfiguration()
                 .MinimumLevel.Debug()
                 .MinimumLevel.Override("Microsoft", LogEventLevel.Information)
@@ -49,7 +48,6 @@ namespace MonEndoVue.Server
             builder.Host.UseSerilog();
 
             // Add services to the container.
-
             if (builder.Environment.IsDevelopment())
             {
                 builder.Services.AddDbContext<AppDbContext>(options =>
@@ -64,7 +62,7 @@ namespace MonEndoVue.Server
             builder.Services.AddScoped<CarnetSanteService>();
             builder.Services.AddScoped<TokenService>();
             builder.Services.AddScoped<DeviceTokenService>();
-            builder.Services.AddScoped<NotificationService>(); 
+            builder.Services.AddScoped<NotificationService>();
             // builder.Services.AddHostedService<NotificationService>(serviceProvider =>
             // {
             //     var logger = serviceProvider.GetRequiredService<ILogger<NotificationService>>();
@@ -81,7 +79,8 @@ namespace MonEndoVue.Server
             {
                 options.AddPolicy("CorsPolicy", policyBuilder =>
                 {
-                    policyBuilder.WithOrigins("https://localhost:7206/", "https://localhost:5173", "http://localhost:5173",
+                    policyBuilder.WithOrigins("https://localhost:7206/", "https://localhost:5173",
+                            "http://localhost:5173",
                             "https://monendoapp.fr")
                         .AllowAnyMethod()
                         .AllowAnyHeader()
@@ -151,7 +150,7 @@ namespace MonEndoVue.Server
                     GoogleCredential.FromFile(Path.Combine(AppDomain.CurrentDomain.BaseDirectory,
                         "serviceAccountKey.json")),
             });
-            
+
             builder.Services.AddSingleton(FirebaseMessaging.DefaultInstance);
 
             builder.Services.AddQuartz(q =>
@@ -163,7 +162,7 @@ namespace MonEndoVue.Server
                     .ForJob(notificationJobKey)
                     .WithIdentity("SendPushNotifications-trigger")
                     .WithCronSchedule("0 00 21 * * ?"));
-                
+
                 // // Job du ping (toutes les 30 minutes)
                 // var pingJobKey = JobKey.Create("PingApplication");
                 // q.AddJob<PingJob>(opts => opts.WithIdentity(pingJobKey));
@@ -174,24 +173,21 @@ namespace MonEndoVue.Server
                 //         .WithIntervalInMinutes(30)
                 //         .RepeatForever()));
             });
-            
-            builder.Services.AddQuartzHostedService(opts => 
-            {
-                opts.WaitForJobsToComplete = true;
-            });
-            
+
+            builder.Services.AddQuartzHostedService(opts => { opts.WaitForJobsToComplete = true; });
+
             // builder.Services.AddHttpClient("PingClient", client =>
             // {
             //     client.Timeout = TimeSpan.FromMinutes(2);
             // });
-            
+
             builder.Services.AddHttpClient("OneSignalClient", client =>
             {
                 client.BaseAddress = new Uri("https://onesignal.com");
                 client.DefaultRequestHeaders.Add("Authorization", $"Basic {builder.Configuration["OneSignal:ApiKey"]}");
                 client.DefaultRequestHeaders.Add("Content-Type", "application/json");
             });
-            
+
             builder.Services.AddSwaggerGen(option =>
             {
                 option.SwaggerDoc("v1", new OpenApiInfo { Title = "Demo API", Version = "v1" });
@@ -215,52 +211,37 @@ namespace MonEndoVue.Server
                                 Id = "Bearer"
                             }
                         },
-                        new string[] { }
+                        []
                     }
                 });
             });
-            
+
             builder.Services.AddSignalR();
 
             builder.Services.AddSingleton<IConfiguration>(builder.Configuration);
-            
+
             var app = builder.Build();
-            
+
             app.MapHub<NotificationHub>("/notificationHub");
 
-            if (app.Environment.IsDevelopment() )
+            if (app.Environment.IsDevelopment())
             {
                 using var scope = app.Services.CreateScope();
                 var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
                 // await dbContext.Database.MigrateAsync();
 
-                var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
-
-                var rootUser = new ApplicationUser
-                {
-                    UserName = "coralie.owczaruk@yahoo.fr", Email = "coralie.owczaruk@yahoo.fr", EmailConfirmed = true
-                };
-                
-                if (await userManager.FindByNameAsync(rootUser.UserName) == null)
-                {
-                    await userManager.CreateAsync(rootUser, "Password123$");
-                }
-                
-                var user = await userManager.FindByNameAsync(rootUser.UserName);
-                if (user != null && dbContext.CarnetSantes.All(c => c.UserId != user.Id))
-                {
-                    var carnet = new CarnetSante { UserId = user.Id };
-                    dbContext.CarnetSantes.Add(carnet);
-                    await dbContext.SaveChangesAsync();
-                }
+                await RootUserSeeder.Seed(scope, builder.Configuration, dbContext);
             }
 
             if (app.Environment.IsProduction())
             {
                 using var scope = app.Services.CreateScope();
                 var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+
+                await RootUserSeeder.Seed(scope, builder.Configuration, dbContext);
+
                 await dbContext.Database.MigrateAsync();
-                
+
                 app.UseHsts();
                 app.Use(async (context, next) =>
                 {
@@ -272,7 +253,7 @@ namespace MonEndoVue.Server
             app.MapIdentityApi<ApplicationUser>();
 
             app.UseCors("CorsPolicy");
-            
+
             // Middleware to add the Authorization header from the cookie to the request headers
             app.Use(async (context, next) =>
             {
