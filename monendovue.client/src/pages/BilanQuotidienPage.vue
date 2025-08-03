@@ -1,12 +1,20 @@
 ﻿<template>
-  <div class="flex-column-container">
-    <BackButton/>
+  <div class="flex-column-container !gap-1">
+    <div class="flex items-center justify-between w-full">
+      <BackButton class="!w-1/4"/>
+      <p v-if="justSubmitted" class="text-lg text-center flex items-center gap-2 justify-center ml-4 w-full">
+        Bilan quotidien enregistré <i class="material-symbols-outlined check-icon mr-2">check_circle</i>
+      </p>
+    </div>
+    <div class="checkmark-animation">
+    </div>
     <div v-if="isLoading" class="flex flex-col space-y-3 p-6 pt-0">
       <Skeleton class="h-[300px] w-full mt-4 rounded-xl"/>
     </div>
     <section v-else v-if="!isSubmitted"
              class="container !mt-0 mx-auto py-8 w-full bg-clearer rounded-3xl shadow-xl ml-auto flex flex-col h-auto">
       <Progress :model-value="(currentStep / 7) * 100" class="mb-6"/>
+
       <div v-if="currentStep === 1">
         <h2 class="text-2xl font-bold mb-14 flex items-center">
           <i class="material-symbols-outlined mr-2">mood</i> Étape 1: Humeur du jour
@@ -54,7 +62,7 @@
       <div v-if="currentStep === 4" class="flex flex-col items-center">
         <h2 class="text-2xl font-bold mb-6 flex items-center">Étape 4: Nombre de pas</h2>
         <FormField name="pas">
-          <span class="material-symbols-outlined absolute top-[20rem]">footprint</span>
+          <span class="material-symbols-outlined absolute top-[20rem]">directions_walk</span>
           <round-slider
               v-model="formData.pas"
               start-angle="315"
@@ -109,7 +117,7 @@
           </FormItem>
         </FormField>
       </div>
-            
+
       <div v-if="currentStep === 7">
         <h2 class="text-2xl font-bold mb-14 flex items-center">
           <i class="material-symbols-outlined mr-2">sick</i> Étape 7: Douleur
@@ -124,65 +132,105 @@
         </Button>
       </div>
     </section>
-    <div v-if="isSubmitted" class="confirmation-message w-full">
-      <p class="text-xl text-center flex items-center gap-2 justify-center">
-        Bilan quotidien enregistré <i class="material-symbols-outlined check-icon mr-2">check_circle</i></p>
-      <div class="checkmark-animation">
-      </div>
-      <Card class="container mt-4 mx-auto w-full bg-clearer rounded-3xl shadow-xl ml-auto flex flex-col">
-        <CardHeader>
-          <CardTitle class="flex items-center">
-            Récapitulatif du bilan
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <ul class="summary-list text-xl">
-            <li class="flex items-center">
-              <span :class="`material-symbols-outlined mood-icon mr-2`">{{ moodIconMapping[todayBilan.mood] }}</span>
-              Humeur : {{ todayBilan.mood }}
-            </li>
-            <li class="flex items-center">
-              <i class="material-symbols-outlined stress-icon mr-2">psychology</i> Niveau de stress :
-              {{ (todayBilan.stressPro + todayBilan.stressPerso) / 2 }}
-            </li>
-            <li class="flex items-center">
-              <i class="material-symbols-outlined fatigue-icon mr-2">bedtime</i> Niveau de fatigue :
-              {{ todayBilan.fatigue.toString() }}
-            </li>
-            <li class="flex items-center">
-              <i class="material-symbols-outlined fatigue-icon mr-2">sick</i> Niveau de douleur :
-              {{ todayBilan.douleurMoyenne.toString() }}
-            </li>
-            <li class="flex items-center">
-              <i class="material-symbols-outlined neat-icon mr-2">footprint</i> Nombre de pas :
-              {{ todayBilan.pas.toString() }}
-            </li>
-            <li class="flex items-center">
-              <i class="material-symbols-outlined hydratation-icon mr-2">local_drink</i> Hydratation :
-              {{ todayBilan.hydratation.toString() + "L" }}
-            </li>
-          </ul>
-        </CardContent>
-      </Card>
 
-      <Card class="container !mx-0 mt-4 w-full bg-clearer rounded-3xl shadow-xl ml-auto flex flex-col">
-        <CardHeader>
-          <CardTitle class="flex items-center">
-            <i class="material-symbols-outlined mr-2">history</i> Historique des bilans
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <SelectWeek v-model="selectedWeekYear" @update:years="handleUpdateYears" class="text-left"/>
-          <LineChart
-              :data="chartData"
-              :categories="['stress', 'fatigue', 'mood']"
-              index="date"
-              :colors="['#ff6b6b', '#4ecdc4', '#ffa726']"
-              :yFormatter="(value) => `${value}`"
-              :yDomain="[0, 5]"
-          />
-        </CardContent>
-      </Card>
+    <!-- Section après soumission avec onglets -->
+    <div v-if="isSubmitted" class="w-full">
+      <Tabs default-value="recap" class="w-full">
+        <TabsList>
+          <TabsTrigger value="recap">Récapitulatif & Historique</TabsTrigger>
+          <TabsTrigger value="dashboard">Analyse & Tendances</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="recap">
+          <div class="confirmation-message w-full">
+
+            <Card class="container mt-4 mx-auto w-full bg-clearer rounded-3xl shadow-xl ml-auto flex flex-col">
+              <CardContent>
+                <BilanWeekSelector
+                    :bilans="bilans"
+                    :selectedDate="selectedDate"
+                    @update:selectedDate="handleDateSelection"
+                />
+              </CardContent>
+            </Card>
+
+            <!-- Section Bilan du jour sélectionné -->
+            <Card class="container mt-4 mx-auto w-full bg-clearer rounded-3xl shadow-xl ml-auto flex flex-col">
+              <CardHeader>
+                <CardTitle class="flex items-center">
+                  {{ selectedDateTitle }}
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div v-if="selectedBilan">
+                  <ul class="summary-list text-xl">
+                    <li class="flex items-center">
+                      <span :class="`material-symbols-outlined mood-icon mr-2`">{{ moodIconMapping[selectedBilan.mood] }}</span>
+                      Humeur : {{ selectedBilan.mood }}
+                    </li>
+                    <li class="flex items-center">
+                      <i class="material-symbols-outlined stress-icon mr-2">psychology</i> Niveau de stress :
+                      {{ (selectedBilan.stressPro + selectedBilan.stressPerso) / 2 }}
+                    </li>
+                    <li class="flex items-center">
+                      <i class="material-symbols-outlined fatigue-icon mr-2">bedtime</i> Niveau de fatigue :
+                      {{ selectedBilan.fatigue.toString() }}
+                    </li>
+                    <li class="flex items-center">
+                      <i class="material-symbols-outlined fatigue-icon mr-2">sick</i> Niveau de douleur :
+                      {{ selectedBilan.douleurMoyenne.toString() }}
+                    </li>
+                    <li class="flex items-center">
+                      <i class="material-symbols-outlined neat-icon mr-2">footprint</i> Nombre de pas :
+                      {{ selectedBilan.pas.toString() }}
+                    </li>
+                    <li class="flex items-center">
+                      <i class="material-symbols-outlined hydratation-icon mr-2">water_drop</i> Hydratation :
+                      {{ selectedBilan.hydratation.toString() + "L" }}
+                    </li>
+                    <li v-if="selectedBilan.commentaire" class="flex items-start mt-4">
+                      <i class="material-symbols-outlined mr-2 mt-1">comment</i>
+                      <div>
+                        <span class="font-medium">Commentaire :</span><br/>
+                        <span class="text-gray-600">{{ selectedBilan.commentaire }}</span>
+                      </div>
+                    </li>
+                  </ul>
+                </div>
+                <div v-else class="text-center py-8 text-gray-500">
+                  <i class="material-symbols-outlined text-4xl mb-4">event_busy</i>
+                  <p class="text-lg">Aucun bilan enregistré pour cette date</p>
+                  <p class="text-sm">Sélectionne une autre date</p>
+                </div>
+              </CardContent>
+            </Card>
+
+            <!-- Section Historique avec graphique -->
+            <Card class="container !mx-0 mt-4 w-full bg-clearer rounded-3xl shadow-xl ml-auto flex flex-col">
+              <CardHeader>
+                <CardTitle class="flex items-center">
+                  <i class="material-symbols-outlined mr-2">show_chart</i> Évolution hebdomadaire
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <SelectWeek v-model="selectedWeekYear" @update:years="handleUpdateYears" class="text-left"/>
+                <LineChart
+                    :data="chartData"
+                    :categories="['stress', 'fatigue', 'humeur', 'douleur']"
+                    index="date"
+                    :colors="['#ff6b6b', '#4ecdc4', '#ffa726', '#8e44ad']"
+                    :yFormatter="(value) => `${value}`"
+                    :yDomain="[0, 10]"
+                />
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="dashboard">
+          <DashboardBilanQuotidien :bilans="bilans" />
+        </TabsContent>
+      </Tabs>
     </div>
   </div>
 </template>
@@ -194,7 +242,8 @@ import {Progress} from '@/components/ui/progress';
 import {Slider} from '@/components/ui/slider';
 import BackButton from "@/components/BackButton.vue";
 import {Card, CardContent, CardHeader, CardTitle} from "@/components/ui/card";
-import {format, startOfWeek, endOfWeek, startOfISOWeek, endOfISOWeek} from 'date-fns';
+import {format, startOfWeek, isToday} from 'date-fns';
+import {fr} from 'date-fns/locale';
 import {LineChart} from "@/components/ui/chart-line";
 import SelectWeek from "@/components/SelectWeek.vue";
 import {FormField, FormItem, FormLabel} from "@/components/ui/form";
@@ -204,11 +253,17 @@ import apiService from "@/services/apiService";
 import {useAuthStore} from "@/store/auth";
 import {Skeleton} from "@/components/ui/skeleton";
 import type {BilanQuotidien} from "@/interfaces/bilan-quotidien";
+import DashboardBilanQuotidien from "@/components/DashboardBilanQuotidien.vue";
+import {Tabs, TabsContent, TabsList, TabsTrigger} from "@/components/ui/tabs";
+import BilanWeekSelector from "@/components/BilanWeekSelector.vue";
 
 const currentStep = ref(1);
 const isSubmitted = ref(false);
+const justSubmitted = ref(false);
 const carnetSanteId = useAuthStore().user!.carnetSanteId;
 const isLoading = ref(true);
+
+const selectedDate = ref(new Date());
 
 const selectedWeekYear = ref(format(new Date(), 'yyyy-\'W\'II'));
 const startYear = ref(new Date().getFullYear());
@@ -219,7 +274,6 @@ const handleUpdateYears = ({ startYear: start, endYear: end }) => {
   endYear.value = end;
   fetchBilans();
 };
-
 
 const formData = ref({
   date: new Date(),
@@ -244,7 +298,7 @@ const todayBilan = ref({
   fatigue: 0,
   pas: 0,
   hydratation: 0,
-  douleurMoyenne: 0,  
+  douleurMoyenne: 0,
 });
 
 const moods = [
@@ -263,6 +317,27 @@ const moodIconMapping = {
   'Heureuse': 'sentiment_satisfied',
   'Neutre': 'sentiment_neutral',
   'Triste': 'sentiment_dissatisfied'
+};
+
+const selectedBilan = computed(() => {
+  if (!bilans.value || bilans.value.length === 0) return null;
+
+  const selectedDateString = format(selectedDate.value, 'yyyy-MM-dd');
+  return bilans.value.find(bilan =>
+      format(new Date(bilan.date), 'yyyy-MM-dd') === selectedDateString
+  ) || null;
+});
+
+const selectedDateTitle = computed(() => {
+  if (isToday(selectedDate.value)) {
+    return "Bilan d'aujourd'hui";
+  } else {
+    return `Bilan du ${format(selectedDate.value, 'dd MMMM yyyy', { locale: fr })}`;
+  }
+});
+
+const handleDateSelection = (date: Date) => {
+  selectedDate.value = date;
 };
 
 const filteredBilans = computed<BilanQuotidien[]>(() => {
@@ -285,9 +360,9 @@ const chartData = computed(() => {
   return filteredBilans.value.map(bilan => ({
     date: format(new Date(bilan.date), 'dd/MM/yyyy'),
     stress: (bilan.stressPro + bilan.stressPerso) / 2,
-    // douleurMoyenne: bilan.douleurMoyenne,
     fatigue: bilan.fatigue,
-    mood: moodMapping[bilan.mood]
+    humeur: moodMapping[bilan.mood],
+    douleur: bilan.douleurMoyenne
   }));
 });
 
@@ -323,7 +398,10 @@ const submitForm = async () => {
     await apiService.postBilanQuotidien(newBilan);
     bilans.value = [...bilans.value, newBilan];
     todayBilan.value = newBilan;
+
+    selectedDate.value = new Date();
     isSubmitted.value = true;
+    justSubmitted.value = true;
   } catch (error) {
     console.error('Error submitting form:', error);
   }
@@ -341,7 +419,7 @@ const isStepValid = () => {
   } else if (currentStep.value === 5) {
     return !formData.value.hydratation;
   } else if (currentStep.value === 6) {
-    return !formData.value.gluten && !formData.value.lactose && !formData.value.grignotage; 
+    return !formData.value.gluten && !formData.value.lactose && !formData.value.grignotage;
   } else if (currentStep.value === 7) {
     return !formData.value.douleurMoyenne;
   }
@@ -362,6 +440,7 @@ const fetchBilans = async () => {
     if (bilan) {
       todayBilan.value = bilan;
       isSubmitted.value = true;
+      selectedDate.value = new Date();
     }
   } catch (error) {
     console.error('Error fetching bilans:', error);
