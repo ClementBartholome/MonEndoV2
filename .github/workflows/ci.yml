@@ -124,6 +124,11 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+          build-args: |
+            VITE_API_URL_PROD=https://monendoapp.fr/
+            VITE_GOOGLE_CALENDAR_API_KEY=${{ secrets.VITE_GOOGLE_CALENDAR_API_KEY }}
+            VITE_GOOGLE_CALENDAR_ID=${{ secrets.VITE_GOOGLE_CALENDAR_ID }}
+            VITE_ONESIGNAL_API_KEY=${{ secrets.VITE_ONESIGNAL_API_KEY }}
 
       # === DÉPLOIEMENT SUR VPS ===
       - name: Deploy to VPS
