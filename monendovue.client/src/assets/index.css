@@ -531,6 +531,7 @@ td, th {
 .fc-direction-ltr .fc-daygrid-event.fc-event-end {
     flex-wrap: wrap;
     margin: 0;
+    overflow: hidden;
 }
 
 .fc-daygrid-dot-event .fc-event-title {
