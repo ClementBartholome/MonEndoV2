@@ -32,6 +32,7 @@ import interactionPlugin from "@fullcalendar/interaction";
 import 'vue-popperjs/dist/vue-popper.css';
 import {Button} from '@/components/ui/button';
 import type {CalendarEvent} from '@/models/calendar-events/calendar-event';
+import type { CalendarOptions } from '@fullcalendar/core' 
 
 const events = ref<CalendarEvent[]>([]);
 const loading = ref(true);
@@ -40,7 +41,7 @@ const selectedDate = ref<string | null>(null);
 type PositionType = { x: number; y: number; };
 const popperPosition: Ref<PositionType> = ref({x: 0, y: 0});
 
-let refreshIntervalId: NodeJS.Timeout;
+let refreshIntervalId: number;
 
 const fetchEvents = async () => {
   localStorage.removeItem('events')
@@ -86,7 +87,7 @@ const fetchEvents = async () => {
   }
 };
 
-const calendarOptions = computed(() => {
+const calendarOptions = computed<CalendarOptions>(() => { 
   const isMobile = window.matchMedia('(max-width: 767px)').matches;
   const initialView = isMobile ? 'dayGridFourWeek' : 'dayGridMonth';
 
