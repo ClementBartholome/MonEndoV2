@@ -4,7 +4,9 @@
     <aside class="bg-clearer border border-gray-300 rounded-2xl p-3 flex items-center justify-center shadow-sm">
       <i class="material-symbols-outlined mr-2 text-button">info</i>
       <span class="text-sm text-paragraph">
-        Analyse basée sur <strong class="text-headline">{{ dataInfo.count }} bilans</strong> 
+        Analyse basée sur <strong class="text-headline">{{ dataInfo.count }} {{
+          dataInfo.count > 1 ? 'bilans' : 'bilan'
+        }}</strong> 
         ({{ dataInfo.period }})
       </span>
     </aside>
@@ -12,8 +14,8 @@
     <!-- Score Global de Bien-être -->
     <Card class="container mt-4 mx-auto w-full bg-clearer rounded-3xl shadow-xl ml-auto flex flex-col">
       <CardHeader>
-        <CardTitle class="flex items-center text-2xl">
-          <i class="material-symbols-outlined mr-3 text-3xl">health_and_safety</i>
+        <CardTitle class="flex items-center">
+          <i class="material-symbols-outlined mr-3">health_and_safety</i>
           Score de Bien-être
         </CardTitle>
       </CardHeader>
@@ -61,7 +63,8 @@
                 <div class="flex-1">
                   <div class="flex items-center justify-between mb-2">
                     <span class="font-medium">{{ goal.title }}</span>
-                    <span class="text-sm font-semibold" :class="goal.progress >= 100 ? 'text-green-600' : goal.progress >= 70 ? 'text-yellow-600' : 'text-red-600'">
+                    <span class="text-sm font-semibold"
+                          :class="goal.progress >= 100 ? 'text-green-600' : goal.progress >= 70 ? 'text-yellow-600' : 'text-red-600'">
                       {{ goal.progress }}%
                     </span>
                   </div>
@@ -85,7 +88,7 @@
       <Card class="container mt-4 mx-auto w-full bg-clearer rounded-3xl shadow-xl ml-auto flex flex-col">
         <CardHeader>
           <CardTitle class="flex items-center">
-            <i class="material-symbols-outlined mr-2">psychology</i>
+            <i class="material-symbols-outlined mr-2 text-2xl">psychology</i>
             Insights & Actions
           </CardTitle>
         </CardHeader>
@@ -95,7 +98,8 @@
                  class="p-4 rounded-2xl border-l-4 bg-white shadow-sm"
                  :class="`border-l-${insight.severity === 'success' ? 'green' : insight.severity === 'warning' ? 'yellow' : insight.severity === 'danger' ? 'red' : 'blue'}-400`">
               <div class="flex items-start space-x-3">
-                <div :class="`p-2 rounded-2xl bg-${insight.severity === 'success' ? 'green' : insight.severity === 'warning' ? 'yellow' : insight.severity === 'danger' ? 'red' : 'blue'}-100`">
+                <div
+                    :class="`p-2 rounded-2xl bg-${insight.severity === 'success' ? 'green' : insight.severity === 'warning' ? 'yellow' : insight.severity === 'danger' ? 'red' : 'blue'}-100`">
                   <i class="material-symbols-outlined"
                      :class="`text-${insight.severity === 'success' ? 'green' : insight.severity === 'warning' ? 'yellow' : insight.severity === 'danger' ? 'red' : 'blue'}-600`">
                     {{ insight.icon }}
@@ -119,9 +123,13 @@
                   <div class="flex items-center justify-between">
                     <div class="flex items-center text-xs text-gray-500">
                       <i class="material-symbols-outlined mr-1 text-xs">
-                        {{ insight.priority === 'high' ? 'priority_high' : insight.priority === 'medium' ? 'info' : 'low_priority' }}
+                        {{
+                          insight.priority === 'high' ? 'priority_high' : insight.priority === 'medium' ? 'info' : 'low_priority'
+                        }}
                       </i>
-                      Priorité {{ insight.priority === 'high' ? 'élevée' : insight.priority === 'medium' ? 'modérée' : 'faible' }}
+                      Priorité {{
+                        insight.priority === 'high' ? 'élevée' : insight.priority === 'medium' ? 'modérée' : 'faible'
+                      }}
                     </div>
                     <span v-if="insight.target" class="text-xs text-gray-400">
                       Objectif: {{ insight.target }}
@@ -223,7 +231,7 @@ const dataInfo = computed(() => {
   const count = recent.length;
 
   if (count === 0) {
-    return { count: 0, period: 'Aucune donnée' };
+    return {count: 0, period: 'Aucune donnée'};
   }
 
   const dates = recent.map(b => new Date(b.date)).sort((a, b) => a.getTime() - b.getTime());
@@ -479,7 +487,7 @@ const insightsWithActions = computed((): InsightWithAction[] => {
 
   // Trier par priorité (high -> medium -> low)
   return insights.sort((a, b) => {
-    const priorityOrder = { high: 0, medium: 1, low: 2 };
+    const priorityOrder = {high: 0, medium: 1, low: 2};
     return priorityOrder[a.priority] - priorityOrder[b.priority];
   }).slice(0, 5); // Limiter à 5 insights max
 });

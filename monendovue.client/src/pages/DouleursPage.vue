@@ -131,7 +131,7 @@
           <p v-else-if="entries.length === 0" class="mt-8 text-2xl text-center">Aucune donnée enregistrée</p>
           <LineChart
               v-else
-              :data="entries"
+              :data="chartData"
               :categories="['intensite']"
               index="date"
           />
@@ -190,6 +190,8 @@ import {useToast} from '@/components/ui/toast';
 import {Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue,} from '@/components/ui/select'
 import BackButton from "@/components/BackButton.vue";
 import SelectMonth from "@/components/SelectMonth.vue";
+import type {DonneesActivitePhysique} from "@/interfaces/donnees-activite-physique";
+import type {DonneesDouleur} from "@/interfaces/donnees-douleur";
 
 const {toast} = useToast();
 const authStore = useAuthStore();
@@ -273,6 +275,17 @@ const openEditForm = (entry: Entry) => {
   isEditMode.value = true;
   isDialogOpen.value = true;
 };
+
+const chartData = computed(() => {
+  return entries.value.map((entry: Entry) => {
+    return {
+      date: entry.date,
+      intensite: entry.intensite,
+      type: entry.type,
+      commentaire: entry.commentaire,
+    };
+  });
+});
 
 const fetchPainEntriesByMonth = async (month: number, year: number) => {
   isLoading.value = true;

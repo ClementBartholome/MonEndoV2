@@ -116,7 +116,7 @@
               <form class="flex flex-col gap-4" @submit.prevent="onSubmitTraitementForm">
                 <FormField v-slot="{ componentField }" name="nom">
                   <FormItem>
-                    <FormLabel>Médicament</FormLabel>
+                    <FormLabel>Nom du traitement</FormLabel>
                     <FormControl>
                       <Input v-bind="componentField" v-model="traitement.nom"/>
                     </FormControl>
@@ -162,7 +162,7 @@
                 <form @submit.prevent="onSubmitEditTraitement" class="flex flex-col gap-4">
                   <FormField v-slot="{ componentField }" name="nom">
                     <FormItem>
-                      <FormLabel>Médicament</FormLabel>
+                      <FormLabel>Nom du traitement</FormLabel>
                       <FormControl>
                         <Input v-bind="componentField" v-model="traitementForm.nom"/>
                       </FormControl>
