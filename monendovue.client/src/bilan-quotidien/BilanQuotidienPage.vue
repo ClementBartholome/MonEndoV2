@@ -253,9 +253,9 @@ import apiService from "@/services/apiService";
 import {useAuthStore} from "@/store/auth";
 import {Skeleton} from "@/components/ui/skeleton";
 import type {BilanQuotidien} from "@/interfaces/bilan-quotidien";
-import DashboardBilanQuotidien from "@/components/DashboardBilanQuotidien.vue";
+import DashboardBilanQuotidien from "@/bilan-quotidien/DashboardBilanQuotidien.vue";
 import {Tabs, TabsContent, TabsList, TabsTrigger} from "@/components/ui/tabs";
-import BilanWeekSelector from "@/components/BilanWeekSelector.vue";
+import BilanWeekSelector from "@/bilan-quotidien/BilanWeekSelector.vue";
 
 const currentStep = ref(1);
 const isSubmitted = ref(false);
@@ -269,10 +269,28 @@ const selectedWeekYear = ref(format(new Date(), 'yyyy-\'W\'II'));
 const startYear = ref(new Date().getFullYear());
 const endYear = ref(new Date().getFullYear());
 
+const bilans = ref<BilanQuotidien[]>([]);
+
+onMounted(() => {
+  fetchBilans();
+});
+
+watch(selectedWeekYear, () => {
+  const alreadyFetched = bilans.value.some(bilan => {
+    const bilanDate = new Date(bilan.date);
+    return (
+        bilanDate.getFullYear() === endYear.value &&
+        format(bilanDate, "II") === selectedWeekYear.value.split("-W")[1]
+    );
+  });
+  if (!alreadyFetched) {
+    fetchBilans();
+  }
+});
+
 const handleUpdateYears = ({ startYear: start, endYear: end }) => {
   startYear.value = start;
   endYear.value = end;
-  fetchBilans();
 };
 
 const formData = ref({
@@ -382,11 +400,8 @@ const prevStep = () => {
   }
 };
 
-const bilans = ref<BilanQuotidien[]>([]);
-
 const submitForm = async () => {
   try {
-    console.log('Form Data:', formData.value);
     const newBilan: BilanQuotidien = {
       id: 0,
       ...formData.value,
@@ -434,7 +449,7 @@ const fetchBilans = async () => {
   try {
     const [year, week] = selectedWeekYear.value.split('-W');
     const response = await apiService.getBilanQuotidienByWeek(carnetSanteId, week, endYear.value.toString());
-    bilans.value = response || [];
+    bilans.value = [...bilans.value, ...(response || [])];
     const today = format(new Date(), 'yyyy-MM-dd');
     const bilan = response.find((bilan: any) => format(new Date(bilan.date), 'yyyy-MM-dd') === today);
     if (bilan) {
@@ -448,14 +463,6 @@ const fetchBilans = async () => {
     isLoading.value = false;
   }
 };
-
-onMounted(() => {
-  fetchBilans();
-});
-
-watch(selectedWeekYear, () => {
-  fetchBilans();
-});
 </script>
 
 <style scoped>

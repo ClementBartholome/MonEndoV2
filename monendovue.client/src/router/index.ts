@@ -8,7 +8,7 @@ import ActivitePage from "@/pages/ActivitePage.vue";
 import MedicamentPage from "@/pages/MedicamentPage.vue";
 import TransitPage from "@/pages/TransitPage.vue";
 import ExportPdfPage from "@/pages/ExportPdfPage.vue";
-import BilanQuotidienPage from "@/pages/BilanQuotidienPage.vue";
+import BilanQuotidienPage from "@/bilan-quotidien/BilanQuotidienPage.vue";
 import ParametresPage from "@/pages/ParametresPage.vue";
 import RegisterPage from "@/pages/RegisterPage.vue";
 import CyclePage from "@/pages/CyclePage.vue";

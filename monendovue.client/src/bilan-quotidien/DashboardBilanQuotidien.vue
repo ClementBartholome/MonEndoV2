@@ -40,10 +40,10 @@
       <!-- Objectifs et Progrès -->
       <Card class="container mt-4 mx-auto w-full bg-clearer rounded-3xl shadow-xl ml-auto flex flex-col">
         <CardHeader>
-          <CardTitle class="flex items-center">
+          <div class="flex items-center">
             <i class="material-symbols-outlined mr-2">flag</i>
             Objectifs et Progrès
-          </CardTitle>
+          </div>
         </CardHeader>
         <CardContent>
           <div class="space-y-4">

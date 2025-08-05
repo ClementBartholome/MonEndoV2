@@ -2,7 +2,7 @@
   <div class="w-full">
     <!-- Navigation semaine -->
     <div class="flex items-center justify-between mb-4">
-      <h3 class="text-lg font-semibold">{{ formatCurrentWeek }}</h3>
+      <h3 class="text-lg">{{ formatCurrentWeek }}</h3>
       <div class="flex items-center space-x-2">
         <Button @click="previousWeek" variant="outline" size="sm">
           <i class="material-symbols-outlined text-lg">chevron_left</i>

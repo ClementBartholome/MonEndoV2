@@ -34,7 +34,7 @@
             @click="selectWeek(date, weekNumber)"
         >
           {{ date.getDate() }}
-          <span v-if="index % 7 === 0" class="week-number">S{{ weekNumber }}</span>
+          <span v-if="index % 7 === 0" class="week-number">{{ weekNumber }}</span>
         </div>
       </div>
     </div>
@@ -42,7 +42,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
+import { ref, computed, onMounted, onUnmounted } from 'vue';
 
 const props = defineProps({
   modelValue: String,
@@ -83,10 +83,6 @@ const internalValue = computed(() => {
   const year = selectedDate.value.getFullYear();
   const weekNumber = getWeekNumber(selectedDate.value);
   return `${year}-W${weekNumber.toString().padStart(2, '0')}`;
-});
-
-watch(internalValue, (newValue) => {
-  emit('update:modelValue', newValue);
 });
 
 const calendarDays = computed(() => {
@@ -137,7 +133,7 @@ function changeMonth(delta) {
   currentDate.value = new Date(currentYear.value, currentMonth.value + delta, 1);
 }
 
-function selectWeek(date, weekNumber) {
+function selectWeek(date) {
   selectedDate.value = date;
   showCalendar.value = false;
 
@@ -146,6 +142,11 @@ function selectWeek(date, weekNumber) {
   const endOfWeek = new Date(startOfWeek);
   endOfWeek.setDate(startOfWeek.getDate() + 6);
 
+  const year = selectedDate.value.getFullYear();
+  const weekNumber = getWeekNumber(selectedDate.value);
+  const internalValue = `${year}-W${weekNumber.toString().padStart(2, '0')}`;
+
+  emit('update:modelValue', internalValue);
   emit('update:years', { startYear: startOfWeek.getFullYear(), endYear: endOfWeek.getFullYear() });
 }
 
@@ -268,7 +269,7 @@ onUnmounted(() => {
   color: white;
   padding: 2px 2px;
   border-radius: 50%;
-  width: 22px;
+  width: 20px;
 }
 
 .input-with-icon {
