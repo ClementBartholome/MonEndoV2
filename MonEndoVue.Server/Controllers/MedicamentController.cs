@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using MonEndoVue.Server.Data;
+using MonEndoVue.Server.Dto;
 using MonEndoVue.Server.Models;
 using MonEndoVue.Server.Services;
 
@@ -76,12 +77,21 @@ namespace MonEndoVue.Server.Controllers
         // POST: Medicament
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPost]
-        public async Task<ActionResult<Medicament>> PostMedicament(Medicament medicament)
+        public async Task<ActionResult<Medicament>> PostMedicament(MedicamentDto medicamentDto)
         {
-            var securityCheck = await this.ValidateCarnetAccess(carnetSanteService, medicament.CarnetSanteId);
+            var securityCheck = await this.ValidateCarnetAccess(carnetSanteService, medicamentDto.CarnetSanteId);
             if (securityCheck != null) return securityCheck;
             
-            medicament.TraitementEnCours = true;
+            var medicament = new Medicament
+            {
+                CarnetSanteId = medicamentDto.CarnetSanteId,
+                Nom = medicamentDto.Nom,
+                Posologie = medicamentDto.Posologie,
+                DateDebutTraitement = medicamentDto.DateDebutTraitement,
+                DateFinTraitement = medicamentDto.DateFinTraitement,
+                TraitementEnCours = true
+            };
+
             context.Medicaments.Add(medicament);
             await context.SaveChangesAsync();
 
