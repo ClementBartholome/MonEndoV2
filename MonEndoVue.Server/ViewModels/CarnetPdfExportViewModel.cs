@@ -4,7 +4,7 @@ public class CarnetPdfExportViewModel
 {
     public string? UserName { get; set; }
     public int CarnetSanteId { get; set; }
-    public List<MedicamentViewModel> Medicaments { get; set; } = new();
+    public List<CarnetPdfMedicamentViewModel> Medicaments { get; set; } = new();
     public List<DonneesMedicamentExportViewModel> DonneesMedicament { get; set; } = new();
     public List<JourRegleViewModel> JourRegles { get; set; } = new();
     public List<DonneesDouleurExportViewModel> DonneesDouleur { get; set; } = new();
@@ -13,7 +13,7 @@ public class CarnetPdfExportViewModel
     public List<BilanQuotidienExportViewModel> BilansQuotidiens { get; set; } = new();
 }
 
-public class MedicamentViewModel
+public class CarnetPdfMedicamentViewModel
 {
     public int Id { get; set; }
     public string Nom { get; set; }

@@ -257,7 +257,7 @@ public class CarnetSanteService(AppDbContext context, ILogger<CarnetSanteService
         {
             UserName = carnetSante.User?.UserName,
             CarnetSanteId = carnetSante.Id,
-            Medicaments = carnetSante.Medicaments.Select(m => new MedicamentViewModel
+            Medicaments = carnetSante.Medicaments.Select(m => new CarnetPdfMedicamentViewModel
             {
                 Id = m.Id,
                 Nom = m.Nom

@@ -354,6 +354,7 @@ const fetchAllMedicaments = async () => {
       nom: med.nom,
       posologie: med.posologie,
     }));
+    console.log(response);
     traitementsEnCours.value = response.$values.filter(med => med.traitementEnCours);
     traitementsPasses.value = response.$values.filter(med => med.traitementEnCours == false);
   } catch (error) {

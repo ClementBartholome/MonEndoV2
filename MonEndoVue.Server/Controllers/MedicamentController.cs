@@ -5,6 +5,7 @@ using MonEndoVue.Server.Data;
 using MonEndoVue.Server.Dto;
 using MonEndoVue.Server.Models;
 using MonEndoVue.Server.Services;
+using MonEndoVue.Server.ViewModels;
 
 namespace MonEndoVue.Server.Controllers
 {
@@ -15,12 +16,25 @@ namespace MonEndoVue.Server.Controllers
     {
         // GET: Medicament/ByCarnetSante/5
         [HttpGet("by-carnet-sante/{carnetSanteId:int}")]
-        public async Task<ActionResult<IEnumerable<Medicament>>> GetMedicaments(int carnetSanteId)
+        public async Task<ActionResult<IEnumerable<MedicamentViewModel>>> GetMedicaments(int carnetSanteId)
         {
             var securityCheck = await this.ValidateCarnetAccess(carnetSanteService, carnetSanteId);
             if (securityCheck != null) return securityCheck;
-            
-            return await context.Medicaments.Where(m => m.CarnetSanteId == carnetSanteId).ToListAsync();
+
+            var medicaments = await context.Medicaments
+                .Where(m => m.CarnetSanteId == carnetSanteId)
+                .Select(m => new MedicamentViewModel
+                {
+                    Id = m.Id,
+                    Nom = m.Nom,
+                    Posologie = m.Posologie,
+                    TraitementEnCours = m.TraitementEnCours,
+                    DateDebutTraitement = m.DateDebutTraitement,
+                    DateFinTraitement = m.DateFinTraitement
+                })
+                .ToListAsync();
+
+            return medicaments;
         }
 
         // GET: Medicament/5
