@@ -434,7 +434,7 @@ const isStepValid = () => {
   } else if (currentStep.value === 5) {
     return !formData.value.hydratation;
   } else if (currentStep.value === 6) {
-    return !formData.value.gluten && !formData.value.lactose && !formData.value.grignotage;
+    return false
   } else if (currentStep.value === 7) {
     return !formData.value.douleurMoyenne;
   }
