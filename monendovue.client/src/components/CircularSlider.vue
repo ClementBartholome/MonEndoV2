@@ -1,8 +1,4 @@
-﻿<template>
-  <div/>
-</template>
-
-<script>
+﻿<script>
 import $ from 'jquery';
 import 'round-slider';
 
@@ -10,7 +6,12 @@ export default {
   name: 'RoundSlider',
 
   props: {
-    // Basic props (frequently used)
+    // Changement pour Vue 3 : value -> modelValue
+    modelValue: {
+      type: [String, Number],
+      default: 0
+    },
+    // ... garder toutes les autres props identiques
     min: {
       type: [String, Number],
       default: 0
@@ -22,10 +23,6 @@ export default {
     step: {
       type: [String, Number],
       default: 100
-    },
-    value: {
-      type: [String, Number],
-      default: null
     },
     radius: {
       type: [String, Number],
@@ -50,8 +47,6 @@ export default {
       type: [String, Number],
       default: "+360"
     },
-
-    // UI appearance related props
     borderWidth: {
       type: [String, Number],
       default: 0
@@ -72,8 +67,6 @@ export default {
       type: String,
       default: "inherit"
     },
-
-    // Behaviour related props
     sliderType: {
       type: String,
       default: "min-range",
@@ -100,8 +93,6 @@ export default {
       type: [String, Boolean],
       default: false
     },
-
-    // Miscellaneous
     handleSize: {
       type: [String, Number],
       default: "+0"
@@ -129,14 +120,10 @@ export default {
       type: [String, Boolean],
       default: false
     },
-
-    // Usecase related props
     startValue: {
       type: [String, Number],
       default: null
     },
-
-    // Events
     create: {
       type: Function,
       default: null,
@@ -174,9 +161,12 @@ export default {
 
     allProps() {
       if (this.$props) {
-        return this.$props;
+        // Remplacer modelValue par value pour roundSlider
+        const props = {...this.$props};
+        props.value = props.modelValue;
+        delete props.modelValue;
+        return props;
       }
-      // for the vue lower versions
       const keys = Object.keys(this.$options.props);
       const props = keys.reduce((propsObj, key) => {
         const obj = {};
@@ -187,37 +177,46 @@ export default {
     }
   },
 
+  watch: {
+    // Watch modelValue pour mettre à jour le slider
+    modelValue(newValue) {
+      if (this.instance && this.instance.getValue() !== newValue) {
+        this.instance.setValue(newValue);
+      }
+    }
+  },
+
   mounted() {
-    // below are the default props to overwrite from base roundSlider
     const defaultProps = {
-      svgMode: true
+      svgMode: true,
+      value: this.modelValue // Initialiser avec modelValue
     };
-    // merge the actual props witht the default props then initialize the component
+
     const options = Object.assign(defaultProps, this.allProps);
 
     this.control
         .roundSlider(options)
         .on("update", ({value}) => {
-          this.$emit('input', value);
+          // Changement pour Vue 3 : input -> update:modelValue
+          this.$emit('update:modelValue', value);
         });
 
-    // all the props from round-slider will support the one-way data binding
-    // so, watch all the props for the changes to reflect in the component
     this.watchProps();
   },
 
-  destroyed() {
+  beforeUnmount() {
     this.control.roundSlider("destroy");
   },
 
   methods: {
     watchProps() {
-      // whenever the prop changed, update the prop with the base 'roundSlider' component
       const props = Object.keys(this.allProps);
       props.forEach((prop) => {
-        this.$watch(prop, value => {
-          this.updateProp(prop, value);
-        });
+        if (prop !== 'modelValue') { // Ne pas watcher modelValue ici
+          this.$watch(prop, value => {
+            this.updateProp(prop, value);
+          });
+        }
       }, this);
     },
 
@@ -225,11 +224,9 @@ export default {
       this.instance.option(prop, value);
     },
   }
-
 }
 
-// the possible values for the string type props
-// #: later this can be imported from the base roundSlider
+// Validation functions (garder identique)
 const possibleValues = {
   lineCap: ['butt', 'round', 'square', 'none'],
   sliderType: ['min-range', 'range', 'default'],
@@ -250,6 +247,10 @@ const validateProp = (prop, value) => {
   return true;
 }
 </script>
+
+<template>
+  <div/>
+</template>
 
 <!--<style src='../node_modules/round-slider/dist/roundslider.min.css'></style>-->
 

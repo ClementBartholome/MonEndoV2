@@ -6,18 +6,46 @@
         Bilan quotidien enregistré <i class="material-symbols-outlined check-icon mr-2">check_circle</i>
       </p>
     </div>
-    <div class="checkmark-animation">
-    </div>
+
     <div v-if="isLoading" class="flex flex-col space-y-3 p-6 pt-0">
       <Skeleton class="h-[300px] w-full mt-4 rounded-xl"/>
     </div>
+
     <section v-else v-if="!isSubmitted"
              class="container !mt-0 mx-auto py-8 w-full bg-clearer rounded-3xl shadow-xl ml-auto flex flex-col h-auto">
-      <Progress :model-value="(currentStep / 7) * 100" class="mb-6"/>
 
+      <div class="mb-6">
+        <div class="flex justify-between mb-2">
+          <span class="text-sm font-medium">Étape {{ currentStep }}/7</span>
+          <span class="text-sm text-gray-500">{{ Math.round((currentStep / 7) * 100) }}%</span>
+        </div>
+        <Progress :model-value="(currentStep / 7) * 100" class="h-3 mb-4"/>
+
+        <div class="flex justify-between gap-2">
+          <button
+              v-for="step in 7"
+              :key="step"
+              @click="goToStep(step)"
+              :disabled="!canAccessStep(step)"
+              :class="[
+                'w-10 h-10 rounded-full flex items-center justify-center text-sm font-medium transition-all duration-200',
+                step < currentStep ? 'bg-green-500 text-white hover:bg-green-600 cursor-pointer' : '',
+                step === currentStep ? 'bg-button text-white ring-button/30 scale-110' : '',
+                step > currentStep ? 'bg-gray-200 text-gray-400 cursor-not-allowed' : '',
+                canAccessStep(step) && step !== currentStep ? 'hover:scale-105' : ''
+              ]"
+              :title="getStepTitle(step)"
+          >
+            <i v-if="step < currentStep" class="material-symbols-outlined text-base">check</i>
+            <span v-else>{{ step }}</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Étape 1: Humeur -->
       <div v-if="currentStep === 1">
-        <h2 class="text-2xl font-bold mb-14 flex items-center">
-          <i class="material-symbols-outlined mr-2">mood</i> Étape 1: Humeur du jour
+        <h2 class="text-2xl font-bold mb-14 flex items-center justify-center">
+          <i class="material-symbols-outlined mr-2">mood</i>Humeur du jour
         </h2>
         <div class="grid grid-cols-3 gap-4 mb-4">
           <Button
@@ -25,44 +53,81 @@
               :key="mood.value"
               @click="selectMood(mood.value)"
               :variant="formData.mood === mood.value ? 'selected' : 'outline'"
-              class="h-24 flex flex-col items-center justify-center"
+              :class="[
+                'h-32 flex flex-col items-center justify-center transition-all duration-300',
+                formData.mood === mood.value 
+                  ? 'scale-110 shadow-2xl ring-4 ring-button/50' 
+                  : 'hover:scale-105 hover:shadow-lg'
+              ]"
           >
-            <component :is="'span'" class="material-symbols-outlined mb-2">{{ mood.icon }}</component>
-            {{ mood.label }}
+            <span
+                class="material-symbols-outlined text-6xl mb-2 transition-transform"
+                :class="{ 'animate-bounce': formData.mood === mood.value }"
+            >
+              {{ mood.icon }}
+            </span>
+            <span class="font-semibold">{{ mood.label }}</span>
           </Button>
         </div>
       </div>
 
+      <!-- Étape 2: Stress -->
       <div v-if="currentStep === 2">
-        <h2 class="text-2xl font-bold mb-14 flex items-center">
-          <i class="material-symbols-outlined mr-2">psychology</i> Étape 2: Niveau de stress
+        <h2 class="text-2xl font-bold mb-14 flex items-center justify-center">
+          <i class="material-symbols-outlined mr-2">psychology</i>Niveau de stress
         </h2>
-        <div class="mb-14">
-          <h3 class="text-xl font-semibold mb-4 flex items-center">
-            <i class="material-symbols-outlined mr-2">work</i> Vie pro
-          </h3>
-          <Slider v-model="formData.stressPro" :default-value="[5]" :min="0" :max="5" :step="1"/>
+        <div class="mb-10">
+          <div class="flex justify-between items-center mb-2">
+            <h3 class="text-xl font-semibold flex items-center">
+              <i class="material-symbols-outlined mr-2">work</i> Vie pro
+            </h3>
+            <span class="text-2xl font-bold text-button">{{ formData.stressPro[0] }}/5</span>
+          </div>
+          <Slider v-model="formData.stressPro" :min="0" :max="5" :step="1"/>
+          <div class="flex justify-between text-sm text-gray-500 mt-1">
+            <span>Aucun stress</span>
+            <span>Stress maximum</span>
+          </div>
         </div>
-        <div class="mb-14">
-          <h3 class="text-xl font-semibold mb-4 flex items-center">
-            <i class="material-symbols-outlined mr-2">home</i> Vie perso
-          </h3>
-          <Slider v-model="formData.stressPerso" :default-value="[5]" :min="0" :max="5" :step="1"/>
+        <div class="mb-10">
+          <div class="flex justify-between items-center mb-2">
+            <h3 class="text-xl font-semibold flex items-center">
+              <i class="material-symbols-outlined mr-2">home</i> Vie perso
+            </h3>
+            <span class="text-2xl font-bold text-button">{{ formData.stressPerso[0] }}/5</span>
+          </div>
+          <Slider v-model="formData.stressPerso" :min="0" :max="5" :step="1"/>
+          <div class="flex justify-between text-sm text-gray-500 mt-1">
+            <span>Aucun stress</span>
+            <span>Stress maximum</span>
+          </div>
         </div>
-        <input type="hidden" :value="averageStress">
       </div>
 
+      <!-- Étape 3: Fatigue -->
       <div v-if="currentStep === 3">
-        <h2 class="text-2xl font-bold mb-14 flex items-center">
-          <i class="material-symbols-outlined mr-2">bedtime</i> Étape 3: Niveau de fatigue
+        <h2 class="text-2xl font-bold mb-8 flex items-center justify-center">
+          <i class="material-symbols-outlined mr-2">bedtime</i>Niveau de fatigue
         </h2>
-        <Slider v-model="formData.fatigue" :default-value="[5]" :min="0" :max="5" :step="1" class="mb-14"/>
+        <div class="mb-10">
+          <div class="flex justify-between items-center mb-2">
+            <span class="text-lg font-medium">Niveau actuel</span>
+            <span class="text-2xl font-bold text-button">{{ formData.fatigue[0] }}/5</span>
+          </div>
+          <Slider v-model="formData.fatigue" :min="0" :max="5" :step="1"/>
+          <div class="flex justify-between text-sm text-gray-500 mt-1">
+            <span>En pleine forme</span>
+            <span>Épuisée</span>
+          </div>
+        </div>
       </div>
 
+      <!-- Étape 4: Pas -->
       <div v-if="currentStep === 4" class="flex flex-col items-center">
-        <h2 class="text-2xl font-bold mb-6 flex items-center">Étape 4: Nombre de pas</h2>
+        <h2 class="text-2xl font-bold mb-6 flex items-center">
+          <i class="material-symbols-outlined mr-2">directions_walk</i>Nombre de pas
+        </h2>
         <FormField name="pas">
-          <span class="material-symbols-outlined absolute top-[20rem]">directions_walk</span>
           <round-slider
               v-model="formData.pas"
               start-angle="315"
@@ -75,10 +140,12 @@
         </FormField>
       </div>
 
+      <!-- Étape 5: Hydratation -->
       <div v-if="currentStep === 5" class="flex flex-col items-center">
-        <h2 class="text-2xl font-bold mb-6 flex items-center">Étape 5: Hydratation</h2>
+        <h2 class="text-2xl font-bold mb-6 flex items-center">
+          <i class="material-symbols-outlined mr-2">local_drink</i>Hydratation
+        </h2>
         <FormField name="hydratation">
-          <span class="material-symbols-outlined absolute top-[20rem]">local_drink</span>
           <round-slider
               v-model="formData.hydratation"
               start-angle="315"
@@ -93,42 +160,140 @@
         </FormField>
       </div>
 
-      <div v-if="currentStep === 6" class="flex flex-col items-center">
-        <h2 class="text-2xl font-bold mb-6 flex items-center">
-          <i class="material-symbols-outlined mr-2">restaurant</i> Étape 6: Alimentation
+      <!-- Étape 6: Alimentation -->
+      <div v-if="currentStep === 6" class="flex flex-col">
+        <h2 class="text-2xl font-bold mb-8 flex items-center justify-center">
+          <i class="material-symbols-outlined mr-2">restaurant</i>Alimentation
         </h2>
+
         <FormField name="alimentation">
-          <div class="flex flex-col items-start">
-            <label class="flex items-center mb-2">
-              <input type="checkbox" v-model="formData.gluten" class="mr-2"> Consommation de gluten
-            </label>
-            <label class="flex items-center mb-2">
-              <input type="checkbox" v-model="formData.lactose" class="mr-2"> Consommation de lactose
-            </label>
-            <label class="flex items-center mb-2">
-              <input type="checkbox" v-model="formData.grignotage" class="mr-2"> Grignotage dans la journée
-            </label>
-          </div>
+          <FormItem class="mb-6">
+            <FormLabel class="text-lg font-semibold mb-4 block">
+              Consommations du jour
+            </FormLabel>
+            <div class="space-y-2">
+              <label
+                  v-for="item in dietOptions"
+                  :key="item.key"
+                  :class="[
+                    'flex items-center p-3 rounded-xl cursor-pointer transition-all duration-200 border-2',
+                    formData[item.key] 
+                      ? 'border-button bg-button/15 shadow-sm' 
+                      : 'border-gray-200 bg-white hover:border-button/50 hover:bg-button/5'
+                  ]"
+              >
+                <input
+                    type="checkbox"
+                    v-model="formData[item.key]"
+                    class="peer sr-only"
+                >
+                <span :class="[
+                  'w-5 h-5 rounded border-2 transition-all duration-200 flex items-center justify-center mr-3',
+                  formData[item.key] 
+                    ? 'bg-button border-button' 
+                    : 'bg-white border-gray-300 peer-hover:border-button/50'
+                ]">
+                  <i v-if="formData[item.key]" class="material-symbols-outlined text-white text-sm">check</i>
+                </span>
+
+                <span :class="[
+                  'w-10 h-10 rounded-full flex items-center justify-center mr-3 transition-all',
+                  formData[item.key] ? 'bg-button/20' : 'bg-gray-100'
+                ]">
+                  <i :class="[
+                    'material-symbols-outlined text-xl',
+                    formData[item.key] ? 'text-button' : 'text-paragraph'
+                  ]">
+                    {{ item.icon }}
+                  </i>
+                </span>
+
+                <span :class="[
+                  'font-medium transition-colors',
+                  formData[item.key] ? 'text-headline' : 'text-paragraph'
+                ]">
+                  {{ item.label }}
+                </span>
+              </label>
+            </div>
+          </FormItem>
         </FormField>
+
         <FormField name="commentaire">
-          <FormItem class="mb-4">
-            <FormLabel>Commentaire</FormLabel>
-            <Input v-model="formData.commentaire" placeholder="Commentaire" type="text" class="w-full"/>
+          <FormItem>
+            <FormLabel class="flex items-center gap-2 mb-3">
+              <i class="material-symbols-outlined text-button">edit_note</i>
+              <span class="text-lg font-semibold text-headline">Notes personnelles</span>
+              <span class="text-sm text-paragraph italic font-normal">(optionnel)</span>
+            </FormLabel>
+
+            <div class="relative">
+              <textarea
+                  v-model="formData.commentaire"
+                  placeholder="Ajoute des détails sur ton alimentation, ton ressenti, des événements particuliers..."
+                  class="w-full p-4 rounded-xl border-2 border-gray-200 focus:border-button transition-all duration-200 resize-none min-h-[120px] bg-form-input text-paragraph placeholder:text-form-placeholder/60"
+                  :class="{ 'border-button bg-button/5': formData.commentaire }"
+                  maxlength="100"
+              ></textarea>
+
+              <div class="absolute bottom-2 right-3 text-xs text-paragraph/60">
+                {{ formData.commentaire.length }}/100
+              </div>
+            </div>
           </FormItem>
         </FormField>
       </div>
 
+      <!-- Étape 7: Douleur -->
       <div v-if="currentStep === 7">
-        <h2 class="text-2xl font-bold mb-14 flex items-center">
-          <i class="material-symbols-outlined mr-2">sick</i> Étape 7: Douleur
+        <h2 class="text-2xl font-bold mb-8 flex items-center justify-center">
+          <i class="material-symbols-outlined mr-2">sick</i>Douleur
         </h2>
-        <Slider v-model="formData.douleurMoyenne" :default-value="[5]" :min="0" :max="10" :step="1"  class="mb-14"/>
+        <div class="mb-10">
+          <div class="flex justify-between items-center mb-2">
+            <span class="text-lg font-medium">Niveau de douleur</span>
+            <span class="text-2xl font-bold text-button">{{ formData.douleurMoyenne[0] }}/10</span>
+          </div>
+          <Slider v-model="formData.douleurMoyenne" :min="0" :max="10" :step="1"/>
+          <div class="flex justify-between text-sm text-gray-500 mt-1">
+            <span>Aucune douleur</span>
+            <span>Douleur maximale</span>
+          </div>
+        </div>
       </div>
 
-      <div class="mt-auto flex justify-end">
-        <Button @click="prevStep" v-if="currentStep > 1" variant="outline" class="mr-2">Précédent</Button>
-        <Button @click="nextStep" v-if="currentStep < 7" :disabled="isStepValid()" variant="custom">Suivant</Button>
-        <Button @click="submitForm" v-if="currentStep === 7" variant="custom" :disabled="isStepValid()">Soumettre
+      <!-- Boutons de navigation -->
+      <div class="mt-auto flex justify-between pt-6">
+        <Button
+            @click="prevStep"
+            v-if="currentStep > 1"
+            variant="outline"
+            class="flex items-center gap-2"
+        >
+          <i class="material-symbols-outlined">arrow_back</i>
+          Précédent
+        </Button>
+        <div v-else></div>
+
+        <Button
+            @click="nextStep"
+            v-if="currentStep < 7"
+            :disabled="!isStepValid"
+            variant="custom"
+            class="flex items-center gap-2"
+        >
+          Suivant
+          <i class="material-symbols-outlined">arrow_forward</i>
+        </Button>
+        <Button
+            @click="submitForm"
+            v-if="currentStep === 7"
+            variant="custom"
+            :disabled="!isStepValid"
+            class="flex items-center gap-2"
+        >
+          <i class="material-symbols-outlined">check_circle</i>
+          Soumettre
         </Button>
       </div>
     </section>
@@ -163,9 +328,11 @@
               </CardHeader>
               <CardContent>
                 <div v-if="selectedBilan">
-                  <ul class="summary-list text-xl">
+                  <ul class="summary-list text-lg">
                     <li class="flex items-center">
-                      <span :class="`material-symbols-outlined mood-icon mr-2`">{{ moodIconMapping[selectedBilan.mood] }}</span>
+                      <span :class="`material-symbols-outlined mood-icon mr-2`">{{
+                          moodIconMapping[selectedBilan.mood]
+                        }}</span>
                       Humeur : {{ selectedBilan.mood }}
                     </li>
                     <li class="flex items-center">
@@ -188,19 +355,59 @@
                       <i class="material-symbols-outlined hydratation-icon mr-2">water_drop</i> Hydratation :
                       {{ selectedBilan.hydratation.toString() + "L" }}
                     </li>
+                    <li class="flex items-center flex-wrap">
+                      <i class="material-symbols-outlined mr-2">restaurant</i> Alimentation :
+                      <span v-if="selectedBilan.gluten"
+                            class="inline-flex items-center gap-1 px-1 py-0.5 rounded-full bg-orange-100 text-orange-700 text-xs m-1"
+                            title="Consommation de gluten">
+                      <i class="material-symbols-outlined text-sm">bakery_dining</i>
+                      Gluten
+                    </span>
+                      <span v-if="selectedBilan.lactose"
+                            class="inline-flex items-center gap-1 px-1 py-0.5 rounded-full bg-blue-100 text-blue-700 text-xs m-1"
+                            title="Consommation de lactose">
+                      <i class="material-symbols-outlined text-sm">icecream</i>
+                      Lactose
+                    </span>
+                      <span v-if="selectedBilan.grignotage"
+                            class="inline-flex items-center gap-1 px-1 py-0.5 rounded-full bg-purple-100 text-purple-700 text-xs m-1"
+                            title="Grignotage dans la journée">
+                      <i class="material-symbols-outlined text-sm">cookie</i>
+                      Grignotage
+                    </span>
+                      <span v-if="!selectedBilan.gluten && !selectedBilan.lactose && !selectedBilan.grignotage"
+                            class="text-gray-500 italic">
+                      Aucune
+                    </span>
+                    </li>
                     <li v-if="selectedBilan.commentaire" class="flex items-start mt-4">
                       <i class="material-symbols-outlined mr-2 mt-1">comment</i>
                       <div>
                         <span class="font-medium">Commentaire :</span><br/>
-                        <span class="text-gray-600">{{ selectedBilan.commentaire }}</span>
+                        <span>{{ selectedBilan.commentaire }}</span>
                       </div>
                     </li>
                   </ul>
                 </div>
-                <div v-else class="text-center py-8 text-gray-500">
-                  <i class="material-symbols-outlined text-4xl mb-4">event_busy</i>
-                  <p class="text-lg">Aucun bilan enregistré pour cette date</p>
-                  <p class="text-sm">Sélectionne une autre date</p>
+                <div v-else class="text-center py-8">
+                  <div class="flex flex-col items-center gap-4">
+                    <i class="material-symbols-outlined text-6xl text-gray-300">event_busy</i>
+                    <div>
+                      <p class="text-xl font-semibold text-headline mb-2">
+                        Aucun bilan pour cette date
+                      </p>
+                    </div>
+
+                    <Button
+                        @click="fillBilanForDate(selectedDate)"
+                        variant="custom"
+                        size="lg"
+                        class="flex items-center gap-2"
+                    >
+                      <i class="material-symbols-outlined">add_circle</i>
+                      Remplir le bilan pour ce jour
+                    </Button>
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -228,12 +435,13 @@
         </TabsContent>
 
         <TabsContent value="dashboard">
-          <DashboardBilanQuotidien :bilans="bilans" />
+          <DashboardBilanQuotidien :bilans="bilans"/>
         </TabsContent>
       </Tabs>
     </div>
   </div>
 </template>
+
 
 <script setup lang="ts">
 import {ref, computed, watch, onMounted} from 'vue';
@@ -256,6 +464,7 @@ import type {BilanQuotidien} from "@/interfaces/bilan-quotidien";
 import DashboardBilanQuotidien from "@/bilan-quotidien/DashboardBilanQuotidien.vue";
 import {Tabs, TabsContent, TabsList, TabsTrigger} from "@/components/ui/tabs";
 import BilanWeekSelector from "@/bilan-quotidien/BilanWeekSelector.vue";
+import {toast} from "@/components/ui/toast";
 
 const currentStep = ref(1);
 const isSubmitted = ref(false);
@@ -264,12 +473,15 @@ const carnetSanteId = useAuthStore().user!.carnetSanteId;
 const isLoading = ref(true);
 
 const selectedDate = ref(new Date());
-
 const selectedWeekYear = ref(format(new Date(), 'yyyy-\'W\'II'));
 const startYear = ref(new Date().getFullYear());
 const endYear = ref(new Date().getFullYear());
 
 const bilans = ref<BilanQuotidien[]>([]);
+
+const completedSteps = ref<Set<number>>(new Set());
+const editingBilanId = ref<number | null>(null);
+
 
 onMounted(() => {
   fetchBilans();
@@ -288,7 +500,7 @@ watch(selectedWeekYear, () => {
   }
 });
 
-const handleUpdateYears = ({ startYear: start, endYear: end }) => {
+const handleUpdateYears = ({startYear: start, endYear: end}) => {
   startYear.value = start;
   endYear.value = end;
 };
@@ -337,6 +549,22 @@ const moodIconMapping = {
   'Triste': 'sentiment_dissatisfied'
 };
 
+const dietOptions = [
+  {key: 'gluten', label: 'Consommation de gluten', icon: 'bakery_dining'},
+  {key: 'lactose', label: 'Consommation de lactose', icon: 'icecream'},
+  {key: 'grignotage', label: 'Grignotage dans la journée', icon: 'cookie'}
+];
+
+const stepTitles = {
+  1: 'Humeur',
+  2: 'Stress',
+  3: 'Fatigue',
+  4: 'Activité',
+  5: 'Hydratation',
+  6: 'Alimentation',
+  7: 'Douleur'
+};
+
 const selectedBilan = computed(() => {
   if (!bilans.value || bilans.value.length === 0) return null;
 
@@ -350,7 +578,7 @@ const selectedDateTitle = computed(() => {
   if (isToday(selectedDate.value)) {
     return "Bilan d'aujourd'hui";
   } else {
-    return `Bilan du ${format(selectedDate.value, 'dd MMMM yyyy', { locale: fr })}`;
+    return `Bilan du ${format(selectedDate.value, 'dd MMMM yyyy', {locale: fr})}`;
   }
 });
 
@@ -361,7 +589,7 @@ const handleDateSelection = (date: Date) => {
 const filteredBilans = computed<BilanQuotidien[]>(() => {
   if (!selectedWeekYear.value) return [];
   const [year, week] = selectedWeekYear.value.split('-W');
-  const startDate = startOfWeek(new Date(Number(endYear.value), 0, 1), { weekStartsOn: 1 });
+  const startDate = startOfWeek(new Date(Number(endYear.value), 0, 1), {weekStartsOn: 1});
   const adjustedStartDate = new Date(startDate.setDate(startDate.getDate() + (Number(week) - 1) * 7));
   const endDate = new Date(adjustedStartDate);
   endDate.setDate(adjustedStartDate.getDate() + 6);
@@ -384,12 +612,34 @@ const chartData = computed(() => {
   }));
 });
 
+// Fonctions de navigation
+const goToStep = (step: number) => {
+  if (canAccessStep(step)) {
+    currentStep.value = step;
+  }
+};
+
+const canAccessStep = (step: number) => {
+  // On peut accéder à l'étape actuelle, aux étapes précédentes et à l'étape suivante si l'actuelle est valide
+  return step <= currentStep.value || (step === currentStep.value + 1 && isStepValid.value);
+};
+
+const getStepTitle = (step: number) => {
+  return stepTitles[step] || `Étape ${step}`;
+};
+
 const selectMood = (mood: string) => {
   formData.value.mood = mood;
+  markStepCompleted(1);
+};
+
+const markStepCompleted = (step: number) => {
+  completedSteps.value.add(step);
 };
 
 const nextStep = () => {
-  if (currentStep.value < 7) {
+  if (currentStep.value < 7 && isStepValid.value) {
+    markStepCompleted(currentStep.value);
     currentStep.value++;
   }
 };
@@ -400,48 +650,106 @@ const prevStep = () => {
   }
 };
 
+watch(() => formData.value.mood, (newVal) => {
+  if (newVal) markStepCompleted(1);
+});
+
+watch(() => [formData.value.stressPro, formData.value.stressPerso], () => {
+  if (formData.value.stressPro[0] !== undefined && formData.value.stressPerso[0] !== undefined) {
+    markStepCompleted(2);
+  }
+}, {deep: true});
+
+watch(() => formData.value.fatigue, () => {
+  if (formData.value.fatigue[0] !== undefined) markStepCompleted(3);
+}, {deep: true});
+
+watch(() => formData.value.pas, (newVal) => {
+  if (newVal > 0) markStepCompleted(4);
+});
+
+watch(() => formData.value.hydratation, (newVal) => {
+  if (newVal > 0) markStepCompleted(5);
+});
+
+watch(() => formData.value.douleurMoyenne, () => {
+  if (formData.value.douleurMoyenne[0] !== undefined) markStepCompleted(7);
+}, {deep: true});
+
 const submitForm = async () => {
   try {
     const newBilan: BilanQuotidien = {
-      id: 0,
+      id: editingBilanId.value || 0,
       ...formData.value,
       stressPro: formData.value.stressPro[0],
       stressPerso: formData.value.stressPerso[0],
       fatigue: formData.value.fatigue[0],
       douleurMoyenne: formData.value.douleurMoyenne[0],
-    }
-    await apiService.postBilanQuotidien(newBilan);
-    bilans.value = [...bilans.value, newBilan];
-    todayBilan.value = newBilan;
+    };
 
-    selectedDate.value = new Date();
+    const response = await apiService.postBilanQuotidien(newBilan);
+    bilans.value = [...bilans.value, {...newBilan, id: response.id}];
+    toast({
+      title: 'Bilan enregistré',
+      description: 'Le bilan a été créé avec succès.',
+      variant: 'custom'
+    });
+
+    selectedDate.value = formData.value.date;
     isSubmitted.value = true;
     justSubmitted.value = true;
+    editingBilanId.value = null;
+
+    setTimeout(() => {
+      justSubmitted.value = false;
+    }, 3000);
   } catch (error) {
     console.error('Error submitting form:', error);
+    toast({
+      title: 'Erreur',
+      description: 'Une erreur est survenue lors de l\'enregistrement.',
+      variant: 'destructive'
+    });
   }
 };
 
-const isStepValid = () => {
-  if (currentStep.value === 1) {
-    return !formData.value.mood;
-  } else if (currentStep.value === 2) {
-    return !formData.value.stressPro && !formData.value.stressPerso;
-  } else if (currentStep.value === 3) {
-    return !formData.value.fatigue;
-  } else if (currentStep.value === 4) {
-    return !formData.value.pas;
-  } else if (currentStep.value === 5) {
-    return !formData.value.hydratation;
-  } else if (currentStep.value === 6) {
-    return false
-  } else if (currentStep.value === 7) {
-    return !formData.value.douleurMoyenne;
-  }
+const resetForm = () => {
+  formData.value = {
+    date: formData.value.date,
+    carnetSanteId: carnetSanteId,
+    mood: '',
+    stressPro: [5],
+    stressPerso: [5],
+    fatigue: [5],
+    pas: 0,
+    hydratation: 0,
+    douleurMoyenne: [5],
+    gluten: false,
+    lactose: false,
+    grignotage: false,
+    commentaire: ''
+  };
 };
 
-const averageStress = computed(() => {
-  return (formData.value.stressPro[0] + formData.value.stressPerso[0]) / 2;
+const isStepValid = computed(() => {
+  switch (currentStep.value) {
+    case 1:
+      return !!formData.value.mood;
+    case 2:
+      return formData.value.stressPro[0] !== undefined && formData.value.stressPerso[0] !== undefined;
+    case 3:
+      return formData.value.fatigue[0] !== undefined;
+    case 4:
+      return formData.value.pas > 0;
+    case 5:
+      return formData.value.hydratation > 0;
+    case 6:
+      return true; // Toujours valide (commentaire optionnel)
+    case 7:
+      return formData.value.douleurMoyenne[0] !== undefined;
+    default:
+      return false;
+  }
 });
 
 const fetchBilans = async () => {
@@ -463,20 +771,69 @@ const fetchBilans = async () => {
     isLoading.value = false;
   }
 };
+
+const fillBilanForDate = (date: Date) => {
+  resetForm();
+  formData.value.date = new Date(date);
+  editingBilanId.value = null;
+  currentStep.value = 1;
+  completedSteps.value.clear();
+  isSubmitted.value = false;
+
+  toast({
+    title: 'Nouveau bilan',
+    description: `Remplissez le bilan pour le ${format(date, 'd MMMM yyyy', {locale: fr})}`,
+    variant: 'custom'
+  });
+};
+
 </script>
 
 <style scoped>
-.icon-selection button {
-  margin: 5px;
-  font-size: 24px;
+/* Taille par défaut des icônes Material */
+.material-symbols-outlined {
+  font-size: 1.5rem;
 }
 
-.material-symbols-outlined {
+/* Grandes icônes pour les titres d'étapes */
+h2 .material-symbols-outlined {
   font-size: 3.2rem;
 }
 
+/* Icônes dans les listes du récapitulatif */
 li .material-symbols-outlined {
   font-size: 2.5rem;
+}
+
+/* Petites icônes dans les boutons de navigation */
+.mt-auto button .material-symbols-outlined,
+Button .material-symbols-outlined {
+  font-size: 1.25rem;
+}
+
+/* Icônes dans les pastilles de navigation */
+.w-10.h-10 .material-symbols-outlined {
+  font-size: 1rem;
+}
+
+/* Icônes moyennes pour les labels de formulaire */
+.text-button.material-symbols-outlined {
+  font-size: 1.5rem;
+}
+
+/* Icônes dans les mood buttons */
+.text-6xl.material-symbols-outlined {
+  font-size: 3.5rem !important;
+}
+
+/* Icônes dans les checkboxes */
+.text-sm.material-symbols-outlined {
+  font-size: 0.875rem !important;
+}
+
+/* Icônes dans les cercles des options d'alimentation */
+.text-xl.material-symbols-outlined {
+  font-size: 1.25rem !important;
 }
 
 .confirmation-message {
@@ -484,30 +841,9 @@ li .material-symbols-outlined {
   font-size: 1.5rem;
 }
 
-.checkmark-animation {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  animation: fadeIn 0.5s ease-in-out;
-}
-
 .check-icon {
   font-size: 48px;
   color: var(--button);
-}
-
-.summary-card {
-  background-color: #f9f9f9;
-  border-radius: 8px;
-  padding: 16px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  margin-top: 16px;
-}
-
-.summary-title {
-  font-size: 1.25rem;
-  font-weight: bold;
-  margin-bottom: 8px;
 }
 
 .summary-list {
@@ -521,18 +857,56 @@ li .material-symbols-outlined {
   margin-bottom: 8px;
 }
 
-.summary-list i {
-  margin-right: 8px;
+textarea {
+  font-family: var(--font-text);
+  line-height: 1.6;
 }
 
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: scale(0.5);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
+textarea::placeholder {
+  color: var(--form-placeholder);
+  opacity: 0.6;
+}
+
+textarea:focus {
+  outline: none;
+}
+
+textarea::-webkit-scrollbar {
+  width: 8px;
+}
+
+textarea::-webkit-scrollbar-track {
+  background: var(--background);
+  border-radius: 10px;
+}
+
+textarea:focus {
+  border-color: var(--button);
+  --tw-ring-color: rgba(255, 122, 153, 0.5);
+  --tw-ring-offset-color: var(--background);
+}
+
+textarea::-webkit-scrollbar-thumb {
+  background: var(--button);
+  border-radius: 10px;
+}
+
+textarea::-webkit-scrollbar-thumb:hover {
+  background: #ff7a99;
+}
+
+/* Animation pour les boutons */
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+label:active {
+  transform: scale(0.98);
+}
+
+/* Transitions */
+.material-symbols-outlined {
+  transition: all 0.2s ease;
 }
 </style>
