@@ -81,7 +81,8 @@ namespace MonEndoVue.Server
                 {
                     policyBuilder.WithOrigins("https://localhost:7206/", "https://localhost:5173",
                             "http://localhost:5173",
-                            "https://monendoapp.fr")
+                            "https://monendoapp.fr",
+                            "https://localhost:5175")
                         .AllowAnyMethod()
                         .AllowAnyHeader()
                         .WithExposedHeaders("Access-Control-Allow-Origin")

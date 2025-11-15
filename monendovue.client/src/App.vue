@@ -8,9 +8,9 @@
 
 <script setup lang="ts">
 import {RouterView} from 'vue-router';
-import Toaster from '@/components/ui/toast/Toaster.vue'
-import Layout from "@/components/Layout.vue";
-import {useAuthStore} from '@/store/auth';
+import Toaster from '@/shared/components/ui/toast/Toaster.vue'
+import Layout from "@/shared/components/Layout.vue";
+import {useAuthStore} from '@/features/auth/store/auth';
 import {onMounted} from 'vue';
 
 const auth = useAuthStore();

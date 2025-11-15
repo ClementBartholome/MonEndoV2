@@ -1,0 +1,67 @@
+﻿# Dockerfile de debug - Sauvegardez comme "Dockerfile-debug"
+
+# Test du backend seulement
+FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build_back
+WORKDIR /src
+
+# Debug : structure initiale
+RUN echo "=== Début du build backend ===" && pwd && ls -la
+
+# Copier et vérifier les fichiers .csproj
+COPY MonEndoVue.Server/*.csproj ./MonEndoVue.Server/
+RUN echo "=== Fichiers .csproj copiés ===" && find . -name "*.csproj" -exec ls -la {} \;
+
+WORKDIR /src/MonEndoVue.Server
+RUN echo "=== Tentative de restore ===" && \
+    dotnet restore --verbosity detailed 2>&1 || echo "RESTORE FAILED"
+
+# Copier tout le code source
+WORKDIR /src
+COPY MonEndoVue.Server/ ./MonEndoVue.Server/
+RUN echo "=== Code source copié ===" && ls -la MonEndoVue.Server/
+
+# Tentative de build
+WORKDIR /src/MonEndoVue.Server
+RUN echo "=== Tentative de build ===" && \
+    dotnet build -c Release --verbosity detailed 2>&1 && \
+    echo "=== Build réussi, fichiers générés ===" && \
+    find . -name "*.dll" -exec ls -la {} \; || echo "BUILD FAILED"
+
+# Tentative de publish
+RUN echo "=== Tentative de publish ===" && \
+    dotnet publish -c Release -o /app/publish --no-restore --verbosity detailed 2>&1 && \
+    echo "=== Publish réussi ===" || echo "PUBLISH FAILED"
+
+# Vérification du contenu publié
+RUN echo "=== Contenu de /app/publish ===" && ls -la /app/publish/ && \
+    echo "=== Recherche de DLL ===" && find /app/publish -name "*.dll" -type f && \
+    echo "=== Recherche MonEndoVue.Server.dll ===" && ls -la /app/publish/MonEndoVue.Server.dll 2>/dev/null || echo "MonEndoVue.Server.dll NOT FOUND"
+
+# Image finale avec debug
+FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS final
+WORKDIR /app
+
+# Vérifier l'environnement de base
+RUN echo "=== Environnement de base ===" && \
+    which dotnet && \
+    dotnet --version && \
+    ls -la /usr/share/dotnet/ 2>/dev/null || echo "Dotnet path issue"
+
+# Copier depuis le build
+COPY --from=build_back /app/publish ./
+
+# Vérification finale
+RUN echo "=== Contenu final de /app ===" && ls -la /app && \
+    echo "=== Test de présence DLL ===" && \
+    ls -la /app/MonEndoVue.Server.dll 2>/dev/null || echo "DLL MISSING" && \
+    echo "=== Tous les fichiers DLL ===" && find /app -name "*.dll" -type f
+
+# Test du point d'entrée
+RUN echo "=== Test dotnet command ===" && \
+    dotnet --version && \
+    echo "=== Test avec le DLL ===" && \
+    dotnet /app/MonEndoVue.Server.dll --help 2>&1 || echo "ENTRYPOINT TEST FAILED"
+
+ENV ASPNETCORE_URLS=http://+:80
+EXPOSE 80
+ENTRYPOINT ["dotnet", "MonEndoVue.Server.dll"]

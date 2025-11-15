@@ -1,17 +1,17 @@
 import {createRouter, createWebHistory} from 'vue-router'
-import HomePage from '@/pages/HomePage.vue'
-import Schedule from '@/pages/Schedule.vue'
-import LoginPage from "@/pages/LoginPage.vue";
-import {useAuthStore} from "@/store/auth";
-import PainPage from "@/pages/DouleursPage.vue";
-import ActivitePage from "@/pages/ActivitePage.vue";
-import MedicamentPage from "@/pages/MedicamentPage.vue";
-import TransitPage from "@/pages/TransitPage.vue";
-import ExportPdfPage from "@/pages/ExportPdfPage.vue";
-import BilanQuotidienPage from "@/bilan-quotidien/BilanQuotidienPage.vue";
-import ParametresPage from "@/pages/ParametresPage.vue";
-import RegisterPage from "@/pages/RegisterPage.vue";
-import CyclePage from "@/pages/CyclePage.vue";
+import HomePage from '@/features/home/pages/HomePage.vue'
+import Schedule from '@/features/schedule/pages/Schedule.vue'
+import LoginPage from "@/features/auth/pages/LoginPage.vue";
+import {useAuthStore} from "@/features/auth/store/auth";
+import PainPage from "@/features/douleurs/pages/DouleursPage.vue";
+import ActivitePage from "@/features/activite/pages/ActivitePage.vue";
+import MedicamentPage from "@/features/medicament/pages/MedicamentPage.vue";
+import TransitPage from "@/features/transit/pages/TransitPage.vue";
+import ExportPdfPage from "@/features/export/pages/ExportPdfPage.vue";
+import BilanQuotidienPage from "@/features/bilan-quotidien/pages/BilanQuotidienPage.vue";
+import ParametresPage from "@/features/parametres/pages/ParametresPage.vue";
+import RegisterPage from "@/features/auth/pages/RegisterPage.vue";
+import CyclePage from "@/features/cycle/pages/CyclePage.vue";
 
 const router = createRouter({
     history: createWebHistory(import.meta.env.BASE_URL),

@@ -1,0 +1,84 @@
+# Fichiers et dossiers à ignorer lors du build Docker
+
+# Dossiers de build et output
+**/bin/
+**/obj/
+**/out/
+**/publish/
+**/dist/
+**/node_modules/
+**/.next/
+**/.nuxt/
+
+# Fichiers de développement
+**/.vs/
+**/.vscode/
+**/.idea/
+*.user
+*.suo
+*.cache
+.vs/
+
+# Logs et fichiers temporaires
+**/Logs/
+**/*.log
+**/keys/
+**/.tmp/
+**/.temp/
+
+# Fichiers de test
+**/TestResults/
+**/.nyc_output/
+**/coverage/
+
+# Fichiers système
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# Docker
+Dockerfile*
+docker-compose*
+.dockerignore
+
+# CI/CD
+.github/
+**/.circleci/
+**/.jenkins/
+
+# Documentation
+README.md
+**/*.md
+
+# Configuration locale
+appsettings.Development.json
+appsettings.Local.json
+
+# Certificats et clés
+**/*.pfx
+**/*.p12
+**/*.key
+**/*.pem
+**/*.crt
+
+# Node.js spécifique
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.npm
+.yarn-integrity
+
+# Frontend build cache
+.cache/
+.eslintcache
+.stylelintcache
+
+# Package lock files (on utilise npm ci dans le Dockerfile)
+package-lock.json
+yarn.lock

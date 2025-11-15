@@ -11,6 +11,6 @@
   "description": "Application de suivi des symptômes de l'endométriose",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#4DBA87"
+  "background_color": "#f7e7e0",
+  "theme_color": "#faeee7"
 }

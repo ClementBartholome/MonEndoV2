@@ -5,7 +5,8 @@ import OneSignalVuePlugin from '@onesignal/onesignal-vue3'
 import { createPinia } from 'pinia';
 import App from './App.vue'
 import router from './router'
-import ApiService from "@/services/apiService";
+import ApiService from "@/shared/services/apiService";
+import { registerSW } from 'virtual:pwa-register';
 
 const pinia = createPinia();
 
@@ -15,3 +16,23 @@ createApp(App).use(router).use(pinia).use(OneSignalVuePlugin, {
 }).mount('#app')
 
 ApiService.init(pinia);
+
+if ('serviceWorker' in navigator) {
+    const updateSW = registerSW({
+        immediate: true,
+        onNeedRefresh() {
+            console.log('🔄 New content available, refresh to update');
+        },
+        onOfflineReady() {
+            console.log('📱 App ready to work offline');
+        },
+        onRegistered(r) {
+            console.log('✅ SW Registered:', r);
+        },
+        onRegisterError(error) {
+            console.error('❌ SW registration error:', error);
+        }
+    });
+} else {
+    console.warn('⚠️ Service Worker not supported in this browser');
+}
