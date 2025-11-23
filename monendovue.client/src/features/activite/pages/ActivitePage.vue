@@ -181,7 +181,8 @@ const { selectedMonthYear, entries, isLoading } = useMonthData<DonneesActivitePh
       intensite: entry.intensite,
       commentaire: entry.commentaire || 'Pas de détails'
     }))
-  }
+  },
+  dataType: 'activite'
 })
 
 const { deleteEntry, createEntry } = useCrudOperations(entries)

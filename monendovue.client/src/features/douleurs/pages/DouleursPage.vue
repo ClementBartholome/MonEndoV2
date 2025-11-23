@@ -217,7 +217,8 @@ const { selectedMonthYear, entries, isLoading } = useMonthData({
         }]
       }
     })
-  }
+  },
+  dataType: 'douleurs'
 })
 
 const { deleteEntry, createEntry, updateEntry } = useCrudOperations(entries)

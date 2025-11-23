@@ -199,7 +199,8 @@ const { selectedMonthYear, entries, isLoading } = useMonthData({
       saignement: entry.saignement ? 'Oui' : 'Non',
       commentaire: entry.commentaires || 'Pas de commentaire'
     }))
-  }
+  },
+  dataType: 'transit'
 })
 
 const { deleteEntry, createEntry } = useCrudOperations(entries)

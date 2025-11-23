@@ -323,7 +323,8 @@ const { selectedMonthYear, entries: listePrises, isLoading } = useMonthData({
       commentaire: d.commentaire || 'Pas de détails',
     }))
   },
-  immediate: false
+  immediate: false,
+  dataType: 'medicament'
 })
 
 const { deleteEntry, createEntry } = useCrudOperations(listePrises)

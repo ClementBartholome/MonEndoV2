@@ -11,6 +11,15 @@ interface CalendarEvent {
     timestamp: number;
 }
 
+interface MonthData {
+    id: string;
+    dataType: string;
+    month: number;
+    year: number;
+    data: any[];
+    timestamp: number;
+}
+
 export interface PendingOperation {
     id: string;
     type: 'create' | 'update' | 'delete';
@@ -24,7 +33,7 @@ export interface PendingOperation {
 
 class OfflineStorageService {
     private dbName = 'MonEndoOffline';
-    private version = 2; // Increment version to add new object store
+    private version = 3;
     private db: IDBDatabase | null = null;
 
     async init(): Promise<void> {
@@ -58,6 +67,12 @@ class OfflineStorageService {
                     const pendingStore = db.createObjectStore('pendingOperations', { keyPath: 'id' });
                     pendingStore.createIndex('timestamp', 'timestamp', { unique: false });
                     pendingStore.createIndex('type', 'type', { unique: false });
+                }
+
+                if (!db.objectStoreNames.contains('monthData')) {
+                    const monthStore = db.createObjectStore('monthData', { keyPath: 'id' });
+                    monthStore.createIndex('dataType', 'dataType', { unique: false });
+                    monthStore.createIndex('timestamp', 'timestamp', { unique: false });
                 }
             };
         });
@@ -245,6 +260,48 @@ class OfflineStorageService {
 
             request.onerror = () => reject(request.error);
             request.onsuccess = () => resolve();
+        });
+    }
+
+    async saveMonthData(dataType: string, month: number, year: number, data: any[]): Promise<void> {
+        if (!this.db) await this.init();
+
+        const monthData: MonthData = {
+            id: `${dataType}-${year}-${month}`,
+            dataType,
+            month,
+            year,
+            data,
+            timestamp: Date.now()
+        };
+
+        return new Promise((resolve, reject) => {
+            const transaction = this.db!.transaction(['monthData'], 'readwrite');
+            const store = transaction.objectStore('monthData');
+            const request = store.put(monthData);
+
+            request.onerror = () => reject(request.error);
+            request.onsuccess = () => resolve();
+        });
+    }
+
+    async getMonthData(dataType: string, month: number, year: number): Promise<any[] | null> {
+        if (!this.db) await this.init();
+
+        return new Promise((resolve, reject) => {
+            const transaction = this.db!.transaction(['monthData'], 'readonly');
+            const store = transaction.objectStore('monthData');
+            const request = store.get(`${dataType}-${year}-${month}`);
+
+            request.onerror = () => reject(request.error);
+            request.onsuccess = () => {
+                const result = request.result as MonthData | undefined;
+                if (result && this.isDataFresh(result.timestamp, 24 * 60 * 60 * 1000)) {
+                    resolve(result.data);
+                } else {
+                    resolve(null);
+                }
+            };
         });
     }
 
