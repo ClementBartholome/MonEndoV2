@@ -150,11 +150,13 @@
           </Dialog>
         </div>
         <ul class="w-full" v-if="traitementsEnCours.length > 0">
-          <li v-for="traitement in traitementsEnCours" :key="traitement.id" class="relative">
-            <Dialog>
-              <DialogTrigger @click="editTraitement(traitement.id)" class="absolute top-0 right-0 cursor-pointer">
-                <span class="material-symbols-outlined edit-btn">edit</span>
-              </DialogTrigger>
+          <li v-for="traitement in traitementsEnCours" :key="traitement.id" class="relative pr-20">
+            <div class="absolute top-0 right-0 flex gap-2">
+              <span @click="confirmDeleteMedicament(traitement.id)" class="material-symbols-outlined delete-btn cursor-pointer">delete</span>
+              <Dialog>
+                <DialogTrigger @click="editTraitement(traitement.id)" class="cursor-pointer">
+                  <span class="material-symbols-outlined edit-btn">edit</span>
+                </DialogTrigger>
               <DialogContent>
                 <DialogHeader>
                   <DialogTitle class="text-2xl">Modifier le traitement</DialogTitle>
@@ -220,7 +222,8 @@
                   </Button>
                 </form>
               </DialogContent>
-            </Dialog>
+              </Dialog>
+            </div>
             <p class="text-headline font-bold text-xl">{{ traitement.nom }}</p>
             <p>{{ traitement.posologie }}</p>
             <p>Depuis le {{ formatDateDisplay(traitement.dateDebutTraitement) }}</p>
@@ -236,7 +239,10 @@
           </h2>
         </div>
         <ul class="w-full">
-          <li v-for="traitement in traitementsPasses" :key="traitement.id" class="relative">
+          <li v-for="traitement in traitementsPasses" :key="traitement.id" class="relative pr-12">
+            <div class="absolute top-0 right-0">
+              <span @click="confirmDeleteMedicament(traitement.id)" class="material-symbols-outlined delete-btn cursor-pointer">delete</span>
+            </div>
             <div>
               <p class="text-headline font-bold text-xl">{{ traitement.nom }}</p>
               <p>{{ traitement.posologie }}</p>
@@ -247,6 +253,26 @@
         </ul>
       </section>
     </div>
+
+    <Dialog v-model:open="showDeleteDialog">
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle class="text-2xl">Confirmer la suppression</DialogTitle>
+        </DialogHeader>
+        <div class="py-4">
+          <p class="text-lg">Es-tu sûr de vouloir supprimer ce traitement ?</p>
+          <p class="text-sm text-gray-600 mt-2">Cette action est irréversible.</p>
+        </div>
+        <div class="flex justify-end gap-4">
+          <Button variant="outline" @click="showDeleteDialog = false">
+            Annuler
+          </Button>
+          <Button variant="custom" @click="handleDeleteMedicament">
+            Supprimer
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
   </div>
 </template>
 
@@ -268,14 +294,20 @@ import { useAuthStore } from '@/features/auth/store/auth'
 import { useMonthData } from '@/shared/composables/useMonthData'
 import { useDateTimeFormat } from '@/shared/composables/useDateTimeFormat'
 import { useCrudOperations } from '@/shared/composables/useCrudOperations'
+import { useToast } from '@/shared/components/ui/toast'
+import { useSync } from '@/shared/composables/useSync'
 import { format, parseISO } from 'date-fns'
 
 const authStore = useAuthStore()
 const { formatDateDisplay, formatTimeDisplay, combineDateTime, getCurrentDateInput, getCurrentTimeInput } = useDateTimeFormat()
+const { toast } = useToast()
+const { handleOfflineOperation } = useSync()
 
 const traitementsEnCours = ref<Medicament[]>([])
 const medicaments = ref<Medicament[]>([])
 const traitementsPasses = ref<Medicament[]>([])
+const medicamentToDelete = ref<string | null>(null)
+const showDeleteDialog = ref(false)
 
 const { selectedMonthYear, entries: listePrises, isLoading } = useMonthData({
   fetchFunction: async (month, year) => {
@@ -352,10 +384,13 @@ const fetchAllMedicaments = async () => {
   }
 }
 
-onMounted(() => {
-  fetchAllMedicaments()
-  const [year, month] = selectedMonthYear.value.split('-').map(Number)
-  apiService.getDonneesMedicamentByMonth(authStore.user!.carnetSanteId, month, year).then((response) => {
+onMounted(async () => {
+  isLoading.value = true
+
+  try {
+    await fetchAllMedicaments()
+    const [year, month] = selectedMonthYear.value.split('-').map(Number)
+    const response = await apiService.getDonneesMedicamentByMonth(authStore.user!.carnetSanteId, month, year)
     listePrises.value = response.map((d: any) => ({
       id: d.id,
       nom: d.nomMedicament,
@@ -364,7 +399,11 @@ onMounted(() => {
       time: formatTimeDisplay(d.date),
       commentaire: d.commentaire || 'Pas de détails',
     }))
-  })
+  } catch (error) {
+    console.error('Error loading medicament data:', error)
+  } finally {
+    isLoading.value = false
+  }
 })
 
 const handleDeletePrise = async (id: number) => {
@@ -493,5 +532,56 @@ const onSubmitEditTraitement = () => {
   }).catch((error) => {
     console.error(error)
   })
+}
+
+const confirmDeleteMedicament = (medicamentId: string) => {
+  medicamentToDelete.value = medicamentId
+  showDeleteDialog.value = true
+}
+
+const handleDeleteMedicament = async () => {
+  if (!medicamentToDelete.value) return
+
+  const medicamentId = medicamentToDelete.value
+
+  const removeMedicamentFromLists = () => {
+    // Remove from traitementsEnCours
+    const indexEnCours = traitementsEnCours.value.findIndex(t => t.id === medicamentId)
+    if (indexEnCours !== -1) {
+      traitementsEnCours.value.splice(indexEnCours, 1)
+    }
+
+    // Remove from traitementsPasses
+    const indexPasses = traitementsPasses.value.findIndex(t => t.id === medicamentId)
+    if (indexPasses !== -1) {
+      traitementsPasses.value.splice(indexPasses, 1)
+    }
+
+    // Remove from medicaments list
+    const indexMedicaments = medicaments.value.findIndex(m => m.id === medicamentId)
+    if (indexMedicaments !== -1) {
+      medicaments.value.splice(indexMedicaments, 1)
+    }
+  }
+
+  await handleOfflineOperation(
+    () => apiService.deleteMedicament(Number(medicamentId)),
+    {
+      endpoint: 'Medicament',
+      method: 'DELETE',
+      resourceId: medicamentId,
+      onSuccess: () => {
+        removeMedicamentFromLists()
+      },
+      onOfflineQueued: () => {
+        removeMedicamentFromLists()
+      },
+      successMessage: 'Le traitement a été supprimé avec succès',
+      errorMessage: 'Une erreur est survenue lors de la suppression du traitement',
+    }
+  )
+
+  showDeleteDialog.value = false
+  medicamentToDelete.value = null
 }
 </script>

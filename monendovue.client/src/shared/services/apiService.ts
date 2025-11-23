@@ -184,7 +184,11 @@ class ApiService {
     async deleteSymptomeCycle(symptomeId: number): Promise<any> {
         return this.request('DELETE', `SymptomesCycle/${symptomeId}`);
     }
-    
+
+    async deleteMedicament(medicamentId: number): Promise<any> {
+        return this.request('DELETE', `Medicament/${medicamentId}`);
+    }
+
     // PUT
 
     async putDonneesMedicament(medicamentId: number, donneesMedicament: any): Promise<any> {

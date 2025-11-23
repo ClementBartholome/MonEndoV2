@@ -156,6 +156,8 @@ class SyncService {
         return apiService.deleteDonneesDouleurs(Number(resourceId));
       case 'DonneesMedicament':
         return apiService.deleteDonneesMedicament(Number(resourceId));
+      case 'Medicament':
+        return apiService.deleteMedicament(Number(resourceId));
       case 'DonneesTransit':
         return apiService.deleteDonneesTransit(Number(resourceId));
       case 'SymptomesCycle':
@@ -163,27 +165,6 @@ class SyncService {
       default:
         throw new Error(`Unknown DELETE endpoint: ${endpoint}`);
     }
-  }
-
-  /**
-   * Get the count of pending operations
-   */
-  async getPendingCount(): Promise<number> {
-    return offlineStorage.getPendingOperationsCount();
-  }
-
-  /**
-   * Get all pending operations
-   */
-  async getPendingOperations(): Promise<PendingOperation[]> {
-    return offlineStorage.getPendingOperations();
-  }
-
-  /**
-   * Check if sync is currently in progress
-   */
-  get isSyncInProgress(): boolean {
-    return this.isSyncing;
   }
 }
 
