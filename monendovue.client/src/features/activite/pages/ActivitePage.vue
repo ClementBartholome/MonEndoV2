@@ -212,7 +212,8 @@ const chartData = computed(() => {
 const handleDelete = async (id: number) => {
   await deleteEntry(id, (id) => apiService.deleteDonneesActivitePhysique(id as number), {
     successMessage: 'La session a été supprimée avec succès',
-    errorMessage: 'Une erreur est survenue lors de la suppression de la session'
+    errorMessage: 'Une erreur est survenue lors de la suppression de la session',
+    endpoint: 'DonneesActivitePhysique'
   })
 }
 
@@ -274,7 +275,8 @@ const onSubmit = form.handleSubmit((values) => {
       commentaire: data.commentaire || 'Pas de commentaire',
     }),
     successMessage: 'La session a été ajoutée avec succès',
-    errorMessage: 'Un problème est survenu lors de l\'ajout de la session'
+    errorMessage: 'Un problème est survenu lors de l\'ajout de la session',
+    endpoint: 'DonneesActivitePhysique'
   })
 })
 </script>

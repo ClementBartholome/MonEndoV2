@@ -46,7 +46,7 @@ class ApiService {
     //         }
     //     );
     // }
-    private async request<T>(method: string, url: string, data?: any): Promise<T | null> {
+    private async request<T>(method: string, url: string, data?: any): Promise<T> {
         try {
             const tokenExpired = this.isTokenExpired();
             if (tokenExpired) {
@@ -55,6 +55,7 @@ class ApiService {
                 } catch (error) {
                     console.error('Error refreshing token:', error);
                     router.push({ name: 'login' });
+                    throw error;
                 }
             }
 
@@ -66,7 +67,8 @@ class ApiService {
             return response.data;
         } catch (error: any) {
             console.error(`Error in ${method} request to ${url}:`, error);
-            return null;
+            // Re-throw the error so it can be handled by the caller and background sync
+            throw error;
         }
     }
 

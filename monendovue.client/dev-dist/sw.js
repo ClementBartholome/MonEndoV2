@@ -67,7 +67,7 @@ if (!self.define) {
     });
   };
 }
-define(['./workbox-25659a9f'], (function (workbox) { 'use strict';
+define(['./workbox-61f793f2'], (function (workbox) { 'use strict';
 
   self.skipWaiting();
   workbox.clientsClaim();
@@ -79,7 +79,7 @@ define(['./workbox-25659a9f'], (function (workbox) { 'use strict';
    */
   workbox.precacheAndRoute([{
     "url": "index.html",
-    "revision": "0.ftma9bg6c98"
+    "revision": "0.naesli9dtag"
   }], {});
   workbox.cleanupOutdatedCaches();
   workbox.registerRoute(new workbox.NavigationRoute(workbox.createHandlerBoundToURL("index.html"), {
@@ -91,12 +91,25 @@ define(['./workbox-25659a9f'], (function (workbox) { 'use strict';
     url
   }) => {
     return request.method === "GET" && url.protocol === "https:" && url.hostname === "monendoapp.fr" && url.pathname.startsWith("/api/");
-  }, new workbox.NetworkFirst({
+  }, new workbox.StaleWhileRevalidate({
     "cacheName": "api-cache",
-    "networkTimeoutSeconds": 3,
     plugins: [new workbox.ExpirationPlugin({
       maxEntries: 100,
-      maxAgeSeconds: 86400
+      maxAgeSeconds: 604800
+    }), new workbox.CacheableResponsePlugin({
+      statuses: [0, 200]
+    })]
+  }), 'GET');
+  workbox.registerRoute(({
+    request,
+    url
+  }) => {
+    const isWriteMethod = ["POST", "PUT", "DELETE", "PATCH"].includes(request.method);
+    const isApiUrl = url.protocol === "https:" && url.hostname === "monendoapp.fr" && url.pathname.startsWith("/api/");
+    return isWriteMethod && isApiUrl;
+  }, new workbox.NetworkOnly({
+    plugins: [new workbox.BackgroundSyncPlugin("api-queue", {
+      maxRetentionTime: 1440
     })]
   }), 'GET');
   workbox.registerRoute(({
@@ -104,12 +117,13 @@ define(['./workbox-25659a9f'], (function (workbox) { 'use strict';
     url
   }) => {
     return request.method === "GET" && url.protocol === "https:" && url.hostname === "www.googleapis.com" && url.pathname.startsWith("/calendar/");
-  }, new workbox.NetworkFirst({
+  }, new workbox.StaleWhileRevalidate({
     "cacheName": "google-calendar-cache",
-    "networkTimeoutSeconds": 3,
     plugins: [new workbox.ExpirationPlugin({
       maxEntries: 50,
-      maxAgeSeconds: 7200
+      maxAgeSeconds: 14400
+    }), new workbox.CacheableResponsePlugin({
+      statuses: [0, 200]
     })]
   }), 'GET');
   workbox.registerRoute(({

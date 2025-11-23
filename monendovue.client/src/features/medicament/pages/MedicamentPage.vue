@@ -370,7 +370,8 @@ onMounted(() => {
 const handleDeletePrise = async (id: number) => {
   await deleteEntry(id, (id) => apiService.deleteDonneesMedicament(id as number), {
     successMessage: 'La prise de médicament a été supprimée avec succès',
-    errorMessage: 'Une erreur est survenue lors de la suppression de la prise de médicament'
+    errorMessage: 'Une erreur est survenue lors de la suppression de la prise de médicament',
+    endpoint: 'DonneesMedicament'
   })
 }
 
@@ -398,7 +399,8 @@ const onSubmitPriseForm = () => {
       time: formatTimeDisplay(data.time),
     }),
     successMessage: 'La prise de médicament a été enregistrée avec succès',
-    errorMessage: 'Une erreur est survenue lors de l\'enregistrement de la prise de médicament'
+    errorMessage: 'Une erreur est survenue lors de l\'enregistrement de la prise de médicament',
+    endpoint: 'DonneesMedicament'
   })
 }
 

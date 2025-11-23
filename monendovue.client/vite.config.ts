@@ -66,38 +66,64 @@ export default defineConfig({
                 navigateFallback: 'index.html',
                 navigateFallbackDenylist: [/^\/_/, /\/[^/?]+\.[^/]+$/, /@vite/, /\/src\//],
                 runtimeCaching: [
+                    // Stale-While-Revalidate for GET API requests
                     {
                         urlPattern: ({ request, url }) => {
-                            return request.method === 'GET' && 
-                                   url.protocol === 'https:' && 
-                                   url.hostname === 'monendoapp.fr' && 
+                            return request.method === 'GET' &&
+                                   url.protocol === 'https:' &&
+                                   url.hostname === 'monendoapp.fr' &&
                                    url.pathname.startsWith('/api/');
                         },
-                        handler: 'NetworkFirst',
+                        handler: 'StaleWhileRevalidate',
                         options: {
                             cacheName: 'api-cache',
                             expiration: {
                                 maxEntries: 100,
-                                maxAgeSeconds: 60 * 60 * 24 // 24 heures
+                                maxAgeSeconds: 60 * 60 * 24 * 7 // 7 days
                             },
-                            networkTimeoutSeconds: 3
+                            cacheableResponse: {
+                                statuses: [0, 200]
+                            }
                         }
                     },
+                    // NetworkOnly with Background Sync for all write operations (POST, PUT, DELETE, PATCH)
+                    // Single route with single queue to avoid duplicate-queue-name error
                     {
                         urlPattern: ({ request, url }) => {
-                            return request.method === 'GET' && 
-                                   url.protocol === 'https:' && 
-                                   url.hostname === 'www.googleapis.com' && 
+                            const isWriteMethod = ['POST', 'PUT', 'DELETE', 'PATCH'].includes(request.method);
+                            const isApiUrl = url.protocol === 'https:' &&
+                                           url.hostname === 'monendoapp.fr' &&
+                                           url.pathname.startsWith('/api/');
+                            return isWriteMethod && isApiUrl;
+                        },
+                        handler: 'NetworkOnly',
+                        options: {
+                            backgroundSync: {
+                                name: 'api-queue',
+                                options: {
+                                    maxRetentionTime: 24 * 60 // Retry for up to 24 hours (in minutes)
+                                }
+                            }
+                        }
+                    },
+                    // Stale-While-Revalidate for Google Calendar API
+                    {
+                        urlPattern: ({ request, url }) => {
+                            return request.method === 'GET' &&
+                                   url.protocol === 'https:' &&
+                                   url.hostname === 'www.googleapis.com' &&
                                    url.pathname.startsWith('/calendar/');
                         },
-                        handler: 'NetworkFirst',
+                        handler: 'StaleWhileRevalidate',
                         options: {
                             cacheName: 'google-calendar-cache',
                             expiration: {
                                 maxEntries: 50,
-                                maxAgeSeconds: 60 * 60 * 2 // 2 hours
+                                maxAgeSeconds: 60 * 60 * 4 // 4 hours
                             },
-                            networkTimeoutSeconds: 3
+                            cacheableResponse: {
+                                statuses: [0, 200]
+                            }
                         }
                     },
                     {

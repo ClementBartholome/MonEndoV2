@@ -231,7 +231,8 @@ const entry = ref({
 const handleDelete = async (id: number) => {
   await deleteEntry(id, (id) => apiService.deleteDonneesTransit(id as number), {
     successMessage: 'Donnée supprimée avec succès',
-    errorMessage: 'Une erreur est survenue lors de la suppression de la donnée'
+    errorMessage: 'Une erreur est survenue lors de la suppression de la donnée',
+    endpoint: 'DonneesTransit'
   })
 }
 
@@ -282,7 +283,8 @@ const onSubmit = form.handleSubmit((values) => {
       commentaire: entry.value.commentaire || 'Pas de commentaire'
     }),
     successMessage: 'Les données de transit ont été ajoutées avec succès',
-    errorMessage: 'Une erreur est survenue lors de l\'ajout des données de transit'
+    errorMessage: 'Une erreur est survenue lors de l\'ajout des données de transit',
+    endpoint: 'DonneesTransit'
   })
 })
 </script>

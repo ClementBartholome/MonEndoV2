@@ -4,6 +4,25 @@
       <i class="material-symbols-outlined mr-2">cloud_off</i>
       Mode hors ligne - Affichage des dernières données sauvegardées
     </div>
+
+    <!-- Pending operations banner -->
+    <div v-if="pendingOperationsCount > 0" class="w-full mb-4 p-3 bg-blue-100 border border-blue-400 rounded-lg text-blue-800 flex items-center justify-between">
+      <div class="flex items-center">
+        <i class="material-symbols-outlined mr-2">sync</i>
+        <span>{{ pendingOperationsCount }} opération(s) en attente de synchronisation</span>
+      </div>
+      <Button
+        v-if="isOnline"
+        variant="custom"
+        @click="performSync"
+        :disabled="isSyncing"
+        class="ml-4"
+      >
+        <i v-if="!isSyncing" class="material-symbols-outlined mr-1">cloud_upload</i>
+        <i v-else class="material-symbols-outlined mr-1 animate-spin">sync</i>
+        {{ isSyncing ? 'Synchronisation...' : 'Synchroniser' }}
+      </Button>
+    </div>
     <div class="w-full mb-8">
       <div class="flex flex-wrap gap-2 m-2 justify-around">
         <router-link to="/bilan-quotidien" class="w-full flex-1">
@@ -175,9 +194,13 @@ import {Button} from '@/shared/components/ui/button'
 import apiService from "@/shared/services/apiService";
 import googleApiService from "@/shared/services/googleApiService";
 import offlineStorage from "@/shared/services/offlineStorage";
+import syncService from "@/shared/services/syncService";
 import {format, parseISO} from 'date-fns';
 import {Skeleton} from "@/shared/components/ui/skeleton";
 import {useAuthStore} from "@/features/auth/store/auth";
+import {useOnlineStatus} from "@/shared/composables/useOnlineStatus";
+import {useSync} from "@/shared/composables/useSync";
+import {useToast} from "@/shared/components/ui/toast";
 
 import {initializeApp} from "firebase/app";
 import {getMessaging, getToken, onMessage} from 'firebase/messaging';
@@ -186,21 +209,19 @@ const carnetSanteId = useAuthStore().user!.carnetSanteId;
 const donneesCarnetSante = ref();
 const isLoading = ref(true);
 const periodMarked = ref(false);
-const isOnline = ref(navigator.onLine);
+const { isOnline } = useOnlineStatus();
+const { toast } = useToast();
+const { pendingOperationsCount, isSyncing, performSync, handleOfflineOperation, updatePendingCount } = useSync();
 
 const upcomingEvents = ref<Event[]>([]);
 
 onMounted(async () => {
   await offlineStorage.init();
-  
-  window.addEventListener('online', () => {
-    isOnline.value = true;
-    console.log('App is online');
-  });
-  
-  window.addEventListener('offline', () => {
-    isOnline.value = false;
-    console.log('App is offline');
+
+  // Auto-sync when coming back online
+  window.addEventListener('online', async () => {
+    console.log('App is online - auto-syncing...');
+    await performSync();
   });
   
   const cachedData = await offlineStorage.getCarnetData(carnetSanteId);
@@ -351,9 +372,26 @@ const lastTransitEntry = computed(() => {
 
 const markPeriodToday = async () => {
   const today = format(new Date(), 'yyyy-MM-dd');
-  await apiService.postJourRegle({date: today, carnetSanteId: carnetSanteId});
-  periodMarked.value = true;
+  const data = { date: today, carnetSanteId: carnetSanteId };
+
+  await handleOfflineOperation(
+    () => apiService.postJourRegle(data),
+    {
+      endpoint: 'JourRegle',
+      method: 'POST',
+      data: data,
+      onSuccess: () => {
+        periodMarked.value = true;
+      },
+      onOfflineQueued: () => {
+        periodMarked.value = true;
+      },
+      successMessage: 'Règles marquées (sera synchronisé)',
+      errorMessage: 'Impossible de marquer les règles',
+    }
+  );
 };
+
 </script>
 
 <style scoped>

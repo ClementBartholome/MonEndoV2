@@ -282,7 +282,8 @@ const intensityIcon = computed(() => {
 const handleDelete = async (id: number) => {
   await deleteEntry(id, (id) => apiService.deleteDonneesDouleurs(id as number), {
     successMessage: 'La douleur a été supprimée avec succès',
-    errorMessage: 'Un problème est survenu lors de la suppression de la douleur'
+    errorMessage: 'Un problème est survenu lors de la suppression de la douleur',
+    endpoint: 'DonneesDouleurs'
   })
 }
 
@@ -356,7 +357,8 @@ const onSubmit = form.handleSubmit((values) => {
         commentaire: data.commentaire || 'Pas de commentaire',
       }),
       successMessage: 'La douleur a été modifiée avec succès',
-      errorMessage: 'Un problème est survenu lors de la modification de la douleur'
+      errorMessage: 'Un problème est survenu lors de la modification de la douleur',
+      endpoint: 'DonneesDouleurs'
     })
   } else {
     createEntry(values, {
@@ -377,7 +379,8 @@ const onSubmit = form.handleSubmit((values) => {
         commentaire: data.commentaire || 'Pas de commentaire',
       }),
       successMessage: 'La douleur a été ajoutée avec succès',
-      errorMessage: 'Un problème est survenu lors de l\'ajout de la douleur'
+      errorMessage: 'Un problème est survenu lors de l\'ajout de la douleur',
+      endpoint: 'DonneesDouleurs'
     })
   }
 })

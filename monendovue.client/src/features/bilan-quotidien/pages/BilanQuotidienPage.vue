@@ -465,6 +465,7 @@ import DashboardBilanQuotidien from "@/features/bilan-quotidien/components/Dashb
 import {Tabs, TabsContent, TabsList, TabsTrigger} from "@/shared/components/ui/tabs";
 import BilanWeekSelector from "@/features/bilan-quotidien/components/BilanWeekSelector.vue";
 import {toast} from "@/shared/components/ui/toast";
+import {useSync} from "@/shared/composables/useSync";
 
 const currentStep = ref(1);
 const isSubmitted = ref(false);
@@ -676,6 +677,8 @@ watch(() => formData.value.douleurMoyenne, () => {
   if (formData.value.douleurMoyenne[0] !== undefined) markStepCompleted(7);
 }, {deep: true});
 
+const { handleOfflineOperation } = useSync();
+
 const submitForm = async () => {
   try {
     const newBilan: BilanQuotidien = {
@@ -687,29 +690,41 @@ const submitForm = async () => {
       douleurMoyenne: formData.value.douleurMoyenne[0],
     };
 
-    const response = await apiService.postBilanQuotidien(newBilan);
-    bilans.value = [...bilans.value, {...newBilan, id: response.id}];
-    toast({
-      title: 'Bilan enregistré',
-      description: 'Le bilan a été créé avec succès.',
-      variant: 'custom'
-    });
+    await handleOfflineOperation(
+      () => apiService.postBilanQuotidien(newBilan),
+      {
+        endpoint: 'BilanQuotidien',
+        method: 'POST',
+        data: newBilan,
+        onSuccess: (response) => {
+          bilans.value = [...bilans.value, {...newBilan, id: response.id}];
+          toast({
+            title: 'Bilan enregistré',
+            description: 'Le bilan a été créé avec succès.',
+            variant: 'custom'
+          });
 
-    selectedDate.value = formData.value.date;
-    isSubmitted.value = true;
-    justSubmitted.value = true;
-    editingBilanId.value = null;
+          selectedDate.value = formData.value.date;
+          isSubmitted.value = true;
+          justSubmitted.value = true;
+          editingBilanId.value = null;
 
-    setTimeout(() => {
-      justSubmitted.value = false;
-    }, 3000);
+          setTimeout(() => {
+            justSubmitted.value = false;
+          }, 3000);
+        },
+        onOfflineQueued: () => {
+          selectedDate.value = formData.value.date;
+          isSubmitted.value = true;
+          justSubmitted.value = true;
+          editingBilanId.value = null;
+        },
+        successMessage: 'Bilan enregistré (sera synchronisé)',
+        errorMessage: 'Impossible d\'enregistrer le bilan',
+      }
+    );
   } catch (error) {
     console.error('Error submitting form:', error);
-    toast({
-      title: 'Erreur',
-      description: 'Une erreur est survenue lors de l\'enregistrement.',
-      variant: 'destructive'
-    });
   }
 };
 

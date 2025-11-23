@@ -345,7 +345,8 @@ const updateAverageCycle = (reglesDates: Date[]) => {
 const handleDelete = async (id: number) => {
   await deleteEntry(id, (id) => apiService.deleteSymptomeCycle(id as number), {
     successMessage: 'Symptôme supprimé avec succès',
-    errorMessage: 'Une erreur est survenue lors de la suppression du symptôme'
+    errorMessage: 'Une erreur est survenue lors de la suppression du symptôme',
+    endpoint: 'SymptomesCycle'
   })
 }
 
@@ -392,7 +393,8 @@ const onSubmit = form.handleSubmit((values) => {
       commentaire: data.commentaire || 'Pas de commentaire',
     }),
     successMessage: 'Symptôme ajouté avec succès',
-    errorMessage: 'Une erreur est survenue lors de l\'ajout du symptôme'
+    errorMessage: 'Une erreur est survenue lors de l\'ajout du symptôme',
+    endpoint: 'SymptomesCycle'
   })
 })
 </script>
