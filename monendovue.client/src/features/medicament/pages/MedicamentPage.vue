@@ -473,7 +473,7 @@ const selectedMonthYearSessions = ref<string>(
 
 const session = ref({
   medicamentId: '',
-  duree: null as number | null,
+  duree: undefined as number | undefined,
   date: getCurrentDateInput(),
   time: getCurrentTimeInput(),
   commentaire: ''
@@ -720,7 +720,7 @@ const onSubmitSessionForm = () => {
     resetFormData: () => {
       session.value = {
         medicamentId: '',
-        duree: null,
+        duree: undefined,
         date: getCurrentDateInput(),
         time: getCurrentTimeInput(),
         commentaire: ''

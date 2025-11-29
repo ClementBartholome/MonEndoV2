@@ -248,7 +248,7 @@ public class CarnetSanteService(AppDbContext context, ILogger<CarnetSanteService
             .Include(c => c.DonneesTransit.Where(d => d.Date.Month == month && d.Date.Year == year))
             .Include(c => c.JourRegles.Where(d => d.Date.Month == month && d.Date.Year == year))
             .Include(c => c.BilansQuotidiens.Where(d => d.Date.Month == month && d.Date.Year == year))
-            .FirstOrDefaultAsync(c => c.Id == carnetSanteId && c.UserId == userId); // Filtrer par userId
+            .FirstOrDefaultAsync(c => c.Id == carnetSanteId && c.UserId == userId);
 
         if (carnetSante == null)
             throw new Exception("Carnet de santé introuvable");

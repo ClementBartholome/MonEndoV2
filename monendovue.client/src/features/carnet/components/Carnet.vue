@@ -38,26 +38,17 @@
             </CardContent>
           </Card>
         </router-link>
-        <Card class="w-full flex-1">
-          <router-link to="/cycle">
+        <router-link to="/cycle" class="w-full flex-1">
+          <Card>
             <CardHeader>
               <i class="material-symbols-outlined bg-red-200 rounded-full p-2" style="font-size: 40px;">menstrual_health</i>
               <CardTitle>Cycle menstruel</CardTitle>
             </CardHeader>
-          </router-link>
-          <div v-if="isLoading" class="flex flex-col space-y-3 p-6 pt-0">
-            <Skeleton class="h-[52px] w-full rounded-xl"/>
-          </div>
-          <CardContent v-else class="flex flex-col">
-            As-tu eu tes règles aujourd'hui?
-            <div class="ml-auto mt-2">
-              <Button v-if="!periodMarked" variant="custom" @click="markPeriodToday">Oui</Button>
-              <div v-else class="checkmark-animation">
-                <i class="material-symbols-outlined" style="font-size: 40px; color: var(--button);">check_circle</i>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+            <CardContent>
+              <p>Suivi de ton cycle menstruel et symptômes</p>
+            </CardContent>
+          </Card>
+        </router-link>
         <router-link to="/douleurs" class="w-full flex-1">
           <Card>
             <CardHeader>
@@ -208,10 +199,9 @@ import {getMessaging, getToken, onMessage} from 'firebase/messaging';
 const carnetSanteId = useAuthStore().user!.carnetSanteId;
 const donneesCarnetSante = ref();
 const isLoading = ref(true);
-const periodMarked = ref(false);
 const { isOnline } = useOnlineStatus();
 const { toast } = useToast();
-const { pendingOperationsCount, isSyncing, performSync, handleOfflineOperation, updatePendingCount } = useSync();
+const { pendingOperationsCount, isSyncing, performSync, updatePendingCount } = useSync();
 
 const upcomingEvents = ref<Event[]>([]);
 
@@ -227,11 +217,6 @@ onMounted(async () => {
   const cachedData = await offlineStorage.getCarnetData(carnetSanteId);
   if (cachedData) {
     donneesCarnetSante.value = cachedData;
-    const today = format(new Date(), 'yyyy-MM-dd');
-    const jourRegleDate = donneesCarnetSante.value?.jourRegle?.date ? format(parseISO(donneesCarnetSante.value.jourRegle.date), 'yyyy-MM-dd') : null;
-    if (jourRegleDate === today) {
-      periodMarked.value = true;
-    }
     isLoading.value = false;
   }
   
@@ -241,12 +226,6 @@ onMounted(async () => {
       if (freshData) {
         donneesCarnetSante.value = freshData;
         await offlineStorage.saveCarnetData(carnetSanteId, freshData);
-        
-        const today = format(new Date(), 'yyyy-MM-dd');
-        const jourRegleDate = donneesCarnetSante.value?.jourRegle?.date ? format(parseISO(donneesCarnetSante.value.jourRegle.date), 'yyyy-MM-dd') : null;
-        if (jourRegleDate === today) {
-          periodMarked.value = true;
-        }
       }
     } catch (error) {
       console.log('Failed to fetch fresh data, using cached data if available');
@@ -370,46 +349,4 @@ const lastTransitEntry = computed(() => {
   return null;
 });
 
-const markPeriodToday = async () => {
-  const today = format(new Date(), 'yyyy-MM-dd');
-  const data = { date: today, carnetSanteId: carnetSanteId };
-
-  await handleOfflineOperation(
-    () => apiService.postJourRegle(data),
-    {
-      endpoint: 'JourRegle',
-      method: 'POST',
-      data: data,
-      onSuccess: () => {
-        periodMarked.value = true;
-      },
-      onOfflineQueued: () => {
-        periodMarked.value = true;
-      },
-      successMessage: 'Règles marquées (sera synchronisé)',
-      errorMessage: 'Impossible de marquer les règles',
-    }
-  );
-};
-
 </script>
-
-<style scoped>
-.checkmark-animation {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  animation: fadeIn 0.5s ease-in-out;
-}
-
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: scale(0.5);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
-</style>

@@ -1,7 +1,7 @@
 import { format as dateFnsFormat, parseISO } from 'date-fns';
 
 export function useDateTimeFormat() {
-  const formatDateDisplay = (date: Date | string): string => {
+  const formatDateDisplay = (date: Date | string ): string => {
     const dateObj = typeof date === 'string' ? new Date(date) : date;
     return dateFnsFormat(dateObj, 'dd-MM-yyyy').replace(/-/g, '/');
   };

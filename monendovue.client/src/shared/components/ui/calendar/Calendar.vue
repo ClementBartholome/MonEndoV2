@@ -16,15 +16,17 @@ const props = defineProps<CalendarRootProps & {
   class?: HTMLAttributes['class'],
   joursRegles?: Date[],
   joursSpotting?: Date[],
-  joursFertiles?: Date[]
+  joursFertiles?: Date[],
+  joursAcne?: Date[]
 }>()
 
 const emits = defineEmits<{
   'update:modelValue': [value: string]
+  'day-click': [date: Date]
 }>()
 
 const delegatedProps = computed(() => {
-  const {class: _, joursRegles, joursSpotting, joursFertiles, ...delegated} = props
+  const {class: _, joursRegles, joursSpotting, joursFertiles, joursAcne, ...delegated} = props
   return delegated
 })
 
@@ -45,9 +47,28 @@ const isJourSpotting = (date: Date) => {
   return props.joursSpotting?.some(jour => jour.toDateString() === dateObj.toDateString());
 }
 
-const isJourFertilite = (date: Date) => {
+// const isJourFertilite = (date: Date) => {
+//   const dateObj = new Date(date)
+//   return props.joursFertiles?.some(jour => jour.toDateString() === dateObj.toDateString());
+// }
+
+const isJourAcne = (date: Date) => {
   const dateObj = new Date(date)
-  return props.joursFertiles?.some(jour => jour.toDateString() === dateObj.toDateString());
+  return props.joursAcne?.some(jour => jour.toDateString() === dateObj.toDateString());
+}
+
+// Get all symptom types for a given date
+const getSymptomTypes = (date: Date): string[] => {
+  const symptoms: string[] = []
+  if (isJourRegle(date)) symptoms.push('regle')
+  if (isJourSpotting(date)) symptoms.push('spotting')
+  if (isJourAcne(date)) symptoms.push('acne')
+  // if (isJourFertilite(date)) symptoms.push('fertilite')
+  return symptoms
+}
+
+const handleDayClick = (date: Date) => {
+  emits('day-click', date)
 }
 </script>
 
@@ -84,9 +105,8 @@ const isJourFertilite = (date: Date) => {
                 v-for="weekDate in weekDates"
                 :key="weekDate.toString()"
                 :date="weekDate"
-                :isJourRegle="isJourRegle(weekDate)"
-                :isJourSpotting="isJourSpotting(weekDate)"
-                :isJourFertilite="isJourFertilite(weekDate)"
+                :symptomTypes="getSymptomTypes(weekDate)"
+                @click="handleDayClick(weekDate)"
             >
               <CalendarCellTrigger
                   :day="weekDate"
