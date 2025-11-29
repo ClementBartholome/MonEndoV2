@@ -305,9 +305,18 @@ const exportToPDF = () => {
   const startDate = startOfMonth(new Date(parseInt(year), parseInt(month) - 1));
   const daysInMonth = getDaysInMonth(startDate);
 
-  // Ajoute le titre et la date au document PDF
-  doc.text('Carnet de suivi - Coralie Owczaruk', 105, 10, {align: 'center'});
-  doc.text(format(startDate, 'MMMM yyyy', {locale: fr}), 10, 30);
+  // ========== HEADER ==========
+  doc.setFillColor(229, 187, 167); 
+  doc.rect(0, 0, 297, 30, 'F');
+
+  doc.setFontSize(22);
+  doc.setTextColor(255, 255, 255);
+  doc.setFont('helvetica', 'bold');
+  doc.text('Carnet de suivi', 148.5, 12, {align: 'center'});
+
+  doc.setFontSize(14);
+  doc.setFont('helvetica', 'normal');
+  doc.text(format(startDate, 'MMMM yyyy', {locale: fr}), 148.5, 22, {align: 'center'});
 
   // Calcule les dimensions des colonnes du tableau
   const pageWidth = doc.internal.pageSize.getWidth();
@@ -319,159 +328,275 @@ const exportToPDF = () => {
   // Crée les en-têtes du tableau
   const headers = [['Date', ...Array.from({length: daysInMonth}, (_, i) => (i + 1).toString())]];
 
-  // Crée les lignes du tableau pour les médicaments
-  const rows = donneesCarnetSante.value.medicaments.$values.map(medicament => {
-    const row = [medicament.nom];
-    for (let day = 1; day <= daysInMonth; day++) {
-      const checkbox = document.querySelector(`input[type="checkbox"][data-medicament="${medicament.nom}"][data-day="${day}"]`) as HTMLInputElement;
-      row.push(checkbox && checkbox.checked ? 'X' : '');
-    }
-    return row;
-  });
+  // Crée les lignes du tableau
+  const rows: any[] = [];
 
-  // Ajoute une ligne pour les traitements
-  rows.unshift([{
-    content: 'Traitements',
-    colSpan: daysInMonth + 1,
-    styles: {halign: 'left', fillColor: [240, 240, 240], fontStyle: 'bold'}
-  }]);
-  // Ajoute une ligne pour les jours de règles
-  rows.push([{
-    content: 'Règles',
-    colSpan: daysInMonth + 1,
-    styles: {halign: 'left', fillColor: [240, 240, 240], fontStyle: 'bold'}
-  }]);
-
-  // Crée une ligne pour chaque jour de règles
-  const jourRegles = donneesCarnetSante.value.jourRegles.$values;
-  const row = ['Règles'];
-  for (let day = 1; day <= daysInMonth; day++) {
-    const checkbox = jourRegles.some(jour => new Date(jour.date).getDate() === day);
-    row.push(checkbox ? 'X' : '');
-  }
-  rows.push(row);
-  // Ajoute une ligne pour les douleurs
-  rows.push([{
-    content: 'Douleurs',
-    colSpan: daysInMonth + 1,
-    styles: {halign: 'left', fillColor: [240, 240, 240], fontStyle: 'bold'}
-  }]);
-
-  // Groupe les douleurs par type et crée une ligne pour chaque type de douleur
-  const groupedDouleurs = donneesCarnetSante.value.donneesDouleur.$values.reduce((acc, douleur) => {
-    if (!acc[douleur.typeDouleur]) {
-      acc[douleur.typeDouleur] = [];
-    }
-    acc[douleur.typeDouleur].push(douleur);
-    return acc;
-  }, {});
-
-  Object.keys(groupedDouleurs).forEach(typeDouleur => {
-    const row = [typeDouleur];
-    for (let day = 1; day <= daysInMonth; day++) {
-      const dailyDouleurs = groupedDouleurs[typeDouleur].filter(d => new Date(d.date).getDate() === day);
-      const averageIntensity = dailyDouleurs.length > 0 ? (dailyDouleurs.reduce((sum, d) => sum + d.intensite, 0) / dailyDouleurs.length).toFixed(1).replace(/\.0+$/, '') : '';
-      row.push(averageIntensity);
-    }
-    rows.push(row);
-  });
-
-  // Ajoute une ligne pour les activités physiques
-  rows.push([{
-    content: 'Activités Physiques',
-    colSpan: daysInMonth + 1,
-    styles: {halign: 'left', fillColor: [240, 240, 240], fontStyle: 'bold'}
-  }]);
-
-  // Groupe les activités physiques par type et crée une ligne pour chaque type d'activité
-  const groupedActivites = donneesCarnetSante.value.donneesActivitePhysique.$values.reduce((acc, activite) => {
-    if (!acc[activite.typeActivite]) {
-      acc[activite.typeActivite] = [];
-    }
-    acc[activite.typeActivite].push(activite);
-    return acc;
-  }, {});
-
-  Object.keys(groupedActivites).forEach(typeActivite => {
-    const row = [typeActivite];
-    for (let day = 1; day <= daysInMonth; day++) {
-      const dailyActivites = groupedActivites[typeActivite].filter(a => new Date(a.date).getDate() === day);
-      const averageIntensity = dailyActivites.length > 0 ? (dailyActivites.reduce((sum, a) => sum + a.intensite, 0) / dailyActivites.length).toFixed(1).replace(/\.0+$/, '') : '';
-      row.push(averageIntensity);
-    }
-    rows.push(row);
-  });
-
-  // Ajoute une ligne pour le transit
-  rows.push([{
-    content: 'Transit',
-    colSpan: daysInMonth + 1,
-    styles: {halign: 'left', fillColor: [240, 240, 240], fontStyle: 'bold'}
-  }]);
-
-  // Groupe les transits par type et crée une ligne pour chaque type de transit
-  const groupedTransits = donneesCarnetSante.value.donneesTransit.$values.reduce((acc, transit) => {
-    if (!acc[transit.typeEvenement]) {
-      acc[transit.typeEvenement] = [];
-    }
-    acc[transit.typeEvenement].push(transit);
-    return acc;
-  }, {});
-
-  Object.keys(groupedTransits).forEach(typeTransit => {
-    const row = [typeTransit];
-    for (let day = 1; day <= daysInMonth; day++) {
-      const checkbox = document.querySelector(`input[type="checkbox"][data-transit="${typeTransit}"][data-day="${day}"]`) as HTMLInputElement;
-      row.push(checkbox && checkbox.checked ? 'X' : '');
-    }
-    rows.push(row);
-  });
-  
-  // Ajoute une ligne pour l'alimentation
-  rows.push([{
-    content: 'Alimentation',
-    colSpan: daysInMonth + 1,
-    styles: {halign: 'left', fillColor: [240, 240, 240], fontStyle: 'bold'}
-  }]);
-
-  const alimentationTypes = ['lactose', 'grignotage', 'gluten'];
-  alimentationTypes.forEach(type => {
-    const row = [type.charAt(0).toUpperCase() + type.slice(1)];
-    for (let day = 1; day <= daysInMonth; day++) {
-      const checkbox = document.querySelector(`input[type="checkbox"][data-alimentation="${day}"]`) as HTMLInputElement;
-      row.push(checkbox && checkbox.checked && dataIsTrue('bilansQuotidiens', type, day) ? 'X' : '');    }
-    rows.push(row);
-  });
-  
-  // Ajoute une ligne pour les bilans quotidiens
+  // Bilans quotidiens - Section principale
   rows.push([{
     content: 'Bilans quotidiens',
     colSpan: daysInMonth + 1,
-    styles: {halign: 'left', fillColor: [240, 240, 240], fontStyle: 'bold'}
+    styles: {halign: 'left', fillColor: [229, 187, 167], fontStyle: 'bold', textColor: [255, 255, 255]}
   }]);
-  
-  const bilanFields = ['fatigue', 'pas', 'douleurMoyenne', 'hydratation', 'stressMoyenne'];
-  bilanFields.forEach(field => {
-    const row = [field.charAt(0).toUpperCase() + field.slice(1)];
+
+  // Stress moyen
+  rows.push(['Stress moy.', ...Array.from({length: daysInMonth}, (_, i) => getBilanValueForDay('stressMoyenne', i + 1) || '')]);
+
+  // Fatigue
+  rows.push(['Fatigue', ...Array.from({length: daysInMonth}, (_, i) => getBilanValueForDay('fatigue', i + 1) || '')]);
+
+  // Pas (format large numbers as "11k" to avoid overflow)
+  const pasRow = ['Pas'];
+  for (let day = 1; day <= daysInMonth; day++) {
+    const value = getBilanValueForDay('pas', day);
+    if (!value) {
+      pasRow.push('');
+    } else if (value >= 10000) {
+      pasRow.push(`${(value / 1000).toFixed(0)}k`);
+    } else {
+      pasRow.push(Math.round(value).toString());
+    }
+  }
+  rows.push(pasRow);
+
+  // Douleur moyenne
+  rows.push(['Douleur moy.', ...Array.from({length: daysInMonth}, (_, i) => getBilanValueForDay('douleurMoyenne', i + 1) || '')]);
+
+  // Hydratation
+  rows.push(['Hydratation', ...Array.from({length: daysInMonth}, (_, i) => getBilanValueForDay('hydratation', i + 1) || '')]);
+
+  // Traitements 
+  const medicamentRows: any[] = [];
+  donneesCarnetSante.value.medicaments.$values.forEach(medicament => {
+    const row = [medicament.nom];
+    let hasData = false;
+
     for (let day = 1; day <= daysInMonth; day++) {
-      row.push(getBilanValueForDay(field, day));
+      const checkbox = document.querySelector(`input[type="checkbox"][data-medicament="${medicament.nom}"][data-day="${day}"]`) as HTMLInputElement;
+      const checked = checkbox && checkbox.checked;
+      if (checked) hasData = true;
+      row.push(checked ? 'X' : '');
+    }
+
+    if (hasData) {
+      medicamentRows.push(row);
+    }
+  });
+
+  if (medicamentRows.length > 0) {
+    rows.push([{
+      content: 'Traitements',
+      colSpan: daysInMonth + 1,
+      styles: {halign: 'left', fillColor: [229, 187, 167], fontStyle: 'bold', textColor: [255, 255, 255]}
+    }]);
+    rows.push(...medicamentRows);
+  }
+
+  // Règles
+  const jourRegles = donneesCarnetSante.value.jourRegles.$values;
+  if (jourRegles.length > 0) {
+    rows.push([{
+      content: 'Règles et Cycle',
+      colSpan: daysInMonth + 1,
+      styles: {halign: 'left', fillColor: [229, 187, 167], fontStyle: 'bold', textColor: [255, 255, 255]}
+    }]);
+
+    const row = ['Règles'];
+    for (let day = 1; day <= daysInMonth; day++) {
+      const checkbox = jourRegles.some(jour => new Date(jour.date).getDate() === day);
+      row.push(checkbox ? 'X' : '');
     }
     rows.push(row);
+  }
+
+  // Douleurs 
+  if (donneesCarnetSante.value.donneesDouleur.$values.length > 0) {
+    rows.push([{
+      content: 'Douleurs',
+      colSpan: daysInMonth + 1,
+      styles: {halign: 'left', fillColor: [229, 187, 167], fontStyle: 'bold', textColor: [255, 255, 255]}
+    }]);
+
+    // Groupe les douleurs par type et crée une ligne pour chaque type de douleur
+    const groupedDouleurs = donneesCarnetSante.value.donneesDouleur.$values.reduce((acc, douleur) => {
+      if (!acc[douleur.typeDouleur]) {
+        acc[douleur.typeDouleur] = [];
+      }
+      acc[douleur.typeDouleur].push(douleur);
+      return acc;
+    }, {});
+
+    Object.keys(groupedDouleurs).forEach(typeDouleur => {
+      const row = [typeDouleur];
+      for (let day = 1; day <= daysInMonth; day++) {
+        const dailyDouleurs = groupedDouleurs[typeDouleur].filter(d => new Date(d.date).getDate() === day);
+        const averageIntensity = dailyDouleurs.length > 0 ? (dailyDouleurs.reduce((sum, d) => sum + d.intensite, 0) / dailyDouleurs.length).toFixed(1).replace(/\.0+$/, '') : '';
+        row.push(averageIntensity);
+      }
+      rows.push(row);
+    });
+  }
+
+  // Activités Physiques 
+  if (donneesCarnetSante.value.donneesActivitePhysique.$values.length > 0) {
+    rows.push([{
+      content: 'Activité Physique',
+      colSpan: daysInMonth + 1,
+      styles: {halign: 'left', fillColor: [229, 187, 167], fontStyle: 'bold', textColor: [255, 255, 255]}
+    }]);
+
+    // Groupe les activités physiques par type et crée une ligne pour chaque type d'activité
+    const groupedActivites = donneesCarnetSante.value.donneesActivitePhysique.$values.reduce((acc, activite) => {
+      if (!acc[activite.typeActivite]) {
+        acc[activite.typeActivite] = [];
+      }
+      acc[activite.typeActivite].push(activite);
+      return acc;
+    }, {});
+
+    Object.keys(groupedActivites).forEach(typeActivite => {
+      const row = [typeActivite];
+      for (let day = 1; day <= daysInMonth; day++) {
+        const dailyActivites = groupedActivites[typeActivite].filter(a => new Date(a.date).getDate() === day);
+        const averageIntensity = dailyActivites.length > 0 ? (dailyActivites.reduce((sum, a) => sum + a.intensite, 0) / dailyActivites.length).toFixed(1).replace(/\.0+$/, '') : '';
+        row.push(averageIntensity);
+      }
+      rows.push(row);
+    });
+  }
+
+  // Transit 
+  if (donneesCarnetSante.value.donneesTransit.$values.length > 0) {
+    rows.push([{
+      content: 'Transit',
+      colSpan: daysInMonth + 1,
+      styles: {halign: 'left', fillColor: [229, 187, 167], fontStyle: 'bold', textColor: [255, 255, 255]}
+    }]);
+
+    // Groupe les transits par type et crée une ligne pour chaque type de transit
+    const groupedTransits = donneesCarnetSante.value.donneesTransit.$values.reduce((acc, transit) => {
+      if (!acc[transit.typeEvenement]) {
+        acc[transit.typeEvenement] = [];
+      }
+      acc[transit.typeEvenement].push(transit);
+      return acc;
+    }, {});
+
+    Object.keys(groupedTransits).forEach(typeTransit => {
+      const row = [typeTransit];
+      for (let day = 1; day <= daysInMonth; day++) {
+        const checkbox = document.querySelector(`input[type="checkbox"][data-transit="${typeTransit}"][data-day="${day}"]`) as HTMLInputElement;
+        row.push(checkbox && checkbox.checked ? 'X' : '');
+      }
+      rows.push(row);
+    });
+  }
+
+  // Alimentation 
+  const alimentationTypes = ['lactose', 'grignotage', 'gluten'];
+  const alimentationRows: any[] = [];
+
+  alimentationTypes.forEach(type => {
+    const row = [type.charAt(0).toUpperCase() + type.slice(1)];
+    let hasData = false;
+
+    for (let day = 1; day <= daysInMonth; day++) {
+      const checkbox = document.querySelector(`input[type="checkbox"][data-alimentation="${day}"]`) as HTMLInputElement;
+      const checked = checkbox && checkbox.checked && dataIsTrue('bilansQuotidiens', type, day);
+      if (checked) hasData = true;
+      row.push(checked ? 'X' : '');
+    }
+
+    if (hasData) {
+      alimentationRows.push(row);
+    }
   });
+
+  if (alimentationRows.length > 0) {
+    rows.push([{
+      content: 'Alimentation',
+      colSpan: daysInMonth + 1,
+      styles: {halign: 'left', fillColor: [229, 187, 167], fontStyle: 'bold', textColor: [255, 255, 255]}
+    }]);
+    rows.push(...alimentationRows);
+  }
 
   // Génère le tableau dans le document PDF
   autoTable(doc, {
     head: headers,
     body: rows,
-    startY: 50,
-    styles: {halign: 'left', lineWidth: 0.1, lineColor: [0, 0, 0]},
-    headStyles: {fillColor: [211, 211, 211], textColor: [0, 0, 0]},
-    alternateRowStyles: {fillColor: [240, 240, 240]},
+    startY: 40,
+    styles: {
+      halign: 'center',
+      lineWidth: 0.2,
+      lineColor: [200, 200, 200],
+      fontSize: 8,
+      cellPadding: 2
+    },
+    headStyles: {
+      fillColor: [51, 51, 51],
+      textColor: [255, 255, 255],
+      fontStyle: 'bold',
+      fontSize: 9
+    },
+    alternateRowStyles: {fillColor: [250, 250, 250]},
     columnStyles: {
-      0: {cellWidth: firstColumnWidth},
-      _: {cellWidth: otherColumnsWidth}
+      0: {cellWidth: firstColumnWidth, halign: 'left', fontStyle: 'bold', fillColor: [245, 245, 245]}
     }
   });
+
+  // ========== COMMENTS PAGE (if any) ==========
+  const bilans = donneesCarnetSante.value.bilansQuotidiens.$values;
+  const commentsData = bilans.filter(b => b.commentaire && b.commentaire.trim() !== '');
+
+  if (commentsData.length > 0) {
+    doc.addPage();
+
+    // Header
+    doc.setFillColor(229, 187, 167);
+    doc.rect(0, 0, 297, 30, 'F');
+
+    doc.setFontSize(22);
+    doc.setTextColor(255, 255, 255);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Commentaires quotidiens', 148.5, 12, {align: 'center'});
+
+    doc.setFontSize(14);
+    doc.setFont('helvetica', 'normal');
+    doc.text(format(startDate, 'MMMM yyyy', {locale: fr}), 148.5, 22, {align: 'center'});
+
+    // Comments
+    let yPos = 45;
+    doc.setFontSize(10);
+
+    commentsData.forEach((bilan, idx) => {
+      if (yPos > 180) {
+        doc.addPage();
+        yPos = 20;
+      }
+
+      // Date
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(229, 187, 167);
+      doc.text(format(new Date(bilan.date), 'EEEE dd MMMM', {locale: fr}), 20, yPos);
+
+      // Comment box
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(51, 51, 51);
+      const comment = bilan.commentaire || '';
+      const splitComment = doc.splitTextToSize(comment, 250);
+
+      doc.setDrawColor(229, 187, 167);
+      doc.setLineWidth(0.3);
+      const boxHeight = Math.max(12, splitComment.length * 5 + 4);
+      doc.roundedRect(20, yPos + 3, 257, boxHeight, 2, 2, 'S');
+
+      doc.text(splitComment, 23, yPos + 8);
+
+      yPos += boxHeight + 8;
+    });
+  }
+
+  // Génère le document PDF final
 
   // Sauvegarde le document PDF avec un nom de fichier formaté
   const formattedMonthYear = format(startDate, 'MM_yyyy');

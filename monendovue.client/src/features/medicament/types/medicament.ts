@@ -1,13 +1,11 @@
-/**
- * This is a TypeGen auto-generated file.
- * Any changes made to this file can be lost when this file is regenerated.
- */
+import type { TypeTraitement } from "./type-traitement";
 
 export interface Medicament {
     id: number;
     carnetSanteId: number;
     nom: string;
-    posologie: string;
+    type: TypeTraitement;
+    posologie?: string;
     traitementEnCours: boolean;
     dateDebutTraitement?: Date;
     dateFinTraitement?: Date;

@@ -6,7 +6,7 @@
         <h2 class="text-2xl flex gap-2 ml-2"><i class="material-symbols-outlined text-3xl ml-auto">gastroenterology</i>
           Suivi du transit</h2>
         <div class="form-modal">
-          <Dialog>
+          <Dialog v-model:open="showAddDialog">
             <DialogTrigger class="flex gap-2 items-center cursor-pointer hover:opacity-80 transition-opacity">
               <Button variant="custom">
                 <span class="hide-xsm">Ajouter une entrée</span>
@@ -182,9 +182,14 @@ import { useAuthStore } from '@/features/auth/store/auth'
 import { useMonthData } from '@/shared/composables/useMonthData'
 import { useDateTimeFormat } from '@/shared/composables/useDateTimeFormat'
 import { useCrudOperations } from '@/shared/composables/useCrudOperations'
+import { useDialogForm } from '@/shared/composables/useDialogForm'
 
 const authStore = useAuthStore()
 const { formatDateDisplay, formatTimeDisplay, combineDateTime } = useDateTimeFormat()
+
+// Dialog control
+const showAddDialog = ref(false)
+const { submitForm } = useDialogForm(showAddDialog)
 
 const { selectedMonthYear, entries, isLoading } = useMonthData({
   fetchFunction: async (month, year) => {
@@ -264,28 +269,44 @@ const form = useForm({
 })
 
 const onSubmit = form.handleSubmit((values) => {
-  createEntry(values, {
-    createFunction: (data) => apiService.postDonneesTransit(data),
-    formatForApi: (data) => ({
-      ...data,
-      typeEvenement: entry.value.typeEvenement,
-      date: combineDateTime(data.date, data.time),
-      carnetSanteId: authStore.user?.carnetSanteId,
-      commentaire: entry.value.commentaire || 'Pas de commentaire'
-    }),
-    formatForDisplay: (data, response) => ({
-      id: response.id,
-      typeEvenement: entry.value.typeEvenement,
-      date: formatDateDisplay(data.date),
-      time: formatTimeDisplay(data.time),
-      intensite: entry.value.intensite,
-      douleurs: entry.value.douleurs ? 'Oui' : 'Non',
-      saignement: entry.value.saignement ? 'Oui' : 'Non',
-      commentaire: entry.value.commentaire || 'Pas de commentaire'
-    }),
+  const dataToSend = {
+    typeEvenement: entry.value.typeEvenement,
+    intensite: entry.value.intensite,
+    saignement: entry.value.saignement,
+    douleur: entry.value.douleurs,
+    date: combineDateTime(values.date, values.time),
+    carnetSanteId: authStore.user?.carnetSanteId,
+    commentaire: entry.value.commentaire || 'Pas de commentaire'
+  }
+
+  submitForm(dataToSend, {
+    submitFunction: (data) => apiService.postDonneesTransit(data),
     successMessage: 'Les données de transit ont été ajoutées avec succès',
     errorMessage: 'Une erreur est survenue lors de l\'ajout des données de transit',
-    endpoint: 'DonneesTransit'
+    onSuccess: (response) => {
+      entries.value.push({
+        id: response.id,
+        typeEvenement: entry.value.typeEvenement,
+        date: formatDateDisplay(values.date),
+        time: formatTimeDisplay(values.time),
+        intensite: entry.value.intensite,
+        douleurs: entry.value.douleurs ? 'Oui' : 'Non',
+        saignement: entry.value.saignement ? 'Oui' : 'Non',
+        commentaire: entry.value.commentaire || 'Pas de commentaire'
+      })
+    },
+    resetFormData: () => {
+      entry.value = {
+        typeEvenement: '',
+        date: '',
+        time: '',
+        intensite: '',
+        saignement: false,
+        douleurs: false,
+        commentaire: ''
+      }
+      form.resetForm()
+    }
   })
 })
 </script>

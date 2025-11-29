@@ -6,7 +6,7 @@
         <h2 class="text-2xl flex gap-2 ml-2"><i class="material-symbols-outlined text-3xl ml-auto">directions_run</i>
           Suivi de l'activité</h2>
         <div class="form-modal">
-          <Dialog>
+          <Dialog v-model:open="showAddDialog">
             <DialogTrigger class="flex gap-2 items-center cursor-pointer hover:opacity-80 transition-opacity">
               <Button variant="custom">
                 <span class="hide-xsm">Ajouter une session</span>
@@ -141,7 +141,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { ref, computed } from 'vue'
 import { useForm } from 'vee-validate'
 import { toTypedSchema } from '@vee-validate/zod'
 import * as z from 'zod'
@@ -162,10 +162,15 @@ import { useAuthStore } from '@/features/auth/store/auth'
 import { useMonthData } from '@/shared/composables/useMonthData'
 import { useDateTimeFormat } from '@/shared/composables/useDateTimeFormat'
 import { useCrudOperations } from '@/shared/composables/useCrudOperations'
+import { useDialogForm } from '@/shared/composables/useDialogForm'
 import type { DonneesActivitePhysique } from "@/features/activite/types/donnees-activite-physique"
 
 const authStore = useAuthStore()
 const { formatDateDisplay, formatTimeDisplay, combineDateTime } = useDateTimeFormat()
+
+// Dialog control
+const showAddDialog = ref(false)
+const { submitForm } = useDialogForm(showAddDialog)
 
 const { selectedMonthYear, entries, isLoading } = useMonthData<DonneesActivitePhysique>({
   fetchFunction: async (month, year) => {
@@ -255,29 +260,34 @@ const form = useForm({
 })
 
 const onSubmit = form.handleSubmit((values) => {
-  createEntry(values, {
-    createFunction: (data) => apiService.postDonneesActivitePhysique(data),
-    formatForApi: (data) => ({
-      ...data,
-      id: 0,
-      typeActivite: data.typeActivite,
-      intensite: data.intensite[0],
-      date: combineDateTime(data.date, data.time),
-      commentaire: data.commentaire || 'Pas de commentaire',
-      carnetSanteId: authStore.user!.carnetSanteId,
-    }),
-    formatForDisplay: (data, response) => ({
-      id: response.id,
-      typeActivite: data.typeActivite,
-      date: formatDateDisplay(data.date),
-      time: formatTimeDisplay(data.time),
-      duree: data.duree,
-      intensite: data.intensite[0],
-      commentaire: data.commentaire || 'Pas de commentaire',
-    }),
+  const dataToSend = {
+    id: 0,
+    typeActivite: values.typeActivite,
+    intensite: values.intensite[0],
+    duree: values.duree,
+    date: combineDateTime(values.date, values.time),
+    commentaire: values.commentaire || 'Pas de commentaire',
+    carnetSanteId: authStore.user!.carnetSanteId,
+  }
+
+  submitForm(dataToSend, {
+    submitFunction: (data) => apiService.postDonneesActivitePhysique(data),
     successMessage: 'La session a été ajoutée avec succès',
     errorMessage: 'Un problème est survenu lors de l\'ajout de la session',
-    endpoint: 'DonneesActivitePhysique'
+    onSuccess: (response) => {
+      entries.value.push({
+        id: response.id,
+        typeActivite: values.typeActivite,
+        date: formatDateDisplay(values.date),
+        time: formatTimeDisplay(values.time),
+        duree: values.duree,
+        intensite: values.intensite[0],
+        commentaire: values.commentaire || 'Pas de commentaire',
+      })
+    },
+    resetFormData: () => {
+      form.resetForm()
+    }
   })
 })
 </script>

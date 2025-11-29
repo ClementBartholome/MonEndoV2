@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using MonEndoVue.Server.Data;
 
@@ -11,9 +12,11 @@ using MonEndoVue.Server.Data;
 namespace MonEndoVue.Server.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251129104327_AddTypeToMedicament")]
+    partial class AddTypeToMedicament
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -429,38 +432,6 @@ namespace MonEndoVue.Server.Migrations
                     b.ToTable("DonneesMedicaments");
                 });
 
-            modelBuilder.Entity("MonEndoVue.Server.Models.DonneesTraitementNonMedicamenteux", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<int>("CarnetSanteId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Commentaire")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime>("Date")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int?>("Duree")
-                        .HasColumnType("int");
-
-                    b.Property<int>("MedicamentId")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("CarnetSanteId");
-
-                    b.HasIndex("MedicamentId");
-
-                    b.ToTable("DonneesTraitementNonMedicamenteux");
-                });
-
             modelBuilder.Entity("MonEndoVue.Server.Models.DonneesTransit", b =>
                 {
                     b.Property<int>("Id")
@@ -705,23 +676,6 @@ namespace MonEndoVue.Server.Migrations
                     b.Navigation("Medicament");
                 });
 
-            modelBuilder.Entity("MonEndoVue.Server.Models.DonneesTraitementNonMedicamenteux", b =>
-                {
-                    b.HasOne("MonEndoVue.Server.Models.CarnetSante", null)
-                        .WithMany("DonneesTraitementNonMedicamenteux")
-                        .HasForeignKey("CarnetSanteId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("MonEndoVue.Server.Models.Medicament", "Medicament")
-                        .WithMany()
-                        .HasForeignKey("MedicamentId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("Medicament");
-                });
-
             modelBuilder.Entity("MonEndoVue.Server.Models.DonneesTransit", b =>
                 {
                     b.HasOne("MonEndoVue.Server.Models.CarnetSante", null)
@@ -776,8 +730,6 @@ namespace MonEndoVue.Server.Migrations
                     b.Navigation("DonneesDouleurs");
 
                     b.Navigation("DonneesMedicaments");
-
-                    b.Navigation("DonneesTraitementNonMedicamenteux");
 
                     b.Navigation("DonneesTransit");
 

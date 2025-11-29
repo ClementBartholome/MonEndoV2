@@ -11,6 +11,7 @@ public class CarnetSante
     public List<DonneesDouleur> DonneesDouleurs { get; set; }
     public List<DonneesActivitePhysique> DonneesActivitePhysique { get; set; }
     public List<DonneesMedicament> DonneesMedicaments { get; set; }
+    public List<DonneesTraitementNonMedicamenteux> DonneesTraitementNonMedicamenteux { get; set; }
     public List<Medicament> Medicaments { get; set; }
     public List<DonneesTransit> DonneesTransit { get; set; }
     public List<JourRegle> JourRegles { get; set; }

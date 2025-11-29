@@ -40,7 +40,7 @@
               <i class="material-symbols-outlined text-3xl ml-auto">gynecology</i>Symptômes
             </h2>
             <div class="form-modal">
-              <Dialog>
+              <Dialog v-model:open="showAddDialog">
                 <DialogTrigger class="flex gap-2 items-center cursor-pointer hover:opacity-80 transition-opacity">
                   <Button variant="custom">
                     <span class="hide-xsm">Ajouter une entrée</span>
@@ -171,11 +171,16 @@ import { useAuthStore } from "@/features/auth/store/auth"
 import { useMonthData } from '@/shared/composables/useMonthData'
 import { useDateTimeFormat } from '@/shared/composables/useDateTimeFormat'
 import { useCrudOperations } from '@/shared/composables/useCrudOperations'
+import { useDialogForm } from '@/shared/composables/useDialogForm'
 import { format } from 'date-fns'
 import type { SymptomeCycle } from "@/features/cycle/types/symptome-cycle"
 
 const { user } = useAuthStore()
 const { formatDateDisplay, formatTimeDisplay, combineDateTime, getCurrentMonthYear } = useDateTimeFormat()
+
+// Dialog control
+const showAddDialog = ref(false)
+const { submitForm } = useDialogForm(showAddDialog)
 
 const selectedMonthYear = ref(getCurrentMonthYear())
 const value = ref(today(getLocalTimeZone())) as Ref<DateValue>
@@ -375,26 +380,38 @@ const form = useForm({
 })
 
 const onSubmit = form.handleSubmit((values) => {
-  createEntry(values, {
-    createFunction: (data) => apiService.postDonneesSymptomesCycle(data),
-    formatForApi: (data) => ({
-      typeSymptome: entry.value.typeSymptome,
-      carnetSanteId: user?.carnetSanteId,
-      date: combineDateTime(data.date, data.time),
-      intensite: data.intensite[0],
-      commentaire: data.commentaire || 'Pas de commentaire',
-    }),
-    formatForDisplay: (data, response) => ({
-      id: response.id,
-      typeSymptome: entry.value.typeSymptome,
-      date: formatDateDisplay(data.date),
-      time: formatTimeDisplay(data.time),
-      intensite: data.intensite[0],
-      commentaire: data.commentaire || 'Pas de commentaire',
-    }),
+  const dataToSend = {
+    typeSymptome: entry.value.typeSymptome,
+    carnetSanteId: user?.carnetSanteId,
+    date: combineDateTime(values.date, values.time),
+    intensite: values.intensite[0],
+    commentaire: values.commentaire || 'Pas de commentaire',
+  }
+
+  submitForm(dataToSend, {
+    submitFunction: (data) => apiService.postDonneesSymptomesCycle(data),
     successMessage: 'Symptôme ajouté avec succès',
     errorMessage: 'Une erreur est survenue lors de l\'ajout du symptôme',
-    endpoint: 'SymptomesCycle'
+    onSuccess: (response) => {
+      entries.value.push({
+        id: response.id,
+        typeSymptome: entry.value.typeSymptome,
+        date: formatDateDisplay(values.date),
+        time: formatTimeDisplay(values.time),
+        intensite: values.intensite[0],
+        commentaire: values.commentaire || 'Pas de commentaire',
+      })
+    },
+    resetFormData: () => {
+      entry.value = {
+        typeSymptome: '',
+        date: '',
+        time: '',
+        intensite: 0,
+        commentaire: ''
+      }
+      form.resetForm()
+    }
   })
 })
 </script>

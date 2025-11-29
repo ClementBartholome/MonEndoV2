@@ -106,6 +106,10 @@ class ApiService {
         return this.request('GET', `DonneesMedicament/${carnetSanteId}/${month}/${year}`);
     }
 
+    async getDonneesTraitementNonMedicamenteuxByMonth(carnetSanteId: number, month: number, year: number): Promise<any> {
+        return this.request('GET', `DonneesTraitementNonMedicamenteux/${carnetSanteId}/${month}/${year}`);
+    }
+
     async getDonneesTransitByMonth(carnetSanteId: number, month: number, year: number): Promise<any> {
         return this.request('GET', `DonneesTransit/${carnetSanteId}/${month}/${year}`);
     }
@@ -146,7 +150,11 @@ class ApiService {
     async postDonneesPriseMedicament(donneesPriseMedicament: any): Promise<any> {
         return this.request('POST', 'DonneesMedicament', donneesPriseMedicament);
     }
-    
+
+    async postDonneesTraitementNonMedicamenteux(donneesTraitement: any): Promise<any> {
+        return this.request('POST', 'DonneesTraitementNonMedicamenteux', donneesTraitement);
+    }
+
     async postDonneesTransit(donneesTransit: any): Promise<any> {
         return this.request('POST', 'DonneesTransit', donneesTransit);
     }
@@ -175,6 +183,10 @@ class ApiService {
 
     async deleteDonneesMedicament(donneesMedicamentId: number): Promise<any> {
         return this.request('DELETE', `DonneesMedicament/${donneesMedicamentId}`);
+    }
+
+    async deleteDonneesTraitementNonMedicamenteux(donneesTraitementId: number): Promise<any> {
+        return this.request('DELETE', `DonneesTraitementNonMedicamenteux/${donneesTraitementId}`);
     }
 
     async deleteDonneesTransit(donneesTransitId: number): Promise<any> {

@@ -27,6 +27,7 @@ namespace MonEndoVue.Server.Controllers
                 {
                     Id = m.Id,
                     Nom = m.Nom,
+                    Type = m.Type,
                     Posologie = m.Posologie,
                     TraitementEnCours = m.TraitementEnCours,
                     DateDebutTraitement = m.DateDebutTraitement,
@@ -57,17 +58,36 @@ namespace MonEndoVue.Server.Controllers
         // PUT: Medicament/5
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPut("{id:int}")]
-        public async Task<IActionResult> PutMedicament(int id, Medicament medicament)
+        public async Task<IActionResult> PutMedicament(int id, Medicament medicamentUpdate)
         {
-            var securityCheck = await this.ValidateCarnetAccess(carnetSanteService, medicament.CarnetSanteId);
-            if (securityCheck != null) return securityCheck;
-            
-            if (id != medicament.Id)
+            if (id != medicamentUpdate.Id)
             {
                 return BadRequest();
             }
 
-            context.Entry(medicament).State = EntityState.Modified;
+            var securityCheck = await this.ValidateCarnetAccess(carnetSanteService, medicamentUpdate.CarnetSanteId);
+            if (securityCheck != null) return securityCheck;
+
+            // Validation : La posologie est obligatoire pour les traitements médicamenteux
+            if (medicamentUpdate.Type == TypeTraitement.Medicamenteux && string.IsNullOrWhiteSpace(medicamentUpdate.Posologie))
+            {
+                return BadRequest(new { message = "La posologie est obligatoire pour les traitements médicamenteux." });
+            }
+
+            // Récupérer l'entité existante de la base de données
+            var existingMedicament = await context.Medicaments.FindAsync(id);
+            if (existingMedicament == null)
+            {
+                return NotFound();
+            }
+
+            // Mettre à jour uniquement les propriétés modifiables
+            existingMedicament.Nom = medicamentUpdate.Nom;
+            existingMedicament.Type = medicamentUpdate.Type;
+            existingMedicament.Posologie = medicamentUpdate.Posologie;
+            existingMedicament.TraitementEnCours = medicamentUpdate.TraitementEnCours;
+            existingMedicament.DateDebutTraitement = medicamentUpdate.DateDebutTraitement;
+            existingMedicament.DateFinTraitement = medicamentUpdate.DateFinTraitement;
 
             try
             {
@@ -95,11 +115,18 @@ namespace MonEndoVue.Server.Controllers
         {
             var securityCheck = await this.ValidateCarnetAccess(carnetSanteService, medicamentDto.CarnetSanteId);
             if (securityCheck != null) return securityCheck;
-            
+
+            // Validation : La posologie est obligatoire pour les traitements médicamenteux
+            if (medicamentDto.Type == TypeTraitement.Medicamenteux && string.IsNullOrWhiteSpace(medicamentDto.Posologie))
+            {
+                return BadRequest(new { message = "La posologie est obligatoire pour les traitements médicamenteux." });
+            }
+
             var medicament = new Medicament
             {
                 CarnetSanteId = medicamentDto.CarnetSanteId,
                 Nom = medicamentDto.Nom,
+                Type = medicamentDto.Type,
                 Posologie = medicamentDto.Posologie,
                 DateDebutTraitement = medicamentDto.DateDebutTraitement,
                 DateFinTraitement = medicamentDto.DateFinTraitement,

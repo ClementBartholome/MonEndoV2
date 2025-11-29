@@ -6,7 +6,7 @@
         <h2 class="text-2xl flex gap-2 ml-2"><i class="material-symbols-outlined text-3xl">medication</i>
           Prises de médicaments</h2>
         <div class="form-modal">
-          <Dialog>
+          <Dialog v-model:open="showAddPriseDialog">
             <DialogTrigger class="flex gap-2 items-center cursor-pointer hover:opacity-80 transition-opacity">
               <Button variant="custom">
                 <span class="hide-xsm">Ajouter une prise</span>
@@ -96,6 +96,106 @@
         <p class="text-2xl text-center">Aucune donnée enregistrée</p>
       </div>
     </section>
+
+    <!-- Section Sessions de traitements non médicamenteux -->
+    <section class="container !mt-0 mx-auto py-8 w-full bg-clearer rounded-3xl shadow-xl ml-auto">
+      <div class="flex justify-between items-center mb-4">
+        <h2 class="text-2xl flex gap-2 ml-2">
+          <i class="material-symbols-outlined text-3xl">healing</i>
+          Sessions de traitements
+        </h2>
+        <div class="form-modal">
+          <Dialog v-model:open="showAddSessionDialog">
+            <DialogTrigger class="flex gap-2 items-center cursor-pointer hover:opacity-80 transition-opacity">
+              <Button variant="custom">
+                <span class="hide-xsm">Ajouter une session</span>
+                <i class="material-symbols-outlined">add</i>
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle class="text-2xl">Ajouter une session</DialogTitle>
+              </DialogHeader>
+              <form class="flex flex-col gap-6" @submit.prevent="onSubmitSessionForm">
+                <FormField v-slot="{ componentField }" name="traitement">
+                  <FormItem>
+                    <FormLabel>Traitement</FormLabel>
+                    <FormControl>
+                      <Select v-model="session.medicamentId">
+                        <SelectTrigger>
+                          <SelectValue/>
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectGroup v-if="traitementsNonMedicamenteux.length > 0" label="Traitements non médicamenteux">
+                            <SelectItem v-for="traitement in traitementsNonMedicamenteux" :key="traitement.id" :value="traitement.id">
+                              {{ traitement.nom }}
+                            </SelectItem>
+                          </SelectGroup>
+                          <p v-else class="px-4 py-2">Pas de traitements non médicamenteux enregistrés</p>
+                        </SelectContent>
+                      </Select>
+                    </FormControl>
+                    <FormMessage/>
+                  </FormItem>
+                </FormField>
+                <FormField v-slot="{ componentField }" name="duree">
+                  <FormItem>
+                    <FormLabel>Durée (minutes) - optionnel</FormLabel>
+                    <FormControl>
+                      <Input type="number" v-bind="componentField" v-model="session.duree" min="1" placeholder="Ex: 30"/>
+                    </FormControl>
+                    <FormMessage/>
+                  </FormItem>
+                </FormField>
+                <div class="flex items-center gap-8">
+                  <FormField v-slot="{ componentField }" name="date">
+                    <FormItem>
+                      <FormLabel>Date</FormLabel>
+                      <FormControl>
+                        <Input type="date" v-bind="componentField" v-model="session.date" class="min-w-28"/>
+                      </FormControl>
+                      <FormMessage/>
+                    </FormItem>
+                  </FormField>
+                  <FormField v-slot="{ componentField }" name="time">
+                    <FormItem>
+                      <FormLabel>Heure</FormLabel>
+                      <FormControl>
+                        <Input type="time" v-bind="componentField" v-model="session.time" class="min-w-28"/>
+                      </FormControl>
+                      <FormMessage/>
+                    </FormItem>
+                  </FormField>
+                </div>
+                <FormField v-slot="{ componentField }" name="commentaire">
+                  <FormItem>
+                    <FormLabel>Un commentaire ? (optionnel)</FormLabel>
+                    <FormControl>
+                      <Input type="text" placeholder="Écrivez ici" v-bind="componentField" v-model="session.commentaire"/>
+                    </FormControl>
+                    <FormMessage/>
+                  </FormItem>
+                </FormField>
+                <Button class="mt-4" variant="custom" type="submit">
+                  Enregistrer
+                </Button>
+              </form>
+            </DialogContent>
+          </Dialog>
+        </div>
+      </div>
+      <SelectMonth v-model="selectedMonthYearSessions"/>
+      <div v-if="isLoadingSessions" class="flex flex-col space-y-3">
+        <Skeleton class="h-[300px] w-full mt-4 rounded-xl"/>
+      </div>
+      <Datatable v-else-if="listeSessions.length > 0" :entries="listeSessions" :columns="columnsSessions"
+                 :deleteFunction="handleDeleteSession">
+      </Datatable>
+      <div v-else class="flex justify-center items-center h-32">
+        <p class="text-2xl text-center">Aucune donnée enregistrée</p>
+      </div>
+    </section>
+
     <div class="flex-row-container w-full gap-8 mb-16">
       <section class="container !mt-0  mx-auto py-8 w-full bg-clearer rounded-3xl shadow-xl ml-auto">
         <div class="flex gap-4 items-center justify-between mb-4">
@@ -103,7 +203,7 @@
             <i class="material-symbols-outlined text-3xl">pill</i>
             Traitements en cours
           </h2>
-          <Dialog>
+          <Dialog v-model:open="showAddTraitementDialog">
             <DialogTrigger class="flex items-center ml-auto gap-2">
               <Button variant="custom">
                 <span class="material-symbols-outlined">add</span>
@@ -123,7 +223,26 @@
                     <FormMessage/>
                   </FormItem>
                 </FormField>
-                <FormField v-slot="{ componentField }" name="posologie">
+                <FormField v-slot="{ componentField }" name="type">
+                  <FormItem>
+                    <FormLabel>Type de traitement</FormLabel>
+                    <FormControl>
+                      <Select v-model="traitement.type">
+                        <SelectTrigger>
+                          <SelectValue/>
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectGroup label="Type">
+                            <SelectItem :value="String(TypeTraitement.Medicamenteux)">Médicamenteux</SelectItem>
+                            <SelectItem :value="String(TypeTraitement.NonMedicamenteux)">Non médicamenteux</SelectItem>
+                          </SelectGroup>
+                        </SelectContent>
+                      </Select>
+                    </FormControl>
+                    <FormMessage/>
+                  </FormItem>
+                </FormField>
+                <FormField v-if="showPosologieInAddForm" v-slot="{ componentField }" name="posologie">
                   <FormItem>
                     <FormLabel>Posologie</FormLabel>
                     <FormControl>
@@ -152,8 +271,7 @@
         <ul class="w-full" v-if="traitementsEnCours.length > 0">
           <li v-for="traitement in traitementsEnCours" :key="traitement.id" class="relative pr-20">
             <div class="absolute top-0 right-0 flex gap-2">
-              <span @click="confirmDeleteMedicament(traitement.id)" class="material-symbols-outlined delete-btn cursor-pointer">delete</span>
-              <Dialog>
+              <Dialog v-model:open="showEditTraitementDialog">
                 <DialogTrigger @click="editTraitement(traitement.id)" class="cursor-pointer">
                   <span class="material-symbols-outlined edit-btn">edit</span>
                 </DialogTrigger>
@@ -171,7 +289,26 @@
                       <FormMessage/>
                     </FormItem>
                   </FormField>
-                  <FormField v-slot="{ componentField }" name="posologie">
+                  <FormField v-slot="{ componentField }" name="type">
+                    <FormItem>
+                      <FormLabel>Type de traitement</FormLabel>
+                      <FormControl>
+                        <Select v-model="traitementForm.type">
+                          <SelectTrigger>
+                            <SelectValue/>
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectGroup label="Type">
+                              <SelectItem :value="String(TypeTraitement.Medicamenteux)">Médicamenteux</SelectItem>
+                              <SelectItem :value="String(TypeTraitement.NonMedicamenteux)">Non médicamenteux</SelectItem>
+                            </SelectGroup>
+                          </SelectContent>
+                        </Select>
+                      </FormControl>
+                      <FormMessage/>
+                    </FormItem>
+                  </FormField>
+                  <FormField v-if="showPosologieInEditForm" v-slot="{ componentField }" name="posologie">
                     <FormItem>
                       <FormLabel>Posologie</FormLabel>
                       <FormControl>
@@ -223,9 +360,11 @@
                 </form>
               </DialogContent>
               </Dialog>
+              <span @click="confirmDeleteMedicament(traitement.id)" class="material-symbols-outlined delete-btn cursor-pointer">delete</span>
             </div>
             <p class="text-headline font-bold text-xl">{{ traitement.nom }}</p>
-            <p>{{ traitement.posologie }}</p>
+            <p class="text-sm text-gray-600">{{ traitement.type === TypeTraitement.Medicamenteux ? 'Médicamenteux' : 'Non médicamenteux' }}</p>
+            <p v-if="traitement.posologie">{{ traitement.posologie }}</p>
             <p>Depuis le {{ formatDateDisplay(traitement.dateDebutTraitement) }}</p>
           </li>
         </ul>
@@ -245,7 +384,8 @@
             </div>
             <div>
               <p class="text-headline font-bold text-xl">{{ traitement.nom }}</p>
-              <p>{{ traitement.posologie }}</p>
+              <p class="text-sm text-gray-600">{{ traitement.type === TypeTraitement.Medicamenteux ? 'Médicamenteux' : 'Non médicamenteux' }}</p>
+              <p v-if="traitement.posologie">{{ traitement.posologie }}</p>
               <p>Traitement pris du {{ formatDateDisplay(traitement.dateDebutTraitement) }} au
                 {{ formatDateDisplay(traitement.dateFinTraitement) }}</p>
             </div>
@@ -277,7 +417,7 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { onMounted, ref, computed, watch } from 'vue'
 
 import { Button } from '@/shared/components/ui/button'
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/shared/components/ui/form'
@@ -294,20 +434,50 @@ import { useAuthStore } from '@/features/auth/store/auth'
 import { useMonthData } from '@/shared/composables/useMonthData'
 import { useDateTimeFormat } from '@/shared/composables/useDateTimeFormat'
 import { useCrudOperations } from '@/shared/composables/useCrudOperations'
+import { useDialogForm } from '@/shared/composables/useDialogForm'
 import { useToast } from '@/shared/components/ui/toast'
 import { useSync } from '@/shared/composables/useSync'
 import { format, parseISO } from 'date-fns'
+import { TypeTraitement } from '@/features/medicament/types/type-traitement'
 
 const authStore = useAuthStore()
 const { formatDateDisplay, formatTimeDisplay, combineDateTime, getCurrentDateInput, getCurrentTimeInput } = useDateTimeFormat()
 const { toast } = useToast()
 const { handleOfflineOperation } = useSync()
 
+// Contrôle des dialogs
+const showAddPriseDialog = ref(false)
+const showAddTraitementDialog = ref(false)
+const showAddSessionDialog = ref(false)
+const showEditTraitementDialog = ref(false)
+
+// Initialiser les composables de formulaire pour chaque dialog
+const { submitForm: submitPriseForm } = useDialogForm(showAddPriseDialog)
+const { submitForm: submitTraitementForm } = useDialogForm(showAddTraitementDialog)
+const { submitForm: submitSessionForm } = useDialogForm(showAddSessionDialog)
+const { submitForm: submitEditForm } = useDialogForm(showEditTraitementDialog)
+
 const traitementsEnCours = ref<Medicament[]>([])
 const medicaments = ref<Medicament[]>([])
 const traitementsPasses = ref<Medicament[]>([])
+const traitementsNonMedicamenteux = ref<Medicament[]>([])
 const medicamentToDelete = ref<string | null>(null)
 const showDeleteDialog = ref(false)
+
+// Données pour les sessions de traitements non médicamenteux
+const listeSessions = ref<any[]>([])
+const isLoadingSessions = ref(false)
+const selectedMonthYearSessions = ref<string>(
+    `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}`
+)
+
+const session = ref({
+  medicamentId: '',
+  duree: null as number | null,
+  date: getCurrentDateInput(),
+  time: getCurrentTimeInput(),
+  commentaire: ''
+})
 
 const { selectedMonthYear, entries: listePrises, isLoading } = useMonthData({
   fetchFunction: async (month, year) => {
@@ -338,16 +508,23 @@ const prise = ref({
   nombreComprimes: 1
 })
 
-const traitement = ref({ nom: '', posologie: '', dateDebutTraitement: '' })
+const traitement = ref({ nom: '', type: String(TypeTraitement.Medicamenteux), posologie: '', dateDebutTraitement: '' })
 
 const traitementForm: any = ref({
   id: '',
   nom: '',
+  type: String(TypeTraitement.Medicamenteux),
   posologie: '',
   dateDebutTraitement: '',
   dateFinTraitement: '',
   traitementEnCours: '',
 })
+
+// Computed pour savoir si on doit afficher le champ posologie dans le formulaire d'ajout
+const showPosologieInAddForm = computed(() => Number(traitement.value.type) === TypeTraitement.Medicamenteux)
+
+// Computed pour savoir si on doit afficher le champ posologie dans le formulaire d'édition
+const showPosologieInEditForm = computed(() => Number(traitementForm.value.type) === TypeTraitement.Medicamenteux)
 
 const columns: any = [
   { data: 'nom', title: 'Médicament' },
@@ -361,10 +538,23 @@ const columns: any = [
   },
 ]
 
+const columnsSessions: any = [
+  { data: 'nom', title: 'Traitement' },
+  { data: 'duree', title: 'Durée' },
+  { data: 'date', title: 'Date' },
+  { data: 'time', title: 'Heure' },
+  { data: 'commentaire', title: 'Commentaire' },
+  {
+    data: null,
+    defaultContent: '<span class="material-symbols-outlined delete-btn">delete</span>'
+  },
+]
+
 interface Medicament {
   id: string
   nom: string
-  posologie: string
+  type: TypeTraitement
+  posologie?: string
   dateDebutTraitement: any
   dateFinTraitement?: any
   traitementEnCours: boolean
@@ -373,23 +563,66 @@ interface Medicament {
 const fetchAllMedicaments = async () => {
   try {
     const response = await apiService.getAllMedicaments(authStore.user!.carnetSanteId)
-    medicaments.value = response.$values.map((med: Medicament) => ({
+
+    // Séparer les traitements médicamenteux et non médicamenteux
+    const allMedicaments = response.$values
+    const medicamenteux = allMedicaments.filter((med: Medicament) => med.type === TypeTraitement.Medicamenteux)
+    const nonMedicamenteux = allMedicaments.filter((med: Medicament) => med.type === TypeTraitement.NonMedicamenteux)
+
+    // Pour les prises de médicaments (seulement médicamenteux)
+    medicaments.value = medicamenteux.map((med: Medicament) => ({
       id: med.id,
       nom: med.nom,
       posologie: med.posologie,
     }))
-    traitementsEnCours.value = response.$values.filter(med => med.traitementEnCours)
-    traitementsPasses.value = response.$values.filter(med => med.traitementEnCours == false)
+
+    // Pour les traitements en cours/passés
+    traitementsEnCours.value = allMedicaments.filter(med => med.traitementEnCours)
+    traitementsPasses.value = allMedicaments.filter(med => med.traitementEnCours == false)
+
+    // Pour les sessions (seulement non médicamenteux)
+    traitementsNonMedicamenteux.value = nonMedicamenteux.map((med: Medicament) => ({
+      id: med.id,
+      nom: med.nom,
+    }))
   } catch (error) {
     console.error(error)
   }
 }
 
+const fetchSessions = async (monthYear: string) => {
+  isLoadingSessions.value = true
+  try {
+    const [year, month] = monthYear.split('-').map(Number)
+    const response = await apiService.getDonneesTraitementNonMedicamenteuxByMonth(authStore.user!.carnetSanteId, month, year)
+    listeSessions.value = response.map((d: any) => ({
+      id: d.id,
+      nom: d.nomTraitement,
+      duree: d.duree || '-',
+      date: formatDateDisplay(d.date),
+      time: formatTimeDisplay(d.date),
+      commentaire: d.commentaire || 'Pas de détails',
+    }))
+  } catch (error) {
+    console.error('Error loading sessions data:', error)
+  } finally {
+    isLoadingSessions.value = false
+  }
+}
+
+// Watcher pour charger les sessions quand le mois change
+watch(selectedMonthYearSessions, (newValue) => {
+  fetchSessions(newValue)
+})
+
 onMounted(async () => {
   isLoading.value = true
+  isLoadingSessions.value = true
 
   try {
     await fetchAllMedicaments()
+
+    // Charger les prises de médicaments
     const [year, month] = selectedMonthYear.value.split('-').map(Number)
     const response = await apiService.getDonneesMedicamentByMonth(authStore.user!.carnetSanteId, month, year)
     listePrises.value = response.map((d: any) => ({
@@ -400,10 +633,14 @@ onMounted(async () => {
       time: formatTimeDisplay(d.date),
       commentaire: d.commentaire || 'Pas de détails',
     }))
+
+    // Charger les sessions de traitements
+    await fetchSessions(selectedMonthYearSessions.value)
   } catch (error) {
     console.error('Error loading medicament data:', error)
   } finally {
     isLoading.value = false
+    isLoadingSessions.value = false
   }
 })
 
@@ -419,49 +656,134 @@ const onSubmitPriseForm = () => {
   const values = prise.value
   const medicamentName = medicaments.value.find(med => med.id === values.medicamentId)?.nom
 
-  createEntry(values, {
-    createFunction: (data) => apiService.postDonneesPriseMedicament(data),
-    formatForApi: (data) => {
-      const { time, ...valuesForApi } = data
-      return {
-        ...valuesForApi,
-        date: combineDateTime(data.date, time),
-        commentaire: data.commentaire || 'Pas de commentaire',
-        carnetSanteId: authStore.user?.carnetSanteId,
-      }
-    },
-    formatForDisplay: (data, response) => ({
-      id: response.id,
-      nom: medicamentName,
-      nombreComprimes: data.nombreComprimes,
-      commentaire: data.commentaire || 'Pas de commentaire',
-      date: formatDateDisplay(data.date),
-      time: formatTimeDisplay(data.time),
-    }),
+  const dataToSend = {
+    medicamentId: values.medicamentId,
+    nombreComprimes: values.nombreComprimes,
+    date: combineDateTime(values.date, values.time),
+    commentaire: values.commentaire || 'Pas de commentaire',
+    carnetSanteId: authStore.user?.carnetSanteId,
+  }
+
+  submitPriseForm(dataToSend, {
+    submitFunction: (data) => apiService.postDonneesPriseMedicament(data),
     successMessage: 'La prise de médicament a été enregistrée avec succès',
     errorMessage: 'Une erreur est survenue lors de l\'enregistrement de la prise de médicament',
-    endpoint: 'DonneesMedicament'
+    onSuccess: (response) => {
+      listePrises.value.push({
+        id: response.id,
+        nom: medicamentName,
+        nombreComprimes: values.nombreComprimes,
+        commentaire: values.commentaire || 'Pas de commentaire',
+        date: formatDateDisplay(values.date),
+        time: formatTimeDisplay(values.time),
+      })
+    },
+    resetFormData: () => {
+      prise.value = {
+        nom: '',
+        date: getCurrentDateInput(),
+        time: getCurrentTimeInput(),
+        commentaire: '',
+        medicamentId: '',
+        nombreComprimes: 1
+      }
+    }
   })
+}
+
+const onSubmitSessionForm = () => {
+  const values = session.value
+  const traitementName = traitementsNonMedicamenteux.value.find(t => t.id === values.medicamentId)?.nom
+
+  const dataToSend = {
+    medicamentId: values.medicamentId,
+    duree: values.duree || null,
+    date: combineDateTime(values.date, values.time),
+    commentaire: values.commentaire || 'Pas de commentaire',
+    carnetSanteId: authStore.user?.carnetSanteId,
+  }
+
+  submitSessionForm(dataToSend, {
+    submitFunction: (data) => apiService.postDonneesTraitementNonMedicamenteux(data),
+    successMessage: 'La session a été enregistrée avec succès',
+    errorMessage: 'Une erreur est survenue lors de l\'enregistrement de la session',
+    onSuccess: (response) => {
+      listeSessions.value.push({
+        id: response.id,
+        nom: traitementName,
+        duree: values.duree || '-',
+        date: formatDateDisplay(values.date),
+        time: formatTimeDisplay(values.time),
+        commentaire: values.commentaire || 'Pas de commentaire',
+      })
+    },
+    resetFormData: () => {
+      session.value = {
+        medicamentId: '',
+        duree: null,
+        date: getCurrentDateInput(),
+        time: getCurrentTimeInput(),
+        commentaire: ''
+      }
+    }
+  })
+}
+
+const handleDeleteSession = async (id: number) => {
+  try {
+    await apiService.deleteDonneesTraitementNonMedicamenteux(id)
+    listeSessions.value = listeSessions.value.filter(s => s.id !== id)
+    toast({
+      title: 'Succès',
+      description: 'La session a été supprimée avec succès',
+    })
+  } catch (error) {
+    console.error(error)
+    toast({
+      title: 'Erreur',
+      description: 'Une erreur est survenue lors de la suppression de la session',
+      variant: 'destructive'
+    })
+  }
 }
 
 const onSubmitTraitementForm = () => {
   const values = traitement.value
-  const valuesWithCarnetSanteId = {
-    ...values,
+  const dataToSend = {
+    nom: values.nom,
+    type: Number(values.type),
+    posologie: values.posologie || null,
     dateDebutTraitement: new Date(values.dateDebutTraitement),
     carnetSanteId: authStore.user?.carnetSanteId,
     traitementEnCours: true
   }
 
-  apiService.postMedicament(valuesWithCarnetSanteId).then((response) => {
-    const medicamentAdded: any = {
-      ...valuesWithCarnetSanteId,
-      id: response.id
+  submitTraitementForm(dataToSend, {
+    submitFunction: (data) => apiService.postMedicament(data),
+    successMessage: 'Le traitement a été ajouté avec succès',
+    errorMessage: 'Une erreur est survenue lors de l\'ajout du traitement',
+    onSuccess: (response) => {
+      const medicamentAdded: any = {
+        ...dataToSend,
+        id: response.id
+      }
+      traitementsEnCours.value.push(medicamentAdded)
+
+      // Ajouter à la liste appropriée selon le type
+      if (Number(values.type) === TypeTraitement.Medicamenteux) {
+        medicaments.value.push(medicamentAdded)
+      } else {
+        traitementsNonMedicamenteux.value.push(medicamentAdded)
+      }
+    },
+    resetFormData: () => {
+      traitement.value = {
+        nom: '',
+        type: String(TypeTraitement.Medicamenteux),
+        posologie: '',
+        dateDebutTraitement: ''
+      }
     }
-    traitementsEnCours.value.push(medicamentAdded)
-    medicaments.value.push(medicamentAdded)
-  }).catch((error) => {
-    console.error(error)
   })
 }
 
@@ -493,6 +815,7 @@ function editTraitement(traitementId) {
 
     traitementForm.value = {
       ...traitementToEdit,
+      type: String(traitementToEdit.type),
       dateDebutTraitement: formattedStartDate,
       dateFinTraitement: formattedEndDate
     }
@@ -501,37 +824,46 @@ function editTraitement(traitementId) {
 
 const onSubmitEditTraitement = () => {
   const values = traitementForm.value
-  const valuesWithCarnetSanteId = {
-    ...values,
-    dateDebutTraitement: new Date(values.dateDebutTraitement),
-    carnetSanteId: authStore.user?.carnetSanteId,
-    traitementEnCours: values.traitementEnCours === true
-  }
   const traitementId: any = values.id
 
-  apiService.putDonneesMedicament(traitementId, valuesWithCarnetSanteId).then(() => {
-    const indexEnCours = traitementsEnCours.value.findIndex(traitement => traitement.id === traitementId)
-    const indexPasses = traitementsPasses.value.findIndex(traitement => traitement.id === traitementId)
+  // Créer un objet propre avec seulement les propriétés nécessaires
+  const dataToSend = {
+    id: traitementId,
+    nom: values.nom,
+    type: Number(values.type),
+    posologie: values.posologie || null,
+    dateDebutTraitement: new Date(values.dateDebutTraitement),
+    dateFinTraitement: values.dateFinTraitement ? new Date(values.dateFinTraitement) : null,
+    traitementEnCours: values.traitementEnCours === 'true' || values.traitementEnCours === true,
+    carnetSanteId: authStore.user?.carnetSanteId
+  }
 
-    if (valuesWithCarnetSanteId.traitementEnCours) {
-      if (indexEnCours !== -1) {
-        traitementsEnCours.value[indexEnCours] = valuesWithCarnetSanteId
+  submitEditForm(dataToSend, {
+    submitFunction: (data) => apiService.putDonneesMedicament(traitementId, data),
+    successMessage: 'Le traitement a été modifié avec succès',
+    errorMessage: 'Une erreur est survenue lors de la modification du traitement',
+    onSuccess: () => {
+      const indexEnCours = traitementsEnCours.value.findIndex(traitement => traitement.id === traitementId)
+      const indexPasses = traitementsPasses.value.findIndex(traitement => traitement.id === traitementId)
+
+      if (dataToSend.traitementEnCours) {
+        if (indexEnCours !== -1) {
+          traitementsEnCours.value[indexEnCours] = dataToSend
+        } else {
+          traitementsEnCours.value.push(dataToSend)
+        }
+        if (indexPasses !== -1) {
+          traitementsPasses.value.splice(indexPasses, 1)
+        }
       } else {
-        traitementsEnCours.value.push(valuesWithCarnetSanteId)
-      }
-      if (indexPasses !== -1) {
-        traitementsPasses.value.splice(indexPasses, 1)
-      }
-    } else {
-      if (indexEnCours !== -1) {
-        traitementsEnCours.value.splice(indexEnCours, 1)
-      }
-      if (indexPasses === -1) {
-        traitementsPasses.value.push(valuesWithCarnetSanteId)
+        if (indexEnCours !== -1) {
+          traitementsEnCours.value.splice(indexEnCours, 1)
+        }
+        if (indexPasses === -1) {
+          traitementsPasses.value.push(dataToSend)
+        }
       }
     }
-  }).catch((error) => {
-    console.error(error)
   })
 }
 

@@ -11,6 +11,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : IdentityDbCo
     public DbSet<CarnetSante> CarnetSantes { get; set; }
     public DbSet<Medicament> Medicaments { get; set; }
     public DbSet<DonneesMedicament> DonneesMedicaments { get; set; }
+    public DbSet<DonneesTraitementNonMedicamenteux> DonneesTraitementNonMedicamenteux { get; set; }
     public DbSet<DonneesTransit> DonneesTransit { get; set; }
     public DbSet<JourRegle> JourRegles { get; set; }
     public DbSet<BilanQuotidien> BilansQuotidiens { get; set; }
@@ -81,6 +82,20 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : IdentityDbCo
         
         // DonneesMedicament → Medicament (NO ACTION pour éviter cascade multiple)
         modelBuilder.Entity<DonneesMedicament>()
+            .HasOne(d => d.Medicament)
+            .WithMany()
+            .HasForeignKey(d => d.MedicamentId)
+            .OnDelete(DeleteBehavior.Restrict); // ← IMPORTANT : Pas de cascade
+
+        // DonneesTraitementNonMedicamenteux → CarnetSante (CASCADE OK)
+        modelBuilder.Entity<DonneesTraitementNonMedicamenteux>()
+            .HasOne<CarnetSante>()
+            .WithMany(c => c.DonneesTraitementNonMedicamenteux)
+            .HasForeignKey(d => d.CarnetSanteId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        // DonneesTraitementNonMedicamenteux → Medicament (NO ACTION pour éviter cascade multiple)
+        modelBuilder.Entity<DonneesTraitementNonMedicamenteux>()
             .HasOne(d => d.Medicament)
             .WithMany()
             .HasForeignKey(d => d.MedicamentId)

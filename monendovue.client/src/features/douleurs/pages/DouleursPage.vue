@@ -176,6 +176,7 @@ import { useAuthStore } from '@/features/auth/store/auth'
 import { useMonthData } from '@/shared/composables/useMonthData'
 import { useDateTimeFormat } from '@/shared/composables/useDateTimeFormat'
 import { useCrudOperations } from '@/shared/composables/useCrudOperations'
+import { useDialogForm } from '@/shared/composables/useDialogForm'
 import { format, eachDayOfInterval, startOfMonth, endOfMonth } from 'date-fns'
 
 const authStore = useAuthStore()
@@ -225,6 +226,7 @@ const { deleteEntry, createEntry, updateEntry } = useCrudOperations(entries)
 
 const isEditMode = ref(false)
 const isDialogOpen = ref(false)
+const { submitForm } = useDialogForm(isDialogOpen)
 
 const columns: any = [
   { data: 'type' },
@@ -339,49 +341,57 @@ const form = useForm({
 })
 
 const onSubmit = form.handleSubmit((values) => {
+  const dataToSend = {
+    typeDouleur: values.type.trim(),
+    intensite: values.intensite[0],
+    date: combineDateTime(values.date, values.time),
+    commentaire: values.commentaire || 'Pas de commentaire',
+    carnetSanteId: authStore.user?.carnetSanteId,
+  }
+
   if (isEditMode.value && values.id !== null) {
-    updateEntry(values.id, values, {
-      updateFunction: (id, data) => apiService.editDonneesDouleurs(id as number, data),
-      formatForApi: (data) => ({
-        typeDouleur: data.type.trim(),
-        intensite: data.intensite[0],
-        date: combineDateTime(data.date, data.time),
-        commentaire: data.commentaire || 'Pas de commentaire',
-        carnetSanteId: authStore.user?.carnetSanteId,
-      }),
-      formatForDisplay: (data) => ({
-        id: data.id,
-        type: data.type,
-        date: formatDateDisplay(data.date),
-        time: formatTimeDisplay(data.time),
-        intensite: data.intensite[0],
-        commentaire: data.commentaire || 'Pas de commentaire',
-      }),
+    // Mode édition
+    submitForm(dataToSend, {
+      submitFunction: (data) => apiService.editDonneesDouleurs(values.id as number, data),
       successMessage: 'La douleur a été modifiée avec succès',
       errorMessage: 'Un problème est survenu lors de la modification de la douleur',
-      endpoint: 'DonneesDouleurs'
+      onSuccess: () => {
+        const entryIndex = entries.value.findIndex((entry) => entry.id === values.id)
+        if (entryIndex !== -1) {
+          entries.value[entryIndex] = {
+            id: values.id,
+            type: values.type,
+            date: formatDateDisplay(values.date),
+            time: formatTimeDisplay(values.time),
+            intensite: values.intensite[0],
+            commentaire: values.commentaire || 'Pas de commentaire',
+          }
+        }
+        isEditMode.value = false
+      },
+      resetFormData: () => {
+        form.resetForm()
+      }
     })
   } else {
-    createEntry(values, {
-      createFunction: (data) => apiService.postDonneesDouleurs(data),
-      formatForApi: (data) => ({
-        typeDouleur: data.type.trim(),
-        intensite: data.intensite[0],
-        date: combineDateTime(data.date, data.time),
-        commentaire: data.commentaire || 'Pas de commentaire',
-        carnetSanteId: authStore.user?.carnetSanteId,
-      }),
-      formatForDisplay: (data, response) => ({
-        id: response.id,
-        type: data.type,
-        date: formatDateDisplay(data.date),
-        time: formatTimeDisplay(data.time),
-        intensite: data.intensite[0],
-        commentaire: data.commentaire || 'Pas de commentaire',
-      }),
+    // Mode création
+    submitForm(dataToSend, {
+      submitFunction: (data) => apiService.postDonneesDouleurs(data),
       successMessage: 'La douleur a été ajoutée avec succès',
       errorMessage: 'Un problème est survenu lors de l\'ajout de la douleur',
-      endpoint: 'DonneesDouleurs'
+      onSuccess: (response) => {
+        entries.value.push({
+          id: response.id,
+          type: values.type,
+          date: formatDateDisplay(values.date),
+          time: formatTimeDisplay(values.time),
+          intensite: values.intensite[0],
+          commentaire: values.commentaire || 'Pas de commentaire',
+        })
+      },
+      resetFormData: () => {
+        form.resetForm()
+      }
     })
   }
 })
