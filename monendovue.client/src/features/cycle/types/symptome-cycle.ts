@@ -10,4 +10,5 @@ export interface SymptomeCycle {
     date: Date;
     intensite: number;
     commentaire?: string;
+    photoUrl?: string
 }

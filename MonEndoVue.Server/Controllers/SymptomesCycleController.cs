@@ -10,7 +10,7 @@ namespace MonEndoVue.Server.Controllers
     [Route("[controller]")]
     [ApiController]
     [Authorize]
-    public class SymptomesCycleController(AppDbContext context, CarnetSanteService carnetSanteService) : ControllerBase
+    public class SymptomesCycleController(AppDbContext context, CarnetSanteService carnetSanteService, AzureBlobStorageService azureBlobStorageService) : ControllerBase
     {
         // GET: SymptomesCycle/5
         [HttpGet("{id:int}")]
@@ -44,40 +44,48 @@ namespace MonEndoVue.Server.Controllers
         // POST: SymptomesCycle
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPost]
-        public async Task<ActionResult<SymptomeCycle>> PostSymptomeCycle(SymptomeCycle symptomeCycle)
+        public async Task<ActionResult<SymptomeCycle>> PostSymptomeCycle([FromForm] SymptomeCycle symptomeCycle, [FromForm] IFormFile? photo)
         {
             var securityCheck = await this.ValidateCarnetAccess(carnetSanteService, symptomeCycle.CarnetSanteId);
             if (securityCheck != null) return securityCheck;
-            
+
+            if (photo != null)
+            {
+                var fileName = $"symptomes/{Guid.NewGuid()}_{photo.FileName}";
+                symptomeCycle.PhotoUrl = await azureBlobStorageService.UploadFileAsync(photo, fileName);
+            }
+
             context.SymptomesCycles.Add(symptomeCycle);
             await context.SaveChangesAsync();
 
-            var carnetSanteId = symptomeCycle.CarnetSanteId;
-            carnetSanteService.InvalidateCache(carnetSanteId);
+            carnetSanteService.InvalidateCache(symptomeCycle.CarnetSanteId);
 
             return CreatedAtAction("GetSymptomeCycle", new { id = symptomeCycle.Id }, symptomeCycle);
         }
-        
-        // DELETE: SymptomesCycle/5
+
         [HttpDelete("{id:int}")]
         public async Task<IActionResult> DeleteSymptomeCycle(int id)
         {
             var symptomeCycle = await context.SymptomesCycles.FindAsync(id);
-            if (symptomeCycle == null)
-            {
-                return NotFound();
-            }
-            
+            if (symptomeCycle == null) return NotFound();
+
             var securityCheck = await this.ValidateCarnetAccess(carnetSanteService, symptomeCycle.CarnetSanteId);
             if (securityCheck != null) return securityCheck;
+
+            // Supprimer la photo si elle existe
+            if (!string.IsNullOrEmpty(symptomeCycle.PhotoUrl))
+            {
+                var fileName = symptomeCycle.PhotoUrl.Split('/').Last();
+                await azureBlobStorageService.DeleteFileAsync(fileName);
+            }
 
             context.SymptomesCycles.Remove(symptomeCycle);
             await context.SaveChangesAsync();
 
-            var carnetSanteId = symptomeCycle.CarnetSanteId;
-            carnetSanteService.InvalidateCache(carnetSanteId);
+            carnetSanteService.InvalidateCache(symptomeCycle.CarnetSanteId);
 
             return NoContent();
         }
+
     }
 }

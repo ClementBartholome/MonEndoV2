@@ -12,4 +12,5 @@ public class SymptomeCycle
     public int Intensite { get; set; }
     [TsOptional]
     public string? Commentaire { get; set; }
+    public string? PhotoUrl { get; set; }
 }

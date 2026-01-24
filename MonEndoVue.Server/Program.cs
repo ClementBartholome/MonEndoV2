@@ -36,7 +36,7 @@ namespace MonEndoVue.Server
                 .AddUserSecrets<Program>();
 
             // TypeGen generate --project-folder "C:\\Users\\Clementoss\\source\\repos\\MonEndoVue\\MonEndoVue.Server" --output-folder "C:\\Users\\Clementoss\\source\\repos\\MonEndoVue\\monendovue.client\\src\\interfaces"
-            
+
             Log.Logger = new LoggerConfiguration()
                 .MinimumLevel.Debug()
                 .MinimumLevel.Override("Microsoft", LogEventLevel.Information)
@@ -93,6 +93,25 @@ namespace MonEndoVue.Server
             builder.Services
                 .AddDefaultIdentity<ApplicationUser>(options => options.SignIn.RequireConfirmedAccount = true)
                 .AddEntityFrameworkStores<AppDbContext>();
+
+            var azureBlobOptions = new AzureBlobStorageOptions
+            {
+                ConnectionString = Environment.GetEnvironmentVariable("AZURE_STORAGE_CONNECTION_STRING") 
+                                   ?? builder.Configuration["AzureBlobStorage:ConnectionString"],
+                ContainerName = Environment.GetEnvironmentVariable("AZURE_CONTAINER_NAME") 
+                                ?? builder.Configuration["AzureBlobStorage:ContainerName"]
+            };
+
+            builder.Services.Configure<AzureBlobStorageOptions>(options =>
+            {
+                options.ConnectionString = azureBlobOptions.ConnectionString;
+                options.ContainerName = azureBlobOptions.ContainerName;
+            });
+
+            builder.Services.AddScoped<AzureBlobStorageService>();
+
+
+
 
             builder.Services.AddControllers().AddJsonOptions(options =>
             {

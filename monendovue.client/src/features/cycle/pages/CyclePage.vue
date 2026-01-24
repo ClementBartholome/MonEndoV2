@@ -293,6 +293,16 @@
                         <FormMessage/>
                       </FormItem>
                     </FormField>
+                    <FormField name="photo">
+                      <FormItem>
+                        <FormLabel>Photo <span>(optionnel)</span></FormLabel>
+                        <FormControl>
+                          <Input type="file" accept="image/*" @change="handlePhotoUpload" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    </FormField>
+                    
                     <Button type="submit" variant="custom" class="mt-4" @click="onSubmit">
                       Enregistrer
                     </Button>
@@ -323,6 +333,17 @@
 
         </section>
       </TabsContent>
+      <!-- Photo Modal -->
+      <Dialog v-model:open="showPhotoModal">
+        <DialogContent class="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Photo</DialogTitle>
+          </DialogHeader>
+          <div class="flex justify-center">
+            <img v-if="selectedPhotoUrl" :src="selectedPhotoUrl" alt="Photo symptôme" class="max-w-full max-h-96 rounded-lg" />
+          </div>
+        </DialogContent>
+      </Dialog>
     </Tabs>
   </div>
 </template>
@@ -371,6 +392,15 @@ const showEndPeriodDialog = ref(false)
 const selectedPeriodToEnd = ref<any>(null)
 const endPeriodDate = ref('')
 
+const showPhotoModal = ref(false)
+const selectedPhotoUrl = ref('')
+
+const openPhotoModal = (url: string) => {
+  selectedPhotoUrl.value = url
+  showPhotoModal.value = true
+}
+
+
 // Period marking
 const periodMarked = ref(false)
 const isLoadingPeriod = ref(true)
@@ -386,6 +416,15 @@ const joursFertiles = ref<Date[]>([])
 const joursSpotting = ref<Date[]>([])
 const joursAcne = ref<Date[]>([])
 const cycleMoyen = ref(28)
+const selectedPhoto = ref<File | null>(null)
+
+const handlePhotoUpload = (event: Event) => {
+  const target = event.target as HTMLInputElement
+  if (target.files && target.files[0]) {
+    selectedPhoto.value = target.files[0]
+  }
+}
+
 
 const { entries, isLoading, refetch } = useMonthData<SymptomeCycle>({
   fetchFunction: async (month, year) => {
@@ -406,7 +445,8 @@ const { entries, isLoading, refetch } = useMonthData<SymptomeCycle>({
       date: formatDateDisplay(symptomeCycle.date),
       time: formatTimeDisplay(symptomeCycle.date),
       intensite: symptomeCycle.intensite,
-      commentaire: symptomeCycle.commentaire || 'Pas de commentaire'
+      commentaire: symptomeCycle.commentaire || 'Pas de commentaire',
+      photoUrl: symptomeCycle.photoUrl || ''
     }))
   },
   immediate: false
@@ -437,9 +477,10 @@ const columns: any = [
   { data: 'intensite' },
   { data: 'commentaire' },
   {
-    data: null,
-    defaultContent: '<span class="material-symbols-outlined delete-btn">delete</span>'
-  }
+    data: 'photoUrl',
+    render: (data: string) => data ? `<i class="material-symbols-outlined cursor-pointer photo-icon" data-url="${data}">photo_camera</i>` : ''
+  },
+  { data: null, defaultContent: '<span class="material-symbols-outlined delete-btn">delete</span>' }
 ]
 
 // Group consecutive acné entries
@@ -599,6 +640,18 @@ onMounted(() => {
   fetchJoursRegles()
   refetch()
 })
+
+onMounted(() => {
+  nextTick(() => {
+    document.addEventListener('click', (e) => {
+      const target = e.target as HTMLElement
+      if (target.classList.contains('photo-icon') && target.dataset.url) {
+        openPhotoModal(target.dataset.url)
+      }
+    })
+  })
+})
+
 
 onMounted(async () => {
   // Check if period was already marked today
@@ -922,15 +975,18 @@ const onSubmit = form.handleSubmit(async (values) => {
     }
   } else {
     // Handle single day submission
-    const dataToSend = {
-      typeSymptome: entry.value.typeSymptome,
-      carnetSanteId: user?.carnetSanteId,
-      date: combineDateTime(values.date ?? '', values.time ?? ''),
-      intensite: values.intensite[0],
-      commentaire: values.commentaire || 'Pas de commentaire',
+    const formData = new FormData()
+    formData.append('typeSymptome', entry.value.typeSymptome)
+    formData.append('carnetSanteId', user!.carnetSanteId.toString())
+    formData.append('date', combineDateTime(values.date ?? '', values.time ?? '').toISOString())
+    formData.append('intensite', values.intensite[0].toString())
+    formData.append('commentaire', values.commentaire || 'Pas de commentaire')
+    if (selectedPhoto.value) {
+      formData.append('photo', selectedPhoto.value)
     }
+    
 
-    submitForm(dataToSend, {
+    submitForm(formData, {
       submitFunction: (data) => apiService.postDonneesSymptomesCycle(data),
       successMessage: 'Symptôme ajouté avec succès',
       errorMessage: 'Une erreur est survenue lors de l\'ajout du symptôme',
