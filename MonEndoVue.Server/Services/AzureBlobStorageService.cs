@@ -1,4 +1,5 @@
 ﻿using Azure.Storage.Blobs;
+using Azure.Storage.Blobs.Models;
 using Microsoft.Extensions.Options;
 
 namespace MonEndoVue.Server.Services;
@@ -27,9 +28,18 @@ public class AzureBlobStorageService
         return blobClient.Uri.ToString();
     }
 
-    public async Task DeleteFileAsync(string fileName)
+    public string GetBlobNameFromUrl(string url)
     {
-        var blobClient = _containerClient.GetBlobClient(fileName);
-        await blobClient.DeleteAsync();
+        if (string.IsNullOrWhiteSpace(url)) return string.Empty;
+        var uri = new Uri(url);
+        var segments = uri.AbsolutePath.Split('/', StringSplitOptions.RemoveEmptyEntries);
+        return segments.Length <= 1 ? string.Empty : string.Join('/', segments.Skip(1));
+    }
+
+    public async Task DeleteFileAsync(string blobName)
+    {
+        if (string.IsNullOrWhiteSpace(blobName)) return;
+        var blobClient = _containerClient.GetBlobClient(blobName);
+        await blobClient.DeleteIfExistsAsync(DeleteSnapshotsOption.IncludeSnapshots);
     }
 }

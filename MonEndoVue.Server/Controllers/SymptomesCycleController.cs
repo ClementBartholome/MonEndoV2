@@ -75,8 +75,8 @@ namespace MonEndoVue.Server.Controllers
             // Supprimer la photo si elle existe
             if (!string.IsNullOrEmpty(symptomeCycle.PhotoUrl))
             {
-                var fileName = symptomeCycle.PhotoUrl.Split('/').Last();
-                await azureBlobStorageService.DeleteFileAsync(fileName);
+                var blobName = azureBlobStorageService.GetBlobNameFromUrl(symptomeCycle.PhotoUrl);
+                await azureBlobStorageService.DeleteFileAsync(blobName);
             }
 
             context.SymptomesCycles.Remove(symptomeCycle);

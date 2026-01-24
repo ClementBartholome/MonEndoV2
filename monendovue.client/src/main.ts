@@ -17,22 +17,22 @@ createApp(App).use(router).use(pinia).use(OneSignalVuePlugin, {
 
 ApiService.init(pinia);
 
-if ('serviceWorker' in navigator) {
-    const updateSW = registerSW({
-        immediate: true,
-        onNeedRefresh() {
-            console.log('🔄 New content available, refresh to update');
-        },
-        onOfflineReady() {
-            console.log('📱 App ready to work offline');
-        },
-        onRegistered(r) {
-            console.log('✅ SW Registered:', r);
-        },
-        onRegisterError(error) {
-            console.error('❌ SW registration error:', error);
-        }
-    });
-} else {
-    console.warn('⚠️ Service Worker not supported in this browser');
-}
+// if ('serviceWorker' in navigator) {
+//     const updateSW = registerSW({
+//         immediate: true,
+//         onNeedRefresh() {
+//             console.log('🔄 New content available, refresh to update');
+//         },
+//         onOfflineReady() {
+//             console.log('📱 App ready to work offline');
+//         },
+//         onRegistered(r) {
+//             console.log('✅ SW Registered:', r);
+//         },
+//         onRegisterError(error) {
+//             console.error('❌ SW registration error:', error);
+//         }
+//     });
+// } else {
+//     console.warn('⚠️ Service Worker not supported in this browser');
+// }

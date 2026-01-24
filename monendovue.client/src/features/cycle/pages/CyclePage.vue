@@ -297,12 +297,18 @@
                       <FormItem>
                         <FormLabel>Photo <span>(optionnel)</span></FormLabel>
                         <FormControl>
-                          <Input type="file" accept="image/*" @change="handlePhotoUpload" />
+                          <Input
+                              type="file"
+                              accept="image/*"
+                              capture="environment"
+                              @change="handlePhotoUpload"
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
                     </FormField>
-                    
+
+
                     <Button type="submit" variant="custom" class="mt-4" @click="onSubmit">
                       Enregistrer
                     </Button>
@@ -420,11 +426,9 @@ const selectedPhoto = ref<File | null>(null)
 
 const handlePhotoUpload = (event: Event) => {
   const target = event.target as HTMLInputElement
-  if (target.files && target.files[0]) {
-    selectedPhoto.value = target.files[0]
-  }
+  const file = target.files?.[0] ?? null
+  selectedPhoto.value = file
 }
-
 
 const { entries, isLoading, refetch } = useMonthData<SymptomeCycle>({
   fetchFunction: async (month, year) => {
@@ -985,7 +989,6 @@ const onSubmit = form.handleSubmit(async (values) => {
       formData.append('photo', selectedPhoto.value)
     }
     
-
     submitForm(formData, {
       submitFunction: (data) => apiService.postDonneesSymptomesCycle(data),
       successMessage: 'Symptôme ajouté avec succès',
@@ -998,6 +1001,7 @@ const onSubmit = form.handleSubmit(async (values) => {
           time: formatTimeDisplay(values.time || ''),
           intensite: values.intensite[0],
           commentaire: values.commentaire || 'Pas de commentaire',
+          photoUrl: response.photoUrl || ''
         })
       },
       resetFormData: () => {
