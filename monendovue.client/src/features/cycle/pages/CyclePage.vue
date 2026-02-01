@@ -458,10 +458,10 @@ const { entries, isLoading, refetch } = useMonthData<SymptomeCycle>({
 
 const { deleteEntry, createEntry } = useCrudOperations(entries)
 
-const entry = ref({
+const getDefaultEntryValues = () => ({
   typeSymptome: '',
-  date: '',
-  time: '',
+  date: format(new Date(), 'yyyy-MM-dd'),
+  time: format(new Date(), 'HH:mm'),
   intensite: 0,
   commentaire: '',
   isPeriod: false,
@@ -469,6 +469,8 @@ const entry = ref({
   dateFin: '',
   enCours: false
 })
+
+const entry = ref(getDefaultEntryValues())
 
 // Confirmation dialog for calendar clicks
 const showConfirmJourRegleDialog = ref(false)
@@ -552,6 +554,7 @@ const processedEntries = computed(() => {
         time: `${acneGroup.length} jour${acneGroup.length > 1 ? 's' : ''}`,
         intensite: avgIntensity,
         commentaire: acneGroup[0].commentaire,
+        photoUrl: acneGroup[0].photoUrl || '',
         isGroup: true,
         groupedEntries: acneGroup,
         entryIds: acneGroup.map(e => e.id)
@@ -903,7 +906,9 @@ const form = useForm({
   validationSchema: formSchema,
   initialValues: {
     intensite: [5],
-    typeSymptome: "Sélectionnez un symptôme"
+    typeSymptome: "Sélectionnez un symptôme",
+    date: format(new Date(), 'yyyy-MM-dd'),
+    time: format(new Date(), 'HH:mm')
   }
 })
 
@@ -935,18 +940,62 @@ const onSubmit = form.handleSubmit(async (values) => {
       currentDate.setDate(currentDate.getDate() + 1)
     }
 
-    // Create entries for each day
-    const entriesToCreate = dates.map(date => ({
-      typeSymptome: entry.value.typeSymptome,
-      carnetSanteId: user?.carnetSanteId,
-      date: combineDateTime(format(date, 'yyyy-MM-dd'), '12:00'),
-      intensite: values.intensite[0],
-      commentaire: values.commentaire || 'Pas de commentaire',
-    }))
+    let firstDayResponse = null
 
     try {
-      const promises = entriesToCreate.map(entryData => apiService.postDonneesSymptomesCycle(entryData))
-      await Promise.all(promises)
+      if (selectedPhoto.value) {
+        const firstDate = dates[0]
+        const firstDayFormData = new FormData()
+        firstDayFormData.append('typeSymptome', entry.value.typeSymptome)
+        firstDayFormData.append('carnetSanteId', user!.carnetSanteId.toString())
+        firstDayFormData.append('date', combineDateTime(format(firstDate, 'yyyy-MM-dd'), '12:00').toISOString())
+        firstDayFormData.append('intensite', values.intensite[0].toString())
+        firstDayFormData.append('commentaire', values.commentaire || 'Pas de commentaire')
+        firstDayFormData.append('photo', selectedPhoto.value)
+
+        firstDayResponse = await apiService.postDonneesSymptomesCycle(firstDayFormData)
+
+        if (dates.length === 1) {
+          await refetch()
+          toast({
+            title: 'Succès',
+            description: `Période ajoutée (${entry.value.typeSymptome}, 1 jour)`,
+            variant: 'custom',
+          })
+
+          entry.value = getDefaultEntryValues()
+          selectedPhoto.value = null
+          form.resetForm()
+          showAddDialog.value = false
+          return
+        }
+
+        const remainingDates = dates.slice(1)
+        const remainingPromises = remainingDates.map(date => {
+          const formData = new FormData()
+          formData.append('typeSymptome', entry.value.typeSymptome)
+          formData.append('carnetSanteId', user!.carnetSanteId.toString())
+          formData.append('date', combineDateTime(format(date, 'yyyy-MM-dd'), '12:00').toISOString())
+          formData.append('intensite', values.intensite[0].toString())
+          formData.append('commentaire', values.commentaire || 'Pas de commentaire')
+          return apiService.postDonneesSymptomesCycle(formData)
+        })
+
+        await Promise.all(remainingPromises)
+      } else {
+        const promises = dates.map(date => {
+          const formData = new FormData()
+          formData.append('typeSymptome', entry.value.typeSymptome)
+          formData.append('carnetSanteId', user!.carnetSanteId.toString())
+          formData.append('date', combineDateTime(format(date, 'yyyy-MM-dd'), '12:00').toISOString())
+          formData.append('intensite', values.intensite[0].toString())
+          formData.append('commentaire', values.commentaire || 'Pas de commentaire')
+          return apiService.postDonneesSymptomesCycle(formData)
+        })
+
+        await Promise.all(promises)
+      }
+
       await refetch()
 
       toast({
@@ -956,26 +1005,26 @@ const onSubmit = form.handleSubmit(async (values) => {
       })
 
       // Reset and close
-      entry.value = {
-        typeSymptome: '',
-        date: '',
-        time: '',
-        intensite: 0,
-        commentaire: '',
-        isPeriod: false,
-        dateDebut: '',
-        dateFin: '',
-        enCours: false
-      }
+      entry.value = getDefaultEntryValues()
+      selectedPhoto.value = null
       form.resetForm()
       showAddDialog.value = false
     } catch (error) {
       console.error('Error creating period:', error)
+
+      const errorMessage = selectedPhoto.value && firstDayResponse
+        ? 'La première journée a été ajoutée mais les jours suivants ont échoué. Veuillez réessayer pour les jours manquants.'
+        : 'Une erreur est survenue lors de l\'ajout de la période'
+
       toast({
         title: 'Erreur',
-        description: 'Une erreur est survenue lors de l\'ajout de la période',
+        description: errorMessage,
         variant: 'destructive',
       })
+
+      if (firstDayResponse) {
+        await refetch()
+      }
     }
   } else {
     // Handle single day submission
@@ -1005,17 +1054,8 @@ const onSubmit = form.handleSubmit(async (values) => {
         })
       },
       resetFormData: () => {
-        entry.value = {
-          typeSymptome: '',
-          date: '',
-          time: '',
-          intensite: 0,
-          commentaire: '',
-          isPeriod: false,
-          dateDebut: '',
-          dateFin: '',
-          enCours: false
-        }
+        entry.value = getDefaultEntryValues()
+        selectedPhoto.value = null
         form.resetForm()
       }
     })
