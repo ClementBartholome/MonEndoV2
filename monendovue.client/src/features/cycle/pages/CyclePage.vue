@@ -318,6 +318,8 @@
             </div>
           </div>
 
+          <SelectMonth v-model="symptomesMonthYear"/>
+
           <div v-if="isLoading" class="flex flex-col space-y-3">
             <Skeleton class="h-[300px] w-full mt-4 rounded-xl"/>
           </div>
@@ -371,6 +373,7 @@ import { Slider } from "@/shared/components/ui/slider"
 import { Skeleton } from "@/shared/components/ui/skeleton"
 import Datatable from "@/shared/components/Datatable.vue"
 import BackButton from "@/shared/components/BackButton.vue"
+import SelectMonth from "@/shared/components/SelectMonth.vue"
 
 import apiService from "@/shared/services/apiService"
 import { useAuthStore } from "@/features/auth/store/auth"
@@ -430,7 +433,7 @@ const handlePhotoUpload = (event: Event) => {
   selectedPhoto.value = file
 }
 
-const { entries, isLoading, refetch } = useMonthData<SymptomeCycle>({
+const { selectedMonthYear: symptomesMonthYear, entries, isLoading, refetch } = useMonthData<SymptomeCycle>({
   fetchFunction: async (month, year) => {
     return apiService.getSymptomesByMonth(user!.carnetSanteId, month, year)
   },
