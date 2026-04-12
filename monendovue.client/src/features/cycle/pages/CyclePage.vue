@@ -12,20 +12,17 @@
       </TabsList>
       <TabsContent value="cycles">
         <section class="container !mt-0 mx-auto py-4 w-full bg-clearer rounded-3xl shadow-xl ml-auto">
-          <!-- Period marking section - only show if not marked today -->
-          <div v-if="isLoadingPeriod" class="flex flex-col space-y-3 p-6 mb-4">
+          <!-- Period marking section -->
+          <div v-if="isLoadingPeriod" class="flex flex-col space-y-3 mb-4">
             <Skeleton class="h-[80px] w-full rounded-xl"/>
           </div>
-          <div v-else-if="!periodMarked" class="mb-6 p-4 bg-red-50 rounded-xl border-2 border-red-200">
-            <div class="flex items-center justify-between">
-              <div class="flex items-center gap-3">
-                <span class="text-lg font-medium">As-tu eu tes règles aujourd'hui ?</span>
-              </div>
-              <div class="ml-auto">
-                <Button variant="custom" @click="markPeriodToday">Oui</Button>
-              </div>
-            </div>
-          </div>
+          <PeriodQuickAdd
+            v-else
+            :isPeriodMarkedToday="periodMarked"
+            :onMarkPeriod="handleMarkPeriod"
+            @marked="onPeriodMarked"
+            class="mb-4"
+          />
 
           <div class="flex flex-col items-center m-auto mb-2" style="max-width: 46%">
             <div class="flex items-center">
@@ -326,10 +323,33 @@
 
           <SelectMonth v-model="symptomesMonthYear"/>
 
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-4 mb-4">
+            <div class="bg-white border border-gray-200 rounded-xl p-3 shadow-sm">
+              <p class="text-xs text-gray-500">Jours d'acné (mois)</p>
+              <p class="text-2xl font-semibold text-headline">{{ acneMonthlyStats.totalDays }}</p>
+            </div>
+            <div class="bg-white border border-gray-200 rounded-xl p-3 shadow-sm">
+              <p class="text-xs text-gray-500">Intensité moyenne</p>
+              <p class="text-2xl font-semibold text-headline">{{ acneMonthlyStats.avgIntensity }}</p>
+            </div>
+          </div>
+
+          <div class="flex gap-2 overflow-x-auto pb-1 mb-3">
+            <Button
+              v-for="filter in symptomFilters"
+              :key="filter"
+              size="sm"
+              :variant="selectedSymptomeFilter === filter ? 'selected' : 'outline'"
+              @click="selectedSymptomeFilter = filter"
+            >
+              {{ filter }}
+            </Button>
+          </div>
+
           <div v-if="isLoading" class="flex flex-col space-y-3">
             <Skeleton class="h-[300px] w-full mt-4 rounded-xl"/>
           </div>
-          <Datatable v-else-if="processedEntries.length > 0" :entries="processedEntries" :columns="columns" :deleteFunction="handleDelete">
+          <Datatable v-else-if="filteredProcessedEntries.length > 0" :entries="filteredProcessedEntries" :columns="columns" :deleteFunction="handleDelete">
             <thead>
             <tr>
               <th>Type</th>
@@ -393,6 +413,9 @@ import { format, parseISO } from 'date-fns'
 import type { SymptomeCycle } from "@/features/cycle/types/symptome-cycle"
 import offlineStorage from "@/shared/services/offlineStorage"
 import {Checkbox} from "@/shared/components/ui/checkbox";
+import PeriodQuickAdd from "@/features/cycle/components/PeriodQuickAdd.vue"
+
+type SymptomFilter = 'Tous' | 'Acné' | 'Spotting' | 'Nausée' | 'Fatigue' | 'Autre'
 
 const { user } = useAuthStore()
 const { formatDateDisplay, formatTimeDisplay, combineDateTime, getCurrentMonthYear } = useDateTimeFormat()
@@ -608,6 +631,8 @@ const entry = ref(getDefaultEntryValues())
 // Confirmation dialog for calendar clicks
 const showConfirmJourRegleDialog = ref(false)
 const pendingJourRegleDate = ref<string>('')
+const selectedSymptomeFilter = ref<SymptomFilter>('Tous')
+const symptomFilters: SymptomFilter[] = ['Tous', 'Acné', 'Spotting', 'Nausée', 'Fatigue', 'Autre']
 
 const columns: any = [
   { data: 'typeSymptome' },
@@ -701,6 +726,36 @@ const processedEntries = computed(() => {
   }
 
   return result
+})
+
+const filteredProcessedEntries = computed(() => {
+  if (selectedSymptomeFilter.value === 'Tous') {
+    return processedEntries.value
+  }
+
+  return processedEntries.value.filter((entry: any) => entry.typeSymptome === selectedSymptomeFilter.value)
+})
+
+const acneMonthlyStats = computed(() => {
+  const acneEntries = entries.value.filter((entry: any) => entry.typeSymptome === 'Acné')
+  const totalDays = acneEntries.length
+  const withPhotos = acneEntries.filter((entry: any) => !!entry.photoUrl).length
+
+  if (totalDays === 0) {
+    return {
+      totalDays: 0,
+      avgIntensity: '-',
+      withPhotos: 0
+    }
+  }
+
+  const avg = acneEntries.reduce((sum: number, entry: any) => sum + Number(entry.intensite || 0), 0) / totalDays
+
+  return {
+    totalDays,
+    avgIntensity: avg % 1 === 0 ? avg.toString() : avg.toFixed(1),
+    withPhotos
+  }
 })
 
 // Detect ongoing acné periods (periods ending today or yesterday)
@@ -1213,6 +1268,32 @@ const markPeriodToday = async () => {
       errorMessage: 'Impossible de marquer les règles',
     }
   )
+}
+
+const handleMarkPeriod = async (dateString: string) => {
+  const data = { date: dateString, carnetSanteId: user?.carnetSanteId }
+
+  await handleOfflineOperation(
+    () => apiService.postJourRegle(data),
+    {
+      endpoint: 'JourRegle',
+      method: 'POST',
+      data: data,
+      onSuccess: () => {
+        periodMarked.value = true
+        fetchJoursRegles()
+      },
+      onOfflineQueued: () => {
+        periodMarked.value = true
+      },
+      successMessage: 'Règles enregistrées',
+      errorMessage: 'Impossible de marquer les règles',
+    }
+  )
+}
+
+const onPeriodMarked = () => {
+  fetchJoursRegles()
 }
 
 const extendAcnePeriod = async (period: any) => {

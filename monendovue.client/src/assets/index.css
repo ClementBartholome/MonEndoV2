@@ -147,12 +147,25 @@
     --paragraph: #594a4e;
     --button: #ff8ba7;
     --form-input: white;
-    --form-button-text: #33272a;
-    --form-placeholder: #4d4545;
+    --form-button-text: #3c2a36;
+    --form-placeholder: #7a6774;
     --highlight: #ff8ba7;
     --button-text: #33272a;
-    --font-title: "Bebas Neue", Arial, Helvetica, sans-serif;
+    --font-title: "Poppins", Arial, Helvetica, sans-serif;
     --font-text: "Poppins", Arial, Helvetica, sans-serif;
+}
+
+input,
+textarea,
+select {
+    color: var(--form-button-text);
+    background-color: var(--form-input);
+}
+
+input::placeholder,
+textarea::placeholder {
+    color: var(--form-placeholder);
+    opacity: 0.7;
 }
 
 /* Style global de la scrollbar */
@@ -352,6 +365,17 @@ td, th {
     }
 }
 
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+}
+
 .hide-xsm {
     @media (max-width: 425px){
         display: none;
@@ -429,7 +453,7 @@ td, th {
         }
 
         .material-symbols-outlined {
-            color: var(--button-text);
+            color: var(--headline);
             font-size: 1.2rem;
             width: 70px;
             height: 44px;
@@ -445,6 +469,10 @@ td, th {
                 height: 30px;
             }
         }
+    }
+
+    li.active .material-symbols-outlined {
+        color: var(--button-text);
     }
 
     @media (max-width: 1023px) {
@@ -490,6 +518,12 @@ td, th {
 
     .material-symbols-outlined {
         font-size: 1.5rem;
+        color: var(--headline);
+        transition: color 0.2s ease;
+    }
+
+    &:hover .material-symbols-outlined {
+        color: var(--button);
     }
 }
 
