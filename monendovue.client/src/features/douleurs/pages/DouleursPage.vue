@@ -2,7 +2,7 @@
   <div class="flex-column-container">
     <BackButton/>
     <section class="container !mt-0  mx-auto py-8 w-full bg-clearer rounded-3xl shadow-xl ml-auto">
-      <div class="flex justify-between items-center mb-4">
+      <div class="flex justify-between items-center mb-4 douleurs-header">
         <h2 class="text-2xl flex gap-2 ml-2"><i class="material-symbols-outlined text-3xl ml-auto">sick</i>
           Suivi des douleurs</h2>
         <div class="form-modal">
@@ -17,7 +17,7 @@
               <DialogHeader>
                 <DialogTitle class="text-2xl">{{ isEditMode ? 'Modifier la douleur' : 'Ajouter une douleur' }}</DialogTitle>
               </DialogHeader>
-              <form class="flex flex-col gap-6" @submit="onSubmit">
+              <form class="flex flex-col gap-6" @submit.prevent="onSubmit">
                 <FormField v-slot="{ componentField }" name="type">
                   <FormItem>
                     <FormLabel>Type</FormLabel>
@@ -45,7 +45,7 @@
                     <FormMessage/>
                   </FormItem>
                 </FormField>
-                <div class="flex items-center gap-8">
+                <div class="flex items-center gap-8 douleurs-date-time-row">
                   <FormField v-slot="{ componentField }" name="date">
                     <FormItem>
                       <FormLabel>Date</FormLabel>
@@ -94,6 +94,7 @@
         </div>
       </div>
       <SelectMonth v-model="selectedMonthYear"/>
+      <SectionKpiHeader :items="douleurKpis" />
 
       <div v-if="isLoading" class="flex flex-col space-y-3">
         <Skeleton class="h-[120px] w-full mt-2 rounded-xl"/>
@@ -127,12 +128,15 @@
           </Datatable>
         </div>
       </template>
-      <div v-else class="flex justify-center items-center h-32">
-        <p class="text-xl text-center text-muted-foreground italic">Aucune douleur enregistrée</p>
-      </div>
+      <EmptyStateAction
+        v-else
+        title="Aucune douleur enregistrée"
+        description="Ajoute une entrée pour suivre les épisodes et identifier les tendances."
+        actionLabel="Ajouter une douleur"
+        @action="isDialogOpen = true"
+      />
     </section>
-    <div class="flex-row-container w-full gap-8">
-      <section class="flex flex-wrap h-full w-8/12 container py-8 px-4 bg-clearer rounded-3xl shadow-xl ml-auto">
+    <section class="container !mt-0 mx-auto py-8 px-4 w-full bg-clearer rounded-3xl shadow-xl ml-auto">
         <div class="w-full flex flex-col justify-center items-baseline">
           <div class="flex justify-center items-center gap-4">
             <h2 class="text-2xl self-start flex gap-4">
@@ -151,21 +155,7 @@
               index="date"
           />
         </div>
-      </section>
-      <section
-          class="flex flex-col h-auto items-center text-center gap-4 w-4/12 container py-8 bg-clearer rounded-3xl shadow-xl ml-auto">
-        <div class="flex gap-4 items-baseline mr-auto ml-2">
-          <h2 class="text-2xl self-start flex gap-4">
-            <i class="material-symbols-outlined text-3xl">trending_up</i>
-            Tendances
-          </h2>
-        </div>
-        <p>Moyenne d'intensité des douleurs ({{ filteredEntries.length }}
-          {{ filteredEntries.length > 1 ? 'entrées' : 'entrée' }})</p>
-        <span class="text-5xl text-highlight">{{ averageIntensity }}</span>
-        <i class="material-symbols-outlined text-7xl text-button">{{ intensityIcon }}</i>
-      </section>
-    </div>
+    </section>
   </div>
 </template>
 
@@ -187,6 +177,8 @@ import Datatable from "@/shared/components/Datatable.vue"
 import GenericCardList from "@/shared/components/GenericCardList.vue"
 import BackButton from "@/shared/components/BackButton.vue"
 import SelectMonth from "@/shared/components/SelectMonth.vue"
+import SectionKpiHeader from "@/shared/components/SectionKpiHeader.vue"
+import EmptyStateAction from "@/shared/components/EmptyStateAction.vue"
 
 import apiService from "@/shared/services/apiService"
 import { useAuthStore } from '@/features/auth/store/auth'
@@ -194,7 +186,7 @@ import { useMonthData } from '@/shared/composables/useMonthData'
 import { useDateTimeFormat } from '@/shared/composables/useDateTimeFormat'
 import { useCrudOperations } from '@/shared/composables/useCrudOperations'
 import { useDialogForm } from '@/shared/composables/useDialogForm'
-import { format, eachDayOfInterval, startOfMonth, endOfMonth } from 'date-fns'
+import { eachDayOfInterval, startOfMonth, endOfMonth } from 'date-fns'
 
 const authStore = useAuthStore()
 const { formatDateDisplay, formatTimeDisplay, combineDateTime, getCurrentDateInput, getCurrentTimeInput } = useDateTimeFormat()
@@ -239,7 +231,7 @@ const { selectedMonthYear, entries, isLoading } = useMonthData({
   dataType: 'douleurs'
 })
 
-const { deleteEntry, createEntry, updateEntry } = useCrudOperations(entries)
+const { deleteEntry } = useCrudOperations(entries)
 
 const isEditMode = ref(false)
 const isDialogOpen = ref(false)
@@ -270,6 +262,16 @@ const filteredEntries = computed(() => {
   return entries.value.filter(entry => entry.intensite !== 0)
 })
 
+const douleurKpis = computed(() => {
+  const uniquePainDays = new Set(filteredEntries.value.map(entry => entry.date)).size
+  const maxIntensity = filteredEntries.value.reduce((max, entry) => Math.max(max, Number(entry.intensite || 0)), 0)
+  return [
+    { label: 'Jours douloureux', value: uniquePainDays },
+    { label: 'Intensité moy.', value: averageIntensity.value },
+    { label: 'Pic d\'intensité', value: maxIntensity }
+  ]
+})
+
 const chartData = computed(() => {
   return entries.value.map((entry: any) => ({
     date: entry.date,
@@ -287,22 +289,6 @@ const averageIntensity = computed(() => {
   return (totalIntensity / filteredEntries.value.length).toFixed(2)
 })
 
-const intensityIcon = computed(() => {
-  const avgIntensity = Number(averageIntensity.value)
-  if (avgIntensity >= 0 && avgIntensity < 2) {
-    return 'sentiment_very_satisfied'
-  } else if (avgIntensity >= 2 && avgIntensity < 4) {
-    return 'sentiment_satisfied'
-  } else if (avgIntensity >= 4 && avgIntensity < 6) {
-    return 'sentiment_neutral'
-  } else if (avgIntensity >= 6 && avgIntensity < 8) {
-    return 'sentiment_dissatisfied'
-  } else if (avgIntensity >= 8 && avgIntensity <= 10) {
-    return 'sentiment_very_dissatisfied'
-  } else {
-    return ''
-  }
-})
 
 const handleDelete = async (id: string | number) => {
   await deleteEntry(id as number, (id) => apiService.deleteDonneesDouleurs(id as number), {
@@ -418,3 +404,20 @@ const onSubmit = form.handleSubmit((values) => {
   }
 })
 </script>
+
+<style scoped>
+@media (max-width: 425px) {
+  .douleurs-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+
+  .douleurs-date-time-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.75rem;
+  }
+}
+</style>
+

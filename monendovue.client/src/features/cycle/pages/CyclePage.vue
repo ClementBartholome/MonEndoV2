@@ -6,7 +6,7 @@
       </h2>
     </div>
     <Tabs default-value="cycles" class="w-full">
-      <TabsList>
+      <TabsList class="cycle-tabs-list">
         <TabsTrigger value="cycles">Mes cycles</TabsTrigger>
         <TabsTrigger value="symptomes">Symptômes</TabsTrigger>
       </TabsList>
@@ -24,8 +24,8 @@
             class="mb-4"
           />
 
-          <div class="flex flex-col items-center m-auto mb-2" style="max-width: 46%">
-            <div class="flex items-center">
+          <div class="flex flex-col items-center m-auto mb-2 cycle-month-wrapper" style="max-width: 46%">
+            <div class="flex items-center cycle-month-controls">
               <button @click="previousMonth" class="mr-2">
                 <i class="material-symbols-outlined">chevron_left</i>
               </button>
@@ -47,16 +47,16 @@
           />
 
           <!-- Calendar Legend -->
-          <div class="flex items-center justify-center gap-4 mt-4 text-sm">
-            <div class="flex items-center gap-1.5">
+          <div class="flex items-center justify-center gap-4 mt-4 text-sm cycle-legend">
+            <div class="flex items-center gap-1.5 cycle-legend-item">
               <div class="w-2 h-2 rounded-full bg-red-500"></div>
               <span>Règles</span>
             </div>
-            <div class="flex items-center gap-1.5">
+            <div class="flex items-center gap-1.5 cycle-legend-item">
               <div class="w-2 h-2 rounded-full bg-red-300"></div>
               <span>Spotting</span>
             </div>
-            <div class="flex items-center gap-1.5">
+            <div class="flex items-center gap-1.5 cycle-legend-item">
               <div class="w-2 h-2 rounded-full bg-purple-500"></div>
               <span>Acné</span>
             </div>
@@ -250,7 +250,7 @@
                     </FormField>
 
                     <!-- Single day fields (shown when not a period) -->
-                    <div v-if="!entry.isPeriod" key="single-day-fields" class="flex items-center gap-8">
+                    <div v-if="!entry.isPeriod" key="single-day-fields" class="flex items-center gap-8 cycle-single-day-fields">
                       <FormField v-slot="{ componentField }" name="date">
                         <FormItem>
                           <FormLabel>Date</FormLabel>
@@ -368,7 +368,8 @@
           <!-- KPI acné - visibles seulement quand filtre Acné ou Tous avec des entrées d'acné -->
           <div v-if="acneMonthlyStats.totalDays > 0" class="grid grid-cols-3 gap-2 mt-4 mb-4">
             <div class="bg-white border border-purple-100 rounded-xl p-3 shadow-sm text-center">
-              <p class="text-xs text-muted-foreground mb-1">{{ acneMonthlyStats.totalDays > 1 ? 'Jours d\'acné' : 'Jour d\'acné' }}</p>      
+              <p class="text-xs text-muted-foreground mb-1">{{ acneMonthlyStats.totalDays > 1 ? 'Jours d\'acné' : 'Jour d\'acné' }}</p>
+              <p class="text-xl font-bold text-headline">{{acneMonthlyStats.totalDays}}</p>
             </div>
             <div class="bg-white border border-purple-100 rounded-xl p-3 shadow-sm text-center">
               <p class="text-xs text-muted-foreground mb-1">Intensité moy.</p>
@@ -1668,6 +1669,48 @@ const confirmDeleteJourRegle = async () => {
   to {
     opacity: 1;
     transform: scale(1);
+  }
+}
+
+@media (max-width: 425px) {
+  .cycle-tabs-list {
+    width: 100%;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.5rem;
+  }
+
+  .cycle-month-wrapper {
+    max-width: 100% !important;
+    width: 100%;
+  }
+
+  .cycle-month-controls {
+    width: 100%;
+    justify-content: space-between;
+    gap: 0.5rem;
+  }
+
+  .cycle-month-controls input[type="month"] {
+    width: 100%;
+    max-width: none;
+    min-width: 0;
+  }
+
+  .cycle-legend {
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    gap: 0.75rem;
+  }
+
+  .cycle-legend-item {
+    width: calc(50% - 0.5rem);
+  }
+
+  .cycle-single-day-fields {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.75rem;
   }
 }
 </style>

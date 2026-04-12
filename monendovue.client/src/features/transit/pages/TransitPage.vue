@@ -2,7 +2,7 @@
   <div class="flex-column-container">
     <BackButton/>
     <section class="container !mt-0  mx-auto py-8 w-full bg-clearer rounded-3xl shadow-xl ml-auto">
-      <div class="flex justify-between items-center mb-4">
+      <div class="flex justify-between items-center mb-4 transit-header">
         <h2 class="text-2xl flex gap-2 ml-2"><i class="material-symbols-outlined text-3xl ml-auto">gastroenterology</i>
           Suivi du transit</h2>
         <div class="form-modal">
@@ -17,7 +17,7 @@
               <DialogHeader>
                 <DialogTitle class="text-2xl">Ajouter une entrée</DialogTitle>
               </DialogHeader>
-              <form class="flex flex-col gap-6" @submit="onSubmit">
+              <form class="flex flex-col gap-6" @submit.prevent="onSubmit">
                 <FormField v-slot="{ componentField }" name="typeEvenement">
                   <FormItem>
                     <FormLabel>Type de trouble</FormLabel>
@@ -43,7 +43,7 @@
                     <FormMessage />
                   </FormItem>
                 </FormField>
-                <div class="flex items-center justify-between">
+                <div class="flex items-center justify-between transit-date-time-row">
                   <FormField name="date" v-slot="{ componentField }">
                     <FormItem>
                       <FormLabel>Date</FormLabel>
@@ -85,7 +85,7 @@
                     <FormMessage />
                   </FormItem>
                 </FormField>
-                <div class="flex items-center justify-between">
+                <div class="flex items-center justify-between transit-radios-row">
                   <FormField v-slot="{ componentField }" name="saignement">
                     <FormItem>
                       <FormControl>
@@ -136,24 +136,46 @@
         </div>
       </div>
       <SelectMonth v-model="selectedMonthYear" />
+      <SectionKpiHeader :items="transitKpis" />
 
       <div v-if="isLoading" class="flex flex-col space-y-3">
         <Skeleton class="h-[300px] w-full mt-4 rounded-xl"/>
       </div>
-      <Datatable v-else-if="entries.length > 0" :entries="entries" :columns="columns" :deleteFunction="handleDelete">
-        <thead>
-        <tr>
-          <th>Type</th>
-          <th>Date</th>
-          <th>Heure</th>
-          <th>Intensité</th>
-          <th>Saignement</th>
-          <th>Douleurs</th>
-          <th>Commentaire</th>
-          <th></th>
-        </tr>
-        </thead>
-      </Datatable>
+      <template v-else-if="entries.length > 0">
+        <div class="md:hidden">
+          <GenericCardList
+            :entries="entries"
+            titleField="typeEvenement"
+            dateField="date"
+            timeField="time"
+            :extraFields="[
+              { key: 'intensite', label: 'Intensité' },
+              { key: 'saignement', label: 'Saignement' },
+              { key: 'douleurs', label: 'Douleurs' },
+              { key: 'commentaire', label: 'Note' }
+            ]"
+            :defaultIcon="{ color: 'text-purple-600', bg: 'bg-purple-100', icon: 'gastroenterology' }"
+            :onDelete="handleDelete"
+            emptyMessage="Aucune donnée de transit ce mois"
+          />
+        </div>
+        <div class="hidden md:block">
+          <Datatable :entries="entries" :columns="columns" :deleteFunction="handleDelete">
+            <thead>
+            <tr>
+              <th>Type</th>
+              <th>Date</th>
+              <th>Heure</th>
+              <th>Intensité</th>
+              <th>Saignement</th>
+              <th>Douleurs</th>
+              <th>Commentaire</th>
+              <th></th>
+            </tr>
+            </thead>
+          </Datatable>
+        </div>
+      </template>
       <div v-else class="flex justify-center items-center h-32">
         <p class="text-2xl text-center">Aucune donnée enregistrée</p>
       </div>
@@ -162,7 +184,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
 import { useForm } from 'vee-validate'
 import { toTypedSchema } from '@vee-validate/zod'
 import * as z from 'zod'
@@ -174,8 +196,10 @@ import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectVa
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/shared/components/ui/dialog'
 import { Skeleton } from "@/shared/components/ui/skeleton"
 import Datatable from "@/shared/components/Datatable.vue"
+import GenericCardList from "@/shared/components/GenericCardList.vue"
 import BackButton from "@/shared/components/BackButton.vue"
 import SelectMonth from "@/shared/components/SelectMonth.vue"
+import SectionKpiHeader from "@/shared/components/SectionKpiHeader.vue"
 
 import apiService from "@/shared/services/apiService"
 import { useAuthStore } from '@/features/auth/store/auth'
@@ -208,7 +232,7 @@ const { selectedMonthYear, entries, isLoading } = useMonthData({
   dataType: 'transit'
 })
 
-const { deleteEntry, createEntry } = useCrudOperations(entries)
+const { deleteEntry } = useCrudOperations(entries)
 
 const columns: any = [
   {data: 'typeEvenement'},
@@ -234,8 +258,22 @@ const entry = ref({
   commentaire: ''
 })
 
-const handleDelete = async (id: number) => {
-  await deleteEntry(id, (id) => apiService.deleteDonneesTransit(id as number), {
+const transitKpis = ref([
+  { label: 'Entrées', value: 0 },
+  { label: 'Saignement', value: 0 },
+  { label: 'Avec douleurs', value: 0 }
+])
+
+watch(entries, (value) => {
+  transitKpis.value = [
+    { label: 'Entrées', value: value.length },
+    { label: 'Saignement', value: value.filter(item => item.saignement === 'Oui').length },
+    { label: 'Avec douleurs', value: value.filter(item => item.douleurs === 'Oui').length }
+  ]
+}, { immediate: true, deep: true })
+
+const handleDelete = async (id: string | number) => {
+  await deleteEntry(id as number, (entryId) => apiService.deleteDonneesTransit(entryId as number), {
     successMessage: 'Donnée supprimée avec succès',
     errorMessage: 'Une erreur est survenue lors de la suppression de la donnée',
     endpoint: 'DonneesTransit'
@@ -310,3 +348,21 @@ const onSubmit = form.handleSubmit((values) => {
   })
 })
 </script>
+
+<style scoped>
+@media (max-width: 425px) {
+  .transit-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+
+  .transit-date-time-row,
+  .transit-radios-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.75rem;
+  }
+}
+</style>
+

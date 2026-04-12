@@ -2,7 +2,7 @@
   <div class="flex-column-container">
     <BackButton/>
     <section class="container !mt-0  mx-auto py-8 w-full bg-clearer rounded-3xl shadow-xl ml-auto">
-      <div class="flex justify-between items-center mb-4">
+      <div class="flex justify-between items-center mb-4 medicament-section-header">
         <h2 class="text-2xl flex gap-2 ml-2"><i class="material-symbols-outlined text-3xl">medication</i>
           Prises de médicaments</h2>
         <div class="form-modal">
@@ -24,7 +24,7 @@
                     <FormControl>
                       <Select v-model="prise.medicamentId">
                         <SelectTrigger>
-                          <SelectValue/>
+                          <SelectValue placeholder="Sélectionner un médicament"/>
                         </SelectTrigger>
                         <SelectContent>
                           <SelectGroup v-if="medicaments.length > 0" label="Médicaments">
@@ -36,6 +36,11 @@
                         </SelectContent>
                       </Select>
                     </FormControl>
+                    <div v-if="medicaments.length === 0" class="mt-3">
+                      <Button type="button" variant="outline" size="sm" @click="openAddMedicamenteuxDialog">
+                        Créer un traitement médicamenteux
+                      </Button>
+                    </div>
                     <FormMessage/>
                   </FormItem>
                 </FormField>
@@ -48,7 +53,7 @@
                     <FormMessage/>
                   </FormItem>
                 </FormField>
-                <div class="flex items-center gap-8">
+                <div class="flex items-center gap-8 prise-date-time-row">
                   <FormField v-slot="{ componentField }" name="date">
                     <FormItem>
                       <FormLabel>Date</FormLabel>
@@ -77,7 +82,7 @@
                     <FormMessage/>
                   </FormItem>
                 </FormField>
-                <Button class="mt-4" variant="custom" type="submit">
+                <Button class="mt-4" variant="custom" type="submit" :disabled="!isPriseFormValid">
                   Enregistrer
                 </Button>
               </form>
@@ -86,12 +91,36 @@
         </div>
       </div>
       <SelectMonth v-model="selectedMonthYear"/>
+      <div class="grid grid-cols-2 gap-2 mt-4 mb-2">
+        <div class="bg-white border border-indigo-100 rounded-xl p-3 text-center">
+          <p class="text-xs text-muted-foreground">Prises ce mois</p>
+          <p class="text-xl font-bold text-headline">{{ prisesStats.totalPrises }}</p>
+        </div>
+        <div class="bg-white border border-indigo-100 rounded-xl p-3 text-center">
+          <p class="text-xs text-muted-foreground">Comprimés totaux</p>
+          <p class="text-xl font-bold text-headline">{{ prisesStats.totalComprimes }}</p>
+        </div>
+      </div>
       <div v-if="isLoading" class="flex flex-col space-y-3">
         <Skeleton class="h-[300px] w-full mt-4 rounded-xl"/>
       </div>
-      <Datatable v-else-if="listePrises.length > 0" :entries="listePrises" :columns="columns"
-                 :deleteFunction="handleDeletePrise">
-      </Datatable>
+      <template v-else-if="listePrises.length > 0">
+        <div class="md:hidden">
+          <GenericCardList
+            :entries="listePrises"
+            titleField="nom"
+            dateField="date"
+            timeField="time"
+            :extraFields="[{ key: 'nombreComprimes', label: 'Comprimés' }, { key: 'commentaire', label: 'Note' }]"
+            :iconConfig="priseIconConfig"
+            :onDelete="handleDeletePrise"
+            emptyMessage="Aucune prise enregistrée ce mois"
+          />
+        </div>
+        <div class="hidden md:block">
+          <Datatable :entries="listePrises" :columns="columns" :deleteFunction="handleDeletePrise" />
+        </div>
+      </template>
       <div v-else class="flex justify-center items-center h-32">
         <p class="text-2xl text-center">Aucune donnée enregistrée</p>
       </div>
@@ -99,7 +128,7 @@
 
     <!-- Section Sessions de traitements non médicamenteux -->
     <section class="container !mt-0 mx-auto py-8 w-full bg-clearer rounded-3xl shadow-xl ml-auto">
-      <div class="flex justify-between items-center mb-4">
+      <div class="flex justify-between items-center mb-4 medicament-section-header">
         <h2 class="text-2xl flex gap-2 ml-2">
           <i class="material-symbols-outlined text-3xl">healing</i>
           Sessions de traitements
@@ -123,7 +152,7 @@
                     <FormControl>
                       <Select v-model="session.medicamentId">
                         <SelectTrigger>
-                          <SelectValue/>
+                          <SelectValue placeholder="Sélectionner un traitement"/>
                         </SelectTrigger>
                         <SelectContent>
                           <SelectGroup v-if="traitementsNonMedicamenteux.length > 0" label="Traitements non médicamenteux">
@@ -135,6 +164,12 @@
                         </SelectContent>
                       </Select>
                     </FormControl>
+                    <div v-if="traitementsNonMedicamenteux.length === 0" class="mt-3 rounded-lg border border-dashed border-emerald-300 bg-emerald-50 p-3">
+                      <p class="text-sm text-emerald-800 mb-2">Ajoute d'abord un traitement non médicamenteux (ex: yoga, kiné, ostéo).</p>
+                      <Button type="button" size="sm" variant="outline" @click="openAddNonMedicamentDialog">
+                        Créer un traitement non médicamenteux
+                      </Button>
+                    </div>
                     <FormMessage/>
                   </FormItem>
                 </FormField>
@@ -147,7 +182,7 @@
                     <FormMessage/>
                   </FormItem>
                 </FormField>
-                <div class="flex items-center gap-8">
+                <div class="flex items-center gap-8 session-date-time-row">
                   <FormField v-slot="{ componentField }" name="date">
                     <FormItem>
                       <FormLabel>Date</FormLabel>
@@ -176,7 +211,19 @@
                     <FormMessage/>
                   </FormItem>
                 </FormField>
-                <Button class="mt-4" variant="custom" type="submit">
+                <div class="flex flex-wrap gap-2 -mt-2">
+                  <Button
+                    v-for="duration in sessionDurationPresets"
+                    :key="duration"
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    @click="setSessionDuration(duration)"
+                  >
+                    {{ duration }} min
+                  </Button>
+                </div>
+                <Button class="mt-4" variant="custom" type="submit" :disabled="!isSessionFormValid">
                   Enregistrer
                 </Button>
               </form>
@@ -185,12 +232,36 @@
         </div>
       </div>
       <SelectMonth v-model="selectedMonthYearSessions"/>
+      <div class="grid grid-cols-2 gap-2 mt-4 mb-2">
+        <div class="bg-white border border-emerald-100 rounded-xl p-3 text-center">
+          <p class="text-xs text-muted-foreground">Sessions ce mois</p>
+          <p class="text-xl font-bold text-headline">{{ sessionsStats.totalSessions }}</p>
+        </div>
+        <div class="bg-white border border-emerald-100 rounded-xl p-3 text-center">
+          <p class="text-xs text-muted-foreground">Minutes cumulées</p>
+          <p class="text-xl font-bold text-headline">{{ sessionsStats.totalMinutes }}</p>
+        </div>
+      </div>
       <div v-if="isLoadingSessions" class="flex flex-col space-y-3">
         <Skeleton class="h-[300px] w-full mt-4 rounded-xl"/>
       </div>
-      <Datatable v-else-if="listeSessions.length > 0" :entries="listeSessions" :columns="columnsSessions"
-                 :deleteFunction="handleDeleteSession">
-      </Datatable>
+      <template v-else-if="listeSessions.length > 0">
+        <div class="md:hidden">
+          <GenericCardList
+            :entries="listeSessions"
+            titleField="nom"
+            dateField="date"
+            timeField="time"
+            :extraFields="[{ key: 'duree', label: 'Durée', suffix: ' min' }, { key: 'commentaire', label: 'Note' }]"
+            :iconConfig="sessionIconConfig"
+            :onDelete="handleDeleteSession"
+            emptyMessage="Aucune session enregistrée ce mois"
+          />
+        </div>
+        <div class="hidden md:block">
+          <Datatable :entries="listeSessions" :columns="columnsSessions" :deleteFunction="handleDeleteSession" />
+        </div>
+      </template>
       <div v-else class="flex justify-center items-center h-32">
         <p class="text-2xl text-center">Aucune donnée enregistrée</p>
       </div>
@@ -198,7 +269,7 @@
 
     <div class="flex-row-container w-full gap-8 mb-16">
       <section class="container !mt-0  mx-auto py-8 w-full bg-clearer rounded-3xl shadow-xl ml-auto">
-        <div class="flex gap-4 items-center justify-between mb-4">
+        <div class="flex gap-4 items-center justify-between mb-4 traitement-list-header">
           <h2 class="text-2xl flex gap-2">
             <i class="material-symbols-outlined text-3xl">pill</i>
             Traitements en cours
@@ -269,8 +340,8 @@
           </Dialog>
         </div>
         <ul class="w-full" v-if="traitementsEnCours.length > 0">
-          <li v-for="traitement in traitementsEnCours" :key="traitement.id" class="relative pr-20">
-            <div class="absolute top-0 right-0 flex gap-2">
+          <li v-for="traitement in traitementsEnCours" :key="traitement.id" class="relative pr-20 traitement-item">
+            <div class="absolute top-0 right-0 flex gap-2 traitement-actions">
               <Dialog v-model:open="showEditTraitementDialog">
                 <DialogTrigger @click="editTraitement(traitement.id)" class="cursor-pointer">
                   <span class="material-symbols-outlined edit-btn">edit</span>
@@ -371,15 +442,15 @@
         <p v-else class="text-2xl text-center">Pas de traitements en cours</p>
       </section>
       <section class="container !mt-0  mx-auto py-8 w-full bg-clearer rounded-3xl shadow-xl ml-auto">
-        <div class="flex gap-4 items-center justify-between mb-4">
+        <div class="flex gap-4 items-center justify-between mb-4 traitement-list-header">
           <h2 class="text-2xl flex gap-2">
             <i class="material-symbols-outlined text-3xl">pill_off</i>
             Traitements passés
           </h2>
         </div>
         <ul class="w-full">
-          <li v-for="traitement in traitementsPasses" :key="traitement.id" class="relative pr-12">
-            <div class="absolute top-0 right-0">
+          <li v-for="traitement in traitementsPasses" :key="traitement.id" class="relative pr-12 past-treatment-item">
+            <div class="absolute top-0 right-0 past-treatment-actions">
               <span @click="confirmDeleteMedicament(traitement.id)" class="material-symbols-outlined delete-btn cursor-pointer">delete</span>
             </div>
             <div>
@@ -428,6 +499,7 @@ import { Skeleton } from "@/shared/components/ui/skeleton"
 import Datatable from "@/shared/components/Datatable.vue"
 import BackButton from "@/shared/components/BackButton.vue"
 import SelectMonth from "@/shared/components/SelectMonth.vue"
+import GenericCardList from "@/shared/components/GenericCardList.vue"
 
 import apiService from "@/shared/services/apiService"
 import { useAuthStore } from '@/features/auth/store/auth'
@@ -497,7 +569,7 @@ const { selectedMonthYear, entries: listePrises, isLoading } = useMonthData({
   dataType: 'medicament'
 })
 
-const { deleteEntry, createEntry } = useCrudOperations(listePrises)
+const { deleteEntry } = useCrudOperations(listePrises)
 
 const prise = ref({
   nom: '',
@@ -549,6 +621,67 @@ const columnsSessions: any = [
     defaultContent: '<span class="material-symbols-outlined delete-btn">delete</span>'
   },
 ]
+
+const priseIconConfig = {
+  'Antalgique': { color: 'text-blue-600', bg: 'bg-blue-100', icon: 'pill' },
+  'AINS': { color: 'text-indigo-600', bg: 'bg-indigo-100', icon: 'medication' },
+  'Autre': { color: 'text-gray-500', bg: 'bg-gray-100', icon: 'medication_liquid' }
+}
+
+const sessionIconConfig = {
+  'Yoga': { color: 'text-emerald-600', bg: 'bg-emerald-100', icon: 'self_improvement' },
+  'Kine': { color: 'text-orange-600', bg: 'bg-orange-100', icon: 'healing' },
+  'Osteo': { color: 'text-cyan-600', bg: 'bg-cyan-100', icon: 'accessibility_new' },
+  'Sophrologie': { color: 'text-violet-600', bg: 'bg-violet-100', icon: 'spa' }
+}
+
+const sessionDurationPresets = [20, 30, 45, 60]
+const shouldReturnToSessionDialog = ref(false)
+
+const prisesStats = computed(() => {
+  const totalPrises = listePrises.value.length
+  const totalComprimes = listePrises.value.reduce((acc: number, item: any) => acc + Number(item.nombreComprimes || 0), 0)
+  return { totalPrises, totalComprimes }
+})
+
+const sessionsStats = computed(() => {
+  const totalSessions = listeSessions.value.length
+  const totalMinutes = listeSessions.value.reduce((acc: number, item: any) => {
+    const value = Number(item.duree)
+    return Number.isFinite(value) ? acc + value : acc
+  }, 0)
+  return { totalSessions, totalMinutes }
+})
+
+const isPriseFormValid = computed(() => !!prise.value.medicamentId && Number(prise.value.nombreComprimes) > 0 && !!prise.value.date && !!prise.value.time)
+const isSessionFormValid = computed(() => !!session.value.medicamentId && !!session.value.date && !!session.value.time)
+
+const setSessionDuration = (minutes: number) => {
+  session.value.duree = minutes
+}
+
+const openAddNonMedicamentDialog = () => {
+  shouldReturnToSessionDialog.value = true
+  traitement.value = {
+    nom: '',
+    type: String(TypeTraitement.NonMedicamenteux),
+    posologie: '',
+    dateDebutTraitement: getCurrentDateInput(),
+  }
+  showAddSessionDialog.value = false
+  showAddTraitementDialog.value = true
+}
+
+const openAddMedicamenteuxDialog = () => {
+  traitement.value = {
+    nom: '',
+    type: String(TypeTraitement.Medicamenteux),
+    posologie: '',
+    dateDebutTraitement: getCurrentDateInput(),
+  }
+  showAddPriseDialog.value = false
+  showAddTraitementDialog.value = true
+}
 
 interface Medicament {
   id: string
@@ -644,8 +777,8 @@ onMounted(async () => {
   }
 })
 
-const handleDeletePrise = async (id: number) => {
-  await deleteEntry(id, (id) => apiService.deleteDonneesMedicament(id as number), {
+const handleDeletePrise = async (id: string | number) => {
+  await deleteEntry(id as number, (entryId) => apiService.deleteDonneesMedicament(entryId as number), {
     successMessage: 'La prise de médicament a été supprimée avec succès',
     errorMessage: 'Une erreur est survenue lors de la suppression de la prise de médicament',
     endpoint: 'DonneesMedicament'
@@ -654,6 +787,16 @@ const handleDeletePrise = async (id: number) => {
 
 const onSubmitPriseForm = () => {
   const values = prise.value
+
+  if (!values.medicamentId) {
+    toast({
+      title: 'Traitement requis',
+      description: 'Sélectionnez un traitement médicamenteux avant d\'enregistrer la prise.',
+      variant: 'destructive'
+    })
+    return
+  }
+
   const medicamentName = medicaments.value.find(med => med.id === values.medicamentId)?.nom
 
   const dataToSend = {
@@ -693,6 +836,16 @@ const onSubmitPriseForm = () => {
 
 const onSubmitSessionForm = () => {
   const values = session.value
+
+  if (!values.medicamentId) {
+    toast({
+      title: 'Traitement requis',
+      description: 'Ajoutez ou sélectionnez un traitement non médicamenteux (yoga, kiné...) avant d\'enregistrer la session.',
+      variant: 'destructive'
+    })
+    return
+  }
+
   const traitementName = traitementsNonMedicamenteux.value.find(t => t.id === values.medicamentId)?.nom
 
   const dataToSend = {
@@ -729,10 +882,10 @@ const onSubmitSessionForm = () => {
   })
 }
 
-const handleDeleteSession = async (id: number) => {
+const handleDeleteSession = async (id: string | number) => {
   try {
-    await apiService.deleteDonneesTraitementNonMedicamenteux(id)
-    listeSessions.value = listeSessions.value.filter(s => s.id !== id)
+    await apiService.deleteDonneesTraitementNonMedicamenteux(id as number)
+    listeSessions.value = listeSessions.value.filter(s => s.id !== (id as number))
     toast({
       title: 'Succès',
       description: 'La session a été supprimée avec succès',
@@ -774,6 +927,12 @@ const onSubmitTraitementForm = () => {
         medicaments.value.push(medicamentAdded)
       } else {
         traitementsNonMedicamenteux.value.push(medicamentAdded)
+
+        if (shouldReturnToSessionDialog.value) {
+          session.value.medicamentId = String(response.id)
+          shouldReturnToSessionDialog.value = false
+          showAddSessionDialog.value = true
+        }
       }
     },
     resetFormData: () => {
@@ -918,3 +1077,34 @@ const handleDeleteMedicament = async () => {
   medicamentToDelete.value = null
 }
 </script>
+
+<style scoped>
+@media (max-width: 425px) {
+  .medicament-section-header,
+  .traitement-list-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+
+  .prise-date-time-row,
+  .session-date-time-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.75rem;
+  }
+
+  .treatment-item,
+  .past-treatment-item {
+    padding-right: 0;
+  }
+
+  .treatment-actions,
+  .past-treatment-actions {
+    position: static;
+    margin-bottom: 0.5rem;
+    justify-content: flex-end;
+  }
+}
+</style>
+
