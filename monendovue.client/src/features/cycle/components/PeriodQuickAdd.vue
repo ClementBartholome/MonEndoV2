@@ -254,13 +254,6 @@ const handlePeriodRange = async () => {
       </Dialog>
     </div>
   </div>
-
-  <div v-else class="bg-green-50 border-2 border-green-200 rounded-xl p-3 shadow-sm">
-    <div class="flex items-center gap-2">
-      <span class="text-xl">✓</span>
-      <span class="text-sm font-medium text-headline">Periode enregistrée pour aujourd'hui</span>
-    </div>
-  </div>
 </template>
 
 

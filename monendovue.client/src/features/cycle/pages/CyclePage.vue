@@ -119,12 +119,6 @@
             <span class="material-symbols-outlined text-purple-400 text-base shrink-0">add_circle</span>
           </button>
         </div>
-        <div v-else class="container !mt-0 mx-auto w-full">
-          <div class="flex items-center gap-2 bg-purple-50 border border-purple-100 rounded-xl p-3">
-            <span class="material-symbols-outlined text-purple-400 text-base">check_circle</span>
-            <span class="text-sm text-purple-700">Acné enregistrée aujourd'hui</span>
-          </div>
-        </div>
 
         <!-- Ongoing Acné Periods Section -->
         <section v-if="ongoingAcnePeriods.length > 0" class="container !mt-0 mx-auto py-8 mb-4 w-full bg-clearer rounded-3xl shadow-xl">
