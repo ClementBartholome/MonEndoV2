@@ -1,5 +1,5 @@
 <template>
-  <div class="flex gap-4">
+  <div class="flex gap-4 mb-2">
     <div class="flex items-start">
       <input class="w-full" type="month" id="month-year" :value="modelValue" @input="updateValue(($event.target as HTMLInputElement).value)"/>
     </div>

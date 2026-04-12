@@ -368,8 +368,7 @@
           <!-- KPI acné - visibles seulement quand filtre Acné ou Tous avec des entrées d'acné -->
           <div v-if="acneMonthlyStats.totalDays > 0" class="grid grid-cols-3 gap-2 mt-4 mb-4">
             <div class="bg-white border border-purple-100 rounded-xl p-3 shadow-sm text-center">
-              <p class="text-xs text-muted-foreground mb-1">Jours d'acné</p>
-              <p class="text-xl font-bold text-headline">{{ acneMonthlyStats.totalDays }}</p>
+              <p class="text-xs text-muted-foreground mb-1">{{ acneMonthlyStats.totalDays > 1 ? 'Jours d\'acné' : 'Jour d\'acné' }}</p>      
             </div>
             <div class="bg-white border border-purple-100 rounded-xl p-3 shadow-sm text-center">
               <p class="text-xs text-muted-foreground mb-1">Intensité moy.</p>
