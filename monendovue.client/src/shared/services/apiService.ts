@@ -215,6 +215,10 @@ class ApiService {
         return this.request('PUT', `DonneesDouleurs/${donneesDouleursId}`, donneesDouleurs);
     }
 
+    async editDonneesActivitePhysique(donneesActivitePhysiqueId: number, donneesActivitePhysique: any): Promise<any> {
+        return this.request('PUT', `DonneesActivitePhysique/${donneesActivitePhysiqueId}`, donneesActivitePhysique);
+    }
+
     async editSymptomeCycle(symptomeCycleId: number, symptomeCycle: any): Promise<any> {
         return this.request('PUT', `SymptomesCycle/${symptomeCycleId}`, symptomeCycle);
     }
