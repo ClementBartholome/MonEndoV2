@@ -15,9 +15,9 @@
             </DialogTrigger>
             <DialogContent>
               <DialogHeader>
-                <DialogTitle class="text-2xl">Ajouter une session</DialogTitle>
+                <DialogTitle class="text-2xl">{{ isEditMode ? 'Modifier la session' : 'Ajouter une session' }}</DialogTitle>
               </DialogHeader>
-              <form class="flex flex-col gap-6" @submit="onSubmit">
+              <form class="flex flex-col gap-6" @submit.prevent="onSubmit">
                 <FormField v-slot="{ componentField }" name="typeActivite">
                   <FormItem>
                     <FormLabel>Type d'activité</FormLabel>
@@ -75,7 +75,7 @@
                   </FormItem>
                 </FormField>
                 <Button class="mt-4" variant="custom" type="submit" @click="onSubmit">
-                  Enregistrer
+                  {{ isEditMode ? 'Mettre à jour' : 'Enregistrer' }}
                 </Button>
               </form>
             </DialogContent>
@@ -83,6 +83,7 @@
         </div>
       </div>
       <SelectMonth v-model="selectedMonthYear" />
+      <SectionKpiHeader :items="activityKpis" />
       <div v-if="isLoading" class="flex flex-col space-y-3">
         <Skeleton class="h-[120px] w-full mt-2 rounded-xl"/>
         <Skeleton class="h-[120px] w-full rounded-xl"/>
@@ -100,12 +101,13 @@
             :extraFields="[{ key: 'duree', label: 'Durée', suffix: ' min' }, { key: 'commentaire', label: 'Note' }]"
             :defaultIcon="{ color: 'text-teal-600', bg: 'bg-teal-100', icon: 'directions_run' }"
             :onDelete="handleDelete"
+            :onEdit="handleEditEntry"
             emptyMessage="Aucune session enregistrée ce mois"
           />
         </div>
         <!-- Desktop: table -->
         <div class="hidden md:block">
-          <Datatable :entries="entries" :columns="columns" :deleteFunction="handleDelete">
+          <Datatable :entries="entries" :columns="columns" :deleteFunction="handleDelete" @edit-entry="handleEditEntry">
             <thead>
               <tr>
                 <th>Type</th><th>Date</th><th>Heure</th><th>Durée</th><th>Intensité</th><th>Commentaire</th><th></th>
@@ -114,12 +116,15 @@
           </Datatable>
         </div>
       </template>
-      <div v-else class="flex justify-center items-center h-32">
-        <p class="text-xl text-center text-muted-foreground italic">Aucune session enregistrée</p>
-      </div>
+      <EmptyStateAction
+        v-else
+        title="Aucune session enregistrée"
+        description="Ajoute une activité pour commencer à suivre ton énergie et ton intensité."
+        actionLabel="Ajouter une session"
+        @action="showAddDialog = true"
+      />
     </section>
-    <div class="flex-row-container w-full gap-8">
-      <section class="flex flex-wrap h-full w-8/12 container py-8 px-4 bg-clearer rounded-3xl shadow-xl ml-auto">
+    <section class="container !mt-0 mx-auto py-8 w-full bg-clearer rounded-3xl shadow-xl ml-auto">
         <div class="w-full flex flex-col justify-center items-baseline">
           <div class="flex justify-center items-center gap-4">
             <h2 class="text-2xl self-start flex gap-4">
@@ -138,20 +143,7 @@
               index="date"
           />
         </div>
-      </section>
-      <section
-          class="flex flex-col h-auto items-center text-center gap-4 w-4/12 container py-8 bg-clearer rounded-3xl shadow-xl ml-auto">
-        <div class="flex gap-4 items-baseline mr-auto ml-2">
-          <h2 class="text-2xl self-start flex gap-4">
-            <i class="material-symbols-outlined text-3xl">trending_up</i>
-            Tendances
-          </h2>
-        </div>
-        <p>Durée totale ({{ entries.length }}
-          {{ entries.length > 1 ? 'entrées' : 'entrée' }})</p>
-        <span class="text-5xl text-highlight">{{ totalSessionDuration }}</span>
-      </section>
-    </div>
+    </section>
   </div>
 </template>
 
@@ -172,6 +164,8 @@ import Datatable from "@/shared/components/Datatable.vue"
 import GenericCardList from "@/shared/components/GenericCardList.vue"
 import BackButton from "@/shared/components/BackButton.vue"
 import SelectMonth from "@/shared/components/SelectMonth.vue"
+import SectionKpiHeader from "@/shared/components/SectionKpiHeader.vue"
+import EmptyStateAction from "@/shared/components/EmptyStateAction.vue"
 
 import apiService from "@/shared/services/apiService"
 import { useAuthStore } from '@/features/auth/store/auth'
@@ -182,10 +176,11 @@ import { useDialogForm } from '@/shared/composables/useDialogForm'
 import type { DonneesActivitePhysique } from "@/features/activite/types/donnees-activite-physique"
 
 const authStore = useAuthStore()
-const { formatDateDisplay, formatTimeDisplay, combineDateTime } = useDateTimeFormat()
+const { formatDateDisplay, formatTimeDisplay, combineDateTime, getCurrentDateInput, getCurrentTimeInput } = useDateTimeFormat()
 
 // Dialog control
 const showAddDialog = ref(false)
+const isEditMode = ref(false)
 const { submitForm } = useDialogForm(showAddDialog)
 
 const { selectedMonthYear, entries, isLoading } = useMonthData<DonneesActivitePhysique>({
@@ -206,7 +201,7 @@ const { selectedMonthYear, entries, isLoading } = useMonthData<DonneesActivitePh
   dataType: 'activite'
 })
 
-const { deleteEntry, createEntry } = useCrudOperations(entries)
+const { deleteEntry } = useCrudOperations(entries)
 
 const columns: any = [
   {data: 'typeActivite'},
@@ -220,6 +215,8 @@ const columns: any = [
     defaultContent: '<span class="material-symbols-outlined delete-btn">delete</span>'
   },
 ]
+
+const editingEntryId = ref<number | null>(null)
 
 const chartData = computed(() => {
   return entries.value.map((entry: any) => ({
@@ -239,6 +236,31 @@ const handleDelete = async (id: string | number) => {
   })
 }
 
+const handleEditEntry = (id: string | number) => {
+  const entry = entries.value.find(item => item.id === (id as number))
+  if (!entry) return
+
+  const [day, month, year] = String(entry.date).split('/').map(Number)
+  const parsedDate = new Date(year, month - 1, day)
+
+  editingEntryId.value = entry.id as number
+  isEditMode.value = true
+  form.setValues({
+    id: entry.id,
+    typeActivite: entry.typeActivite,
+    date: new Intl.DateTimeFormat('fr-CA', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit'
+    }).format(parsedDate),
+    time: String(entry.time).replace('h', ':'),
+    duree: Number(String(entry.duree).replace('min', '')),
+    intensite: [Number(entry.intensite)],
+    commentaire: entry.commentaire === 'Pas de commentaire' ? '' : entry.commentaire,
+  })
+  showAddDialog.value = true
+}
+
 const totalSessionDuration = computed(() => {
   const totalMinutes = entries.value.reduce((total, entry) => {
     const dureeString = String(entry.duree)
@@ -249,7 +271,20 @@ const totalSessionDuration = computed(() => {
   return `${hours}h${minutes.toString().padStart(2, '0')}`
 })
 
+const averageIntensity = computed(() => {
+  if (entries.value.length === 0) return '0.0'
+  const avg = entries.value.reduce((sum, entry: any) => sum + Number(entry.intensite || 0), 0) / entries.value.length
+  return avg.toFixed(1)
+})
+
+const activityKpis = computed(() => ([
+  { label: 'Sessions', value: entries.value.length },
+  { label: 'Durée totale', value: totalSessionDuration.value },
+  { label: 'Intensité moy.', value: averageIntensity.value }
+]))
+
 const formSchema = toTypedSchema(z.object({
+  id: z.number().optional().nullable(),
   typeActivite: z.string({
     required_error: 'Le type d\'activité est requis',
   }),
@@ -271,19 +306,63 @@ const formSchema = toTypedSchema(z.object({
 const form = useForm({
   validationSchema: formSchema,
   initialValues: {
+    id: null,
+    typeActivite: '',
+    date: getCurrentDateInput(),
+    time: getCurrentTimeInput(),
+    duree: 30,
     intensite: [5],
+    commentaire: '',
   }
 })
 
 const onSubmit = form.handleSubmit((values) => {
   const dataToSend = {
-    id: 0,
+    id: editingEntryId.value ?? 0,
     typeActivite: values.typeActivite,
     intensite: values.intensite[0],
     duree: values.duree,
     date: combineDateTime(values.date, values.time),
     commentaire: values.commentaire || 'Pas de commentaire',
     carnetSanteId: authStore.user!.carnetSanteId,
+  }
+
+  if (isEditMode.value && editingEntryId.value !== null) {
+    submitForm(dataToSend, {
+      submitFunction: (data) => apiService.editDonneesActivitePhysique(editingEntryId.value as number, data),
+      successMessage: 'La session a été modifiée avec succès',
+      errorMessage: 'Un problème est survenu lors de la modification de la session',
+      onSuccess: () => {
+        const idx = entries.value.findIndex((entry) => entry.id === editingEntryId.value)
+        if (idx !== -1) {
+          entries.value[idx] = {
+            id: editingEntryId.value,
+            typeActivite: values.typeActivite,
+            date: formatDateDisplay(values.date),
+            time: formatTimeDisplay(values.time),
+            duree: values.duree,
+            intensite: values.intensite[0],
+            commentaire: values.commentaire || 'Pas de commentaire',
+          }
+        }
+      },
+      resetFormData: () => {
+        isEditMode.value = false
+        editingEntryId.value = null
+        form.resetForm({
+          values: {
+            id: null,
+            typeActivite: '',
+            date: getCurrentDateInput(),
+            time: getCurrentTimeInput(),
+            duree: 30,
+            intensite: [5],
+            commentaire: '',
+          }
+        })
+      }
+    })
+    return
   }
 
   submitForm(dataToSend, {
@@ -302,7 +381,19 @@ const onSubmit = form.handleSubmit((values) => {
       })
     },
     resetFormData: () => {
-      form.resetForm()
+      isEditMode.value = false
+      editingEntryId.value = null
+      form.resetForm({
+        values: {
+          id: null,
+          typeActivite: '',
+          date: getCurrentDateInput(),
+          time: getCurrentTimeInput(),
+          duree: 30,
+          intensite: [5],
+          commentaire: '',
+        }
+      })
     }
   })
 })
