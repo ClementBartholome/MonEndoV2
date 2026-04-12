@@ -48,6 +48,9 @@
           </div>
         </CardHeader>
         <CardContent>
+          <div class="mb-3 text-xs text-muted-foreground">
+            Objectifs personnalisables depuis <router-link to="/parametres" class="underline">Paramètres</router-link>
+          </div>
           <div class="space-y-4">
             <div v-for="goal in goals" :key="goal.id"
                  class="p-4 rounded-2xl border-l-4 bg-white shadow-sm"
@@ -119,18 +122,8 @@
                     <p class="text-xs text-blue-600 mt-1">{{ insight.action.description }}</p>
                   </div>
 
-                  <!-- Priorité et objectif -->
-                  <div class="flex items-center justify-between">
-                    <div class="flex items-center text-xs text-gray-500">
-                      <i class="material-symbols-outlined mr-1 text-xs">
-                        {{
-                          insight.priority === 'high' ? 'priority_high' : insight.priority === 'medium' ? 'info' : 'low_priority'
-                        }}
-                      </i>
-                      Priorité {{
-                        insight.priority === 'high' ? 'élevée' : insight.priority === 'medium' ? 'modérée' : 'faible'
-                      }}
-                    </div>
+                  <!-- Objectif -->
+                  <div class="flex items-center justify-end">
                     <span v-if="insight.target" class="text-xs text-gray-400">
                       Objectif: {{ insight.target }}
                     </span>
@@ -152,10 +145,13 @@ import type {BilanQuotidien} from "@/features/bilan-quotidien/types/bilan-quotid
 import type {ScoreMetric} from "@/features/bilan-quotidien/models/score-metric";
 import type {Goal} from "@/features/bilan-quotidien/models/goal";
 import type {InsightWithAction} from "@/features/bilan-quotidien/models/insight-with-action";
+import { getWellbeingGoals } from '@/shared/services/wellbeingGoalsStorage';
 
 const props = defineProps<{
   bilans: BilanQuotidien[];
 }>();
+
+const wellbeingGoals = getWellbeingGoals();
 
 const getMoodScore = (mood: string): number => {
   const mapping: Record<string, number> = {'Heureuse': 20, 'Neutre': 10, 'Triste': 0};
@@ -283,7 +279,7 @@ const scoreBreakdown = computed((): ScoreMetric[] => {
     },
     {
       name: 'Activité',
-      value: Math.round(Math.min(avgSteps / 10000, 1) * 20),
+      value: Math.round(Math.min(avgSteps / wellbeingGoals.stepsGoal, 1) * 20),
       icon: 'directions_walk'
     }
   ];
@@ -311,26 +307,32 @@ const goals = computed((): Goal[] => {
     {
       id: 1,
       title: 'Hydratation quotidienne',
-      description: `Objectif: 1.5L/jour`,
-      progress: Math.min(Math.round((avgHydration / 1.5) * 100), 100),
+      description: `Objectif: ${wellbeingGoals.hydrationLitersGoal}L/jour`,
+      progress: Math.min(Math.round((avgHydration / wellbeingGoals.hydrationLitersGoal) * 100), 100),
       icon: 'water_drop',
-      detail: `${avgHydration >= 1.5 ? '✅' : '⚠️'} ${avgHydration.toFixed(1)}L sur les ${recent.length} derniers jours`
+      detail: `${avgHydration >= wellbeingGoals.hydrationLitersGoal ? '✅' : '⚠️'} ${avgHydration.toFixed(1)}L sur les ${recent.length} derniers jours`,
+      targetValue: wellbeingGoals.hydrationLitersGoal,
+      targetLabel: 'L/jour'
     },
     {
       id: 2,
       title: 'Activité physique',
-      description: `Objectif: 10 000 pas/jour`,
-      progress: Math.min(Math.round((avgSteps / 10000) * 100), 100),
+      description: `Objectif: ${wellbeingGoals.stepsGoal.toLocaleString()} pas/jour`,
+      progress: Math.min(Math.round((avgSteps / wellbeingGoals.stepsGoal) * 100), 100),
       icon: 'directions_walk',
-      detail: `${avgSteps >= 10000 ? '✅' : '⚠️'} ${Math.round(avgSteps).toLocaleString()} pas en moyenne`
+      detail: `${avgSteps >= wellbeingGoals.stepsGoal ? '✅' : '⚠️'} ${Math.round(avgSteps).toLocaleString()} pas en moyenne`,
+      targetValue: wellbeingGoals.stepsGoal,
+      targetLabel: 'pas/jour'
     },
     {
       id: 3,
       title: 'Gestion du stress',
-      description: `Objectif: < 3/5 `,
-      progress: Math.max(Math.round((1 - Math.max(avgStress - 3, 0) / 2) * 100), 0),
+      description: `Objectif: <= ${wellbeingGoals.stressMaxGoal}/5`,
+      progress: Math.max(Math.round((1 - Math.max(avgStress - wellbeingGoals.stressMaxGoal, 0) / 2) * 100), 0),
       icon: 'psychology',
-      detail: `${avgStress < 3 ? '✅' : '⚠️'} Niveau moyen de ${avgStress.toFixed(1)}/5`
+      detail: `${avgStress <= wellbeingGoals.stressMaxGoal ? '✅' : '⚠️'} Niveau moyen de ${avgStress.toFixed(1)}/5`,
+      targetValue: wellbeingGoals.stressMaxGoal,
+      targetLabel: '/5 max'
     }
   ];
 });
@@ -352,7 +354,7 @@ const insightsWithActions = computed((): InsightWithAction[] => {
 
   // Analyse Hydratation
   const avgHydration = recent.reduce((sum, b) => sum + (b.hydratation || 0), 0) / recent.length;
-  if (avgHydration < 1.5) {
+  if (avgHydration < wellbeingGoals.hydrationLitersGoal) {
     insights.push({
       id: 1,
       title: 'Hydratation insuffisante',
@@ -364,9 +366,9 @@ const insightsWithActions = computed((): InsightWithAction[] => {
         title: 'Augmenter l\'hydratation',
         description: 'Garde une bouteille d\'eau à portée de main et bois régulièrement.'
       },
-      target: '1.5L/jour'
+      target: `${wellbeingGoals.hydrationLitersGoal}L/jour`
     });
-  } else if (avgHydration >= 1.5) {
+  } else if (avgHydration >= wellbeingGoals.hydrationLitersGoal) {
     insights.push({
       id: 1,
       title: 'Excellente hydratation',
@@ -374,13 +376,13 @@ const insightsWithActions = computed((): InsightWithAction[] => {
       icon: 'water_drop',
       severity: 'success',
       priority: 'low',
-      target: '1.5L/jour'
+      target: `${wellbeingGoals.hydrationLitersGoal}L/jour`
     });
   }
 
   // Analyse Fatigue
   const avgFatigue = recent.reduce((sum, b) => sum + (b.fatigue || 0), 0) / recent.length;
-  if (avgFatigue > 3) {
+  if (avgFatigue > wellbeingGoals.fatigueMaxGoal) {
     insights.push({
       id: 2,
       title: 'Fatigue élevée',
@@ -392,13 +394,13 @@ const insightsWithActions = computed((): InsightWithAction[] => {
         title: 'Améliorer le sommeil',
         description: 'Essaie de te coucher 30 minutes plus tôt et maintiens des horaires réguliers.'
       },
-      target: '< 3/5'
+      target: `<= ${wellbeingGoals.fatigueMaxGoal}/5`
     });
   }
 
   // Analyse Activité
   const avgSteps = recent.reduce((sum, b) => sum + (b.pas || 0), 0) / recent.length;
-  if (avgSteps < 5000) {
+  if (avgSteps < wellbeingGoals.stepsGoal * 0.6) {
     insights.push({
       id: 3,
       title: 'Activité physique faible',
@@ -410,9 +412,9 @@ const insightsWithActions = computed((): InsightWithAction[] => {
         title: 'Bouger plus',
         description: 'Intègre de courtes marches dans ta journée, même 10 minutes suffisent.'
       },
-      target: '10 000 pas/jour'
+      target: `${wellbeingGoals.stepsGoal.toLocaleString()} pas/jour`
     });
-  } else if (avgSteps >= 5000) {
+  } else if (avgSteps >= wellbeingGoals.stepsGoal * 0.6) {
     insights.push({
       id: 3,
       title: 'Bonne activité physique !',
@@ -420,13 +422,13 @@ const insightsWithActions = computed((): InsightWithAction[] => {
       icon: 'directions_walk',
       severity: 'success',
       priority: 'medium',
-      target: '10 000 pas/jour'
+      target: `${wellbeingGoals.stepsGoal.toLocaleString()} pas/jour`
     });
   }
 
   // Analyse Stress
   const avgStress = recent.reduce((sum, b) => sum + ((b.stressPro || 0) + (b.stressPerso || 0)) / 2, 0) / recent.length;
-  if (avgStress > 3.5) {
+  if (avgStress > wellbeingGoals.stressMaxGoal + 0.5) {
     insights.push({
       id: 4,
       title: 'Niveau de stress élevé',
@@ -438,9 +440,9 @@ const insightsWithActions = computed((): InsightWithAction[] => {
         title: 'Techniques de relaxation',
         description: 'Essaie la méditation, la respiration profonde ou le yoga.'
       },
-      target: '< 3/5'
+      target: `<= ${wellbeingGoals.stressMaxGoal}/5`
     });
-  } else if (avgStress < 2) {
+  } else if (avgStress < Math.max(wellbeingGoals.stressMaxGoal - 1, 0)) {
     insights.push({
       id: 4,
       title: 'Stress bien géré',
@@ -448,13 +450,13 @@ const insightsWithActions = computed((): InsightWithAction[] => {
       icon: 'self_care',
       severity: 'success',
       priority: 'low',
-      target: '< 3/5'
+      target: `<= ${wellbeingGoals.stressMaxGoal}/5`
     });
   }
 
   // Analyse Douleur
   const avgPain = recent.reduce((sum, b) => sum + (b.douleurMoyenne || 0), 0) / recent.length;
-  if (avgPain > 6) {
+  if (avgPain > wellbeingGoals.painMaxGoal + 1) {
     insights.push({
       id: 5,
       title: 'Douleurs persistantes',
@@ -466,7 +468,7 @@ const insightsWithActions = computed((): InsightWithAction[] => {
         title: 'Consulter un professionnel',
         description: 'Prends rendez-vous avec un professionnel de santé si les douleurs persistent.'
       },
-      target: '< 5/10'
+      target: `<= ${wellbeingGoals.painMaxGoal}/10`
     });
   }
 

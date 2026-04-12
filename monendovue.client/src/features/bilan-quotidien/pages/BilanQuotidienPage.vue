@@ -21,7 +21,7 @@
         </div>
         <Progress :model-value="(currentStep / 7) * 100" class="h-3 mb-4"/>
 
-        <div class="flex justify-between gap-2">
+        <div class="flex justify-between gap-2 bilan-stepper">
           <button
               v-for="step in 7"
               :key="step"
@@ -34,6 +34,7 @@
                 step > currentStep ? 'bg-gray-200 text-gray-400 cursor-not-allowed' : '',
                 canAccessStep(step) && step !== currentStep ? 'hover:scale-105' : ''
               ]"
+              class="bilan-step-dot"
               :title="getStepTitle(step)"
           >
             <i v-if="step < currentStep" class="material-symbols-outlined text-base">check</i>
@@ -301,9 +302,9 @@
     <!-- Section après soumission avec onglets -->
     <div v-if="isSubmitted" class="w-full">
       <Tabs default-value="recap" class="w-full">
-        <TabsList>
-          <TabsTrigger value="recap">Récapitulatif & Historique</TabsTrigger>
-          <TabsTrigger value="dashboard">Analyse & Tendances</TabsTrigger>
+        <TabsList class="bilan-tabs-list">
+          <TabsTrigger value="recap" class="bilan-tab-trigger">Récapitulatif & Historique</TabsTrigger>
+          <TabsTrigger value="dashboard" class="bilan-tab-trigger">Analyse & Tendances</TabsTrigger>
         </TabsList>
 
         <TabsContent value="recap">
@@ -328,66 +329,89 @@
               </CardHeader>
               <CardContent>
                 <div v-if="selectedBilan">
-                  <ul class="summary-list text-lg">
-                    <li class="flex items-center">
-                      <span :class="`material-symbols-outlined mood-icon mr-2`">{{
-                          moodIconMapping[selectedBilan.mood]
-                        }}</span>
-                      Humeur : {{ selectedBilan.mood }}
-                    </li>
-                    <li class="flex items-center">
-                      <i class="material-symbols-outlined stress-icon mr-2">psychology</i> Niveau de stress :
-                      {{ (selectedBilan.stressPro + selectedBilan.stressPerso) / 2 }}
-                    </li>
-                    <li class="flex items-center">
-                      <i class="material-symbols-outlined fatigue-icon mr-2">bedtime</i> Niveau de fatigue :
-                      {{ selectedBilan.fatigue.toString() }}
-                    </li>
-                    <li class="flex items-center">
-                      <i class="material-symbols-outlined fatigue-icon mr-2">sick</i> Niveau de douleur :
-                      {{ selectedBilan.douleurMoyenne.toString() }}
-                    </li>
-                    <li class="flex items-center">
-                      <i class="material-symbols-outlined neat-icon mr-2">footprint</i> Nombre de pas :
-                      {{ selectedBilan.pas.toString() }}
-                    </li>
-                    <li class="flex items-center">
-                      <i class="material-symbols-outlined hydratation-icon mr-2">water_drop</i> Hydratation :
-                      {{ selectedBilan.hydratation.toString() + "L" }}
-                    </li>
-                    <li class="flex items-center flex-wrap">
-                      <i class="material-symbols-outlined mr-2">restaurant</i> Alimentation :
+                  <div class="grid grid-cols-2 md:grid-cols-3 gap-2 mb-4">
+                    <div class="bg-white rounded-xl border border-gray-100 p-3">
+                      <p class="text-xs text-muted-foreground flex items-center gap-1">
+                        <span :class="`material-symbols-outlined text-base`">{{ moodIconMapping[selectedBilan.mood] }}</span>
+                        Humeur
+                      </p>
+                      <p class="text-base font-semibold text-headline mt-1">{{ selectedBilan.mood }}</p>
+                    </div>
+                    <div class="bg-white rounded-xl border border-gray-100 p-3">
+                      <p class="text-xs text-muted-foreground flex items-center gap-1">
+                        <i class="material-symbols-outlined text-base">psychology</i>
+                        Stress moyen
+                      </p>
+                      <p class="text-base font-semibold text-headline mt-1">{{ selectedBilanStress }}</p>
+                    </div>
+                    <div class="bg-white rounded-xl border border-gray-100 p-3">
+                      <p class="text-xs text-muted-foreground flex items-center gap-1">
+                        <i class="material-symbols-outlined text-base">bedtime</i>
+                        Fatigue
+                      </p>
+                      <p class="text-base font-semibold text-headline mt-1">{{ selectedBilan.fatigue }}/5</p>
+                    </div>
+                    <div class="bg-white rounded-xl border border-gray-100 p-3">
+                      <p class="text-xs text-muted-foreground flex items-center gap-1">
+                        <i class="material-symbols-outlined text-base">sick</i>
+                        Douleur
+                      </p>
+                      <p class="text-base font-semibold text-headline mt-1">{{ selectedBilan.douleurMoyenne }}/10</p>
+                    </div>
+                    <div class="bg-white rounded-xl border border-gray-100 p-3">
+                      <p class="text-xs text-muted-foreground flex items-center gap-1">
+                        <i class="material-symbols-outlined text-base">footprint</i>
+                        Pas
+                      </p>
+                      <p class="text-base font-semibold text-headline mt-1">{{ selectedBilan.pas }}</p>
+                    </div>
+                    <div class="bg-white rounded-xl border border-gray-100 p-3">
+                      <p class="text-xs text-muted-foreground flex items-center gap-1">
+                        <i class="material-symbols-outlined text-base">water_drop</i>
+                        Hydratation
+                      </p>
+                      <p class="text-base font-semibold text-headline mt-1">{{ selectedBilan.hydratation }} L</p>
+                    </div>
+                  </div>
+
+                  <div class="bg-white rounded-xl border border-gray-100 p-3 mb-3">
+                    <p class="text-xs text-muted-foreground flex items-center gap-1 mb-2">
+                      <i class="material-symbols-outlined text-base">restaurant</i>
+                      Alimentation
+                    </p>
+                    <div class="flex flex-wrap gap-2">
                       <span v-if="selectedBilan.gluten"
-                            class="inline-flex items-center gap-1 px-1 py-0.5 rounded-full bg-orange-100 text-orange-700 text-xs m-1"
+                            class="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-orange-100 text-orange-700 text-xs"
                             title="Consommation de gluten">
-                      <i class="material-symbols-outlined text-sm">bakery_dining</i>
-                      Gluten
-                    </span>
+                        <i class="material-symbols-outlined text-sm">bakery_dining</i>
+                        Gluten
+                      </span>
                       <span v-if="selectedBilan.lactose"
-                            class="inline-flex items-center gap-1 px-1 py-0.5 rounded-full bg-blue-100 text-blue-700 text-xs m-1"
+                            class="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-blue-100 text-blue-700 text-xs"
                             title="Consommation de lactose">
-                      <i class="material-symbols-outlined text-sm">icecream</i>
-                      Lactose
-                    </span>
+                        <i class="material-symbols-outlined text-sm">icecream</i>
+                        Lactose
+                      </span>
                       <span v-if="selectedBilan.grignotage"
-                            class="inline-flex items-center gap-1 px-1 py-0.5 rounded-full bg-purple-100 text-purple-700 text-xs m-1"
+                            class="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-purple-100 text-purple-700 text-xs"
                             title="Grignotage dans la journée">
-                      <i class="material-symbols-outlined text-sm">cookie</i>
-                      Grignotage
-                    </span>
+                        <i class="material-symbols-outlined text-sm">cookie</i>
+                        Grignotage
+                      </span>
                       <span v-if="!selectedBilan.gluten && !selectedBilan.lactose && !selectedBilan.grignotage"
-                            class="text-gray-500 italic">
-                      Aucune
-                    </span>
-                    </li>
-                    <li v-if="selectedBilan.commentaire" class="flex items-start mt-4">
-                      <i class="material-symbols-outlined mr-2 mt-1">comment</i>
-                      <div>
-                        <span class="font-medium">Commentaire :</span><br/>
-                        <span>{{ selectedBilan.commentaire }}</span>
-                      </div>
-                    </li>
-                  </ul>
+                            class="text-gray-500 italic text-sm">
+                        Aucune consommation signalée
+                      </span>
+                    </div>
+                  </div>
+
+                  <div v-if="selectedBilan.commentaire" class="bg-white rounded-xl border border-gray-100 p-3">
+                    <p class="text-xs text-muted-foreground flex items-center gap-1 mb-1">
+                      <i class="material-symbols-outlined text-base">comment</i>
+                      Commentaire
+                    </p>
+                    <p class="text-sm text-paragraph">{{ selectedBilan.commentaire }}</p>
+                  </div>
                 </div>
                 <div v-else class="text-center py-8">
                   <div class="flex flex-col items-center gap-4">
@@ -581,6 +605,11 @@ const selectedDateTitle = computed(() => {
   } else {
     return `Bilan du ${format(selectedDate.value, 'dd MMMM yyyy', {locale: fr})}`;
   }
+});
+
+const selectedBilanStress = computed(() => {
+  if (!selectedBilan.value) return '-';
+  return (((selectedBilan.value.stressPro + selectedBilan.value.stressPerso) / 2).toFixed(1)) + '/5';
 });
 
 const handleDateSelection = (date: Date) => {
@@ -923,5 +952,37 @@ label:active {
 /* Transitions */
 .material-symbols-outlined {
   transition: all 0.2s ease;
+}
+
+.bilan-tabs-list {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+}
+
+.bilan-tab-trigger {
+  white-space: normal;
+  text-align: center;
+  line-height: 1.2;
+}
+
+@media (max-width: 425px) {
+  .bilan-stepper {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .bilan-step-dot {
+    width: 2rem !important;
+    height: 2rem !important;
+    font-size: 0.75rem;
+  }
+
+  .bilan-tab-trigger {
+    font-size: 0.8rem;
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+  }
 }
 </style>

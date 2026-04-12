@@ -5,4 +5,6 @@
     progress: number;
     icon: string;
     detail?: string;
+    targetValue?: number;
+    targetLabel?: string;
 }
