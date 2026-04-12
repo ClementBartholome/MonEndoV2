@@ -14,6 +14,11 @@ namespace MonEndoVue.Server.Services
         {
             var tokenHandler = new JwtSecurityTokenHandler();
             var key = Encoding.ASCII.GetBytes(configuration["Jwt:Key"] ?? string.Empty);
+            var issuer = configuration["Authentication:Schemes:Bearer:ValidIssuer"];
+            var audience = configuration
+                .GetSection("Authentication:Schemes:Bearer:ValidAudiences")
+                .Get<string[]>()?
+                .FirstOrDefault();
             var tokenDescriptor = new SecurityTokenDescriptor
             {
                 Subject = new ClaimsIdentity(new Claim[]
@@ -22,6 +27,8 @@ namespace MonEndoVue.Server.Services
                     new Claim(ClaimTypes.NameIdentifier, user.Id)
                 }),
                 Expires = DateTime.Now.AddMinutes(30),
+                Issuer = issuer,
+                Audience = audience,
                 SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
             };
             var token = tokenHandler.CreateToken(tokenDescriptor);

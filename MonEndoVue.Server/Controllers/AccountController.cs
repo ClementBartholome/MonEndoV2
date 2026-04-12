@@ -30,7 +30,6 @@ namespace MonEndoVue.Server.Controllers
                 var translatedErrors = TranslateErrors(result.Errors);
                 return BadRequest(translatedErrors);
             }
-            await signInManager.SignInAsync(user, isPersistent: false);
             await carnetSanteService.CreateCarnetSante(user.Id);
 
             var (accessToken, tokenExpiry) = tokenService.GenerateAccessToken(user);
@@ -45,6 +44,7 @@ namespace MonEndoVue.Server.Controllers
                 HttpOnly = true,
                 Secure = true,
                 SameSite = SameSiteMode.Strict,
+                Path = "/",
                 Expires = DateTime.Now.AddMinutes(30)
             };
 
@@ -53,6 +53,7 @@ namespace MonEndoVue.Server.Controllers
                 HttpOnly = true,
                 Secure = true,
                 SameSite = SameSiteMode.Strict,
+                Path = "/",
                 Expires = DateTime.Now.AddDays(2)
             };
 
@@ -69,14 +70,14 @@ namespace MonEndoVue.Server.Controllers
             logger.LogInformation("Login method called with email: {Email}", email);
             try
             {
-                var result = await signInManager.PasswordSignInAsync(email, password, isPersistent: false, lockoutOnFailure: false);
-
-                if (!result.Succeeded) return Unauthorized();
                 var user = await userManager.FindByEmailAsync(email);
                 if (user == null)
                 {
                     return Unauthorized();
                 }
+
+                var result = await signInManager.CheckPasswordSignInAsync(user, password, lockoutOnFailure: false);
+                if (!result.Succeeded) return Unauthorized();
 
                 var (accessToken, tokenExpiry) = tokenService.GenerateAccessToken(user);
                 var refreshToken = tokenService.GenerateRefreshToken();
@@ -90,6 +91,7 @@ namespace MonEndoVue.Server.Controllers
                     HttpOnly = true,
                     Secure = true,
                     SameSite = SameSiteMode.Strict,
+                    Path = "/",
                     Expires = DateTime.Now.AddMinutes(30)
                 };
                 
@@ -98,6 +100,7 @@ namespace MonEndoVue.Server.Controllers
                     HttpOnly = true,
                     Secure = true,
                     SameSite = SameSiteMode.Strict,
+                    Path = "/",
                     Expires = DateTime.Now.AddDays(2)
                 };
                 
@@ -150,6 +153,7 @@ namespace MonEndoVue.Server.Controllers
                 HttpOnly = true,
                 Secure = true,
                 SameSite = SameSiteMode.Strict,
+                Path = "/",
                 Expires = DateTime.Now.AddMinutes(30)
             };
 
@@ -158,6 +162,7 @@ namespace MonEndoVue.Server.Controllers
                 HttpOnly = true,
                 Secure = true,
                 SameSite = SameSiteMode.Strict,
+                Path = "/",
                 Expires = DateTime.Now.AddDays(2)
             };
 
@@ -204,8 +209,13 @@ namespace MonEndoVue.Server.Controllers
         {
             await signInManager.SignOutAsync();
             
-            Response.Cookies.Delete("accessToken");
-            Response.Cookies.Delete("refreshToken");
+            // Efface les cookies actuels (Path=/)
+            Response.Cookies.Delete("accessToken", new CookieOptions { Path = "/" });
+            Response.Cookies.Delete("refreshToken", new CookieOptions { Path = "/" });
+
+            // Efface les anciens cookies qui auraient ete crees avec le path par defaut /Account
+            Response.Cookies.Delete("accessToken", new CookieOptions { Path = "/Account" });
+            Response.Cookies.Delete("refreshToken", new CookieOptions { Path = "/Account" });
 
             return Ok();
         }
