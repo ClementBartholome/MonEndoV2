@@ -147,7 +147,7 @@
 
         <!-- Regular Symptoms Section -->
         <section class="container !mt-0  mx-auto py-8 w-full bg-clearer rounded-3xl shadow-xl ml-auto">
-          <div class="flex justify-between items-center mb-4 flex flex-wrap gap-2 h-full">
+          <div class="flex justify-between items-center mb-4 flex-wrap gap-2 h-full">
             <h2 class="text-2xl flex gap-2 ml-2">
               <i class="material-symbols-outlined text-3xl ml-auto">gynecology</i>Symptômes
             </h2>
@@ -298,12 +298,18 @@
                         <FormLabel>Photo <span>(optionnel)</span></FormLabel>
                         <FormControl>
                           <Input
+                              ref="photoInputRef"
                               type="file"
-                              accept="image/*"
+                              accept="image/*,.heic,.heif"
                               capture="environment"
                               @change="handlePhotoUpload"
                           />
                         </FormControl>
+                        <p class="text-xs text-gray-500">JPG, PNG, WEBP, HEIC - max {{ MAX_PHOTO_SIZE_MB }} MB</p>
+                        <div v-if="selectedPhotoPreviewUrl" class="mt-2 flex items-center gap-3">
+                          <img :src="selectedPhotoPreviewUrl" alt="Aperçu photo" class="w-16 h-16 rounded-md object-cover border" />
+                          <Button type="button" variant="outline" size="sm" @click="resetSelectedPhoto">Retirer</Button>
+                        </div>
                         <FormMessage />
                       </FormItem>
                     </FormField>
@@ -359,7 +365,7 @@
 <script setup lang="ts">
 import { Calendar } from '@/shared/components/ui/calendar'
 import { type DateValue, getLocalTimeZone, today, parseDate } from '@internationalized/date'
-import { type Ref, ref, onMounted, watch, computed, nextTick } from 'vue'
+import { type Ref, ref, onMounted, watch, computed, nextTick, onBeforeUnmount } from 'vue'
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/shared/components/ui/dialog"
 import { Button } from "@/shared/components/ui/button"
 import { Input } from "@/shared/components/ui/input"
@@ -426,11 +432,135 @@ const joursSpotting = ref<Date[]>([])
 const joursAcne = ref<Date[]>([])
 const cycleMoyen = ref(28)
 const selectedPhoto = ref<File | null>(null)
+const photoInputRef = ref<HTMLInputElement | null>(null)
+const selectedPhotoPreviewUrl = ref<string>('')
 
-const handlePhotoUpload = (event: Event) => {
+const MAX_PHOTO_SIZE_MB = 10
+const MAX_PHOTO_SIZE_BYTES = MAX_PHOTO_SIZE_MB * 1024 * 1024
+
+const resetSelectedPhoto = () => {
+  selectedPhoto.value = null
+
+  if (selectedPhotoPreviewUrl.value) {
+    URL.revokeObjectURL(selectedPhotoPreviewUrl.value)
+    selectedPhotoPreviewUrl.value = ''
+  }
+
+  if (photoInputRef.value) {
+    photoInputRef.value.value = ''
+  }
+}
+
+const resizeImageIfNeeded = async (file: File): Promise<File> => {
+  const isCompressibleType = ['image/jpeg', 'image/png', 'image/webp'].includes(file.type)
+  if (!isCompressibleType || file.size <= 2 * 1024 * 1024) {
+    return file
+  }
+
+  return new Promise((resolve) => {
+    const reader = new FileReader()
+
+    reader.onload = () => {
+      const img = new Image()
+      img.onload = () => {
+        const maxDimension = 1600
+        const ratio = Math.min(maxDimension / img.width, maxDimension / img.height, 1)
+        const width = Math.round(img.width * ratio)
+        const height = Math.round(img.height * ratio)
+
+        const canvas = document.createElement('canvas')
+        canvas.width = width
+        canvas.height = height
+
+        const ctx = canvas.getContext('2d')
+        if (!ctx) {
+          resolve(file)
+          return
+        }
+
+        ctx.drawImage(img, 0, 0, width, height)
+        canvas.toBlob((blob) => {
+          if (!blob) {
+            resolve(file)
+            return
+          }
+
+          const optimized = new File([blob], file.name.replace(/\.[^.]+$/, '.jpg'), {
+            type: 'image/jpeg',
+            lastModified: Date.now()
+          })
+          resolve(optimized)
+        }, 'image/jpeg', 0.82)
+      }
+
+      img.onerror = () => resolve(file)
+      img.src = reader.result as string
+    }
+
+    reader.onerror = () => resolve(file)
+    reader.readAsDataURL(file)
+  })
+}
+
+const handlePhotoUpload = async (event: Event) => {
   const target = event.target as HTMLInputElement
   const file = target.files?.[0] ?? null
-  selectedPhoto.value = file
+
+  if (!file) {
+    resetSelectedPhoto()
+    return
+  }
+
+  if (!file.type.startsWith('image/')) {
+    toast({
+      title: 'Format non supporté',
+      description: 'Veuillez choisir une image (jpg, png, webp, heic).',
+      variant: 'destructive',
+    })
+    resetSelectedPhoto()
+    return
+  }
+
+  const optimizedFile = await resizeImageIfNeeded(file)
+
+  if (optimizedFile.size > MAX_PHOTO_SIZE_BYTES) {
+    toast({
+      title: 'Photo trop volumineuse',
+      description: `La photo doit faire moins de ${MAX_PHOTO_SIZE_MB} MB.`,
+      variant: 'destructive',
+    })
+    resetSelectedPhoto()
+    return
+  }
+
+  if (selectedPhotoPreviewUrl.value) {
+    URL.revokeObjectURL(selectedPhotoPreviewUrl.value)
+  }
+
+  selectedPhoto.value = optimizedFile
+  selectedPhotoPreviewUrl.value = URL.createObjectURL(optimizedFile)
+}
+
+const buildSymptomeFormData = (payload: {
+  typeSymptome: string
+  carnetSanteId: number
+  dateIso: string
+  intensite: number
+  commentaire?: string
+  photo?: File | null
+}) => {
+  const formData = new FormData()
+  formData.append('typeSymptome', payload.typeSymptome)
+  formData.append('carnetSanteId', payload.carnetSanteId.toString())
+  formData.append('date', payload.dateIso)
+  formData.append('intensite', payload.intensite.toString())
+  formData.append('commentaire', payload.commentaire || 'Pas de commentaire')
+
+  if (payload.photo) {
+    formData.append('photo', payload.photo)
+  }
+
+  return formData
 }
 
 const { selectedMonthYear: symptomesMonthYear, entries, isLoading, refetch } = useMonthData<SymptomeCycle>({
@@ -459,7 +589,7 @@ const { selectedMonthYear: symptomesMonthYear, entries, isLoading, refetch } = u
   immediate: false
 })
 
-const { deleteEntry, createEntry } = useCrudOperations(entries)
+const { deleteEntry } = useCrudOperations(entries)
 
 const getDefaultEntryValues = () => ({
   typeSymptome: '',
@@ -651,15 +781,24 @@ onMounted(() => {
   refetch()
 })
 
+const handlePhotoIconClick = (e: Event) => {
+  const target = e.target as HTMLElement
+  if (target.classList.contains('photo-icon') && target.dataset.url) {
+    openPhotoModal(target.dataset.url)
+  }
+}
+
 onMounted(() => {
   nextTick(() => {
-    document.addEventListener('click', (e) => {
-      const target = e.target as HTMLElement
-      if (target.classList.contains('photo-icon') && target.dataset.url) {
-        openPhotoModal(target.dataset.url)
-      }
-    })
+    document.addEventListener('click', handlePhotoIconClick)
   })
+})
+
+onBeforeUnmount(() => {
+  document.removeEventListener('click', handlePhotoIconClick)
+  if (selectedPhotoPreviewUrl.value) {
+    URL.revokeObjectURL(selectedPhotoPreviewUrl.value)
+  }
 })
 
 
@@ -752,12 +891,6 @@ const fetchJoursRegles = async () => {
 
 const isInSelectedMonth = (date: Date): boolean => {
   return date.getMonth() + 1 === month.value && date.getFullYear() === year.value
-}
-
-const getMonthBoundaries = () => {
-  const firstDay = new Date(year.value, month.value - 1, 1)
-  const lastDay = new Date(year.value, month.value, 0)
-  return { firstDay, lastDay }
 }
 
 const calculateFertilePeriodsForMonth = (reglesDates: Date[]) => {
@@ -948,13 +1081,14 @@ const onSubmit = form.handleSubmit(async (values) => {
     try {
       if (selectedPhoto.value) {
         const firstDate = dates[0]
-        const firstDayFormData = new FormData()
-        firstDayFormData.append('typeSymptome', entry.value.typeSymptome)
-        firstDayFormData.append('carnetSanteId', user!.carnetSanteId.toString())
-        firstDayFormData.append('date', combineDateTime(format(firstDate, 'yyyy-MM-dd'), '12:00').toISOString())
-        firstDayFormData.append('intensite', values.intensite[0].toString())
-        firstDayFormData.append('commentaire', values.commentaire || 'Pas de commentaire')
-        firstDayFormData.append('photo', selectedPhoto.value)
+        const firstDayFormData = buildSymptomeFormData({
+          typeSymptome: entry.value.typeSymptome,
+          carnetSanteId: user!.carnetSanteId,
+          dateIso: combineDateTime(format(firstDate, 'yyyy-MM-dd'), '12:00').toISOString(),
+          intensite: values.intensite[0],
+          commentaire: values.commentaire,
+          photo: selectedPhoto.value
+        })
 
         firstDayResponse = await apiService.postDonneesSymptomesCycle(firstDayFormData)
 
@@ -967,7 +1101,7 @@ const onSubmit = form.handleSubmit(async (values) => {
           })
 
           entry.value = getDefaultEntryValues()
-          selectedPhoto.value = null
+          resetSelectedPhoto()
           form.resetForm()
           showAddDialog.value = false
           return
@@ -975,24 +1109,26 @@ const onSubmit = form.handleSubmit(async (values) => {
 
         const remainingDates = dates.slice(1)
         const remainingPromises = remainingDates.map(date => {
-          const formData = new FormData()
-          formData.append('typeSymptome', entry.value.typeSymptome)
-          formData.append('carnetSanteId', user!.carnetSanteId.toString())
-          formData.append('date', combineDateTime(format(date, 'yyyy-MM-dd'), '12:00').toISOString())
-          formData.append('intensite', values.intensite[0].toString())
-          formData.append('commentaire', values.commentaire || 'Pas de commentaire')
+          const formData = buildSymptomeFormData({
+            typeSymptome: entry.value.typeSymptome,
+            carnetSanteId: user!.carnetSanteId,
+            dateIso: combineDateTime(format(date, 'yyyy-MM-dd'), '12:00').toISOString(),
+            intensite: values.intensite[0],
+            commentaire: values.commentaire
+          })
           return apiService.postDonneesSymptomesCycle(formData)
         })
 
         await Promise.all(remainingPromises)
       } else {
         const promises = dates.map(date => {
-          const formData = new FormData()
-          formData.append('typeSymptome', entry.value.typeSymptome)
-          formData.append('carnetSanteId', user!.carnetSanteId.toString())
-          formData.append('date', combineDateTime(format(date, 'yyyy-MM-dd'), '12:00').toISOString())
-          formData.append('intensite', values.intensite[0].toString())
-          formData.append('commentaire', values.commentaire || 'Pas de commentaire')
+          const formData = buildSymptomeFormData({
+            typeSymptome: entry.value.typeSymptome,
+            carnetSanteId: user!.carnetSanteId,
+            dateIso: combineDateTime(format(date, 'yyyy-MM-dd'), '12:00').toISOString(),
+            intensite: values.intensite[0],
+            commentaire: values.commentaire
+          })
           return apiService.postDonneesSymptomesCycle(formData)
         })
 
@@ -1009,7 +1145,7 @@ const onSubmit = form.handleSubmit(async (values) => {
 
       // Reset and close
       entry.value = getDefaultEntryValues()
-      selectedPhoto.value = null
+      resetSelectedPhoto()
       form.resetForm()
       showAddDialog.value = false
     } catch (error) {
@@ -1031,34 +1167,25 @@ const onSubmit = form.handleSubmit(async (values) => {
     }
   } else {
     // Handle single day submission
-    const formData = new FormData()
-    formData.append('typeSymptome', entry.value.typeSymptome)
-    formData.append('carnetSanteId', user!.carnetSanteId.toString())
-    formData.append('date', combineDateTime(values.date ?? '', values.time ?? '').toISOString())
-    formData.append('intensite', values.intensite[0].toString())
-    formData.append('commentaire', values.commentaire || 'Pas de commentaire')
-    if (selectedPhoto.value) {
-      formData.append('photo', selectedPhoto.value)
-    }
+    const formData = buildSymptomeFormData({
+      typeSymptome: entry.value.typeSymptome,
+      carnetSanteId: user!.carnetSanteId,
+      dateIso: combineDateTime(values.date ?? '', values.time ?? '').toISOString(),
+      intensite: values.intensite[0],
+      commentaire: values.commentaire,
+      photo: selectedPhoto.value
+    })
     
     submitForm(formData, {
       submitFunction: (data) => apiService.postDonneesSymptomesCycle(data),
       successMessage: 'Symptôme ajouté avec succès',
       errorMessage: 'Une erreur est survenue lors de l\'ajout du symptôme',
-      onSuccess: (response) => {
-        entries.value.push({
-          id: response.id,
-          typeSymptome: entry.value.typeSymptome,
-          date: formatDateDisplay(values.date || ''),
-          time: formatTimeDisplay(values.time || ''),
-          intensite: values.intensite[0],
-          commentaire: values.commentaire || 'Pas de commentaire',
-          photoUrl: response.photoUrl || ''
-        })
+      onSuccess: async () => {
+        await refetch()
       },
       resetFormData: () => {
         entry.value = getDefaultEntryValues()
-        selectedPhoto.value = null
+        resetSelectedPhoto()
         form.resetForm()
       }
     })
@@ -1094,13 +1221,17 @@ const extendAcnePeriod = async (period: any) => {
   // Get the last entry from the period to use its intensity and comment
   const lastEntry = period.entries[period.entries.length - 1]
 
-  const data = {
-    typeSymptome: 'Acné',
-    carnetSanteId: user?.carnetSanteId,
-    date: combineDateTime(today, '12:00'),
-    intensite: lastEntry.intensite,
-    commentaire: lastEntry.commentaire
+  if (!user?.carnetSanteId) {
+    return
   }
+
+  const data = buildSymptomeFormData({
+    typeSymptome: 'Acné',
+    carnetSanteId: user.carnetSanteId,
+    dateIso: combineDateTime(today, '12:00').toISOString(),
+    intensite: Number(lastEntry.intensite),
+    commentaire: lastEntry.commentaire
+  })
 
   try {
     await apiService.postDonneesSymptomesCycle(data)

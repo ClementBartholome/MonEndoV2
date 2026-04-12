@@ -1,4 +1,3 @@
-using System.Security.Claims;
 using System.Text;
 using System.Text.Json.Serialization;
 using FirebaseAdmin;
@@ -6,7 +5,7 @@ using FirebaseAdmin.Messaging;
 using Google.Apis.Auth.OAuth2;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.DataProtection;
-using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Http.Features;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
@@ -109,6 +108,11 @@ namespace MonEndoVue.Server
             });
 
             builder.Services.AddScoped<AzureBlobStorageService>();
+
+            builder.Services.Configure<FormOptions>(options =>
+            {
+                options.MultipartBodyLengthLimit = 15 * 1024 * 1024; // 15 MB
+            });
 
 
 

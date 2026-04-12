@@ -1,5 +1,6 @@
 ﻿using Azure.Storage.Blobs;
 using Azure.Storage.Blobs.Models;
+using Azure;
 using Microsoft.Extensions.Options;
 
 namespace MonEndoVue.Server.Services;
@@ -16,30 +17,81 @@ public class AzureBlobStorageService
 
     public AzureBlobStorageService(IOptions<AzureBlobStorageOptions> options)
     {
-        var blobServiceClient = new BlobServiceClient(options.Value.ConnectionString);
-        _containerClient = blobServiceClient.GetBlobContainerClient(options.Value.ContainerName);
+        var connectionString = options.Value.ConnectionString;
+        var containerName = options.Value.ContainerName;
+
+        if (string.IsNullOrWhiteSpace(connectionString))
+        {
+            throw new InvalidOperationException("Azure Blob connection string is missing.");
+        }
+
+        if (string.IsNullOrWhiteSpace(containerName))
+        {
+            throw new InvalidOperationException("Azure Blob container name is missing.");
+        }
+
+        var blobServiceClient = new BlobServiceClient(connectionString);
+        _containerClient = blobServiceClient.GetBlobContainerClient(containerName);
+        _containerClient.CreateIfNotExists(PublicAccessType.None);
     }
 
     public async Task<string> UploadFileAsync(IFormFile file, string fileName)
     {
         var blobClient = _containerClient.GetBlobClient(fileName);
         await using var stream = file.OpenReadStream();
-        await blobClient.UploadAsync(stream, overwrite: true);
+        var headers = new BlobHttpHeaders
+        {
+            ContentType = string.IsNullOrWhiteSpace(file.ContentType) ? "application/octet-stream" : file.ContentType
+        };
+
+        await blobClient.UploadAsync(stream, new BlobUploadOptions
+        {
+            HttpHeaders = headers
+        });
+
         return blobClient.Uri.ToString();
     }
 
     public string GetBlobNameFromUrl(string url)
     {
         if (string.IsNullOrWhiteSpace(url)) return string.Empty;
-        var uri = new Uri(url);
-        var segments = uri.AbsolutePath.Split('/', StringSplitOptions.RemoveEmptyEntries);
-        return segments.Length <= 1 ? string.Empty : string.Join('/', segments.Skip(1));
+
+        if (!Uri.TryCreate(url, UriKind.Absolute, out var uri))
+        {
+            return url;
+        }
+
+        var path = uri.AbsolutePath.Trim('/');
+        var containerPrefix = $"{_containerClient.Name}/";
+
+        if (path.StartsWith(containerPrefix, StringComparison.OrdinalIgnoreCase))
+        {
+            return path[containerPrefix.Length..];
+        }
+
+        return path;
     }
 
     public async Task DeleteFileAsync(string blobName)
     {
         if (string.IsNullOrWhiteSpace(blobName)) return;
+
         var blobClient = _containerClient.GetBlobClient(blobName);
         await blobClient.DeleteIfExistsAsync(DeleteSnapshotsOption.IncludeSnapshots);
+    }
+
+    public async Task DeleteFileByUrlAsync(string fileUrl)
+    {
+        var blobName = GetBlobNameFromUrl(fileUrl);
+        if (string.IsNullOrWhiteSpace(blobName)) return;
+
+        try
+        {
+            await DeleteFileAsync(blobName);
+        }
+        catch (RequestFailedException ex) when (ex.Status == 404)
+        {
+            // Blob already removed: no-op to keep deletion idempotent.
+        }
     }
 }

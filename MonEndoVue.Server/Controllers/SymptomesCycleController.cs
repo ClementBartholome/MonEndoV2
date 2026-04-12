@@ -4,14 +4,32 @@ using Microsoft.EntityFrameworkCore;
 using MonEndoVue.Server.Data;
 using MonEndoVue.Server.Models;
 using MonEndoVue.Server.Services;
+using System.Globalization;
 
 namespace MonEndoVue.Server.Controllers
 {
     [Route("[controller]")]
     [ApiController]
     [Authorize]
-    public class SymptomesCycleController(AppDbContext context, CarnetSanteService carnetSanteService, AzureBlobStorageService azureBlobStorageService) : ControllerBase
+    public class SymptomesCycleController(
+        AppDbContext context,
+        CarnetSanteService carnetSanteService,
+        AzureBlobStorageService azureBlobStorageService,
+        ILogger<SymptomesCycleController> logger) : ControllerBase
     {
+        private const long MaxPhotoSizeInBytes = 10 * 1024 * 1024; // 10 MB
+        private static readonly HashSet<string> AllowedMimeTypes =
+        [
+            "image/jpeg",
+            "image/png",
+            "image/webp",
+            "image/heic",
+            "image/heif"
+        ];
+
+        private static readonly HashSet<string> AllowedExtensions =
+        [".jpg", ".jpeg", ".png", ".webp", ".heic", ".heif"];
+
         // GET: SymptomesCycle/5
         [HttpGet("{id:int}")]
         public async Task<ActionResult<SymptomeCycle>> GetSymptomeCycle(int id)
@@ -51,7 +69,13 @@ namespace MonEndoVue.Server.Controllers
 
             if (photo != null)
             {
-                var fileName = $"symptomes/{Guid.NewGuid()}_{photo.FileName}";
+                if (!IsPhotoValid(photo, out var validationError))
+                {
+                    return BadRequest(new { message = validationError });
+                }
+
+                var extension = Path.GetExtension(photo.FileName).ToLowerInvariant();
+                var fileName = $"symptomes/{symptomeCycle.CarnetSanteId.ToString(CultureInfo.InvariantCulture)}/{Guid.NewGuid()}{extension}";
                 symptomeCycle.PhotoUrl = await azureBlobStorageService.UploadFileAsync(photo, fileName);
             }
 
@@ -75,8 +99,14 @@ namespace MonEndoVue.Server.Controllers
             // Supprimer la photo si elle existe
             if (!string.IsNullOrEmpty(symptomeCycle.PhotoUrl))
             {
-                var blobName = azureBlobStorageService.GetBlobNameFromUrl(symptomeCycle.PhotoUrl);
-                await azureBlobStorageService.DeleteFileAsync(blobName);
+                try
+                {
+                    await azureBlobStorageService.DeleteFileByUrlAsync(symptomeCycle.PhotoUrl);
+                }
+                catch (Exception ex)
+                {
+                    logger.LogWarning(ex, "Unable to delete symptom photo for symptom {SymptomeId}", symptomeCycle.Id);
+                }
             }
 
             context.SymptomesCycles.Remove(symptomeCycle);
@@ -85,6 +115,37 @@ namespace MonEndoVue.Server.Controllers
             carnetSanteService.InvalidateCache(symptomeCycle.CarnetSanteId);
 
             return NoContent();
+        }
+
+        private static bool IsPhotoValid(IFormFile photo, out string error)
+        {
+            if (photo.Length == 0)
+            {
+                error = "Le fichier photo est vide.";
+                return false;
+            }
+
+            if (photo.Length > MaxPhotoSizeInBytes)
+            {
+                error = "La photo dépasse la taille maximale autorisée (10 MB).";
+                return false;
+            }
+
+            var extension = Path.GetExtension(photo.FileName).ToLowerInvariant();
+            if (!AllowedExtensions.Contains(extension))
+            {
+                error = "Format de photo non supporté.";
+                return false;
+            }
+
+            if (!string.IsNullOrWhiteSpace(photo.ContentType) && !AllowedMimeTypes.Contains(photo.ContentType.ToLowerInvariant()))
+            {
+                error = "Type MIME de la photo non supporté.";
+                return false;
+            }
+
+            error = string.Empty;
+            return true;
         }
 
     }

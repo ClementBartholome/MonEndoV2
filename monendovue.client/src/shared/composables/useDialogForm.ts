@@ -5,7 +5,7 @@ interface DialogFormOptions<T> {
   submitFunction: (data: any) => Promise<T>;
   successMessage?: string;
   errorMessage?: string;
-  onSuccess?: (response: T) => void;
+  onSuccess?: (response: T) => void | Promise<void>;
   onError?: (error: any) => void;
   resetFormData?: () => void;
 }
@@ -35,7 +35,7 @@ export function useDialogForm<T = any>(dialogRef: Ref<boolean>) {
 
       // Execute custom success callback if provided
       if (onSuccess) {
-        onSuccess(response);
+        await onSuccess(response);
       }
 
       // Reset form data if reset function is provided
