@@ -1,20 +1,14 @@
 ﻿<script setup lang="ts">
+import { symptomeIconConfig } from '@/shared/config/materialSymbols'
+
 const props = defineProps<{
   entries: any[]
   onDelete: (id: string | number) => Promise<void>
   onPhotoClick: (url: string) => void
 }>()
 
-const typeConfig: Record<string, { color: string; bg: string; icon: string }> = {
-  'Acné':    { color: 'text-purple-600', bg: 'bg-purple-100', icon: 'face_retouching_natural' },
-  'Spotting': { color: 'text-red-500',    bg: 'bg-red-100',    icon: 'water_drop' },
-  'Nausée':   { color: 'text-yellow-600', bg: 'bg-yellow-100', icon: 'sick' },
-  'Fatigue':  { color: 'text-blue-500',   bg: 'bg-blue-100',   icon: 'bedtime' },
-  'Autre':    { color: 'text-gray-500',   bg: 'bg-gray-100',   icon: 'help_outline' },
-}
-
 const getConfig = (type: string) =>
-  typeConfig[type] ?? { color: 'text-gray-500', bg: 'bg-gray-100', icon: 'help_outline' }
+  symptomeIconConfig[type] ?? { color: 'text-gray-500', bg: 'bg-gray-100', icon: 'help' }
 
 const intensityColor = (v: number | string) => {
   const n = Number(v)

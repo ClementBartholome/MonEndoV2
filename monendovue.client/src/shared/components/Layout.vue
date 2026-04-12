@@ -1,10 +1,11 @@
 ﻿<script setup lang="ts">
 
+import { materialSymbols } from '@/shared/config/materialSymbols'
+
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuSeparator,
   DropdownMenuTrigger
 } from "@/shared/components/ui/dropdown-menu";
 
@@ -54,17 +55,17 @@ const handleLogout = async () => {
           </li>
           <li class="flex items-center" :class="{ active: $route.path === '/medicaments' }">
             <router-link to="/medicaments" class="flex flex-col items-center text-dark w-full">
-              <span class="material-symbols-outlined">pill</span>
+              <span class="material-symbols-outlined">{{ materialSymbols.treatments }}</span>
               <span>Traitements</span>
             </router-link>
           </li>
           <li class="flex items-center" :class="{ active: $route.path === '/cycle' }">
             <router-link to="/cycle" class="flex flex-col items-center text-dark w-full">
-              <span class="material-symbols-outlined">menstrual_health</span>
+              <span class="material-symbols-outlined">{{ materialSymbols.cycle }}</span>
               <span>Cycle</span>
             </router-link>
           </li>
-          <li class="flex items-center hidden md:block" :class="{ active: $route.path === '/export' }">
+          <li class="hidden md:flex items-center" :class="{ active: $route.path === '/export' }">
             <router-link to="/export" class="flex flex-col items-center text-dark w-full">
               <span class="material-symbols-outlined">picture_as_pdf</span>
               <span>Export PDF</span>

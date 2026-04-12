@@ -271,7 +271,7 @@
       <section class="container !mt-0  mx-auto py-8 w-full bg-clearer rounded-3xl shadow-xl ml-auto">
         <div class="flex gap-4 items-center justify-between mb-4 traitement-list-header">
           <h2 class="text-2xl flex gap-2">
-            <i class="material-symbols-outlined text-3xl">pill</i>
+            <i class="material-symbols-outlined text-3xl">{{ materialSymbols.treatments }}</i>
             Traitements en cours
           </h2>
           <Dialog v-model:open="showAddTraitementDialog">
@@ -444,7 +444,7 @@
       <section class="container !mt-0  mx-auto py-8 w-full bg-clearer rounded-3xl shadow-xl ml-auto">
         <div class="flex gap-4 items-center justify-between mb-4 traitement-list-header">
           <h2 class="text-2xl flex gap-2">
-            <i class="material-symbols-outlined text-3xl">pill_off</i>
+            <i class="material-symbols-outlined text-3xl">{{ materialSymbols.pastTreatments }}</i>
             Traitements passés
           </h2>
         </div>
@@ -511,6 +511,7 @@ import { useToast } from '@/shared/components/ui/toast'
 import { useSync } from '@/shared/composables/useSync'
 import { format, parseISO } from 'date-fns'
 import { TypeTraitement } from '@/features/medicament/types/type-traitement'
+import { materialSymbols, traitementPriseIconConfig } from '@/shared/config/materialSymbols'
 
 const authStore = useAuthStore()
 const { formatDateDisplay, formatTimeDisplay, combineDateTime, getCurrentDateInput, getCurrentTimeInput } = useDateTimeFormat()
@@ -622,11 +623,7 @@ const columnsSessions: any = [
   },
 ]
 
-const priseIconConfig = {
-  'Antalgique': { color: 'text-blue-600', bg: 'bg-blue-100', icon: 'pill' },
-  'AINS': { color: 'text-indigo-600', bg: 'bg-indigo-100', icon: 'medication' },
-  'Autre': { color: 'text-gray-500', bg: 'bg-gray-100', icon: 'medication_liquid' }
-}
+const priseIconConfig = traitementPriseIconConfig
 
 const sessionIconConfig = {
   'Yoga': { color: 'text-emerald-600', bg: 'bg-emerald-100', icon: 'self_improvement' },

@@ -187,6 +187,7 @@ import { useDateTimeFormat } from '@/shared/composables/useDateTimeFormat'
 import { useCrudOperations } from '@/shared/composables/useCrudOperations'
 import { useDialogForm } from '@/shared/composables/useDialogForm'
 import { eachDayOfInterval, startOfMonth, endOfMonth } from 'date-fns'
+import { douleurIconConfig } from '@/shared/config/materialSymbols'
 
 const authStore = useAuthStore()
 const { formatDateDisplay, formatTimeDisplay, combineDateTime, getCurrentDateInput, getCurrentTimeInput } = useDateTimeFormat()
@@ -247,16 +248,6 @@ const columns: any = [
   { data: null, defaultContent: '<span class="material-symbols-outlined delete-btn">delete</span>' },
 ]
 
-const douleurIconConfig: Record<string, { color: string; bg: string; icon: string }> = {
-  'Douleur pelvienne':      { color: 'text-red-600',    bg: 'bg-red-100',    icon: 'emergency_home' },
-  'Douleur abdominale':     { color: 'text-orange-600', bg: 'bg-orange-100', icon: 'sick' },
-  'Douleur lombaire':       { color: 'text-amber-600',  bg: 'bg-amber-100',  icon: 'spine' },
-  'Douleur thoracique':     { color: 'text-blue-600',   bg: 'bg-blue-100',   icon: 'favorite' },
-  'Douleur projetée':       { color: 'text-purple-600', bg: 'bg-purple-100', icon: 'neurology' },
-  'Douleur neuropathique':  { color: 'text-indigo-600', bg: 'bg-indigo-100', icon: 'bolt' },
-  'Dyspareunie':            { color: 'text-pink-600',   bg: 'bg-pink-100',   icon: 'health_and_beauty' },
-  'Autre':                  { color: 'text-gray-500',   bg: 'bg-gray-100',   icon: 'help_outline' },
-}
 
 const filteredEntries = computed(() => {
   return entries.value.filter(entry => entry.intensite !== 0)

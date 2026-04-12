@@ -22,7 +22,7 @@ const props = defineProps<{
 const defaultIconFallback: CardIconConfig = {
   color: 'text-gray-500',
   bg: 'bg-gray-100',
-  icon: 'help_outline'
+  icon: 'help'
 }
 
 const getIcon = (value: string): CardIconConfig => {

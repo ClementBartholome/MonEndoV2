@@ -182,29 +182,29 @@
         <section class="container !mt-0  mx-auto py-8 w-full bg-clearer rounded-3xl shadow-xl ml-auto">
           <div class="flex justify-between items-center mb-4 flex-wrap gap-2 h-full">
             <h2 class="text-2xl flex gap-2 ml-2">
-              <i class="material-symbols-outlined text-3xl ml-auto">gynecology</i>Symptômes
+              <i class="material-symbols-outlined text-3xl ml-auto">monitor_heart</i>Symptômes
             </h2>
             <div class="form-modal">
               <Dialog v-model:open="showAddDialog">
                 <DialogTrigger class="flex gap-2 items-center cursor-pointer hover:opacity-80 transition-opacity">
-                  <Button variant="custom">
+                  <Button variant="custom" @click="openAddSymptomeDialog">
                     <span class="hide-xsm">Ajouter une entrée</span>
                     <i class="material-symbols-outlined">add</i>
                   </Button>
                 </DialogTrigger>
                 <DialogContent>
                   <DialogHeader class="text-2xl">
-                    <DialogTitle>Ajouter un symptôme</DialogTitle>
+                    <DialogTitle>{{ editingSymptomeId !== null ? 'Modifier le symptôme' : 'Ajouter un symptôme' }}</DialogTitle>
                   </DialogHeader>
-                  <form class="flex flex-col gap-6" @submit="onSubmit">
+                  <form class="flex flex-col gap-6" @submit.prevent="onSubmit">
                     <FormField v-slot="{ componentField }" name="typeSymptome">
                       <FormItem>
                         <FormLabel>Type</FormLabel>
                         <FormControl>
-                          <Select v-model="entry.typeSymptome" v-bind="componentField">
+                          <Select v-model="form.values.typeSymptome" v-bind="componentField">
                             <SelectTrigger>
                               <SelectValue v-bind="componentField">
-                                {{ entry.typeSymptome || 'Sélectionner un type de symptôme' }}
+                                {{ form.values.typeSymptome || 'Sélectionner un type de symptôme' }}
                               </SelectValue>
                             </SelectTrigger>
                             <SelectContent>
@@ -244,12 +244,12 @@
                     </FormField>
 
                     <!-- Single day fields (shown when not a period) -->
-                    <div v-if="!entry.isPeriod" key="single-day-fields" class="flex items-center gap-8 cycle-single-day-fields">
+                    <div v-if="!form.values.isPeriod" key="single-day-fields" class="flex items-center gap-8 cycle-single-day-fields">
                       <FormField v-slot="{ componentField }" name="date">
                         <FormItem>
                           <FormLabel>Date</FormLabel>
                           <FormControl>
-                            <Input type="date" v-model="entry.date" v-bind="componentField"/>
+                            <Input type="date" v-model="form.values.date" v-bind="componentField"/>
                           </FormControl>
                           <FormMessage/>
                         </FormItem>
@@ -258,7 +258,7 @@
                         <FormItem>
                           <FormLabel>Heure</FormLabel>
                           <FormControl>
-                            <Input type="time" v-model="entry.time" v-bind="componentField"/>
+                            <Input type="time" v-model="form.values.time" v-bind="componentField"/>
                           </FormControl>
                           <FormMessage/>
                         </FormItem>
@@ -266,12 +266,12 @@
                     </div>
 
                     <!-- Period fields (shown when isPeriod is checked) -->
-                    <div v-if="entry.isPeriod" key="period-fields" class="flex flex-col gap-4">
+                    <div v-if="form.values.isPeriod" key="period-fields" class="flex flex-col gap-4">
                       <FormField v-slot="{ componentField }" name="dateDebut">
                         <FormItem>
                           <FormLabel>Date de début</FormLabel>
                           <FormControl>
-                            <Input type="date" v-model="entry.dateDebut" v-bind="componentField"/>
+                            <Input type="date" v-model="form.values.dateDebut" v-bind="componentField"/>
                           </FormControl>
                           <FormMessage/>
                         </FormItem>
@@ -297,11 +297,11 @@
                         </FormItem>
                       </FormField>
 
-                      <FormField v-if="!entry.enCours" v-slot="{ componentField }" name="dateFin">
+                      <FormField v-if="!form.values.enCours" v-slot="{ componentField }" name="dateFin">
                         <FormItem>
                           <FormLabel>Date de fin</FormLabel>
                           <FormControl>
-                            <Input type="date" v-model="entry.dateFin" v-bind="componentField"/>
+                            <Input type="date" v-model="form.values.dateFin" v-bind="componentField"/>
                           </FormControl>
                           <FormMessage/>
                         </FormItem>
@@ -312,7 +312,7 @@
                       <FormItem>
                         <FormLabel>Intensité</FormLabel>
                         <FormControl>
-                          <Slider v-bind="componentField" :default-value="[5]" :max="10" :min="1" :step="1"/>
+                          <Slider v-bind="componentField" v-model="form.values.intensite" :default-value="[5]" :max="10" :min="1" :step="1"/>
                         </FormControl>
                         <FormMessage/>
                       </FormItem>
@@ -321,7 +321,7 @@
                       <FormItem>
                         <FormLabel>Un commentaire ? <span class="">(optionnel)</span></FormLabel>
                         <FormControl>
-                          <Input type="text" placeholder="Écrivez ici" v-bind="componentField"/>
+                          <Input type="text" placeholder="Écrivez ici" v-model="form.values.commentaire" v-bind="componentField"/>
                         </FormControl>
                         <FormMessage/>
                       </FormItem>
@@ -348,7 +348,7 @@
                     </FormField>
 
 
-                    <Button type="submit" variant="custom" class="mt-4" @click="onSubmit">
+                    <Button type="submit" variant="custom" class="mt-4">
                       Enregistrer
                     </Button>
                   </form>
@@ -409,7 +409,7 @@
             </div>
             <!-- Table sur desktop -->
             <div class="hidden md:block">
-              <Datatable :entries="filteredProcessedEntries" :columns="columns" :deleteFunction="handleDelete">
+              <Datatable :entries="filteredProcessedEntries" :columns="columns" :deleteFunction="handleDelete" @edit-entry="handleEditSymptome">
                 <thead>
                   <tr>
                     <th>Type</th><th>Date</th><th>Heure</th><th>Intensité</th><th>Commentaire</th><th></th><th></th>
@@ -472,6 +472,7 @@ import offlineStorage from "@/shared/services/offlineStorage"
 import {Checkbox} from "@/shared/components/ui/checkbox";
 import PeriodQuickAdd from "@/features/cycle/components/PeriodQuickAdd.vue"
 import GenericCardList from "@/shared/components/GenericCardList.vue"
+import { symptomeIconConfig } from '@/shared/config/materialSymbols'
 
 type SymptomFilter = 'Tous' | 'Acné' | 'Spotting' | 'Nausée' | 'Fatigue' | 'Autre'
 
@@ -546,38 +547,41 @@ const quickAddAcneToday = async () => {
   }
 }
 
-// Config icônes par type de symptôme
-const symptomeIconConfig: Record<string, { color: string; bg: string; icon: string }> = {
-  'Acné':    { color: 'text-purple-600', bg: 'bg-purple-100', icon: 'face_retouching_natural' },
-  'Spotting': { color: 'text-red-500',    bg: 'bg-red-100',    icon: 'water_drop' },
-  'Nausée':   { color: 'text-yellow-600', bg: 'bg-yellow-100', icon: 'sick' },
-  'Fatigue':  { color: 'text-blue-500',   bg: 'bg-blue-100',   icon: 'bedtime' },
-  'Autre':    { color: 'text-gray-500',   bg: 'bg-gray-100',   icon: 'help_outline' },
-}
-
 // Edit symptôme — ouvre le dialog en mode édition
 const editingSymptomeId = ref<number | null>(null)
 const handleEditSymptome = (id: string | number) => {
-  const found = entries.value.find(e => e.id === id)
+  const found = processedEntries.value.find(e => e.id === id)
   if (!found) return
 
+  if ((found as any).isGroup) {
+    toast({
+      title: 'Modification indisponible',
+      description: 'Modifiez individuellement les symptômes simples. Pour une période d\'acné, utilisez les actions dédiées.',
+      variant: 'destructive',
+    })
+    return
+  }
+
+  if (typeof found.id !== 'number') return
+
   editingSymptomeId.value = found.id
-  // Pré-remplir le formulaire
-  entry.value.typeSymptome = found.typeSymptome
   const [day, mo, yr] = found.date.split('/').map(Number)
-  entry.value.date = `${yr}-${String(mo).padStart(2, '0')}-${String(day).padStart(2, '0')}`
-  entry.value.time = found.time?.replace('h', ':') ?? format(new Date(), 'HH:mm')
+  const formDate = `${yr}-${String(mo).padStart(2, '0')}-${String(day).padStart(2, '0')}`
+  const formTime = found.time?.replace('h', ':') ?? format(new Date(), 'HH:mm')
 
   form.setValues({
     typeSymptome: found.typeSymptome,
-    date: entry.value.date,
-    time: entry.value.time,
+    date: formDate,
+    time: formTime,
     intensite: [typeof found.intensite === 'number' ? found.intensite : Number(found.intensite)],
     commentaire: found.commentaire === 'Pas de commentaire' ? '' : found.commentaire,
     isPeriod: false,
     enCours: false,
+    dateDebut: '',
+    dateFin: '',
   })
 
+  resetSelectedPhoto()
   showAddDialog.value = true
 }
 
@@ -688,6 +692,7 @@ const handlePhotoUpload = async (event: Event) => {
 }
 
 const buildSymptomeFormData = (payload: {
+  id?: number
   typeSymptome: string
   carnetSanteId: number
   dateIso: string
@@ -696,6 +701,11 @@ const buildSymptomeFormData = (payload: {
   photo?: File | null
 }) => {
   const formData = new FormData()
+
+  if (payload.id !== undefined) {
+    formData.append('id', payload.id.toString())
+  }
+
   formData.append('typeSymptome', payload.typeSymptome)
   formData.append('carnetSanteId', payload.carnetSanteId.toString())
   formData.append('date', payload.dateIso)
@@ -737,11 +747,11 @@ const { selectedMonthYear: symptomesMonthYear, entries, isLoading, refetch } = u
 
 const { deleteEntry } = useCrudOperations(entries)
 
-const getDefaultEntryValues = () => ({
+const getDefaultSymptomeFormValues = () => ({
   typeSymptome: '',
   date: format(new Date(), 'yyyy-MM-dd'),
   time: format(new Date(), 'HH:mm'),
-  intensite: 0,
+  intensite: [5],
   commentaire: '',
   isPeriod: false,
   dateDebut: '',
@@ -749,7 +759,15 @@ const getDefaultEntryValues = () => ({
   enCours: false
 })
 
-const entry = ref(getDefaultEntryValues())
+const resetSymptomeFormState = () => {
+  editingSymptomeId.value = null
+  resetSelectedPhoto()
+  form.resetForm({ values: getDefaultSymptomeFormValues() })
+}
+
+const openAddSymptomeDialog = () => {
+  resetSymptomeFormState()
+}
 
 // Confirmation dialog for calendar clicks
 const showConfirmJourRegleDialog = ref(false)
@@ -1178,7 +1196,7 @@ const handleDelete = async (id: string | number) => {
 const formSchema = toTypedSchema(z.object({
   typeSymptome: z.string({
     required_error: 'Le type de symptôme est requis'
-  }),
+  }).min(1, 'Le type de symptôme est requis'),
   date: z.string().optional(),
   time: z.string().optional(),
   dateDebut: z.string().optional(),
@@ -1191,7 +1209,7 @@ const formSchema = toTypedSchema(z.object({
   commentaire: z.string().optional(),
 }).superRefine((data, ctx) => {
   // Validate based on isPeriod
-  if (entry.value.isPeriod) {
+  if (data.isPeriod) {
     // Period mode validation
     if (!data.dateDebut) {
       ctx.addIssue({
@@ -1228,26 +1246,23 @@ const formSchema = toTypedSchema(z.object({
 
 const form = useForm({
   validationSchema: formSchema,
-  initialValues: {
-    intensite: [5],
-    typeSymptome: "Sélectionnez un symptôme",
-    date: format(new Date(), 'yyyy-MM-dd'),
-    time: format(new Date(), 'HH:mm')
+  initialValues: getDefaultSymptomeFormValues()
+})
+
+watch(showAddDialog, (isOpen) => {
+  if (!isOpen) {
+    resetSymptomeFormState()
   }
 })
 
-watch(() => form.values.isPeriod, v => { entry.value.isPeriod = !!v })
-watch(() => form.values.enCours, v => { entry.value.enCours = !!v })
-
 const onSubmit = form.handleSubmit(async (values) => {
-  console.log(values)
   // Handle period submission (multiple days)
-  if (entry.value.isPeriod) {
-    const endDate = entry.value.enCours ? new Date() : new Date(entry.value.dateFin)
-    const startDate = new Date(entry.value.dateDebut)
+  if (values.isPeriod) {
+    const endDate = values.enCours ? new Date() : new Date(values.dateFin ?? '')
+    const startDate = new Date(values.dateDebut ?? '')
 
     // Validate dates
-    if (startDate > endDate && !entry.value.enCours) {
+    if (startDate > endDate && !values.enCours) {
       toast({
         title: 'Erreur',
         description: 'La date de début doit être avant la date de fin',
@@ -1270,7 +1285,7 @@ const onSubmit = form.handleSubmit(async (values) => {
       if (selectedPhoto.value) {
         const firstDate = dates[0]
         const firstDayFormData = buildSymptomeFormData({
-          typeSymptome: entry.value.typeSymptome,
+          typeSymptome: values.typeSymptome,
           carnetSanteId: user!.carnetSanteId,
           dateIso: combineDateTime(format(firstDate, 'yyyy-MM-dd'), '12:00').toISOString(),
           intensite: values.intensite[0],
@@ -1284,13 +1299,11 @@ const onSubmit = form.handleSubmit(async (values) => {
           await refetch()
           toast({
             title: 'Succès',
-            description: `Période ajoutée (${entry.value.typeSymptome}, 1 jour)`,
+            description: `Période ajoutée (${values.typeSymptome}, 1 jour)`,
             variant: 'custom',
           })
 
-          entry.value = getDefaultEntryValues()
-          resetSelectedPhoto()
-          form.resetForm()
+          resetSymptomeFormState()
           showAddDialog.value = false
           return
         }
@@ -1298,7 +1311,7 @@ const onSubmit = form.handleSubmit(async (values) => {
         const remainingDates = dates.slice(1)
         const remainingPromises = remainingDates.map(date => {
           const formData = buildSymptomeFormData({
-            typeSymptome: entry.value.typeSymptome,
+            typeSymptome: values.typeSymptome,
             carnetSanteId: user!.carnetSanteId,
             dateIso: combineDateTime(format(date, 'yyyy-MM-dd'), '12:00').toISOString(),
             intensite: values.intensite[0],
@@ -1311,7 +1324,7 @@ const onSubmit = form.handleSubmit(async (values) => {
       } else {
         const promises = dates.map(date => {
           const formData = buildSymptomeFormData({
-            typeSymptome: entry.value.typeSymptome,
+            typeSymptome: values.typeSymptome,
             carnetSanteId: user!.carnetSanteId,
             dateIso: combineDateTime(format(date, 'yyyy-MM-dd'), '12:00').toISOString(),
             intensite: values.intensite[0],
@@ -1327,14 +1340,12 @@ const onSubmit = form.handleSubmit(async (values) => {
 
       toast({
         title: 'Succès',
-        description: `Période ajoutée (${entry.value.typeSymptome}, ${dates.length} jour${dates.length > 1 ? 's' : ''})`,
+        description: `Période ajoutée (${values.typeSymptome}, ${dates.length} jour${dates.length > 1 ? 's' : ''})`,
         variant: 'custom',
       })
 
       // Reset and close
-      entry.value = getDefaultEntryValues()
-      resetSelectedPhoto()
-      form.resetForm()
+      resetSymptomeFormState()
       showAddDialog.value = false
     } catch (error) {
       console.error('Error creating period:', error)
@@ -1357,32 +1368,31 @@ const onSubmit = form.handleSubmit(async (values) => {
     // Mode édition ou ajout d'un seul jour
     if (editingSymptomeId.value !== null) {
       // Edit mode
-      const dataToSend = {
+      const dataToSend = buildSymptomeFormData({
         id: editingSymptomeId.value,
-        typeSymptome: entry.value.typeSymptome,
+        typeSymptome: values.typeSymptome,
         carnetSanteId: user!.carnetSanteId,
-        date: combineDateTime(values.date ?? '', values.time ?? '').toISOString(),
+        dateIso: combineDateTime(values.date ?? '', values.time ?? '').toISOString(),
         intensite: values.intensite[0],
         commentaire: values.commentaire || 'Pas de commentaire',
-      }
+        photo: selectedPhoto.value
+      })
+
       submitForm(dataToSend, {
         submitFunction: (data) => apiService.editSymptomeCycle(editingSymptomeId.value as number, data),
         successMessage: 'Symptôme modifié avec succès',
         errorMessage: 'Une erreur est survenue lors de la modification',
         onSuccess: async () => {
-          editingSymptomeId.value = null
           await refetch()
         },
         resetFormData: () => {
-          entry.value = getDefaultEntryValues()
-          resetSelectedPhoto()
-          form.resetForm()
+          resetSymptomeFormState()
         }
       })
     } else {
       // Create mode
       const formData = buildSymptomeFormData({
-        typeSymptome: entry.value.typeSymptome,
+        typeSymptome: values.typeSymptome,
         carnetSanteId: user!.carnetSanteId,
         dateIso: combineDateTime(values.date ?? '', values.time ?? '').toISOString(),
         intensite: values.intensite[0],
@@ -1397,9 +1407,7 @@ const onSubmit = form.handleSubmit(async (values) => {
           await refetch()
         },
         resetFormData: () => {
-          entry.value = getDefaultEntryValues()
-          resetSelectedPhoto()
-          form.resetForm()
+          resetSymptomeFormState()
         }
       })
     }

@@ -87,6 +87,59 @@ namespace MonEndoVue.Server.Controllers
             return CreatedAtAction("GetSymptomeCycle", new { id = symptomeCycle.Id }, symptomeCycle);
         }
 
+        [HttpPut("{id:int}")]
+        public async Task<IActionResult> PutSymptomeCycle(int id, [FromForm] SymptomeCycle symptomeCycle, [FromForm] IFormFile? photo)
+        {
+            if (id != symptomeCycle.Id)
+            {
+                return BadRequest();
+            }
+
+            var existingSymptome = await context.SymptomesCycles.FindAsync(id);
+            if (existingSymptome == null)
+            {
+                return NotFound();
+            }
+
+            var securityCheck = await this.ValidateCarnetAccess(carnetSanteService, existingSymptome.CarnetSanteId);
+            if (securityCheck != null) return securityCheck;
+
+            existingSymptome.TypeSymptome = symptomeCycle.TypeSymptome;
+            existingSymptome.Date = symptomeCycle.Date;
+            existingSymptome.Intensite = symptomeCycle.Intensite;
+            existingSymptome.Commentaire = symptomeCycle.Commentaire;
+
+            if (photo != null)
+            {
+                if (!IsPhotoValid(photo, out var validationError))
+                {
+                    return BadRequest(new { message = validationError });
+                }
+
+                var previousPhotoUrl = existingSymptome.PhotoUrl;
+                var extension = Path.GetExtension(photo.FileName).ToLowerInvariant();
+                var fileName = $"symptomes/{existingSymptome.CarnetSanteId.ToString(CultureInfo.InvariantCulture)}/{Guid.NewGuid()}{extension}";
+                existingSymptome.PhotoUrl = await azureBlobStorageService.UploadFileAsync(photo, fileName);
+
+                if (!string.IsNullOrWhiteSpace(previousPhotoUrl))
+                {
+                    try
+                    {
+                        await azureBlobStorageService.DeleteFileByUrlAsync(previousPhotoUrl);
+                    }
+                    catch (Exception ex)
+                    {
+                        logger.LogWarning(ex, "Unable to delete previous symptom photo for symptom {SymptomeId}", existingSymptome.Id);
+                    }
+                }
+            }
+
+            await context.SaveChangesAsync();
+            carnetSanteService.InvalidateCache(existingSymptome.CarnetSanteId);
+
+            return NoContent();
+        }
+
         [HttpDelete("{id:int}")]
         public async Task<IActionResult> DeleteSymptomeCycle(int id)
         {
