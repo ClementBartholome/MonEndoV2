@@ -22,6 +22,10 @@ MonEndoV2 est une application destinée aux personnes souffrant d'endométriose,
 - Base de données : SQL Server
 - Outils externes : OneSignal (notifications), Google Calendar
 
+## Roadmap modernisation
+
+- Plan global UX/UI, fonctionnalites, architecture et securite : `docs/modernization-plan.md`
+
 
 ![2025-05-27 19_17_19-Mon Endo](https://github.com/user-attachments/assets/8c3657a7-e029-4500-82d0-d04316c8750f)
 ![2025-05-27 19_16_31-Mon Endo](https://github.com/user-attachments/assets/0c82679a-49c7-4756-9002-61574c269dae)

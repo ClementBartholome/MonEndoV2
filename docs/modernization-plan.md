@@ -14,6 +14,10 @@ Ce plan combine:
 - Priorite lisibilite sur densite: aucune information cle ne doit etre tronquee sur mobile.
 - Desktop ensuite: enrichissement progressif (grilles, details, densite) sans degrader l'experience mobile.
 
+## Convention de commit
+- Format obligatoire: `feat(perimetre cible): court message descriptif`
+- Messages en francais.
+
 ## Reference de marche (patterns apps sante populaires)
 Patterns repris des apps de suivi sante/cycle et chronic care:
 - onboarding progressif (2 a 5 ecrans, puis personnalisation continue)
@@ -67,6 +71,28 @@ Patterns repris des apps de suivi sante/cycle et chronic care:
 3. Observabilite produit
    - instrumentation events UX
    - suivi des funnels et taux d'echec sync/API
+
+## Prochaines grosses etapes validees
+
+1. Correlation des donnees et utilite clinique
+   - croiser douleur, cycle, activite, transit, bilan quotidien
+   - produire des hypotheses explicables (sans sur-promesse medicale)
+   - mettre en avant des signaux utiles avant/pendant un rendez-vous medical
+
+2. Parcours "Rendez-vous medecin"
+   - renforcer l'export PDF (synthese decisionnelle, timeline, points marquants)
+   - inclure une page de preparation consultation (questions, historique recent, red flags)
+   - rendre l'export accessible en 1 tap depuis la homepage
+
+3. Audit securite et hardening complet
+   - revue auth/session/cookies/JWT
+   - revue OWASP Top 10 (XSS, CSRF, injections, exposition de donnees)
+   - revue gestion secrets, logs, permissions et dependances (CVE)
+
+4. Autres idees a fort impact
+   - mode "resume hebdo" partageable (patient + medecin)
+   - alertes intelligentes basees sur inactivite et derive des objectifs
+   - personnalisation plus fine des objectifs (par section et par phase du cycle)
 
 ## Architecture cible
 
@@ -138,10 +164,17 @@ Regles:
   - badge "A mettre a jour" selon seuil d'inactivite par section
   - compromis mobile: cards cote a cote, puis 1 colonne <= 425px pour lisibilite complete
   - clic rendez-vous avec adresse -> ouverture Google Maps (itineraire)
+  - acces Export PDF reintegre sur la homepage (card dediee)
 - Passe mobile-first <=425px appliquee sur pages metier:
   - `CyclePage.vue`: tabs/legende/selecteur mois/champs date-heure adaptes
   - `DouleursPage.vue`: en-tete et formulaire date-heure adaptes
   - `MedicamentPage.vue`: en-tetes, formulaires et actions de listes adaptes
+- Passe mobile-first et utilite metier sur nouvelles zones:
+  - `TransitPage.vue`: cards mobile + KPI de section + formulaire adapte <=425px
+  - `BilanQuotidienPage.vue`: stepper/tabs adaptes <=425px + resume KPI du jour selectionne
+- Personnalisation Analyse & Tendances:
+  - `ParametresPage.vue`: section "Objectifs bien-etre" (hydratation, pas, stress, fatigue, douleur)
+  - `DashboardBilanQuotidien.vue`: calcul des objectifs/insights pilote par ces cibles utilisateur
 
 ## Definition of Done (pour chaque lot)
 - UX: test manuel mobile + desktop + accessibilite clavier
