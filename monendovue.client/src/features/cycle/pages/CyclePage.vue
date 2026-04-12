@@ -63,7 +63,7 @@
           </div>
         </section>
 
-        <!-- Confirmation Dialog for Calendar Click -->
+        <!-- Confirmation Dialog for Calendar Click (Add) -->
         <Dialog v-model:open="showConfirmJourRegleDialog">
           <DialogContent>
             <DialogHeader>
@@ -82,8 +82,50 @@
             </DialogFooter>
           </DialogContent>
         </Dialog>
+
+        <!-- Confirmation Dialog for Calendar Click (Delete) -->
+        <Dialog v-model:open="showConfirmDeleteJourRegleDialog">
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle class="text-2xl">Démarquer ce jour de règles</DialogTitle>
+            </DialogHeader>
+            <p class="text-base py-4">
+              Voulez-vous retirer le <strong>{{ pendingJourRegleDate ? format(new Date(pendingJourRegleDate), 'dd/MM/yyyy') : '' }}</strong> des jours de règles ?
+            </p>
+            <DialogFooter>
+              <Button variant="outline" @click="showConfirmDeleteJourRegleDialog = false">
+                Annuler
+              </Button>
+              <Button variant="destructive" @click="confirmDeleteJourRegle">
+                Supprimer
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </TabsContent>
       <TabsContent value="symptomes">
+
+        <!-- Quick-add acné aujourd'hui (visible si pas encore marquée aujourd'hui) -->
+        <div v-if="!acneMarkedToday" class="container !mt-0 mx-auto w-full">
+          <button
+            @click="quickAddAcneToday"
+            :disabled="isQuickAddingAcne"
+            class="w-full flex items-center gap-3 bg-purple-50 border-2 border-purple-200 rounded-xl p-3 hover:bg-purple-100 transition-colors"
+          >
+            <span class="material-symbols-outlined text-purple-500 text-2xl shrink-0">face_retouching_natural</span>
+            <span class="font-medium text-headline text-sm text-left flex-1">
+              {{ isQuickAddingAcne ? 'Enregistrement...' : 'Acné aujourd\'hui ?' }}
+            </span>
+            <span class="material-symbols-outlined text-purple-400 text-base shrink-0">add_circle</span>
+          </button>
+        </div>
+        <div v-else class="container !mt-0 mx-auto w-full">
+          <div class="flex items-center gap-2 bg-purple-50 border border-purple-100 rounded-xl p-3">
+            <span class="material-symbols-outlined text-purple-400 text-base">check_circle</span>
+            <span class="text-sm text-purple-700">Acné enregistrée aujourd'hui</span>
+          </div>
+        </div>
+
         <!-- Ongoing Acné Periods Section -->
         <section v-if="ongoingAcnePeriods.length > 0" class="container !mt-0 mx-auto py-8 mb-4 w-full bg-clearer rounded-3xl shadow-xl">
           <div class="mb-4">
@@ -323,17 +365,19 @@
 
           <SelectMonth v-model="symptomesMonthYear"/>
 
-          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-4 mb-4">
-            <div class="bg-white border border-gray-200 rounded-xl p-3 shadow-sm">
-              <p class="text-xs text-gray-500">Jours d'acné (mois)</p>
-              <p class="text-2xl font-semibold text-headline">{{ acneMonthlyStats.totalDays }}</p>
+          <!-- KPI acné - visibles seulement quand filtre Acné ou Tous avec des entrées d'acné -->
+          <div v-if="acneMonthlyStats.totalDays > 0" class="grid grid-cols-3 gap-2 mt-4 mb-4">
+            <div class="bg-white border border-purple-100 rounded-xl p-3 shadow-sm text-center">
+              <p class="text-xs text-muted-foreground mb-1">Jours d'acné</p>
+              <p class="text-xl font-bold text-headline">{{ acneMonthlyStats.totalDays }}</p>
             </div>
-            <div class="bg-white border border-gray-200 rounded-xl p-3 shadow-sm">
-              <p class="text-xs text-gray-500">Intensité moyenne</p>
-              <p class="text-2xl font-semibold text-headline">{{ acneMonthlyStats.avgIntensity }}</p>
+            <div class="bg-white border border-purple-100 rounded-xl p-3 shadow-sm text-center">
+              <p class="text-xs text-muted-foreground mb-1">Intensité moy.</p>
+              <p class="text-xl font-bold text-headline">{{ acneMonthlyStats.avgIntensity }}</p>
             </div>
           </div>
 
+          <!-- Filtres rapides -->
           <div class="flex gap-2 overflow-x-auto pb-1 mb-3">
             <Button
               v-for="filter in symptomFilters"
@@ -347,22 +391,41 @@
           </div>
 
           <div v-if="isLoading" class="flex flex-col space-y-3">
-            <Skeleton class="h-[300px] w-full mt-4 rounded-xl"/>
+            <Skeleton class="h-[120px] w-full mt-2 rounded-xl"/>
+            <Skeleton class="h-[120px] w-full rounded-xl"/>
+            <Skeleton class="h-[120px] w-full rounded-xl"/>
           </div>
-          <Datatable v-else-if="filteredProcessedEntries.length > 0" :entries="filteredProcessedEntries" :columns="columns" :deleteFunction="handleDelete">
-            <thead>
-            <tr>
-              <th>Type</th>
-              <th>Date</th>
-              <th>Heure</th>
-              <th>Intensité</th>
-              <th>Commentaire</th>
-              <th></th>
-            </tr>
-            </thead>
-          </Datatable>
+          <template v-else-if="filteredProcessedEntries.length > 0">
+            <!-- Cards sur mobile -->
+            <div class="md:hidden">
+              <GenericCardList
+                :entries="filteredProcessedEntries"
+                titleField="typeSymptome"
+                dateField="date"
+                timeField="time"
+                intensityField="intensite"
+                photoField="photoUrl"
+                :extraFields="[{ key: 'commentaire', label: 'Note' }]"
+                :iconConfig="symptomeIconConfig"
+                :onDelete="handleDelete"
+                :onEdit="handleEditSymptome"
+                :onPhotoClick="openPhotoModal"
+                emptyMessage="Aucun symptôme enregistré ce mois"
+              />
+            </div>
+            <!-- Table sur desktop -->
+            <div class="hidden md:block">
+              <Datatable :entries="filteredProcessedEntries" :columns="columns" :deleteFunction="handleDelete">
+                <thead>
+                  <tr>
+                    <th>Type</th><th>Date</th><th>Heure</th><th>Intensité</th><th>Commentaire</th><th></th><th></th>
+                  </tr>
+                </thead>
+              </Datatable>
+            </div>
+          </template>
           <div v-else class="flex justify-center items-center h-32">
-            <p class="text-2xl text-center">Aucune donnée enregistrée</p>
+            <p class="text-xl text-center text-muted-foreground italic">Aucune donnée enregistrée</p>
           </div>
 
         </section>
@@ -414,6 +477,7 @@ import type { SymptomeCycle } from "@/features/cycle/types/symptome-cycle"
 import offlineStorage from "@/shared/services/offlineStorage"
 import {Checkbox} from "@/shared/components/ui/checkbox";
 import PeriodQuickAdd from "@/features/cycle/components/PeriodQuickAdd.vue"
+import GenericCardList from "@/shared/components/GenericCardList.vue"
 
 type SymptomFilter = 'Tous' | 'Acné' | 'Spotting' | 'Nausée' | 'Fatigue' | 'Autre'
 
@@ -449,6 +513,7 @@ const value = ref(today(getLocalTimeZone())) as Ref<DateValue>
 const month = ref(value.value.month)
 const year = ref(value.value.year)
 const joursRegles = ref<Date[]>([])
+const joursReglesMap = ref<Map<string, number>>(new Map()) // date string 'yyyy-MM-dd' -> id
 const joursOvulation = ref<Date[]>([])
 const joursFertiles = ref<Date[]>([])
 const joursSpotting = ref<Date[]>([])
@@ -457,6 +522,70 @@ const cycleMoyen = ref(28)
 const selectedPhoto = ref<File | null>(null)
 const photoInputRef = ref<HTMLInputElement | null>(null)
 const selectedPhotoPreviewUrl = ref<string>('')
+
+// Quick-add acné
+const isQuickAddingAcne = ref(false)
+const acneMarkedToday = computed(() => {
+  if (!entries.value) return false
+  const today = format(new Date(), 'dd/MM/yyyy')
+  return entries.value.some(e => e.typeSymptome === 'Acné' && e.date === today)
+})
+
+const quickAddAcneToday = async () => {
+  if (!user?.carnetSanteId) return
+  isQuickAddingAcne.value = true
+  try {
+    const formData = buildSymptomeFormData({
+      typeSymptome: 'Acné',
+      carnetSanteId: user.carnetSanteId,
+      dateIso: combineDateTime(format(new Date(), 'yyyy-MM-dd'), format(new Date(), 'HH:mm')).toISOString(),
+      intensite: 5,
+      commentaire: 'Pas de commentaire',
+    })
+    await apiService.postDonneesSymptomesCycle(formData)
+    await refetch()
+    toast({ title: 'Acné enregistrée', description: 'Marquée pour aujourd\'hui', variant: 'custom' })
+  } catch {
+    toast({ title: 'Erreur', description: 'Impossible d\'enregistrer', variant: 'destructive' })
+  } finally {
+    isQuickAddingAcne.value = false
+  }
+}
+
+// Config icônes par type de symptôme
+const symptomeIconConfig: Record<string, { color: string; bg: string; icon: string }> = {
+  'Acné':    { color: 'text-purple-600', bg: 'bg-purple-100', icon: 'face_retouching_natural' },
+  'Spotting': { color: 'text-red-500',    bg: 'bg-red-100',    icon: 'water_drop' },
+  'Nausée':   { color: 'text-yellow-600', bg: 'bg-yellow-100', icon: 'sick' },
+  'Fatigue':  { color: 'text-blue-500',   bg: 'bg-blue-100',   icon: 'bedtime' },
+  'Autre':    { color: 'text-gray-500',   bg: 'bg-gray-100',   icon: 'help_outline' },
+}
+
+// Edit symptôme — ouvre le dialog en mode édition
+const editingSymptomeId = ref<number | null>(null)
+const handleEditSymptome = (id: string | number) => {
+  const found = entries.value.find(e => e.id === id)
+  if (!found) return
+
+  editingSymptomeId.value = found.id
+  // Pré-remplir le formulaire
+  entry.value.typeSymptome = found.typeSymptome
+  const [day, mo, yr] = found.date.split('/').map(Number)
+  entry.value.date = `${yr}-${String(mo).padStart(2, '0')}-${String(day).padStart(2, '0')}`
+  entry.value.time = found.time?.replace('h', ':') ?? format(new Date(), 'HH:mm')
+
+  form.setValues({
+    typeSymptome: found.typeSymptome,
+    date: entry.value.date,
+    time: entry.value.time,
+    intensite: [typeof found.intensite === 'number' ? found.intensite : Number(found.intensite)],
+    commentaire: found.commentaire === 'Pas de commentaire' ? '' : found.commentaire,
+    isPeriod: false,
+    enCours: false,
+  })
+
+  showAddDialog.value = true
+}
 
 const MAX_PHOTO_SIZE_MB = 10
 const MAX_PHOTO_SIZE_BYTES = MAX_PHOTO_SIZE_MB * 1024 * 1024
@@ -630,7 +759,9 @@ const entry = ref(getDefaultEntryValues())
 
 // Confirmation dialog for calendar clicks
 const showConfirmJourRegleDialog = ref(false)
+const showConfirmDeleteJourRegleDialog = ref(false)
 const pendingJourRegleDate = ref<string>('')
+const pendingDeleteJourRegleId = ref<number | null>(null)
 const selectedSymptomeFilter = ref<SymptomFilter>('Tous')
 const symptomFilters: SymptomFilter[] = ['Tous', 'Acné', 'Spotting', 'Nausée', 'Fatigue', 'Autre']
 
@@ -919,7 +1050,15 @@ watch(selectedMonthYear, () => {
 const fetchJoursRegles = async () => {
   try {
     const response = await apiService.getJoursReglesByMonth(user!.carnetSanteId, month.value, year.value)
-    joursRegles.value = response.$values.map(jour => new Date(jour.date))
+    const joursList: { id: number; date: string }[] = response.$values
+    joursRegles.value = joursList.map(jour => new Date(jour.date))
+
+    // Build map date -> id for deletion
+    const newMap = new Map<string, number>()
+    joursList.forEach(jour => {
+      newMap.set(format(new Date(jour.date), 'yyyy-MM-dd'), jour.id)
+    })
+    joursReglesMap.value = newMap
 
     const { fertileDays, ovulationDates } = calculateFertilePeriodsForMonth(joursRegles.value)
 
@@ -1221,29 +1360,55 @@ const onSubmit = form.handleSubmit(async (values) => {
       }
     }
   } else {
-    // Handle single day submission
-    const formData = buildSymptomeFormData({
-      typeSymptome: entry.value.typeSymptome,
-      carnetSanteId: user!.carnetSanteId,
-      dateIso: combineDateTime(values.date ?? '', values.time ?? '').toISOString(),
-      intensite: values.intensite[0],
-      commentaire: values.commentaire,
-      photo: selectedPhoto.value
-    })
-    
-    submitForm(formData, {
-      submitFunction: (data) => apiService.postDonneesSymptomesCycle(data),
-      successMessage: 'Symptôme ajouté avec succès',
-      errorMessage: 'Une erreur est survenue lors de l\'ajout du symptôme',
-      onSuccess: async () => {
-        await refetch()
-      },
-      resetFormData: () => {
-        entry.value = getDefaultEntryValues()
-        resetSelectedPhoto()
-        form.resetForm()
+    // Mode édition ou ajout d'un seul jour
+    if (editingSymptomeId.value !== null) {
+      // Edit mode
+      const dataToSend = {
+        id: editingSymptomeId.value,
+        typeSymptome: entry.value.typeSymptome,
+        carnetSanteId: user!.carnetSanteId,
+        date: combineDateTime(values.date ?? '', values.time ?? '').toISOString(),
+        intensite: values.intensite[0],
+        commentaire: values.commentaire || 'Pas de commentaire',
       }
-    })
+      submitForm(dataToSend, {
+        submitFunction: (data) => apiService.editSymptomeCycle(editingSymptomeId.value as number, data),
+        successMessage: 'Symptôme modifié avec succès',
+        errorMessage: 'Une erreur est survenue lors de la modification',
+        onSuccess: async () => {
+          editingSymptomeId.value = null
+          await refetch()
+        },
+        resetFormData: () => {
+          entry.value = getDefaultEntryValues()
+          resetSelectedPhoto()
+          form.resetForm()
+        }
+      })
+    } else {
+      // Create mode
+      const formData = buildSymptomeFormData({
+        typeSymptome: entry.value.typeSymptome,
+        carnetSanteId: user!.carnetSanteId,
+        dateIso: combineDateTime(values.date ?? '', values.time ?? '').toISOString(),
+        intensite: values.intensite[0],
+        commentaire: values.commentaire,
+        photo: selectedPhoto.value
+      })
+      submitForm(formData, {
+        submitFunction: (data) => apiService.postDonneesSymptomesCycle(data),
+        successMessage: 'Symptôme ajouté avec succès',
+        errorMessage: 'Une erreur est survenue lors de l\'ajout du symptôme',
+        onSuccess: async () => {
+          await refetch()
+        },
+        resetFormData: () => {
+          entry.value = getDefaultEntryValues()
+          resetSelectedPhoto()
+          form.resetForm()
+        }
+      })
+    }
   }
 })
 
@@ -1404,6 +1569,13 @@ const handleDayClick = async (date: any) => {
   )
 
   if (isAlreadyMarked) {
+    // Propose to unmark it
+    const jourId = joursReglesMap.value.get(clickedDate)
+    if (jourId !== undefined) {
+      pendingJourRegleDate.value = clickedDate
+      pendingDeleteJourRegleId.value = jourId
+      showConfirmDeleteJourRegleDialog.value = true
+    }
     return
   }
 
@@ -1447,6 +1619,37 @@ const confirmAddJourRegle = async () => {
 
   // Close the dialog
   showConfirmJourRegleDialog.value = false
+}
+
+const confirmDeleteJourRegle = async () => {
+  if (pendingDeleteJourRegleId.value === null) return
+
+  try {
+    await apiService.deleteJourRegle(pendingDeleteJourRegleId.value)
+    await fetchJoursRegles()
+
+    // If today was unmarked, update periodMarked
+    const todayStr = format(new Date(), 'yyyy-MM-dd')
+    if (pendingJourRegleDate.value === todayStr) {
+      periodMarked.value = false
+    }
+
+    toast({
+      title: 'Jour retiré',
+      description: 'Le jour de règles a été supprimé',
+      variant: 'custom',
+    })
+  } catch (error) {
+    console.error('Erreur lors de la suppression du jour de règles:', error)
+    toast({
+      title: 'Erreur',
+      description: 'Impossible de supprimer ce jour',
+      variant: 'destructive',
+    })
+  } finally {
+    showConfirmDeleteJourRegleDialog.value = false
+    pendingDeleteJourRegleId.value = null
+  }
 }
 </script>
 

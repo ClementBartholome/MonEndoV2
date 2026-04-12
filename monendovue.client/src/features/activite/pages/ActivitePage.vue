@@ -84,23 +84,38 @@
       </div>
       <SelectMonth v-model="selectedMonthYear" />
       <div v-if="isLoading" class="flex flex-col space-y-3">
-        <Skeleton class="h-[300px] w-full mt-4 rounded-xl"/>
+        <Skeleton class="h-[120px] w-full mt-2 rounded-xl"/>
+        <Skeleton class="h-[120px] w-full rounded-xl"/>
+        <Skeleton class="h-[120px] w-full rounded-xl"/>
       </div>
-      <Datatable v-else-if="entries.length > 0" :entries="entries" :columns="columns" :deleteFunction="handleDelete">
-        <thead>
-        <tr>
-          <th>Type</th>
-          <th>Date</th>
-          <th>Heure</th>
-          <th>Durée</th>
-          <th>Intensité</th>
-          <th>Commentaire</th>
-          <th></th>
-        </tr>
-        </thead>
-      </Datatable>
+      <template v-else-if="entries.length > 0">
+        <!-- Mobile: cards -->
+        <div class="md:hidden">
+          <GenericCardList
+            :entries="entries"
+            titleField="typeActivite"
+            dateField="date"
+            timeField="time"
+            intensityField="intensite"
+            :extraFields="[{ key: 'duree', label: 'Durée', suffix: ' min' }, { key: 'commentaire', label: 'Note' }]"
+            :defaultIcon="{ color: 'text-teal-600', bg: 'bg-teal-100', icon: 'directions_run' }"
+            :onDelete="handleDelete"
+            emptyMessage="Aucune session enregistrée ce mois"
+          />
+        </div>
+        <!-- Desktop: table -->
+        <div class="hidden md:block">
+          <Datatable :entries="entries" :columns="columns" :deleteFunction="handleDelete">
+            <thead>
+              <tr>
+                <th>Type</th><th>Date</th><th>Heure</th><th>Durée</th><th>Intensité</th><th>Commentaire</th><th></th>
+              </tr>
+            </thead>
+          </Datatable>
+        </div>
+      </template>
       <div v-else class="flex justify-center items-center h-32">
-        <p class="text-2xl text-center">Aucune donnée enregistrée</p>
+        <p class="text-xl text-center text-muted-foreground italic">Aucune session enregistrée</p>
       </div>
     </section>
     <div class="flex-row-container w-full gap-8">
@@ -154,6 +169,7 @@ import { Slider } from "@/shared/components/ui/slider"
 import { Skeleton } from "@/shared/components/ui/skeleton"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/shared/components/ui/dialog'
 import Datatable from "@/shared/components/Datatable.vue"
+import GenericCardList from "@/shared/components/GenericCardList.vue"
 import BackButton from "@/shared/components/BackButton.vue"
 import SelectMonth from "@/shared/components/SelectMonth.vue"
 
@@ -215,8 +231,8 @@ const chartData = computed(() => {
   }))
 })
 
-const handleDelete = async (id: number) => {
-  await deleteEntry(id, (id) => apiService.deleteDonneesActivitePhysique(id as number), {
+const handleDelete = async (id: string | number) => {
+  await deleteEntry(id as number, (id) => apiService.deleteDonneesActivitePhysique(id as number), {
     successMessage: 'La session a été supprimée avec succès',
     errorMessage: 'Une erreur est survenue lors de la suppression de la session',
     endpoint: 'DonneesActivitePhysique'

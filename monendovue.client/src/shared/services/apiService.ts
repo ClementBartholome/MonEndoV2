@@ -197,6 +197,10 @@ class ApiService {
         return this.request('DELETE', `SymptomesCycle/${symptomeId}`);
     }
 
+    async deleteJourRegle(jourRegleId: number): Promise<any> {
+        return this.request('DELETE', `JourRegle/${jourRegleId}`);
+    }
+
     async deleteMedicament(medicamentId: number): Promise<any> {
         return this.request('DELETE', `Medicament/${medicamentId}`);
     }
@@ -209,6 +213,10 @@ class ApiService {
     
     async editDonneesDouleurs(donneesDouleursId: number, donneesDouleurs: any): Promise<any> {
         return this.request('PUT', `DonneesDouleurs/${donneesDouleursId}`, donneesDouleurs);
+    }
+
+    async editSymptomeCycle(symptomeCycleId: number, symptomeCycle: any): Promise<any> {
+        return this.request('PUT', `SymptomesCycle/${symptomeCycleId}`, symptomeCycle);
     }
 
 }

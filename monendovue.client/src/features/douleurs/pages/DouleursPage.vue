@@ -96,23 +96,39 @@
       <SelectMonth v-model="selectedMonthYear"/>
 
       <div v-if="isLoading" class="flex flex-col space-y-3">
-        <Skeleton class="h-[300px] w-full mt-4 rounded-xl"/>
+        <Skeleton class="h-[120px] w-full mt-2 rounded-xl"/>
+        <Skeleton class="h-[120px] w-full rounded-xl"/>
+        <Skeleton class="h-[120px] w-full rounded-xl"/>
       </div>
-      <Datatable v-else-if="filteredEntries.length > 0" :entries="filteredEntries" :columns="columns"
-                 :deleteFunction="handleDelete" @edit-entry="handleEditEntry">
-        <thead>
-        <tr>
-          <th>Type</th>
-          <th>Date</th>
-          <th>Heure</th>
-          <th>Intensité</th>
-          <th>Commentaire</th>
-          <th></th>
-        </tr>
-        </thead>
-      </Datatable>
+      <template v-else-if="filteredEntries.length > 0">
+        <!-- Mobile: cards -->
+        <div class="md:hidden">
+          <GenericCardList
+            :entries="filteredEntries"
+            titleField="type"
+            dateField="date"
+            timeField="time"
+            intensityField="intensite"
+            :extraFields="[{ key: 'commentaire', label: 'Note' }]"
+            :iconConfig="douleurIconConfig"
+            :onDelete="handleDelete"
+            :onEdit="handleEditEntry"
+            emptyMessage="Aucune douleur enregistrée ce mois"
+          />
+        </div>
+        <!-- Desktop: table -->
+        <div class="hidden md:block">
+          <Datatable :entries="filteredEntries" :columns="columns" :deleteFunction="handleDelete" @edit-entry="handleEditEntry">
+            <thead>
+              <tr>
+                <th>Type</th><th>Date</th><th>Heure</th><th>Intensité</th><th>Commentaire</th><th></th><th></th>
+              </tr>
+            </thead>
+          </Datatable>
+        </div>
+      </template>
       <div v-else class="flex justify-center items-center h-32">
-        <p class="text-2xl text-center">Aucune donnée enregistrée</p>
+        <p class="text-xl text-center text-muted-foreground italic">Aucune douleur enregistrée</p>
       </div>
     </section>
     <div class="flex-row-container w-full gap-8">
@@ -168,6 +184,7 @@ import { Skeleton } from '@/shared/components/ui/skeleton'
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/shared/components/ui/dialog'
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@/shared/components/ui/select'
 import Datatable from "@/shared/components/Datatable.vue"
+import GenericCardList from "@/shared/components/GenericCardList.vue"
 import BackButton from "@/shared/components/BackButton.vue"
 import SelectMonth from "@/shared/components/SelectMonth.vue"
 
@@ -234,15 +251,20 @@ const columns: any = [
   { data: 'time' },
   { data: 'intensite' },
   { data: 'commentaire' },
-  {
-    data: 'actions',
-    defaultContent: '<span class="material-symbols-outlined edit-btn">edit</span>'
-  },
-  {
-    data: null,
-    defaultContent: '<span class="material-symbols-outlined delete-btn">delete</span>'
-  },
+  { data: 'actions', defaultContent: '<span class="material-symbols-outlined edit-btn">edit</span>' },
+  { data: null, defaultContent: '<span class="material-symbols-outlined delete-btn">delete</span>' },
 ]
+
+const douleurIconConfig: Record<string, { color: string; bg: string; icon: string }> = {
+  'Douleur pelvienne':      { color: 'text-red-600',    bg: 'bg-red-100',    icon: 'emergency_home' },
+  'Douleur abdominale':     { color: 'text-orange-600', bg: 'bg-orange-100', icon: 'sick' },
+  'Douleur lombaire':       { color: 'text-amber-600',  bg: 'bg-amber-100',  icon: 'spine' },
+  'Douleur thoracique':     { color: 'text-blue-600',   bg: 'bg-blue-100',   icon: 'favorite' },
+  'Douleur projetée':       { color: 'text-purple-600', bg: 'bg-purple-100', icon: 'neurology' },
+  'Douleur neuropathique':  { color: 'text-indigo-600', bg: 'bg-indigo-100', icon: 'bolt' },
+  'Dyspareunie':            { color: 'text-pink-600',   bg: 'bg-pink-100',   icon: 'health_and_beauty' },
+  'Autre':                  { color: 'text-gray-500',   bg: 'bg-gray-100',   icon: 'help_outline' },
+}
 
 const filteredEntries = computed(() => {
   return entries.value.filter(entry => entry.intensite !== 0)
@@ -282,16 +304,16 @@ const intensityIcon = computed(() => {
   }
 })
 
-const handleDelete = async (id: number) => {
-  await deleteEntry(id, (id) => apiService.deleteDonneesDouleurs(id as number), {
+const handleDelete = async (id: string | number) => {
+  await deleteEntry(id as number, (id) => apiService.deleteDonneesDouleurs(id as number), {
     successMessage: 'La douleur a été supprimée avec succès',
     errorMessage: 'Un problème est survenu lors de la suppression de la douleur',
     endpoint: 'DonneesDouleurs'
   })
 }
 
-const handleEditEntry = (id: number) => {
-  const entry = entries.value.find(entry => entry.id === id)
+const handleEditEntry = (id: string | number) => {
+  const entry = entries.value.find(entry => entry.id === (id as number))
   if (entry) {
     const [day, month, year] = entry.date.split('/').map(Number)
     const parsedDate = new Date(year, month - 1, day)

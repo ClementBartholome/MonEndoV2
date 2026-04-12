@@ -67,4 +67,21 @@ public class JourRegleController(AppDbContext context, CarnetSanteService carnet
         await context.SaveChangesAsync();
         return jourRegle;
     }
+
+    [HttpDelete("{id:int}")]
+    public async Task<IActionResult> Delete(int id)
+    {
+        var jourRegle = await context.JourRegles.FirstOrDefaultAsync(j => j.Id == id);
+        if (jourRegle == null) return NotFound();
+
+        var securityCheck = await this.ValidateCarnetAccess(carnetSanteService, jourRegle.CarnetSanteId);
+        if (securityCheck != null) return securityCheck;
+
+        context.JourRegles.Remove(jourRegle);
+        await context.SaveChangesAsync();
+
+        carnetSanteService.InvalidateCache(jourRegle.CarnetSanteId);
+
+        return NoContent();
+    }
 }
