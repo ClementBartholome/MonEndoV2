@@ -23,154 +23,119 @@
         {{ isSyncing ? 'Synchronisation...' : 'Synchroniser' }}
       </Button>
     </div>
-    <div class="w-full mb-8">
-      <div class="flex flex-wrap gap-2 m-2 justify-around">
-        <router-link to="/bilan-quotidien" class="w-full flex-1">
-          <Card>
-            <CardHeader>
-              <i class="material-symbols-outlined bg-[#A8D8EA] rounded-full p-2" style="font-size: 40px;">event_note</i>  
-              <CardTitle>Bilan quotidien</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p>
-                Humeur, stress, fatigue... fais le point sur ta journée
+    <!-- Bilan quotidien : pleine largeur, action principale du jour -->
+    <div class="w-full mb-3 px-2">
+      <router-link to="/bilan-quotidien">
+        <div class="bg-white rounded-2xl p-4 shadow-md hover:shadow-lg transition-shadow border border-gray-100 flex items-center gap-4">
+          <i class="material-symbols-outlined bg-blue-100 text-blue-600 rounded-xl p-3 shrink-0" style="font-size: 28px;">event_note</i>
+          <div class="flex-1 min-w-0">
+            <h3 class="font-semibold text-headline">Bilan quotidien</h3>
+            <p class="text-sm text-paragraph truncate">Humeur, stress, fatigue... fais le point sur ta journée</p>
+          </div>
+          <i class="material-symbols-outlined text-muted-foreground shrink-0">chevron_right</i>
+        </div>
+      </router-link>
+    </div>
+
+    <!-- Grille 2 colonnes pour les sections secondaires -->
+    <div class="w-full mb-3 px-2">
+      <div class="grid grid-cols-2 gap-3">
+
+        <router-link to="/cycle">
+          <div class="bg-white rounded-2xl p-4 h-full shadow-sm hover:shadow-md transition-shadow border border-gray-100">
+            <i class="material-symbols-outlined bg-red-100 text-red-500 rounded-lg p-2 mb-2" style="font-size: 24px;">menstrual_health</i>
+            <p class="font-semibold text-headline text-sm">Cycle</p>
+            <p class="text-xs text-muted-foreground mt-1">Règles & symptômes</p>
+          </div>
+        </router-link>
+
+        <router-link to="/douleurs">
+          <div class="bg-white rounded-2xl p-4 h-full shadow-sm hover:shadow-md transition-shadow border border-gray-100">
+            <i class="material-symbols-outlined bg-orange-100 text-orange-500 rounded-lg p-2 mb-2" style="font-size: 24px;">sick</i>
+            <p class="font-semibold text-headline text-sm">Douleurs</p>
+            <div v-if="isLoading" class="mt-1 h-2 bg-gray-200 rounded-full w-3/4"></div>
+            <p v-else-if="lastDouleurEntry" class="text-xs text-muted-foreground mt-1 truncate">
+              {{ lastDouleurEntry.typeDouleur }} — {{ lastDouleurEntry.date }}
+            </p>
+            <p v-else class="text-xs text-muted-foreground mt-1 italic">Pas de données</p>
+          </div>
+        </router-link>
+
+        <router-link to="/activite">
+          <div class="bg-white rounded-2xl p-4 h-full shadow-sm hover:shadow-md transition-shadow border border-gray-100">
+            <i class="material-symbols-outlined bg-teal-100 text-teal-500 rounded-lg p-2 mb-2" style="font-size: 24px;">directions_run</i>
+            <p class="font-semibold text-headline text-sm">Activité</p>
+            <div v-if="isLoading" class="mt-1 h-2 bg-gray-200 rounded-full w-3/4"></div>
+            <p v-else-if="lastActiviteEntry" class="text-xs text-muted-foreground mt-1 truncate">
+              {{ lastActiviteEntry.typeActivite }} — {{ lastActiviteEntry.date }}
+            </p>
+            <p v-else class="text-xs text-muted-foreground mt-1 italic">Pas de données</p>
+          </div>
+        </router-link>
+
+        <router-link to="/medicaments">
+          <div class="bg-white rounded-2xl p-4 h-full shadow-sm hover:shadow-md transition-shadow border border-gray-100">
+            <i class="material-symbols-outlined bg-green-100 text-green-500 rounded-lg p-2 mb-2" style="font-size: 24px;">pill</i>
+            <p class="font-semibold text-headline text-sm">Traitements</p>
+            <div v-if="isLoading" class="mt-1 h-2 bg-gray-200 rounded-full w-3/4"></div>
+            <p v-else-if="lastMedicamentEntry" class="text-xs text-muted-foreground mt-1 truncate">
+              {{ lastMedicamentEntry.nom }} — {{ lastMedicamentEntry.date }}
+            </p>
+            <p v-else class="text-xs text-muted-foreground mt-1 italic">Pas de données</p>
+          </div>
+        </router-link>
+
+        <router-link to="/transit" class="col-span-2">
+          <div class="bg-white rounded-2xl p-4 shadow-sm hover:shadow-md transition-shadow border border-gray-100 flex items-center gap-4">
+            <i class="material-symbols-outlined bg-purple-100 text-purple-500 rounded-lg p-2 shrink-0" style="font-size: 24px;">gastroenterology</i>
+            <div class="flex-1 min-w-0">
+              <p class="font-semibold text-headline text-sm">Transit</p>
+              <div v-if="isLoading" class="mt-1 h-2 bg-gray-200 rounded-full w-1/2"></div>
+              <p v-else-if="lastTransitEntry" class="text-xs text-muted-foreground truncate">
+                {{ lastTransitEntry.typeTransit }} — {{ lastTransitEntry.date }}
               </p>
-            </CardContent>
-          </Card>
-        </router-link>
-        <router-link to="/cycle" class="w-full flex-1">
-          <Card>
-            <CardHeader>
-              <i class="material-symbols-outlined bg-red-200 rounded-full p-2" style="font-size: 40px;">menstrual_health</i>
-              <CardTitle>Cycle menstruel</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p>Suivi de ton cycle menstruel et symptômes</p>
-            </CardContent>
-          </Card>
-        </router-link>
-        <router-link to="/douleurs" class="w-full flex-1">
-          <Card>
-            <CardHeader>
-              <i class="material-symbols-outlined bg-[#FFB7B2] rounded-full p-2" style="font-size: 40px;">sick</i>
-              <CardTitle>Douleurs</CardTitle>
-            </CardHeader>
-            <div v-if="isLoading" class="flex flex-col space-y-3 p-6 pt-0">
-              <Skeleton class="h-[52px] w-full rounded-xl"/>
+              <p v-else class="text-xs text-muted-foreground italic">Pas de données</p>
             </div>
-            <CardContent v-else>
-              <p v-if="lastDouleurEntry">
-                {{ lastDouleurEntry.typeDouleur }} à <br> <span class="highlight">{{ lastDouleurEntry.time }}</span>
-                <br> le
-                {{ lastDouleurEntry.date }}
-              </p>
-              <p v-else>Pas de données</p>
-            </CardContent>
-          </Card>
+            <i class="material-symbols-outlined text-muted-foreground shrink-0">chevron_right</i>
+          </div>
         </router-link>
-        <router-link to="/activite" class="w-full flex-1">
-          <Card>
-            <CardHeader>
-              <i class="material-symbols-outlined bg-teal-200 rounded-full p-2" style="font-size: 40px;">directions_run</i>
-              <CardTitle>Activité Physique</CardTitle>
-            </CardHeader>
-            <div v-if="isLoading" class="flex flex-col space-y-3 p-6 pt-0">
-              <Skeleton class="h-[52px] w-full rounded-xl"/>
-            </div>
-            <CardContent v-else>
-              <p v-if="lastActiviteEntry">
-                {{ lastActiviteEntry.typeActivite }} à <br><span class="highlight">{{
-                  lastActiviteEntry.time
-                }}</span><br> le
-                {{ lastActiviteEntry.date }}
-              </p>
-              <p v-else>Pas de données</p>
-            </CardContent>
-          </Card>
-        </router-link>
-        <router-link to="/medicaments" class="w-full flex-1">
-          <Card>
-            <CardHeader>
-              <i class="material-symbols-outlined bg-[#B5EAD7] rounded-full p-2" style="font-size: 40px;">medical_services</i>
-              <CardTitle>Traitements</CardTitle>
-            </CardHeader>
-            <div v-if="isLoading" class="flex flex-col space-y-3 p-6 pt-0">
-              <Skeleton class="h-[52px] w-full rounded-xl"/>
-            </div>
-            <CardContent v-else>
-              <p v-if="lastMedicamentEntry">
-                {{ lastMedicamentEntry.nom }} à <br><span class="highlight">{{ lastMedicamentEntry.heure }}</span> <br>
-                le
-                {{ lastMedicamentEntry.date }}
-              </p>
-              <p v-else>Pas de données</p>
-            </CardContent>
-          </Card>
-        </router-link>
-        <router-link to="/transit" class="w-full flex-1">
-          <Card>
-            <CardHeader>
-              <i class="material-symbols-outlined bg-[#C7CEEA] rounded-full p-2" style="font-size: 40px;">gastroenterology</i>
-              <CardTitle>Transit</CardTitle>
-            </CardHeader>
-            <div v-if="isLoading" class="flex flex-col space-y-3 p-6 pt-0">
-              <Skeleton class="h-[52px] w-full rounded-xl"/>
-            </div>
-            <CardContent v-else>
-              <p v-if="lastTransitEntry">
-                {{ lastTransitEntry.typeTransit }} à <br> <span class="highlight">{{ lastTransitEntry.time }}</span>
-                <br> le
-                {{ lastTransitEntry.date }}
-              </p>
-              <p v-else>Pas de données</p>
-            </CardContent>
-          </Card>
-        </router-link>
-        <router-link to="/agenda" class="w-full col-span-3">
-          <Card>
-            <CardHeader class="w-full">
-              <i class="material-symbols-outlined bg-[#FFDAC1] rounded-full p-2" style="font-size: 40px;">event</i>
-              <CardTitle>Mes prochains RDV</CardTitle>
-            </CardHeader>
-            <CardContent class="flex flex-col md:flex-row text-center gap-4 md:gap-16">
-              <div v-if="isLoading" class="flex flex-col space-y-3 p-6 pt-0">
-                <Skeleton class="h-[52px] w-full rounded-xl"/>
-              </div>
-              <div v-else-if="upcomingEvents.length === 0" class="text-start">Pas de rendez-vous à venir</div>
-              <div v-else v-for="event in upcomingEvents" :key="event.id"
-                   class="rounded-3xl px-4 mb-4 bg-white flex flex-col min-w-40  justify-evenly">
-                <h3 class="text-lg">
-                  {{ event.summary }}
-                </h3>
-                <p>
-                  {{ event.location }}
-                </p>
-                <p class="mt-auto text-highlight font-bold">
-                  {{
-                    event.start.dateTime
-                        ? format(new Date(event.start.dateTime), "dd/MM 'à' H'h'mm")
-                        : event.start.date
-                            ? format(new Date(event.start.date), "dd/MM")
-                            : 'Date invalide'
-                  }}
-                </p>
-                </div>
-            </CardContent>
-          </Card>
-        </router-link>
-        <router-link to="/export" class="w-full">
-          <Card>
-            <CardHeader>
-              <i class="material-symbols-outlined bg-[#E2F0CB] rounded-full p-2" style="font-size: 40px;">picture_as_pdf</i>
-              <CardTitle>Export PDF</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p>Exportez vos données de santé au format PDF</p>
-            </CardContent>
-          </Card>
-        </router-link>
+
       </div>
     </div>
+
+    <!-- Prochains RDV -->
+    <div class="w-full px-2 pb-8">
+      <div class="bg-white rounded-2xl p-5 shadow-md border border-gray-100">
+        <div class="flex items-center gap-3 mb-4">
+          <i class="material-symbols-outlined bg-amber-100 text-amber-600 rounded-xl p-3" style="font-size: 32px;">event</i>
+          <h3 class="font-semibold text-headline text-lg">Prochains rendez-vous</h3>
+        </div>
+        <div v-if="isLoading" class="flex flex-col space-y-2">
+          <div class="h-3 bg-gray-200 rounded-full w-3/4"></div>
+          <div class="h-3 bg-gray-200 rounded-full w-1/2"></div>
+        </div>
+        <div v-else-if="upcomingEvents.length === 0" class="text-sm text-muted-foreground italic">
+          Pas de rendez-vous à venir
+        </div>
+        <div v-else class="flex flex-col md:flex-row gap-4">
+          <div v-for="event in upcomingEvents" :key="event.id"
+               class="flex-1 rounded-xl px-4 py-3 bg-amber-50 border border-amber-100">
+            <h4 class="font-medium text-headline text-sm">{{ event.summary }}</h4>
+            <p v-if="event.location" class="text-xs text-paragraph mt-1">{{ event.location }}</p>
+            <p class="text-xs font-semibold text-highlight mt-2">
+              {{
+                event.start.dateTime
+                  ? format(new Date(event.start.dateTime), "dd/MM 'à' H'h'mm")
+                  : event.start.date
+                    ? format(new Date(event.start.date), "dd/MM")
+                    : 'Date invalide'
+              }}
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+
   </section>
 
 </template>
