@@ -6,6 +6,7 @@ using Google.Apis.Auth.OAuth2;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Http.Features;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
@@ -17,6 +18,7 @@ using MonEndoVue.Server.Services;
 using Quartz;
 using Serilog;
 using Serilog.Events;
+using System.Threading.RateLimiting;
 
 
 namespace MonEndoVue.Server
@@ -131,6 +133,27 @@ namespace MonEndoVue.Server
 
             builder.Services.AddAuthorization();
 
+            builder.Services.AddRateLimiter(options =>
+            {
+                options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+
+                options.AddFixedWindowLimiter("api", limiterOptions =>
+                {
+                    limiterOptions.PermitLimit = 120;
+                    limiterOptions.Window = TimeSpan.FromMinutes(1);
+                    limiterOptions.QueueLimit = 0;
+                    limiterOptions.AutoReplenishment = true;
+                });
+
+                options.AddFixedWindowLimiter("auth", limiterOptions =>
+                {
+                    limiterOptions.PermitLimit = 20;
+                    limiterOptions.Window = TimeSpan.FromMinutes(1);
+                    limiterOptions.QueueLimit = 0;
+                    limiterOptions.AutoReplenishment = true;
+                });
+            });
+
             builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                 .AddJwtBearer(options =>
                 {
@@ -139,12 +162,16 @@ namespace MonEndoVue.Server
                         .GetSection("Authentication:Schemes:Bearer:ValidAudiences").Get<string[]>();
                     var secret = builder.Configuration["Authentication:Schemes:Bearer:Secret"];
 
+                    var hasIssuer = !string.IsNullOrWhiteSpace(validIssuer);
+                    var hasAudiences = validAudiences is { Length: > 0 };
+
                     options.TokenValidationParameters = new TokenValidationParameters
                     {
-                        ValidateIssuer = false,
-                        ValidateAudience = false,
+                        ValidateIssuer = hasIssuer,
+                        ValidateAudience = hasAudiences,
                         ValidateLifetime = true,
                         ValidateIssuerSigningKey = true,
+                        ClockSkew = TimeSpan.FromMinutes(1),
                         ValidIssuer = validIssuer,
                         ValidAudiences = validAudiences,
                         IssuerSigningKey = new SymmetricSecurityKey(Encoding.ASCII.GetBytes(secret))
@@ -155,7 +182,7 @@ namespace MonEndoVue.Server
                         OnAuthenticationFailed = context =>
                         {
                             var logger = context.HttpContext.RequestServices.GetRequiredService<ILogger<Program>>();
-                            logger.LogError("Authentication failed.", context.Exception);
+                            logger.LogError(context.Exception, "Authentication failed.");
                             return Task.CompletedTask;
                         },
                         OnTokenValidated = context =>
@@ -246,8 +273,6 @@ namespace MonEndoVue.Server
 
             var app = builder.Build();
 
-            app.MapHub<NotificationHub>("/notificationHub");
-
             if (app.Environment.IsDevelopment())
             {
                 using var scope = app.Services.CreateScope();
@@ -267,22 +292,30 @@ namespace MonEndoVue.Server
                 await dbContext.Database.MigrateAsync();
 
                 app.UseHsts();
-                app.Use(async (context, next) =>
-                {
-                    context.Response.Headers.Append("X-Frame-Options", "DENY");
-                    await next();
-                });
             }
 
-            app.MapIdentityApi<ApplicationUser>();
+            var identityApi = app.MapIdentityApi<ApplicationUser>();
+            identityApi.RequireRateLimiting("auth");
+
+            var notificationHub = app.MapHub<NotificationHub>("/notificationHub");
+            notificationHub.RequireRateLimiting("api");
 
             app.UseCors("CorsPolicy");
+
+            app.Use(async (context, next) =>
+            {
+                context.Response.Headers["X-Frame-Options"] = "DENY";
+                context.Response.Headers["X-Content-Type-Options"] = "nosniff";
+                context.Response.Headers["Referrer-Policy"] = "strict-origin-when-cross-origin";
+                context.Response.Headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()";
+                await next();
+            });
 
             // Middleware to add the Authorization header from the cookie to the request headers
             app.Use(async (context, next) =>
             {
                 var token = context.Request.Cookies["accessToken"];
-                if (!string.IsNullOrEmpty(token))
+                if (!string.IsNullOrEmpty(token) && !context.Request.Headers.ContainsKey("Authorization"))
                 {
                     context.Request.Headers.Append("Authorization", $"Bearer {token}");
                 }
@@ -303,7 +336,8 @@ namespace MonEndoVue.Server
 
             app.UseAuthentication();
             app.UseAuthorization();
-            app.MapControllers();
+            app.UseRateLimiter();
+            app.MapControllers().RequireRateLimiting("api");
             app.MapFallbackToFile("/index.html");
             await app.RunAsync();
         }
