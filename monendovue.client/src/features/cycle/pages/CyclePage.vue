@@ -192,7 +192,7 @@
                     <i class="material-symbols-outlined">add</i>
                   </Button>
                 </DialogTrigger>
-                <DialogContent>
+                <DialogContent class="max-h-[85vh] overflow-y-auto">
                   <DialogHeader class="text-2xl">
                     <DialogTitle>{{ editingSymptomeId !== null ? 'Modifier le symptôme' : 'Ajouter un symptôme' }}</DialogTitle>
                   </DialogHeader>
@@ -244,7 +244,7 @@
                     </FormField>
 
                     <!-- Single day fields (shown when not a period) -->
-                    <div v-if="!form.values.isPeriod" key="single-day-fields" class="flex items-center gap-8 cycle-single-day-fields">
+                    <div v-if="!form.values.isPeriod" key="single-day-fields" class="grid grid-cols-2 gap-3">
                       <FormField v-slot="{ componentField }" name="date">
                         <FormItem>
                           <FormLabel>Date</FormLabel>
@@ -331,37 +331,37 @@
                         <FormLabel>Photo <span>(optionnel)</span></FormLabel>
                         <FormControl>
                           <div class="flex flex-col gap-3">
-                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                              <button
-                                type="button"
-                                class="inline-flex items-center justify-center gap-2 rounded-md border border-input bg-background px-3 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground disabled:pointer-events-none disabled:opacity-50"
-                                :disabled="isProcessingPhoto"
-                                @click="openCameraPicker"
+                            <div class="grid grid-cols-2 gap-2">
+                              <label
+                                for="cameraPhotoInput"
+                                class="inline-flex items-center justify-center gap-2 rounded-md border border-input bg-background px-3 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground"
+                                :class="isProcessingPhoto ? 'pointer-events-none opacity-50' : 'cursor-pointer'"
                               >
                                 <i class="material-symbols-outlined text-base">photo_camera</i>
                                 <span>Prendre une photo</span>
-                              </button>
-                              <button
-                                type="button"
-                                class="inline-flex items-center justify-center gap-2 rounded-md border border-input bg-background px-3 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground disabled:pointer-events-none disabled:opacity-50"
-                                :disabled="isProcessingPhoto"
-                                @click="openGalleryPicker"
+                              </label>
+                              <label
+                                for="galleryPhotoInput"
+                                class="inline-flex items-center justify-center gap-2 rounded-md border border-input bg-background px-3 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground"
+                                :class="isProcessingPhoto ? 'pointer-events-none opacity-50' : 'cursor-pointer'"
                               >
                                 <i class="material-symbols-outlined text-base">photo_library</i>
-                                <span>Choisir depuis la galerie</span>
-                              </button>
+                                <span>Galerie</span>
+                              </label>
                             </div>
                             <input
+                              id="cameraPhotoInput"
                               ref="cameraPhotoInputRef"
-                              class="sr-only"
+                              class="hidden"
                               type="file"
                               accept="image/*"
                               capture="environment"
                               @change="(event) => handlePhotoUpload(event, 'camera')"
                             />
                             <input
+                              id="galleryPhotoInput"
                               ref="galleryPhotoInputRef"
-                              class="sr-only"
+                              class="hidden"
                               type="file"
                               accept="image/*,.heic,.heif"
                               @change="(event) => handlePhotoUpload(event, 'gallery')"
@@ -513,6 +513,25 @@ const { user } = useAuthStore()
 const { formatDateDisplay, formatTimeDisplay, combineDateTime, getCurrentMonthYear } = useDateTimeFormat()
 const { toast } = useToast()
 
+const getRequestErrorMessage = (error: unknown, fallback: string): string => {
+  const anyError = error as any
+  const responseData = anyError?.response?.data
+
+  if (typeof responseData?.message === 'string' && responseData.message.length > 0) {
+    return responseData.message
+  }
+
+  if (typeof responseData?.title === 'string' && responseData.title.length > 0) {
+    return responseData.title
+  }
+
+  if (typeof anyError?.message === 'string' && anyError.message.length > 0) {
+    return anyError.message
+  }
+
+  return fallback
+}
+
 // Dialog control
 const showAddDialog = ref(false)
 const { submitForm } = useDialogForm(showAddDialog)
@@ -576,8 +595,8 @@ const quickAddAcneToday = async () => {
     await apiService.postDonneesSymptomesCycle(formData)
     await refetch()
     toast({ title: 'Acné enregistrée', description: 'Marquée pour aujourd\'hui', variant: 'custom' })
-  } catch {
-    toast({ title: 'Erreur', description: 'Impossible d\'enregistrer', variant: 'destructive' })
+  } catch (error) {
+    toast({ title: 'Erreur', description: getRequestErrorMessage(error, 'Impossible d\'enregistrer'), variant: 'destructive' })
   } finally {
     isQuickAddingAcne.value = false
   }
@@ -669,13 +688,6 @@ const getUploadFileName = (file: File): string => {
   return `${baseName}${extension}`
 }
 
-const openCameraPicker = () => {
-  cameraPhotoInputRef.value?.click()
-}
-
-const openGalleryPicker = () => {
-  galleryPhotoInputRef.value?.click()
-}
 
 const resetSelectedPhoto = () => {
   selectedPhoto.value = null
@@ -1436,7 +1448,7 @@ const onSubmit = form.handleSubmit(async (values) => {
 
       toast({
         title: 'Erreur',
-        description: errorMessage,
+        description: getRequestErrorMessage(error, errorMessage),
         variant: 'destructive',
       })
 
@@ -1576,7 +1588,7 @@ const extendAcnePeriod = async (period: any) => {
     console.error('Error extending acné period:', error)
     toast({
       title: 'Erreur',
-      description: 'Une erreur est survenue lors de l\'extension de la période',
+      description: getRequestErrorMessage(error, 'Une erreur est survenue lors de l\'extension de la période'),
       variant: 'destructive',
     })
   }
@@ -1791,10 +1803,5 @@ const confirmDeleteJourRegle = async () => {
     width: calc(50% - 0.5rem);
   }
 
-  .cycle-single-day-fields {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 0.75rem;
-  }
 }
 </style>

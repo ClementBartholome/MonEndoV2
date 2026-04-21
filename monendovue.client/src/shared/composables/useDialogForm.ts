@@ -13,6 +13,32 @@ interface DialogFormOptions<T> {
 export function useDialogForm<T = any>(dialogRef: Ref<boolean>) {
   const { toast } = useToast();
 
+  const getErrorDescription = (error: any, fallback: string): string => {
+    const responseData = error?.response?.data;
+
+    if (typeof responseData?.message === 'string' && responseData.message.length > 0) {
+      return responseData.message;
+    }
+
+    if (typeof responseData?.title === 'string' && responseData.title.length > 0) {
+      return responseData.title;
+    }
+
+    const validationErrors = responseData?.errors;
+    if (validationErrors && typeof validationErrors === 'object') {
+      const firstEntry = Object.values(validationErrors).find((value) => Array.isArray(value) && value.length > 0) as string[] | undefined;
+      if (firstEntry && typeof firstEntry[0] === 'string') {
+        return firstEntry[0];
+      }
+    }
+
+    if (typeof error?.message === 'string' && error.message.length > 0) {
+      return error.message;
+    }
+
+    return fallback;
+  };
+
   const submitForm = async (data: any, options: DialogFormOptions<T>) => {
     const {
       submitFunction,
@@ -50,12 +76,10 @@ export function useDialogForm<T = any>(dialogRef: Ref<boolean>) {
     } catch (error: any) {
       console.error('Form submission error:', error);
 
-      const backendMessage = error?.response?.data?.message;
-
       // Show error toast
       toast({
         title: 'Erreur',
-        description: typeof backendMessage === 'string' && backendMessage.length > 0 ? backendMessage : errorMessage,
+        description: getErrorDescription(error, errorMessage),
         variant: 'destructive',
       });
 
