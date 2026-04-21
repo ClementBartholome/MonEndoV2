@@ -7,6 +7,10 @@ export interface PreparePhotoResult {
   compressed: boolean
 }
 
+export interface PreparePhotoOptions {
+  targetMaxBytes?: number
+}
+
 const getExtension = (fileName: string): string => {
   const index = fileName.lastIndexOf('.')
   if (index < 0) return ''
@@ -58,34 +62,60 @@ const canvasToJpegBlob = (canvas: HTMLCanvasElement, quality: number): Promise<B
   })
 }
 
-const compressImageIfNeeded = async (file: File): Promise<File> => {
-  const isCompressibleType = ['image/jpeg', 'image/png', 'image/webp'].includes(file.type)
-  if (!isCompressibleType || file.size <= 2 * 1024 * 1024) {
+const compressImageToTarget = async (file: File, targetMaxBytes: number): Promise<File> => {
+  if (!file.type.startsWith('image/')) {
+    return file
+  }
+
+  if (file.size <= targetMaxBytes) {
     return file
   }
 
   const image = await createImageFromFile(file)
-  const maxDimension = 1600
-  const ratio = Math.min(maxDimension / image.width, maxDimension / image.height, 1)
-  const width = Math.round(image.width * ratio)
-  const height = Math.round(image.height * ratio)
+  const qualitySteps = [0.86, 0.78, 0.7, 0.62, 0.55]
+  const maxDimensions = [1600, 1280, 1024, 896, 768]
+  let smallestBlob: Blob | null = null
 
-  const canvas = document.createElement('canvas')
-  canvas.width = width
-  canvas.height = height
+  for (const maxDimension of maxDimensions) {
+    const ratio = Math.min(maxDimension / image.width, maxDimension / image.height, 1)
+    const width = Math.max(1, Math.round(image.width * ratio))
+    const height = Math.max(1, Math.round(image.height * ratio))
 
-  const context = canvas.getContext('2d')
-  if (!context) {
-    return file
+    const canvas = document.createElement('canvas')
+    canvas.width = width
+    canvas.height = height
+
+    const context = canvas.getContext('2d')
+    if (!context) {
+      continue
+    }
+
+    context.drawImage(image, 0, 0, width, height)
+
+    for (const quality of qualitySteps) {
+      const jpegBlob = await canvasToJpegBlob(canvas, quality)
+
+      if (!smallestBlob || jpegBlob.size < smallestBlob.size) {
+        smallestBlob = jpegBlob
+      }
+
+      if (jpegBlob.size <= targetMaxBytes) {
+        return new File([jpegBlob], `${getBaseName(file.name)}.jpg`, {
+          type: 'image/jpeg',
+          lastModified: Date.now(),
+        })
+      }
+    }
   }
 
-  context.drawImage(image, 0, 0, width, height)
+  if (smallestBlob) {
+    return new File([smallestBlob], `${getBaseName(file.name)}.jpg`, {
+      type: 'image/jpeg',
+      lastModified: Date.now(),
+    })
+  }
 
-  const jpegBlob = await canvasToJpegBlob(canvas, 0.82)
-  return new File([jpegBlob], `${getBaseName(file.name)}.jpg`, {
-    type: 'image/jpeg',
-    lastModified: Date.now(),
-  })
+  return file
 }
 
 const convertHeicToJpeg = async (file: File): Promise<File | null> => {
@@ -113,7 +143,11 @@ const convertHeicToJpeg = async (file: File): Promise<File | null> => {
   }
 }
 
-export const preparePhotoForUpload = async (file: File): Promise<PreparePhotoResult> => {
+export const preparePhotoForUpload = async (
+  file: File,
+  options: PreparePhotoOptions = {}
+): Promise<PreparePhotoResult> => {
+  const targetMaxBytes = options.targetMaxBytes ?? 900 * 1024
   let currentFile = file
   let convertedFromHeic = false
 
@@ -125,7 +159,7 @@ export const preparePhotoForUpload = async (file: File): Promise<PreparePhotoRes
     }
   }
 
-  const compressedFile = await compressImageIfNeeded(currentFile)
+  const compressedFile = await compressImageToTarget(currentFile, targetMaxBytes)
 
   return {
     file: compressedFile,

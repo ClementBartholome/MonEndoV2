@@ -14,7 +14,12 @@ export function useDialogForm<T = any>(dialogRef: Ref<boolean>) {
   const { toast } = useToast();
 
   const getErrorDescription = (error: any, fallback: string): string => {
+    const statusCode = error?.response?.status;
     const responseData = error?.response?.data;
+
+    if (statusCode === 413) {
+      return 'Fichier trop volumineux pour le serveur. Merci de sélectionner une image plus légère.';
+    }
 
     if (typeof responseData?.message === 'string' && responseData.message.length > 0) {
       return responseData.message;

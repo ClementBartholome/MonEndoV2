@@ -369,8 +369,8 @@
                           </div>
                         </FormControl>
                         <p v-if="isProcessingPhoto" class="text-xs text-gray-500">Traitement de la photo...</p>
-                        <p class="text-xs text-gray-500">JPG, PNG, WEBP, HEIC - max {{ MAX_PHOTO_SIZE_MB }} MB</p>
-                        <p v-if="selectedPhoto" class="text-xs text-gray-500">Fichier sélectionné : {{ selectedPhoto.name }}</p>
+                        <p class="text-xs text-gray-500">JPG, PNG, WEBP, HEIC - max {{ MAX_PHOTO_SIZE_LABEL }}</p>
+                        <p v-if="selectedPhoto" class="text-xs text-gray-500">Fichier sélectionné : {{ selectedPhoto.name }} ({{ formatFileSize(selectedPhoto.size) }})</p>
                         <div v-if="selectedPhotoPreviewUrl" class="mt-2 flex items-center gap-3">
                           <img :src="selectedPhotoPreviewUrl" alt="Aperçu photo" class="w-16 h-16 rounded-md object-cover border" />
                           <Button type="button" variant="outline" size="sm" @click="resetSelectedPhoto">Retirer</Button>
@@ -515,7 +515,12 @@ const { toast } = useToast()
 
 const getRequestErrorMessage = (error: unknown, fallback: string): string => {
   const anyError = error as any
+  const statusCode = anyError?.response?.status
   const responseData = anyError?.response?.data
+
+  if (statusCode === 413) {
+    return 'Photo trop volumineuse pour le serveur. Réduisez la taille ou choisissez une autre photo.'
+  }
 
   if (typeof responseData?.message === 'string' && responseData.message.length > 0) {
     return responseData.message
@@ -530,6 +535,18 @@ const getRequestErrorMessage = (error: unknown, fallback: string): string => {
   }
 
   return fallback
+}
+
+const formatFileSize = (bytes: number): string => {
+  if (!Number.isFinite(bytes) || bytes < 1024) {
+    return `${Math.max(0, Math.round(bytes || 0))} B`
+  }
+
+  if (bytes < 1024 * 1024) {
+    return `${(bytes / 1024).toFixed(1)} KB`
+  }
+
+  return `${(bytes / (1024 * 1024)).toFixed(2)} MB`
 }
 
 // Dialog control
@@ -640,8 +657,9 @@ const handleEditSymptome = (id: string | number) => {
   showAddDialog.value = true
 }
 
-const MAX_PHOTO_SIZE_MB = 10
-const MAX_PHOTO_SIZE_BYTES = MAX_PHOTO_SIZE_MB * 1024 * 1024
+const MAX_PHOTO_SIZE_BYTES = 900 * 1024
+const HARD_INPUT_MAX_BYTES = 20 * 1024 * 1024
+const MAX_PHOTO_SIZE_LABEL = '900 KB'
 
 const ALLOWED_PHOTO_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.webp', '.heic', '.heif']
 
@@ -725,6 +743,16 @@ const handlePhotoUpload = async (event: Event, source: 'camera' | 'gallery') => 
     return
   }
 
+  if (file.size > HARD_INPUT_MAX_BYTES) {
+    toast({
+      title: 'Photo trop volumineuse',
+      description: `Le fichier dépasse ${formatFileSize(HARD_INPUT_MAX_BYTES)}. Prenez une photo plus légère.`,
+      variant: 'destructive',
+    })
+    resetSelectedPhoto()
+    return
+  }
+
   if (!isAcceptedImageFile(file)) {
     toast({
       title: 'Format non supporté',
@@ -738,7 +766,9 @@ const handlePhotoUpload = async (event: Event, source: 'camera' | 'gallery') => 
   isProcessingPhoto.value = true
 
   try {
-    const preparedPhoto = await preparePhotoForUpload(file)
+    const preparedPhoto = await preparePhotoForUpload(file, {
+      targetMaxBytes: MAX_PHOTO_SIZE_BYTES,
+    })
 
     if (preparedPhoto.convertedFromHeic) {
       toast({
@@ -751,7 +781,7 @@ const handlePhotoUpload = async (event: Event, source: 'camera' | 'gallery') => 
     if (preparedPhoto.file.size > MAX_PHOTO_SIZE_BYTES) {
       toast({
         title: 'Photo trop volumineuse',
-        description: `La photo doit faire moins de ${MAX_PHOTO_SIZE_MB} MB.`,
+        description: `La photo doit faire moins de ${MAX_PHOTO_SIZE_LABEL}. Taille actuelle: ${formatFileSize(preparedPhoto.file.size)}.`,
         variant: 'destructive',
       })
       resetSelectedPhoto()
