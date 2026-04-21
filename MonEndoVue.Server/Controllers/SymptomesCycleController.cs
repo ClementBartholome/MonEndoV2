@@ -66,7 +66,7 @@ namespace MonEndoVue.Server.Controllers
         // POST: SymptomesCycle
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPost]
-        public async Task<ActionResult<SymptomeCycle>> PostSymptomeCycle([FromForm] SymptomeCycle symptomeCycle, [FromForm] IFormFile? photo)
+        public async Task<ActionResult<SymptomeCycle>> PostSymptomeCycle([FromForm] SymptomeCycle symptomeCycle, [FromForm] IFormFile? photo, [FromForm] string? photoSource)
         {
             var securityCheck = await this.ValidateCarnetAccess(carnetSanteService, symptomeCycle.CarnetSanteId);
             if (securityCheck != null) return securityCheck;
@@ -76,8 +76,9 @@ namespace MonEndoVue.Server.Controllers
                 if (!IsPhotoValid(photo, out var validationError))
                 {
                     logger.LogWarning(
-                        "Photo validation failed for POST symptom. CarnetSanteId={CarnetSanteId}, FileName={FileName}, ContentType={ContentType}, Length={Length}, UserAgent={UserAgent}, Error={Error}",
+                        "Photo validation failed for POST symptom. CarnetSanteId={CarnetSanteId}, PhotoSource={PhotoSource}, FileName={FileName}, ContentType={ContentType}, Length={Length}, UserAgent={UserAgent}, Error={Error}",
                         symptomeCycle.CarnetSanteId,
+                        photoSource,
                         photo.FileName,
                         photo.ContentType,
                         photo.Length,
@@ -89,6 +90,12 @@ namespace MonEndoVue.Server.Controllers
                 var extension = ResolveFileExtension(photo);
                 var fileName = $"symptomes/{symptomeCycle.CarnetSanteId.ToString(CultureInfo.InvariantCulture)}/{Guid.NewGuid()}{extension}";
                 symptomeCycle.PhotoUrl = await azureBlobStorageService.UploadFileAsync(photo, fileName);
+                logger.LogInformation(
+                    "Photo uploaded for POST symptom. CarnetSanteId={CarnetSanteId}, PhotoSource={PhotoSource}, FileName={FileName}, StoredAs={StoredAs}",
+                    symptomeCycle.CarnetSanteId,
+                    photoSource,
+                    photo.FileName,
+                    fileName);
             }
 
             context.SymptomesCycles.Add(symptomeCycle);
@@ -100,7 +107,7 @@ namespace MonEndoVue.Server.Controllers
         }
 
         [HttpPut("{id:int}")]
-        public async Task<IActionResult> PutSymptomeCycle(int id, [FromForm] SymptomeCycle symptomeCycle, [FromForm] IFormFile? photo)
+        public async Task<IActionResult> PutSymptomeCycle(int id, [FromForm] SymptomeCycle symptomeCycle, [FromForm] IFormFile? photo, [FromForm] string? photoSource)
         {
             if (id != symptomeCycle.Id)
             {
@@ -126,8 +133,9 @@ namespace MonEndoVue.Server.Controllers
                 if (!IsPhotoValid(photo, out var validationError))
                 {
                     logger.LogWarning(
-                        "Photo validation failed for PUT symptom. SymptomeId={SymptomeId}, FileName={FileName}, ContentType={ContentType}, Length={Length}, UserAgent={UserAgent}, Error={Error}",
+                        "Photo validation failed for PUT symptom. SymptomeId={SymptomeId}, PhotoSource={PhotoSource}, FileName={FileName}, ContentType={ContentType}, Length={Length}, UserAgent={UserAgent}, Error={Error}",
                         existingSymptome.Id,
+                        photoSource,
                         photo.FileName,
                         photo.ContentType,
                         photo.Length,
@@ -140,6 +148,12 @@ namespace MonEndoVue.Server.Controllers
                 var extension = ResolveFileExtension(photo);
                 var fileName = $"symptomes/{existingSymptome.CarnetSanteId.ToString(CultureInfo.InvariantCulture)}/{Guid.NewGuid()}{extension}";
                 existingSymptome.PhotoUrl = await azureBlobStorageService.UploadFileAsync(photo, fileName);
+                logger.LogInformation(
+                    "Photo uploaded for PUT symptom. SymptomeId={SymptomeId}, PhotoSource={PhotoSource}, FileName={FileName}, StoredAs={StoredAs}",
+                    existingSymptome.Id,
+                    photoSource,
+                    photo.FileName,
+                    fileName);
 
                 if (!string.IsNullOrWhiteSpace(previousPhotoUrl))
                 {

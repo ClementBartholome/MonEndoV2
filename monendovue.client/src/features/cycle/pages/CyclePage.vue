@@ -330,16 +330,47 @@
                       <FormItem>
                         <FormLabel>Photo <span>(optionnel)</span></FormLabel>
                         <FormControl>
-                          <Input
-                              ref="photoInputRef"
+                          <div class="flex flex-col gap-3">
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                              <button
+                                type="button"
+                                class="inline-flex items-center justify-center gap-2 rounded-md border border-input bg-background px-3 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground disabled:pointer-events-none disabled:opacity-50"
+                                :disabled="isProcessingPhoto"
+                                @click="openCameraPicker"
+                              >
+                                <i class="material-symbols-outlined text-base">photo_camera</i>
+                                <span>Prendre une photo</span>
+                              </button>
+                              <button
+                                type="button"
+                                class="inline-flex items-center justify-center gap-2 rounded-md border border-input bg-background px-3 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground disabled:pointer-events-none disabled:opacity-50"
+                                :disabled="isProcessingPhoto"
+                                @click="openGalleryPicker"
+                              >
+                                <i class="material-symbols-outlined text-base">photo_library</i>
+                                <span>Choisir depuis la galerie</span>
+                              </button>
+                            </div>
+                            <input
+                              ref="cameraPhotoInputRef"
+                              class="sr-only"
+                              type="file"
+                              accept="image/*"
+                              capture="environment"
+                              @change="(event) => handlePhotoUpload(event, 'camera')"
+                            />
+                            <input
+                              ref="galleryPhotoInputRef"
+                              class="sr-only"
                               type="file"
                               accept="image/*,.heic,.heif"
-                              :disabled="isProcessingPhoto"
-                              @change="handlePhotoUpload"
-                          />
+                              @change="(event) => handlePhotoUpload(event, 'gallery')"
+                            />
+                          </div>
                         </FormControl>
                         <p v-if="isProcessingPhoto" class="text-xs text-gray-500">Traitement de la photo...</p>
                         <p class="text-xs text-gray-500">JPG, PNG, WEBP, HEIC - max {{ MAX_PHOTO_SIZE_MB }} MB</p>
+                        <p v-if="selectedPhoto" class="text-xs text-gray-500">Fichier sélectionné : {{ selectedPhoto.name }}</p>
                         <div v-if="selectedPhotoPreviewUrl" class="mt-2 flex items-center gap-3">
                           <img :src="selectedPhotoPreviewUrl" alt="Aperçu photo" class="w-16 h-16 rounded-md object-cover border" />
                           <Button type="button" variant="outline" size="sm" @click="resetSelectedPhoto">Retirer</Button>
@@ -517,9 +548,11 @@ const joursSpotting = ref<Date[]>([])
 const joursAcne = ref<Date[]>([])
 const cycleMoyen = ref(28)
 const selectedPhoto = ref<File | null>(null)
-const photoInputRef = ref<HTMLInputElement | null>(null)
+const cameraPhotoInputRef = ref<HTMLInputElement | null>(null)
+const galleryPhotoInputRef = ref<HTMLInputElement | null>(null)
 const selectedPhotoPreviewUrl = ref<string>('')
 const isProcessingPhoto = ref(false)
+const selectedPhotoSource = ref<'camera' | 'gallery' | null>(null)
 
 // Quick-add acné
 const isQuickAddingAcne = ref(false)
@@ -636,24 +669,46 @@ const getUploadFileName = (file: File): string => {
   return `${baseName}${extension}`
 }
 
+const openCameraPicker = () => {
+  cameraPhotoInputRef.value?.click()
+}
+
+const openGalleryPicker = () => {
+  galleryPhotoInputRef.value?.click()
+}
+
 const resetSelectedPhoto = () => {
   selectedPhoto.value = null
+  selectedPhotoSource.value = null
 
   if (selectedPhotoPreviewUrl.value) {
     URL.revokeObjectURL(selectedPhotoPreviewUrl.value)
     selectedPhotoPreviewUrl.value = ''
   }
 
-  if (photoInputRef.value) {
-    photoInputRef.value.value = ''
+  if (cameraPhotoInputRef.value) {
+    cameraPhotoInputRef.value.value = ''
+  }
+
+  if (galleryPhotoInputRef.value) {
+    galleryPhotoInputRef.value.value = ''
   }
 }
 
-const handlePhotoUpload = async (event: Event) => {
+const handlePhotoUpload = async (event: Event, source: 'camera' | 'gallery') => {
   const target = event.target as HTMLInputElement
   const file = target.files?.[0] ?? null
 
   if (!file) {
+    return
+  }
+
+  if (file.size === 0) {
+    toast({
+      title: 'Photo invalide',
+      description: 'La photo sélectionnée est vide ou incomplète. Réessayez.',
+      variant: 'destructive',
+    })
     resetSelectedPhoto()
     return
   }
@@ -696,6 +751,7 @@ const handlePhotoUpload = async (event: Event) => {
     }
 
     selectedPhoto.value = preparedPhoto.file
+    selectedPhotoSource.value = source
     selectedPhotoPreviewUrl.value = URL.createObjectURL(preparedPhoto.file)
   } catch {
     toast({
@@ -717,6 +773,7 @@ const buildSymptomeFormData = (payload: {
   intensite: number
   commentaire?: string
   photo?: File | null
+  photoSource?: 'camera' | 'gallery' | null
 }) => {
   const formData = new FormData()
 
@@ -732,6 +789,10 @@ const buildSymptomeFormData = (payload: {
 
   if (payload.photo) {
     formData.append('photo', payload.photo, getUploadFileName(payload.photo))
+  }
+
+  if (payload.photoSource) {
+    formData.append('photoSource', payload.photoSource)
   }
 
   return formData
@@ -1308,7 +1369,8 @@ const onSubmit = form.handleSubmit(async (values) => {
           dateIso: combineDateTime(format(firstDate, 'yyyy-MM-dd'), '12:00').toISOString(),
           intensite: values.intensite[0],
           commentaire: values.commentaire,
-          photo: selectedPhoto.value
+          photo: selectedPhoto.value,
+          photoSource: selectedPhotoSource.value
         })
 
         firstDayResponse = await apiService.postDonneesSymptomesCycle(firstDayFormData)
@@ -1393,7 +1455,8 @@ const onSubmit = form.handleSubmit(async (values) => {
         dateIso: combineDateTime(values.date ?? '', values.time ?? '').toISOString(),
         intensite: values.intensite[0],
         commentaire: values.commentaire || 'Pas de commentaire',
-        photo: selectedPhoto.value
+        photo: selectedPhoto.value,
+        photoSource: selectedPhotoSource.value
       })
 
       submitForm(dataToSend, {
@@ -1415,7 +1478,8 @@ const onSubmit = form.handleSubmit(async (values) => {
         dateIso: combineDateTime(values.date ?? '', values.time ?? '').toISOString(),
         intensite: values.intensite[0],
         commentaire: values.commentaire,
-        photo: selectedPhoto.value
+        photo: selectedPhoto.value,
+        photoSource: selectedPhotoSource.value
       })
       submitForm(formData, {
         submitFunction: (data) => apiService.postDonneesSymptomesCycle(data),

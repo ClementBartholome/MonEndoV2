@@ -50,10 +50,12 @@ export function useDialogForm<T = any>(dialogRef: Ref<boolean>) {
     } catch (error: any) {
       console.error('Form submission error:', error);
 
+      const backendMessage = error?.response?.data?.message;
+
       // Show error toast
       toast({
         title: 'Erreur',
-        description: errorMessage,
+        description: typeof backendMessage === 'string' && backendMessage.length > 0 ? backendMessage : errorMessage,
         variant: 'destructive',
       });
 
