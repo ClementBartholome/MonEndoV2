@@ -21,10 +21,14 @@ namespace MonEndoVue.Server.Controllers
         private static readonly HashSet<string> AllowedMimeTypes =
         [
             "image/jpeg",
+            "image/jpg",
+            "image/pjpeg",
             "image/png",
             "image/webp",
             "image/heic",
-            "image/heif"
+            "image/heic-sequence",
+            "image/heif",
+            "image/heif-sequence"
         ];
 
         private static readonly HashSet<string> AllowedExtensions =
@@ -71,10 +75,18 @@ namespace MonEndoVue.Server.Controllers
             {
                 if (!IsPhotoValid(photo, out var validationError))
                 {
+                    logger.LogWarning(
+                        "Photo validation failed for POST symptom. CarnetSanteId={CarnetSanteId}, FileName={FileName}, ContentType={ContentType}, Length={Length}, UserAgent={UserAgent}, Error={Error}",
+                        symptomeCycle.CarnetSanteId,
+                        photo.FileName,
+                        photo.ContentType,
+                        photo.Length,
+                        Request.Headers.UserAgent.ToString(),
+                        validationError);
                     return BadRequest(new { message = validationError });
                 }
 
-                var extension = Path.GetExtension(photo.FileName).ToLowerInvariant();
+                var extension = ResolveFileExtension(photo);
                 var fileName = $"symptomes/{symptomeCycle.CarnetSanteId.ToString(CultureInfo.InvariantCulture)}/{Guid.NewGuid()}{extension}";
                 symptomeCycle.PhotoUrl = await azureBlobStorageService.UploadFileAsync(photo, fileName);
             }
@@ -113,11 +125,19 @@ namespace MonEndoVue.Server.Controllers
             {
                 if (!IsPhotoValid(photo, out var validationError))
                 {
+                    logger.LogWarning(
+                        "Photo validation failed for PUT symptom. SymptomeId={SymptomeId}, FileName={FileName}, ContentType={ContentType}, Length={Length}, UserAgent={UserAgent}, Error={Error}",
+                        existingSymptome.Id,
+                        photo.FileName,
+                        photo.ContentType,
+                        photo.Length,
+                        Request.Headers.UserAgent.ToString(),
+                        validationError);
                     return BadRequest(new { message = validationError });
                 }
 
                 var previousPhotoUrl = existingSymptome.PhotoUrl;
-                var extension = Path.GetExtension(photo.FileName).ToLowerInvariant();
+                var extension = ResolveFileExtension(photo);
                 var fileName = $"symptomes/{existingSymptome.CarnetSanteId.ToString(CultureInfo.InvariantCulture)}/{Guid.NewGuid()}{extension}";
                 existingSymptome.PhotoUrl = await azureBlobStorageService.UploadFileAsync(photo, fileName);
 
@@ -185,20 +205,44 @@ namespace MonEndoVue.Server.Controllers
             }
 
             var extension = Path.GetExtension(photo.FileName).ToLowerInvariant();
-            if (!AllowedExtensions.Contains(extension))
+            var normalizedMimeType = NormalizeMimeType(photo.ContentType);
+
+            var hasAllowedExtension = !string.IsNullOrWhiteSpace(extension) && AllowedExtensions.Contains(extension);
+            var hasAllowedMimeType = !string.IsNullOrWhiteSpace(normalizedMimeType) && AllowedMimeTypes.Contains(normalizedMimeType);
+
+            // iOS peut envoyer un MIME vide/inattendu ou un nom sans extension: accepter si l'un des deux est reconnu.
+            if (!hasAllowedExtension && !hasAllowedMimeType)
             {
                 error = "Format de photo non supporté.";
                 return false;
             }
 
-            if (!string.IsNullOrWhiteSpace(photo.ContentType) && !AllowedMimeTypes.Contains(photo.ContentType.ToLowerInvariant()))
-            {
-                error = "Type MIME de la photo non supporté.";
-                return false;
-            }
-
             error = string.Empty;
             return true;
+        }
+
+        private static string ResolveFileExtension(IFormFile photo)
+        {
+            var extension = Path.GetExtension(photo.FileName).ToLowerInvariant();
+            if (AllowedExtensions.Contains(extension))
+            {
+                return extension;
+            }
+
+            return NormalizeMimeType(photo.ContentType) switch
+            {
+                "image/jpeg" or "image/jpg" or "image/pjpeg" => ".jpg",
+                "image/png" => ".png",
+                "image/webp" => ".webp",
+                "image/heic" or "image/heic-sequence" => ".heic",
+                "image/heif" or "image/heif-sequence" => ".heif",
+                _ => ".jpg"
+            };
+        }
+
+        private static string NormalizeMimeType(string? contentType)
+        {
+            return contentType?.Trim().ToLowerInvariant() ?? string.Empty;
         }
 
     }

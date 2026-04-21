@@ -41,7 +41,7 @@ public class AzureBlobStorageService
         await using var stream = file.OpenReadStream();
         var headers = new BlobHttpHeaders
         {
-            ContentType = string.IsNullOrWhiteSpace(file.ContentType) ? "application/octet-stream" : file.ContentType
+            ContentType = ResolveContentType(file)
         };
 
         await blobClient.UploadAsync(stream, new BlobUploadOptions
@@ -50,6 +50,24 @@ public class AzureBlobStorageService
         });
 
         return blobClient.Uri.ToString();
+    }
+
+    private static string ResolveContentType(IFormFile file)
+    {
+        if (!string.IsNullOrWhiteSpace(file.ContentType))
+        {
+            return file.ContentType;
+        }
+
+        return Path.GetExtension(file.FileName).ToLowerInvariant() switch
+        {
+            ".jpg" or ".jpeg" => "image/jpeg",
+            ".png" => "image/png",
+            ".webp" => "image/webp",
+            ".heic" => "image/heic",
+            ".heif" => "image/heif",
+            _ => "application/octet-stream"
+        };
     }
 
     public string GetBlobNameFromUrl(string url)

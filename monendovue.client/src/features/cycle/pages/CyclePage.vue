@@ -334,10 +334,11 @@
                               ref="photoInputRef"
                               type="file"
                               accept="image/*,.heic,.heif"
-                              capture="environment"
+                              :disabled="isProcessingPhoto"
                               @change="handlePhotoUpload"
                           />
                         </FormControl>
+                        <p v-if="isProcessingPhoto" class="text-xs text-gray-500">Traitement de la photo...</p>
                         <p class="text-xs text-gray-500">JPG, PNG, WEBP, HEIC - max {{ MAX_PHOTO_SIZE_MB }} MB</p>
                         <div v-if="selectedPhotoPreviewUrl" class="mt-2 flex items-center gap-3">
                           <img :src="selectedPhotoPreviewUrl" alt="Aperçu photo" class="w-16 h-16 rounded-md object-cover border" />
@@ -473,6 +474,7 @@ import {Checkbox} from "@/shared/components/ui/checkbox";
 import PeriodQuickAdd from "@/features/cycle/components/PeriodQuickAdd.vue"
 import GenericCardList from "@/shared/components/GenericCardList.vue"
 import { symptomeIconConfig } from '@/shared/config/materialSymbols'
+import { preparePhotoForUpload } from '@/shared/utils/safeImageUpload'
 
 type SymptomFilter = 'Tous' | 'Acné' | 'Spotting' | 'Nausée' | 'Fatigue' | 'Autre'
 
@@ -517,6 +519,7 @@ const cycleMoyen = ref(28)
 const selectedPhoto = ref<File | null>(null)
 const photoInputRef = ref<HTMLInputElement | null>(null)
 const selectedPhotoPreviewUrl = ref<string>('')
+const isProcessingPhoto = ref(false)
 
 // Quick-add acné
 const isQuickAddingAcne = ref(false)
@@ -588,6 +591,51 @@ const handleEditSymptome = (id: string | number) => {
 const MAX_PHOTO_SIZE_MB = 10
 const MAX_PHOTO_SIZE_BYTES = MAX_PHOTO_SIZE_MB * 1024 * 1024
 
+const ALLOWED_PHOTO_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.webp', '.heic', '.heif']
+
+const getFileExtension = (fileName: string): string => {
+  const index = fileName.lastIndexOf('.')
+  if (index < 0) return ''
+  return fileName.substring(index).toLowerCase()
+}
+
+const inferExtensionFromType = (mimeType: string): string => {
+  const normalizedType = mimeType.trim().toLowerCase()
+  switch (normalizedType) {
+    case 'image/jpeg':
+    case 'image/jpg':
+    case 'image/pjpeg':
+      return '.jpg'
+    case 'image/png':
+      return '.png'
+    case 'image/webp':
+      return '.webp'
+    case 'image/heic':
+    case 'image/heic-sequence':
+      return '.heic'
+    case 'image/heif':
+    case 'image/heif-sequence':
+      return '.heif'
+    default:
+      return ''
+  }
+}
+
+const isAcceptedImageFile = (file: File): boolean => {
+  const extension = getFileExtension(file.name)
+  if (extension && ALLOWED_PHOTO_EXTENSIONS.includes(extension)) {
+    return true
+  }
+
+  return !!inferExtensionFromType(file.type)
+}
+
+const getUploadFileName = (file: File): string => {
+  const baseName = file.name.replace(/\.[^.]+$/, '').trim() || `photo-${Date.now()}`
+  const extension = getFileExtension(file.name) || inferExtensionFromType(file.type) || '.jpg'
+  return `${baseName}${extension}`
+}
+
 const resetSelectedPhoto = () => {
   selectedPhoto.value = null
 
@@ -601,57 +649,6 @@ const resetSelectedPhoto = () => {
   }
 }
 
-const resizeImageIfNeeded = async (file: File): Promise<File> => {
-  const isCompressibleType = ['image/jpeg', 'image/png', 'image/webp'].includes(file.type)
-  if (!isCompressibleType || file.size <= 2 * 1024 * 1024) {
-    return file
-  }
-
-  return new Promise((resolve) => {
-    const reader = new FileReader()
-
-    reader.onload = () => {
-      const img = new Image()
-      img.onload = () => {
-        const maxDimension = 1600
-        const ratio = Math.min(maxDimension / img.width, maxDimension / img.height, 1)
-        const width = Math.round(img.width * ratio)
-        const height = Math.round(img.height * ratio)
-
-        const canvas = document.createElement('canvas')
-        canvas.width = width
-        canvas.height = height
-
-        const ctx = canvas.getContext('2d')
-        if (!ctx) {
-          resolve(file)
-          return
-        }
-
-        ctx.drawImage(img, 0, 0, width, height)
-        canvas.toBlob((blob) => {
-          if (!blob) {
-            resolve(file)
-            return
-          }
-
-          const optimized = new File([blob], file.name.replace(/\.[^.]+$/, '.jpg'), {
-            type: 'image/jpeg',
-            lastModified: Date.now()
-          })
-          resolve(optimized)
-        }, 'image/jpeg', 0.82)
-      }
-
-      img.onerror = () => resolve(file)
-      img.src = reader.result as string
-    }
-
-    reader.onerror = () => resolve(file)
-    reader.readAsDataURL(file)
-  })
-}
-
 const handlePhotoUpload = async (event: Event) => {
   const target = event.target as HTMLInputElement
   const file = target.files?.[0] ?? null
@@ -661,7 +658,7 @@ const handlePhotoUpload = async (event: Event) => {
     return
   }
 
-  if (!file.type.startsWith('image/')) {
+  if (!isAcceptedImageFile(file)) {
     toast({
       title: 'Format non supporté',
       description: 'Veuillez choisir une image (jpg, png, webp, heic).',
@@ -671,24 +668,45 @@ const handlePhotoUpload = async (event: Event) => {
     return
   }
 
-  const optimizedFile = await resizeImageIfNeeded(file)
+  isProcessingPhoto.value = true
 
-  if (optimizedFile.size > MAX_PHOTO_SIZE_BYTES) {
+  try {
+    const preparedPhoto = await preparePhotoForUpload(file)
+
+    if (preparedPhoto.convertedFromHeic) {
+      toast({
+        title: 'Photo optimisée',
+        description: 'Votre photo HEIC a été convertie en JPG pour garantir la compatibilité.',
+        variant: 'custom',
+      })
+    }
+
+    if (preparedPhoto.file.size > MAX_PHOTO_SIZE_BYTES) {
+      toast({
+        title: 'Photo trop volumineuse',
+        description: `La photo doit faire moins de ${MAX_PHOTO_SIZE_MB} MB.`,
+        variant: 'destructive',
+      })
+      resetSelectedPhoto()
+      return
+    }
+
+    if (selectedPhotoPreviewUrl.value) {
+      URL.revokeObjectURL(selectedPhotoPreviewUrl.value)
+    }
+
+    selectedPhoto.value = preparedPhoto.file
+    selectedPhotoPreviewUrl.value = URL.createObjectURL(preparedPhoto.file)
+  } catch {
     toast({
-      title: 'Photo trop volumineuse',
-      description: `La photo doit faire moins de ${MAX_PHOTO_SIZE_MB} MB.`,
+      title: 'Erreur de traitement',
+      description: 'Impossible de préparer la photo pour l\'upload. Réessayez avec une autre image.',
       variant: 'destructive',
     })
     resetSelectedPhoto()
-    return
+  } finally {
+    isProcessingPhoto.value = false
   }
-
-  if (selectedPhotoPreviewUrl.value) {
-    URL.revokeObjectURL(selectedPhotoPreviewUrl.value)
-  }
-
-  selectedPhoto.value = optimizedFile
-  selectedPhotoPreviewUrl.value = URL.createObjectURL(optimizedFile)
 }
 
 const buildSymptomeFormData = (payload: {
@@ -713,7 +731,7 @@ const buildSymptomeFormData = (payload: {
   formData.append('commentaire', payload.commentaire || 'Pas de commentaire')
 
   if (payload.photo) {
-    formData.append('photo', payload.photo)
+    formData.append('photo', payload.photo, getUploadFileName(payload.photo))
   }
 
   return formData
