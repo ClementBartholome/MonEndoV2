@@ -1,9 +1,9 @@
 ﻿import type { CardIconConfig } from '@/shared/types/card'
 
 export const materialSymbols = {
-  cycle: 'female',
+  cycle: 'menstrual_health',
   symptoms: 'monitor_heart',
-  treatments: 'medication',
+  treatments: 'pill',
   pastTreatments: 'history',
   fallback: 'help',
 } as const

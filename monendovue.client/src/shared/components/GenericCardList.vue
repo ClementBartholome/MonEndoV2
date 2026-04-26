@@ -13,6 +13,8 @@ const props = defineProps<{
   photoField?: string
   iconConfig?: Record<string, CardIconConfig>
   defaultIcon?: CardIconConfig
+  hideTitle?: boolean
+  hideIcon?: boolean
   onDelete: (id: string | number) => Promise<void>
   onEdit?: (id: string | number) => void
   onPhotoClick?: (url: string) => void
@@ -49,11 +51,12 @@ const intensityColor = (v: number | string) => {
       <div class="flex items-start justify-between gap-2 mb-3">
         <div class="flex items-center gap-2 min-w-0">
           <span
+            v-if="!hideIcon"
             class="material-symbols-outlined rounded-lg p-1.5 text-base shrink-0"
             :class="[getIcon(entry[titleField]).bg, getIcon(entry[titleField]).color]"
           >{{ getIcon(entry[titleField]).icon }}</span>
           <div class="min-w-0">
-            <p class="font-semibold text-headline text-sm leading-tight truncate">{{ entry[titleField] }}</p>
+            <p v-if="!hideTitle" class="font-semibold text-headline text-sm leading-tight truncate">{{ entry[titleField] }}</p>
             <p class="text-xs text-muted-foreground">
               {{ entry[dateField] }}
               <span v-if="timeField && entry[timeField]"> · {{ entry[timeField] }}</span>

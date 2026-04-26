@@ -274,8 +274,9 @@
             <i class="material-symbols-outlined text-3xl">{{ materialSymbols.treatments }}</i>
             Traitements en cours
           </h2>
+          <div class="form-modal">
           <Dialog v-model:open="showAddTraitementDialog">
-            <DialogTrigger class="flex items-center ml-auto gap-2">
+            <DialogTrigger class="flex items-center gap-2">
               <Button variant="custom">
                 <span class="material-symbols-outlined">add</span>
               </Button>
@@ -338,6 +339,7 @@
               </form>
             </DialogContent>
           </Dialog>
+          </div>
         </div>
         <ul class="w-full" v-if="traitementsEnCours.length > 0">
           <li v-for="traitement in traitementsEnCours" :key="traitement.id" class="relative pr-20 traitement-item">
@@ -449,16 +451,16 @@
           </h2>
         </div>
         <ul class="w-full">
-          <li v-for="traitement in traitementsPasses" :key="traitement.id" class="relative pr-12 past-treatment-item">
-            <div class="absolute top-0 right-0 past-treatment-actions">
-              <span @click="confirmDeleteMedicament(traitement.id)" class="material-symbols-outlined delete-btn cursor-pointer">delete</span>
-            </div>
-            <div>
+          <li v-for="traitement in traitementsPasses" :key="traitement.id" class="flex items-start justify-between gap-3">
+            <div class="min-w-0">
               <p class="text-headline font-bold text-xl">{{ traitement.nom }}</p>
               <p class="text-sm text-gray-600">{{ traitement.type === TypeTraitement.Medicamenteux ? 'Médicamenteux' : 'Non médicamenteux' }}</p>
               <p v-if="traitement.posologie">{{ traitement.posologie }}</p>
               <p>Traitement pris du {{ formatDateDisplay(traitement.dateDebutTraitement) }} au
                 {{ formatDateDisplay(traitement.dateFinTraitement) }}</p>
+            </div>
+            <div class="shrink-0">
+              <span @click="confirmDeleteMedicament(traitement.id)" class="material-symbols-outlined delete-btn cursor-pointer">delete</span>
             </div>
           </li>
         </ul>
@@ -1079,9 +1081,10 @@ const handleDeleteMedicament = async () => {
 @media (max-width: 425px) {
   .medicament-section-header,
   .traitement-list-header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.75rem;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
   }
 
   .prise-date-time-row,

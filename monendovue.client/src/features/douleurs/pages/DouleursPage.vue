@@ -399,9 +399,10 @@ const onSubmit = form.handleSubmit((values) => {
 <style scoped>
 @media (max-width: 425px) {
   .douleurs-header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.75rem;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
   }
 
   .douleurs-date-time-row {
