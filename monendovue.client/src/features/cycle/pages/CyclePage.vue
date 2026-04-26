@@ -5,10 +5,11 @@
       <h2 class="text-2xl flex gap-2"><i class="material-symbols-outlined text-3xl">menstrual_health</i>Cycle menstruel
       </h2>
     </div>
-    <Tabs default-value="cycles" class="w-full">
+    <Tabs v-model="activeTab" class="w-full">
       <TabsList class="cycle-tabs-list">
         <TabsTrigger value="cycles">Mes cycles</TabsTrigger>
         <TabsTrigger value="symptomes">Symptômes</TabsTrigger>
+        <TabsTrigger value="acne">Acné</TabsTrigger>
       </TabsList>
       <TabsContent value="cycles">
         <section class="container !mt-0 mx-auto py-4 w-full bg-clearer rounded-3xl shadow-xl ml-auto">
@@ -105,79 +106,6 @@
       </TabsContent>
       <TabsContent value="symptomes">
 
-        <!-- Quick-add acné aujourd'hui (visible si pas encore marquée aujourd'hui) -->
-        <div v-if="!acneMarkedToday" class="container !mt-0 mx-auto w-full">
-          <button
-            @click="quickAddAcneToday"
-            :disabled="isQuickAddingAcne"
-            class="w-full flex items-center gap-3 bg-purple-50 border-2 border-purple-200 rounded-xl p-3 hover:bg-purple-100 transition-colors"
-          >
-            <span class="material-symbols-outlined text-purple-500 text-2xl shrink-0">face_retouching_natural</span>
-            <span class="font-medium text-headline text-sm text-left flex-1">
-              {{ isQuickAddingAcne ? 'Enregistrement...' : 'Acné aujourd\'hui ?' }}
-            </span>
-            <span class="material-symbols-outlined text-purple-400 text-base shrink-0">add_circle</span>
-          </button>
-        </div>
-
-        <!-- Ongoing Acné Periods Section -->
-        <section v-if="ongoingAcnePeriods.length > 0" class="container !mt-0 mx-auto py-8 mb-4 w-full bg-clearer rounded-3xl shadow-xl">
-          <div class="mb-4">
-            <h2 class="text-2xl flex gap-2 ml-2 mb-4">
-              <i class="material-symbols-outlined text-3xl">schedule</i>
-              Période d'acné en cours
-            </h2>
-            <div class="flex flex-col gap-3 px-2">
-              <div v-for="period in ongoingAcnePeriods" :key="`${period.startDate}-${period.endDate}`"
-                   class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-3 bg-white rounded-lg border border-gray-200 shadow-sm">
-                <div class="flex flex-col">
-                  <span class="font-medium">{{ period.startDate }} - {{ period.endDate }}</span>
-                  <span class="text-sm text-gray-600">{{ period.duration }} jour{{ period.duration > 1 ? 's' : '' }} • Intensité moyenne: {{ period.avgIntensity }}</span>
-                </div>
-                <div class="flex gap-2 flex-wrap sm:flex-nowrap">
-                  <Button variant="custom" size="sm" @click="extendAcnePeriod(period)">
-                    <i class="material-symbols-outlined mr-1">add</i>
-                    Ajouter aujourd'hui
-                  </Button>
-                  <Button variant="outline" size="sm" @click="openEndPeriodDialog(period)">
-                    <i class="material-symbols-outlined mr-1">close</i>
-                    Terminer
-                  </Button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <!-- End Period Dialog -->
-        <Dialog v-model:open="showEndPeriodDialog">
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle class="text-2xl">Terminer la période d'acné</DialogTitle>
-            </DialogHeader>
-            <div class="flex flex-col gap-4 py-4">
-              <p>Cette période a commencé le {{ selectedPeriodToEnd?.startDate }} et se termine actuellement le {{ selectedPeriodToEnd?.endDate }}.</p>
-              <FormField name="endDate">
-                <FormItem>
-                  <FormLabel>Date de fin réelle</FormLabel>
-                  <FormControl>
-                    <Input type="date" v-model="endPeriodDate" :max="format(new Date(), 'yyyy-MM-dd')" />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              </FormField>
-            </div>
-            <DialogFooter>
-              <Button variant="outline" @click="showEndPeriodDialog = false">
-                Annuler
-              </Button>
-              <Button variant="custom" @click="confirmEndPeriod">
-                Confirmer
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-
         <!-- Regular Symptoms Section -->
         <section class="container !mt-0  mx-auto py-8 w-full bg-clearer rounded-3xl shadow-xl ml-auto">
           <div class="flex justify-between items-center mb-4 flex-wrap gap-2 h-full">
@@ -185,223 +113,14 @@
               <i class="material-symbols-outlined text-3xl ml-auto">monitor_heart</i>Symptômes
             </h2>
             <div class="form-modal">
-              <Dialog v-model:open="showAddDialog">
-                <DialogTrigger class="flex gap-2 items-center cursor-pointer hover:opacity-80 transition-opacity">
-                  <Button variant="custom" @click="openAddSymptomeDialog">
-                    <span class="hide-xsm">Ajouter une entrée</span>
-                    <i class="material-symbols-outlined">add</i>
-                  </Button>
-                </DialogTrigger>
-                <DialogContent class="max-h-[85vh] overflow-y-auto">
-                  <DialogHeader class="text-2xl">
-                    <DialogTitle>{{ editingSymptomeId !== null ? 'Modifier le symptôme' : 'Ajouter un symptôme' }}</DialogTitle>
-                  </DialogHeader>
-                  <form class="flex flex-col gap-6" @submit.prevent="onSubmit">
-                    <FormField v-slot="{ componentField }" name="typeSymptome">
-                      <FormItem>
-                        <FormLabel>Type</FormLabel>
-                        <FormControl>
-                          <Select v-model="form.values.typeSymptome" v-bind="componentField">
-                            <SelectTrigger>
-                              <SelectValue v-bind="componentField">
-                                {{ form.values.typeSymptome || 'Sélectionner un type de symptôme' }}
-                              </SelectValue>
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectGroup label="Type de symptôme">
-                                <SelectItem value="Spotting">Spotting</SelectItem>
-                                <SelectItem value="Nausée">Nausée</SelectItem>
-                                <SelectItem value="Fatigue">Fatigue</SelectItem>
-                                <SelectItem value="Acné">Acné</SelectItem>
-                                <SelectItem value="Autre">Autre</SelectItem>
-                              </SelectGroup>
-                            </SelectContent>
-                          </Select>
-                        </FormControl>
-                        <FormMessage/>
-                      </FormItem>
-                    </FormField>
-
-                    <!-- Period checkbox -->
-                    <FormField name="isPeriod" v-slot="{ componentField, value }">
-                      <FormItem>
-                        <FormControl>
-                          <div class="flex items-center gap-2">
-                            <Checkbox
-                                id="isPeriod"
-                                v-bind="componentField"
-                                :checked="value"
-                                @update:checked="componentField.onChange"
-                                class="shrink-0"
-                            />
-                            <FormLabel for="isPeriod" class="!mt-0 cursor-pointer">
-                              Période de plusieurs jours
-                            </FormLabel>
-                          </div>
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    </FormField>
-
-                    <!-- Single day fields (shown when not a period) -->
-                    <div v-if="!form.values.isPeriod" key="single-day-fields" class="grid grid-cols-2 gap-3">
-                      <FormField v-slot="{ componentField }" name="date">
-                        <FormItem>
-                          <FormLabel>Date</FormLabel>
-                          <FormControl>
-                            <Input type="date" v-model="form.values.date" v-bind="componentField"/>
-                          </FormControl>
-                          <FormMessage/>
-                        </FormItem>
-                      </FormField>
-                      <FormField v-slot="{ componentField }" name="time">
-                        <FormItem>
-                          <FormLabel>Heure</FormLabel>
-                          <FormControl>
-                            <Input type="time" v-model="form.values.time" v-bind="componentField"/>
-                          </FormControl>
-                          <FormMessage/>
-                        </FormItem>
-                      </FormField>
-                    </div>
-
-                    <!-- Period fields (shown when isPeriod is checked) -->
-                    <div v-if="form.values.isPeriod" key="period-fields" class="flex flex-col gap-4">
-                      <FormField v-slot="{ componentField }" name="dateDebut">
-                        <FormItem>
-                          <FormLabel>Date de début</FormLabel>
-                          <FormControl>
-                            <Input type="date" v-model="form.values.dateDebut" v-bind="componentField"/>
-                          </FormControl>
-                          <FormMessage/>
-                        </FormItem>
-                      </FormField>
-
-                      <FormField name="enCours" v-slot="{ componentField, value }">
-                        <FormItem>
-                          <FormControl>
-                            <div class="flex items-center gap-2">
-                              <Checkbox
-                                  id="enCoursEntry"
-                                  v-bind="componentField"
-                                  :checked="value"
-                                  @update:checked="componentField.onChange"
-                                  class="shrink-0"
-                              />
-                              <FormLabel for="enCoursEntry" class="!mt-0 cursor-pointer">
-                                Toujours en cours
-                              </FormLabel>
-                            </div>
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      </FormField>
-
-                      <FormField v-if="!form.values.enCours" v-slot="{ componentField }" name="dateFin">
-                        <FormItem>
-                          <FormLabel>Date de fin</FormLabel>
-                          <FormControl>
-                            <Input type="date" v-model="form.values.dateFin" v-bind="componentField"/>
-                          </FormControl>
-                          <FormMessage/>
-                        </FormItem>
-                      </FormField>
-                    </div>
-
-                    <FormField v-slot="{ componentField }" name="intensite">
-                      <FormItem>
-                        <FormLabel>Intensité</FormLabel>
-                        <FormControl>
-                          <Slider v-bind="componentField" v-model="form.values.intensite" :default-value="[5]" :max="10" :min="1" :step="1"/>
-                        </FormControl>
-                        <FormMessage/>
-                      </FormItem>
-                    </FormField>
-                    <FormField v-slot="{ componentField }" name="commentaire">
-                      <FormItem>
-                        <FormLabel>Un commentaire ? <span class="">(optionnel)</span></FormLabel>
-                        <FormControl>
-                          <Input type="text" placeholder="Écrivez ici" v-model="form.values.commentaire" v-bind="componentField"/>
-                        </FormControl>
-                        <FormMessage/>
-                      </FormItem>
-                    </FormField>
-                    <FormField name="photo">
-                      <FormItem>
-                        <FormLabel>Photo <span>(optionnel)</span></FormLabel>
-                        <FormControl>
-                          <div class="flex flex-col gap-3">
-                            <div class="grid grid-cols-2 gap-2">
-                              <label
-                                for="cameraPhotoInput"
-                                class="inline-flex items-center justify-center gap-2 rounded-md border border-input bg-background px-3 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground"
-                                :class="isProcessingPhoto ? 'pointer-events-none opacity-50' : 'cursor-pointer'"
-                              >
-                                <i class="material-symbols-outlined text-base">photo_camera</i>
-                                <span>Prendre une photo</span>
-                              </label>
-                              <label
-                                for="galleryPhotoInput"
-                                class="inline-flex items-center justify-center gap-2 rounded-md border border-input bg-background px-3 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground"
-                                :class="isProcessingPhoto ? 'pointer-events-none opacity-50' : 'cursor-pointer'"
-                              >
-                                <i class="material-symbols-outlined text-base">photo_library</i>
-                                <span>Galerie</span>
-                              </label>
-                            </div>
-                            <input
-                              id="cameraPhotoInput"
-                              ref="cameraPhotoInputRef"
-                              class="hidden"
-                              type="file"
-                              accept="image/*"
-                              capture="environment"
-                              @change="(event) => handlePhotoUpload(event, 'camera')"
-                            />
-                            <input
-                              id="galleryPhotoInput"
-                              ref="galleryPhotoInputRef"
-                              class="hidden"
-                              type="file"
-                              accept="image/*,.heic,.heif"
-                              @change="(event) => handlePhotoUpload(event, 'gallery')"
-                            />
-                          </div>
-                        </FormControl>
-                        <p v-if="isProcessingPhoto" class="text-xs text-gray-500">Traitement de la photo...</p>
-                        <p class="text-xs text-gray-500">JPG, PNG, WEBP, HEIC - max {{ MAX_PHOTO_SIZE_LABEL }}</p>
-                        <p v-if="selectedPhoto" class="text-xs text-gray-500">Fichier sélectionné : {{ selectedPhoto.name }} ({{ formatFileSize(selectedPhoto.size) }})</p>
-                        <div v-if="selectedPhotoPreviewUrl" class="mt-2 flex items-center gap-3">
-                          <img :src="selectedPhotoPreviewUrl" alt="Aperçu photo" class="w-16 h-16 rounded-md object-cover border" />
-                          <Button type="button" variant="outline" size="sm" @click="resetSelectedPhoto">Retirer</Button>
-                        </div>
-                        <FormMessage />
-                      </FormItem>
-                    </FormField>
-
-
-                    <Button type="submit" variant="custom" class="mt-4">
-                      Enregistrer
-                    </Button>
-                  </form>
-                </DialogContent>
-              </Dialog>
+              <Button variant="custom" @click="openAddSymptomeDialog">
+                <span class="hide-xsm">Ajouter une entrée</span>
+                <i class="material-symbols-outlined">add</i>
+              </Button>
             </div>
           </div>
 
           <SelectMonth v-model="symptomesMonthYear"/>
-
-          <!-- KPI acné - visibles seulement quand filtre Acné ou Tous avec des entrées d'acné -->
-          <div v-if="acneMonthlyStats.totalDays > 0" class="grid grid-cols-3 gap-2 mt-4 mb-4">
-            <div class="bg-white border border-purple-100 rounded-xl p-3 shadow-sm text-center">
-              <p class="text-xs text-muted-foreground mb-1">{{ acneMonthlyStats.totalDays > 1 ? 'Jours d\'acné' : 'Jour d\'acné' }}</p>
-              <p class="text-xl font-bold text-headline">{{acneMonthlyStats.totalDays}}</p>
-            </div>
-            <div class="bg-white border border-purple-100 rounded-xl p-3 shadow-sm text-center">
-              <p class="text-xs text-muted-foreground mb-1">Intensité moy.</p>
-              <p class="text-xl font-bold text-headline">{{ acneMonthlyStats.avgIntensity }}</p>
-            </div>
-          </div>
 
           <!-- Filtres rapides -->
           <div class="flex gap-2 overflow-x-auto pb-1 mb-3">
@@ -421,11 +140,11 @@
             <Skeleton class="h-[120px] w-full rounded-xl"/>
             <Skeleton class="h-[120px] w-full rounded-xl"/>
           </div>
-          <template v-else-if="filteredProcessedEntries.length > 0">
+          <template v-else-if="filteredNonAcneEntries.length > 0">
             <!-- Cards sur mobile -->
             <div class="md:hidden">
               <GenericCardList
-                :entries="filteredProcessedEntries"
+                :entries="filteredNonAcneEntries"
                 titleField="typeSymptome"
                 dateField="date"
                 timeField="time"
@@ -441,7 +160,7 @@
             </div>
             <!-- Table sur desktop -->
             <div class="hidden md:block">
-              <Datatable :entries="filteredProcessedEntries" :columns="columns" :deleteFunction="handleDelete" @edit-entry="handleEditSymptome">
+              <Datatable :entries="filteredNonAcneEntries" :columns="columns" :deleteFunction="handleDelete" @edit-entry="handleEditSymptome">
                 <thead>
                   <tr>
                     <th>Type</th><th>Date</th><th>Heure</th><th>Intensité</th><th>Commentaire</th><th></th><th></th>
@@ -456,6 +175,46 @@
 
         </section>
       </TabsContent>
+
+      <TabsContent value="acne">
+        <AcneTabContent
+          :isQuickAddingAcne="isQuickAddingAcne"
+          :acneMarkedToday="acneMarkedToday"
+          :acneMonthYear="acneMonthYear"
+          :acneWindowLabel="acneWindowLabel"
+          :ongoingAcnePeriods="ongoingAcnePeriods"
+          :acneWindowMonths="acneWindowMonths"
+          :acnePhotoEntries="acnePhotoEntries"
+          :orderedComparePhotos="orderedComparePhotos"
+          :displayedAcneHistoryEntries="displayedAcneHistoryEntries"
+          :processedAcneEntriesCount="processedAcneEntries.length"
+          :acneHistoryEntriesCount="acneHistorySourceEntries.length"
+          :acneHistoryHiddenByPhotoCount="acneHistoryHiddenByPhotoCount"
+          :acneHistoryInitialCount="acneHistoryInitialCount"
+          :showFullAcneHistory="showFullAcneHistory"
+          :isAcneHistoryExpanded="isAcneHistoryExpanded"
+          :showAcneHistoryWithPhotos="showAcneHistoryWithPhotos"
+          :iconConfig="symptomeIconConfig"
+          :historyExtraFields="acneHistoryExtraFields"
+          :isPhotoSelectedForCompare="isPhotoSelectedForCompare"
+          :onOpenAddAcneDialog="openAddAcneDialog"
+          :onQuickAddAcneToday="quickAddAcneToday"
+          :onExtendAcnePeriod="extendAcnePeriod"
+          :onOpenEndPeriodDialog="openEndPeriodDialog"
+          :onOpenPhotoModal="openPhotoModal"
+          :onSlideAcneWindow="slideAcneWindow"
+          :onSelectLatestComparePair="selectLatestComparePair"
+          :onTogglePhotoCompare="togglePhotoCompare"
+          :onResetPhotoCompare="resetPhotoCompare"
+          :onEditSymptome="handleEditSymptome"
+          :onDeleteSymptome="handleDelete"
+          :onToggleShowFullHistory="toggleShowFullAcneHistory"
+          :onToggleAcneHistoryExpanded="toggleAcneHistoryExpanded"
+          :onToggleAcneHistoryWithPhotos="toggleAcneHistoryWithPhotos"
+          :onAcneMonthYearChange="onAcneMonthYearChange"
+        />
+      </TabsContent>
+
       <!-- Photo Modal -->
       <Dialog v-model:open="showPhotoModal">
         <DialogContent class="max-w-2xl">
@@ -463,8 +222,234 @@
             <DialogTitle>Photo</DialogTitle>
           </DialogHeader>
           <div class="flex justify-center">
-            <img v-if="selectedPhotoUrl" :src="selectedPhotoUrl" alt="Photo symptôme" class="max-w-full max-h-96 rounded-lg" />
+            <img v-if="selectedPhotoUrl" :src="selectedPhotoUrl" alt="Photo symptôme" class="max-w-full max-h-[80vh] rounded-lg object-contain" />
           </div>
+        </DialogContent>
+      </Dialog>
+
+      <!-- End Period Dialog -->
+      <Dialog v-model:open="showEndPeriodDialog">
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle class="text-2xl">Terminer la période d'acné</DialogTitle>
+          </DialogHeader>
+          <div class="flex flex-col gap-4 py-4">
+            <p>Cette période a commencé le {{ selectedPeriodToEnd?.startDate }} et se termine actuellement le {{ selectedPeriodToEnd?.endDate }}.</p>
+            <FormField name="endDate">
+              <FormItem>
+                <FormLabel>Date de fin réelle</FormLabel>
+                <FormControl>
+                  <Input type="date" v-model="endPeriodDate" :max="format(new Date(), 'yyyy-MM-dd')" />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            </FormField>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" @click="showEndPeriodDialog = false">
+              Annuler
+            </Button>
+            <Button variant="custom" @click="confirmEndPeriod">
+              Confirmer
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <!-- Add/Edit Symptom Dialog -->
+      <Dialog v-model:open="showAddDialog">
+        <DialogContent class="max-h-[85vh] overflow-y-auto">
+          <DialogHeader class="text-2xl">
+            <DialogTitle>{{ editingSymptomeId !== null ? 'Modifier le symptôme' : 'Ajouter un symptôme' }}</DialogTitle>
+          </DialogHeader>
+          <form class="flex flex-col gap-6" @submit.prevent="onSubmit">
+            <FormField v-if="!isAcneOnlyDialog" v-slot="{ componentField }" name="typeSymptome">
+              <FormItem>
+                <FormLabel>Type</FormLabel>
+                <FormControl>
+                  <Select v-model="form.values.typeSymptome" v-bind="componentField">
+                    <SelectTrigger>
+                      <SelectValue v-bind="componentField">
+                        {{ form.values.typeSymptome || 'Sélectionner un type de symptôme' }}
+                      </SelectValue>
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectGroup label="Type de symptôme">
+                        <SelectItem value="Spotting">Spotting</SelectItem>
+                        <SelectItem value="Nausée">Nausée</SelectItem>
+                        <SelectItem value="Fatigue">Fatigue</SelectItem>
+                        <SelectItem value="Autre">Autre</SelectItem>
+                      </SelectGroup>
+                    </SelectContent>
+                  </Select>
+                </FormControl>
+                <FormMessage/>
+              </FormItem>
+            </FormField>
+
+            <div v-else class="rounded-md border border-purple-200 bg-purple-50 px-3 py-2 text-sm text-purple-900 inline-flex items-center gap-2">
+              <i class="material-symbols-outlined text-base">face</i>
+              <span>Type: Acné</span>
+            </div>
+
+            <FormField name="isPeriod" v-slot="{ componentField, value }">
+              <FormItem>
+                <FormControl>
+                  <div class="flex items-center gap-2">
+                    <Checkbox
+                      id="isPeriod"
+                      v-bind="componentField"
+                      :checked="value"
+                      @update:checked="componentField.onChange"
+                      class="shrink-0"
+                    />
+                    <FormLabel for="isPeriod" class="!mt-0 cursor-pointer">
+                      Période de plusieurs jours
+                    </FormLabel>
+                  </div>
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            </FormField>
+
+            <div v-if="!form.values.isPeriod" key="single-day-fields" class="grid grid-cols-2 gap-3">
+              <FormField v-slot="{ componentField }" name="date">
+                <FormItem>
+                  <FormLabel>Date</FormLabel>
+                  <FormControl>
+                    <Input type="date" v-model="form.values.date" v-bind="componentField"/>
+                  </FormControl>
+                  <FormMessage/>
+                </FormItem>
+              </FormField>
+              <FormField v-slot="{ componentField }" name="time">
+                <FormItem>
+                  <FormLabel>Heure</FormLabel>
+                  <FormControl>
+                    <Input type="time" v-model="form.values.time" v-bind="componentField"/>
+                  </FormControl>
+                  <FormMessage/>
+                </FormItem>
+              </FormField>
+            </div>
+
+            <div v-if="form.values.isPeriod" key="period-fields" class="flex flex-col gap-4">
+              <FormField v-slot="{ componentField }" name="dateDebut">
+                <FormItem>
+                  <FormLabel>Date de début</FormLabel>
+                  <FormControl>
+                    <Input type="date" v-model="form.values.dateDebut" v-bind="componentField"/>
+                  </FormControl>
+                  <FormMessage/>
+                </FormItem>
+              </FormField>
+
+              <FormField name="enCours" v-slot="{ componentField, value }">
+                <FormItem>
+                  <FormControl>
+                    <div class="flex items-center gap-2">
+                      <Checkbox
+                        id="enCoursEntry"
+                        v-bind="componentField"
+                        :checked="value"
+                        @update:checked="componentField.onChange"
+                        class="shrink-0"
+                      />
+                      <FormLabel for="enCoursEntry" class="!mt-0 cursor-pointer">
+                        Toujours en cours
+                      </FormLabel>
+                    </div>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              </FormField>
+
+              <FormField v-if="!form.values.enCours" v-slot="{ componentField }" name="dateFin">
+                <FormItem>
+                  <FormLabel>Date de fin</FormLabel>
+                  <FormControl>
+                    <Input type="date" v-model="form.values.dateFin" v-bind="componentField"/>
+                  </FormControl>
+                  <FormMessage/>
+                </FormItem>
+              </FormField>
+            </div>
+
+            <FormField v-slot="{ componentField }" name="intensite">
+              <FormItem>
+                <FormLabel>Intensité</FormLabel>
+                <FormControl>
+                  <Slider v-bind="componentField" v-model="form.values.intensite" :default-value="[5]" :max="10" :min="1" :step="1"/>
+                </FormControl>
+                <FormMessage/>
+              </FormItem>
+            </FormField>
+            <FormField v-slot="{ componentField }" name="commentaire">
+              <FormItem>
+                <FormLabel>Un commentaire ? <span class="">(optionnel)</span></FormLabel>
+                <FormControl>
+                  <Input type="text" placeholder="Écrivez ici" v-model="form.values.commentaire" v-bind="componentField"/>
+                </FormControl>
+                <FormMessage/>
+              </FormItem>
+            </FormField>
+            <FormField name="photo">
+              <FormItem>
+                <FormLabel>Photo <span>(optionnel)</span></FormLabel>
+                <FormControl>
+                  <div class="flex flex-col gap-3">
+                    <div class="grid grid-cols-2 gap-2">
+                      <label
+                        for="cameraPhotoInput"
+                        class="inline-flex items-center justify-center gap-2 rounded-md border border-input bg-background px-3 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground"
+                        :class="isProcessingPhoto ? 'pointer-events-none opacity-50' : 'cursor-pointer'"
+                      >
+                        <i class="material-symbols-outlined text-base">photo_camera</i>
+                        <span>Prendre une photo</span>
+                      </label>
+                      <label
+                        for="galleryPhotoInput"
+                        class="inline-flex items-center justify-center gap-2 rounded-md border border-input bg-background px-3 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground"
+                        :class="isProcessingPhoto ? 'pointer-events-none opacity-50' : 'cursor-pointer'"
+                      >
+                        <i class="material-symbols-outlined text-base">photo_library</i>
+                        <span>Galerie</span>
+                      </label>
+                    </div>
+                    <input
+                      id="cameraPhotoInput"
+                      ref="cameraPhotoInputRef"
+                      class="hidden"
+                      type="file"
+                      accept="image/*"
+                      capture="environment"
+                      @change="(event) => handlePhotoUpload(event, 'camera')"
+                    />
+                    <input
+                      id="galleryPhotoInput"
+                      ref="galleryPhotoInputRef"
+                      class="hidden"
+                      type="file"
+                      accept="image/*,.heic,.heif"
+                      @change="(event) => handlePhotoUpload(event, 'gallery')"
+                    />
+                  </div>
+                </FormControl>
+                <p v-if="isProcessingPhoto" class="text-xs text-gray-500">Traitement de la photo...</p>
+                <p class="text-xs text-gray-500">JPG, PNG, WEBP, HEIC - max {{ MAX_PHOTO_SIZE_LABEL }}</p>
+                <p v-if="selectedPhoto" class="text-xs text-gray-500">Fichier sélectionné : {{ selectedPhoto.name }} ({{ formatFileSize(selectedPhoto.size) }})</p>
+                <div v-if="selectedPhotoPreviewUrl" class="mt-2 flex items-center gap-3">
+                  <img :src="selectedPhotoPreviewUrl" alt="Aperçu photo" class="w-16 h-16 rounded-md object-cover border" />
+                  <Button type="button" variant="outline" size="sm" @click="resetSelectedPhoto">Retirer</Button>
+                </div>
+                <FormMessage />
+              </FormItem>
+            </FormField>
+
+            <Button type="submit" variant="custom" class="mt-4">
+              Enregistrer
+            </Button>
+          </form>
         </DialogContent>
       </Dialog>
     </Tabs>
@@ -475,7 +460,7 @@
 import { Calendar } from '@/shared/components/ui/calendar'
 import { type DateValue, getLocalTimeZone, today, parseDate } from '@internationalized/date'
 import { type Ref, ref, onMounted, watch, computed, nextTick, onBeforeUnmount } from 'vue'
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/shared/components/ui/dialog"
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/shared/components/ui/dialog"
 import { Button } from "@/shared/components/ui/button"
 import { Input } from "@/shared/components/ui/input"
 import { FormControl, FormItem, FormLabel, FormField, FormMessage } from "@/shared/components/ui/form"
@@ -498,11 +483,11 @@ import { useCrudOperations } from '@/shared/composables/useCrudOperations'
 import { useDialogForm } from '@/shared/composables/useDialogForm'
 import { useSync } from '@/shared/composables/useSync'
 import { useToast } from '@/shared/components/ui/toast'
-import { format, parseISO } from 'date-fns'
+import { format } from 'date-fns'
 import type { SymptomeCycle } from "@/features/cycle/types/symptome-cycle"
-import offlineStorage from "@/shared/services/offlineStorage"
 import {Checkbox} from "@/shared/components/ui/checkbox";
 import PeriodQuickAdd from "@/features/cycle/components/PeriodQuickAdd.vue"
+import AcneTabContent from "@/features/cycle/components/AcneTabContent.vue"
 import GenericCardList from "@/shared/components/GenericCardList.vue"
 import { symptomeIconConfig } from '@/shared/config/materialSymbols'
 import { preparePhotoForUpload } from '@/shared/utils/safeImageUpload'
@@ -512,6 +497,8 @@ type SymptomFilter = 'Tous' | 'Acné' | 'Spotting' | 'Nausée' | 'Fatigue' | 'Au
 const { user } = useAuthStore()
 const { formatDateDisplay, formatTimeDisplay, combineDateTime, getCurrentMonthYear } = useDateTimeFormat()
 const { toast } = useToast()
+const activeTab = ref<'cycles' | 'symptomes' | 'acne'>('cycles')
+const isAcneOnlyDialog = computed(() => activeTab.value === 'acne')
 
 const getRequestErrorMessage = (error: unknown, fallback: string): string => {
   const anyError = error as any
@@ -560,10 +547,52 @@ const endPeriodDate = ref('')
 
 const showPhotoModal = ref(false)
 const selectedPhotoUrl = ref('')
+const selectedComparePhotoIds = ref<number[]>([])
+const acneWindowEntriesByMonth = ref<Record<string, any[]>>({})
+const isAcneWindowLoading = ref(false)
+const acneHistoryInitialCount = 8
+const showFullAcneHistory = ref(false)
+const isAcneHistoryExpanded = ref(false)
+const showAcneHistoryWithPhotos = ref(false)
+const acneHistoryExtraFields = [{ key: 'commentaire', label: 'Note' }]
+const ACNE_WINDOW_RADIUS = 1
 
 const openPhotoModal = (url: string) => {
   selectedPhotoUrl.value = url
   showPhotoModal.value = true
+}
+
+const togglePhotoCompare = (id: number) => {
+  if (selectedComparePhotoIds.value.includes(id)) {
+    selectedComparePhotoIds.value = selectedComparePhotoIds.value.filter(photoId => photoId !== id)
+    return
+  }
+
+  if (selectedComparePhotoIds.value.length === 2) {
+    selectedComparePhotoIds.value = [selectedComparePhotoIds.value[1], id]
+    return
+  }
+
+  selectedComparePhotoIds.value = [...selectedComparePhotoIds.value, id]
+}
+
+const isPhotoSelectedForCompare = (id: number) => selectedComparePhotoIds.value.includes(id)
+
+const resetPhotoCompare = () => {
+  selectedComparePhotoIds.value = []
+}
+
+const toggleShowFullAcneHistory = () => {
+  showFullAcneHistory.value = !showFullAcneHistory.value
+}
+
+const toggleAcneHistoryExpanded = () => {
+  isAcneHistoryExpanded.value = !isAcneHistoryExpanded.value
+}
+
+const toggleAcneHistoryWithPhotos = () => {
+  showAcneHistoryWithPhotos.value = !showAcneHistoryWithPhotos.value
+  showFullAcneHistory.value = false
 }
 
 
@@ -592,14 +621,43 @@ const selectedPhotoSource = ref<'camera' | 'gallery' | null>(null)
 
 // Quick-add acné
 const isQuickAddingAcne = ref(false)
-const acneMarkedToday = computed(() => {
-  if (!entries.value) return false
-  const today = format(new Date(), 'dd/MM/yyyy')
-  return entries.value.some(e => e.typeSymptome === 'Acné' && e.date === today)
-})
+const acneMarkedToday = ref(false)
+
+const refreshAcneMarkedToday = async () => {
+  if (!user?.carnetSanteId) {
+    acneMarkedToday.value = false
+    return
+  }
+
+  const now = new Date()
+  const currentMonth = now.getMonth() + 1
+  const currentYear = now.getFullYear()
+  const todayDisplay = format(now, 'dd/MM/yyyy')
+
+  try {
+    const currentMonthEntries = await apiService.getSymptomesByMonth(user.carnetSanteId, currentMonth, currentYear)
+    acneMarkedToday.value = currentMonthEntries
+      .some((entry: SymptomeCycle) => entry.typeSymptome === 'Acné' && formatDateDisplay(entry.date) === todayDisplay)
+  } catch {
+    acneMarkedToday.value = false
+  }
+}
+
+const refreshSymptomesAndAcneViews = async () => {
+  await Promise.all([refetch(), refetchAcne()])
+  await refreshAcneMarkedToday()
+}
 
 const quickAddAcneToday = async () => {
-  if (!user?.carnetSanteId) return
+  if (!user?.carnetSanteId) {
+    toast({
+      title: 'Session indisponible',
+      description: 'Impossible d\'ajouter ce bilan acné pour le moment. Reconnectez-vous puis réessayez.',
+      variant: 'destructive',
+    })
+    return
+  }
+
   isQuickAddingAcne.value = true
   try {
     const formData = buildSymptomeFormData({
@@ -607,10 +665,11 @@ const quickAddAcneToday = async () => {
       carnetSanteId: user.carnetSanteId,
       dateIso: combineDateTime(format(new Date(), 'yyyy-MM-dd'), format(new Date(), 'HH:mm')).toISOString(),
       intensite: 5,
-      commentaire: 'Pas de commentaire',
+      commentaire: '',
     })
     await apiService.postDonneesSymptomesCycle(formData)
-    await refetch()
+    await refreshSymptomesAndAcneViews()
+
     toast({ title: 'Acné enregistrée', description: 'Marquée pour aujourd\'hui', variant: 'custom' })
   } catch (error) {
     toast({ title: 'Erreur', description: getRequestErrorMessage(error, 'Impossible d\'enregistrer'), variant: 'destructive' })
@@ -622,8 +681,12 @@ const quickAddAcneToday = async () => {
 // Edit symptôme — ouvre le dialog en mode édition
 const editingSymptomeId = ref<number | null>(null)
 const handleEditSymptome = (id: string | number) => {
-  const found = processedEntries.value.find(e => e.id === id)
+  const found = processedEntries.value.find(e => e.id === id) ?? processedAcneEntries.value.find(e => e.id === id)
   if (!found) return
+
+  if (found.typeSymptome === 'Acné') {
+    activeTab.value = 'acne'
+  }
 
   if ((found as any).isGroup) {
     toast({
@@ -827,7 +890,7 @@ const buildSymptomeFormData = (payload: {
   formData.append('carnetSanteId', payload.carnetSanteId.toString())
   formData.append('date', payload.dateIso)
   formData.append('intensite', payload.intensite.toString())
-  formData.append('commentaire', payload.commentaire || 'Pas de commentaire')
+  formData.append('commentaire', payload.commentaire || '')
 
   if (payload.photo) {
     formData.append('photo', payload.photo, getUploadFileName(payload.photo))
@@ -839,6 +902,16 @@ const buildSymptomeFormData = (payload: {
 
   return formData
 }
+
+const mapSymptomeToViewModel = (symptomeCycle: SymptomeCycle) => ({
+  id: symptomeCycle.id,
+  typeSymptome: symptomeCycle.typeSymptome,
+  date: formatDateDisplay(symptomeCycle.date),
+  time: formatTimeDisplay(symptomeCycle.date),
+  intensite: symptomeCycle.intensite,
+  commentaire: symptomeCycle.commentaire || '',
+  photoUrl: symptomeCycle.photoUrl || ''
+})
 
 const { selectedMonthYear: symptomesMonthYear, entries, isLoading, refetch } = useMonthData<SymptomeCycle>({
   fetchFunction: async (month, year) => {
@@ -853,18 +926,130 @@ const { selectedMonthYear: symptomesMonthYear, entries, isLoading, refetch } = u
       .filter((s: SymptomeCycle) => s.typeSymptome === 'Acné')
       .map((s: SymptomeCycle) => new Date(s.date))
 
-    return response.map((symptomeCycle: SymptomeCycle) => ({
-      id: symptomeCycle.id,
-      typeSymptome: symptomeCycle.typeSymptome,
-      date: formatDateDisplay(symptomeCycle.date),
-      time: formatTimeDisplay(symptomeCycle.date),
-      intensite: symptomeCycle.intensite,
-      commentaire: symptomeCycle.commentaire || 'Pas de commentaire',
-      photoUrl: symptomeCycle.photoUrl || ''
-    }))
+    return response.map((symptomeCycle: SymptomeCycle) => mapSymptomeToViewModel(symptomeCycle))
   },
   immediate: false
 })
+
+const { selectedMonthYear: acneMonthYear, entries: entriesAcne, refetch: refetchAcne } = useMonthData<SymptomeCycle>({
+  fetchFunction: async (month, year) => {
+    return apiService.getSymptomesByMonth(user!.carnetSanteId, month, year)
+  },
+  transformData: (response) => {
+    return response.map((symptomeCycle: SymptomeCycle) => mapSymptomeToViewModel(symptomeCycle))
+  },
+  immediate: false
+})
+
+const parseMonthYear = (monthYear: string): Date => {
+  const [yearValue, monthValue] = monthYear.split('-').map(Number)
+  return new Date(yearValue, monthValue - 1, 1)
+}
+
+const monthKeyFromDate = (date: Date): string => {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`
+}
+
+const monthLabelFromKey = (monthKey: string): string => {
+  const [yearValue, monthValue] = monthKey.split('-').map(Number)
+  const date = new Date(yearValue, monthValue - 1, 1)
+  return date.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })
+}
+
+const acneWindowMonthKeys = computed(() => {
+  const center = parseMonthYear(acneMonthYear.value)
+  const keys: string[] = []
+
+  for (let offset = -ACNE_WINDOW_RADIUS; offset <= ACNE_WINDOW_RADIUS; offset++) {
+    const date = new Date(center)
+    date.setMonth(center.getMonth() + offset)
+    keys.push(monthKeyFromDate(date))
+  }
+
+  return keys
+})
+
+const acneWindowDisplayMonthKeys = computed(() => {
+  if (acneWindowMonthKeys.value.length === 0) {
+    return []
+  }
+
+  const selectedIndex = acneWindowMonthKeys.value.indexOf(acneMonthYear.value)
+  if (selectedIndex < 0) {
+    return acneWindowMonthKeys.value
+  }
+
+  const selectedKey = acneWindowMonthKeys.value[selectedIndex]
+  const before = acneWindowMonthKeys.value.slice(0, selectedIndex).reverse()
+  const after = acneWindowMonthKeys.value.slice(selectedIndex + 1)
+  return [selectedKey, ...before, ...after]
+})
+
+const acneWindowLabel = computed(() => {
+  if (acneWindowMonthKeys.value.length === 0) {
+    return ''
+  }
+
+  const firstLabel = monthLabelFromKey(acneWindowMonthKeys.value[0])
+  const lastLabel = monthLabelFromKey(acneWindowMonthKeys.value[acneWindowMonthKeys.value.length - 1])
+  return `${firstLabel} -> ${lastLabel}`
+})
+
+const acneWindowMonths = computed(() => {
+  return acneWindowDisplayMonthKeys.value.map((monthKey) => {
+    const monthEntries = acneWindowEntriesByMonth.value[monthKey] ?? []
+    const photoEntries = monthEntries
+      .filter((entry: any) => entry.typeSymptome === 'Acné' && !!entry.photoUrl)
+      .sort((a: any, b: any) => parseDisplayDate(b.date).getTime() - parseDisplayDate(a.date).getTime())
+
+    return {
+      key: monthKey,
+      label: monthLabelFromKey(monthKey),
+      entries: photoEntries,
+    }
+  })
+})
+
+const hydrateAcneWindow = async () => {
+  if (!user?.carnetSanteId) {
+    return
+  }
+
+  const missingMonthKeys = acneWindowMonthKeys.value.filter((monthKey) => !acneWindowEntriesByMonth.value[monthKey])
+  if (missingMonthKeys.length === 0) {
+    return
+  }
+
+  isAcneWindowLoading.value = true
+  try {
+    const responses = await Promise.all(
+      missingMonthKeys.map(async (monthKey) => {
+        const [yearValue, monthValue] = monthKey.split('-').map(Number)
+        const response = await apiService.getSymptomesByMonth(user.carnetSanteId, monthValue, yearValue)
+        const mapped = response.map((symptomeCycle: SymptomeCycle) => mapSymptomeToViewModel(symptomeCycle))
+        return { monthKey, mapped }
+      })
+    )
+
+    responses.forEach(({ monthKey, mapped }) => {
+      acneWindowEntriesByMonth.value[monthKey] = mapped
+    })
+  } catch (error) {
+    console.error('Erreur lors du chargement de la fenetre acné:', error)
+  } finally {
+    isAcneWindowLoading.value = false
+  }
+}
+
+const slideAcneWindow = (direction: -1 | 1) => {
+  const center = parseMonthYear(acneMonthYear.value)
+  center.setMonth(center.getMonth() + direction)
+  acneMonthYear.value = monthKeyFromDate(center)
+}
+
+const onAcneMonthYearChange = (value: string) => {
+  acneMonthYear.value = value
+}
 
 const { deleteEntry } = useCrudOperations(entries)
 
@@ -887,7 +1072,19 @@ const resetSymptomeFormState = () => {
 }
 
 const openAddSymptomeDialog = () => {
+  activeTab.value = 'symptomes'
   resetSymptomeFormState()
+  showAddDialog.value = true
+}
+
+const openAddAcneDialog = () => {
+  resetSymptomeFormState()
+  activeTab.value = 'acne'
+  form.setValues({
+    ...getDefaultSymptomeFormValues(),
+    typeSymptome: 'Acné',
+  })
+  showAddDialog.value = true
 }
 
 // Confirmation dialog for calendar clicks
@@ -896,7 +1093,7 @@ const showConfirmDeleteJourRegleDialog = ref(false)
 const pendingJourRegleDate = ref<string>('')
 const pendingDeleteJourRegleId = ref<number | null>(null)
 const selectedSymptomeFilter = ref<SymptomFilter>('Tous')
-const symptomFilters: SymptomFilter[] = ['Tous', 'Acné', 'Spotting', 'Nausée', 'Fatigue', 'Autre']
+const symptomFilters: SymptomFilter[] = ['Tous', 'Spotting', 'Nausée', 'Fatigue', 'Autre']
 
 const columns: any = [
   { data: 'typeSymptome' },
@@ -1000,114 +1197,202 @@ const filteredProcessedEntries = computed(() => {
   return processedEntries.value.filter((entry: any) => entry.typeSymptome === selectedSymptomeFilter.value)
 })
 
-const acneMonthlyStats = computed(() => {
-  const acneEntries = entries.value.filter((entry: any) => entry.typeSymptome === 'Acné')
-  const totalDays = acneEntries.length
-  const withPhotos = acneEntries.filter((entry: any) => !!entry.photoUrl).length
-
-  if (totalDays === 0) {
-    return {
-      totalDays: 0,
-      avgIntensity: '-',
-      withPhotos: 0
-    }
-  }
-
-  const avg = acneEntries.reduce((sum: number, entry: any) => sum + Number(entry.intensite || 0), 0) / totalDays
-
-  return {
-    totalDays,
-    avgIntensity: avg % 1 === 0 ? avg.toString() : avg.toFixed(1),
-    withPhotos
-  }
+const filteredNonAcneEntries = computed(() => {
+  return filteredProcessedEntries.value.filter((entry: any) => entry.typeSymptome !== 'Acné')
 })
 
-// Detect ongoing acné periods (periods ending today or yesterday)
-const ongoingAcnePeriods = computed(() => {
-  if (!entries.value || entries.value.length === 0) return []
+const processedAcneEntries = computed(() => {
+  if (!entriesAcne.value || entriesAcne.value.length === 0) return []
 
-  // Get all acné entries
-  const acneEntries = entries.value
+  const sortedEntries = [...entriesAcne.value]
+    .filter((entry: any) => entry.typeSymptome === 'Acné')
+    .sort((a: any, b: any) => parseDisplayDate(a.date).getTime() - parseDisplayDate(b.date).getTime())
+
+  const result: any[] = []
+  let i = 0
+
+  while (i < sortedEntries.length) {
+    const acneGroup = [sortedEntries[i]]
+    let j = i + 1
+
+    while (j < sortedEntries.length) {
+      const prevDate = parseDisplayDate(sortedEntries[j - 1].date)
+      const currDate = parseDisplayDate(sortedEntries[j].date)
+      const diffInDays = Math.round((currDate.getTime() - prevDate.getTime()) / (1000 * 60 * 60 * 24))
+      if (diffInDays !== 1) break
+      acneGroup.push(sortedEntries[j])
+      j++
+    }
+
+    if (acneGroup.length > 1) {
+      const avg = acneGroup.reduce((sum, e) => sum + Number(e.intensite || 0), 0) / acneGroup.length
+      result.push({
+        id: `acne-group-${acneGroup[0].id}`,
+        typeSymptome: 'Acné',
+        date: `${acneGroup[0].date} - ${acneGroup[acneGroup.length - 1].date}`,
+        time: `${acneGroup.length} jour${acneGroup.length > 1 ? 's' : ''}`,
+        intensite: avg % 1 === 0 ? avg.toString() : avg.toFixed(1),
+        commentaire: acneGroup[0].commentaire,
+        photoUrl: acneGroup[0].photoUrl || '',
+        isGroup: true,
+        groupedEntries: acneGroup,
+        entryIds: acneGroup.map(e => e.id)
+      })
+    } else {
+      result.push(acneGroup[0])
+    }
+
+    i = j
+  }
+
+  return result
+})
+
+const acnePhotoEntries = computed(() => {
+  return acneWindowMonths.value.flatMap((month) => month.entries)
+})
+
+const parseDisplayDate = (displayDate: string): Date => {
+  const [day, month, year] = displayDate.split('/').map(Number)
+  return new Date(year, month - 1, day)
+}
+
+const displayedAcneHistoryEntries = computed(() => {
+  if (showFullAcneHistory.value) {
+    return acneHistorySourceEntries.value
+  }
+
+  return acneHistorySourceEntries.value.slice(0, acneHistoryInitialCount)
+})
+
+const acneHistoryEntriesWithoutPhoto = computed(() => {
+  return processedAcneEntries.value.filter((entry: any) => !entry.photoUrl)
+})
+
+const acneHistoryHiddenByPhotoCount = computed(() => {
+  return Math.max(0, processedAcneEntries.value.length - acneHistoryEntriesWithoutPhoto.value.length)
+})
+
+const acneHistorySourceEntries = computed(() => {
+  if (showAcneHistoryWithPhotos.value) {
+    return processedAcneEntries.value
+  }
+
+  return acneHistoryEntriesWithoutPhoto.value
+})
+
+const orderedComparePhotos = computed(() => {
+  return selectedComparePhotoIds.value
+    .map(id => acnePhotoEntries.value.find((entry: any) => entry.id === id))
+    .filter((entry): entry is any => !!entry)
+    .sort((a: any, b: any) => parseDisplayDate(a.date).getTime() - parseDisplayDate(b.date).getTime())
+})
+
+const selectLatestComparePair = () => {
+  const latestEntries = [...acnePhotoEntries.value]
+    .sort((a: any, b: any) => parseDisplayDate(b.date).getTime() - parseDisplayDate(a.date).getTime())
+    .slice(0, 2)
+
+  if (latestEntries.length < 2) {
+    return
+  }
+
+  selectedComparePhotoIds.value = latestEntries.map((entry: any) => entry.id)
+}
+
+const ongoingAcnePeriods = computed(() => {
+  if (!entriesAcne.value || entriesAcne.value.length === 0) return []
+
+  const acneEntries = entriesAcne.value
     .filter(e => e.typeSymptome === 'Acné')
-    .sort((a, b) => {
-      const [dayA, monthA, yearA] = a.date.split('/').map(Number)
-      const [dayB, monthB, yearB] = b.date.split('/').map(Number)
-      const dateA = new Date(yearA, monthA - 1, dayA)
-      const dateB = new Date(yearB, monthB - 1, dayB)
-      return dateA.getTime() - dateB.getTime()
-    })
+    .sort((a, b) => parseDisplayDate(a.date).getTime() - parseDisplayDate(b.date).getTime())
 
   if (acneEntries.length === 0) return []
 
-  // Find groups of consecutive days
   const groups: any[] = []
   let currentGroup = [acneEntries[0]]
 
   for (let i = 1; i < acneEntries.length; i++) {
-    const prevEntry = acneEntries[i - 1]
-    const currEntry = acneEntries[i]
-
-    const [dayPrev, monthPrev, yearPrev] = prevEntry.date.split('/').map(Number)
-    const [dayCurr, monthCurr, yearCurr] = currEntry.date.split('/').map(Number)
-    const datePrev = new Date(yearPrev, monthPrev - 1, dayPrev)
-    const dateCurr = new Date(yearCurr, monthCurr - 1, dayCurr)
-
-    const diffInDays = Math.round((dateCurr.getTime() - datePrev.getTime()) / (1000 * 60 * 60 * 24))
+    const prevDate = parseDisplayDate(acneEntries[i - 1].date)
+    const currentDate = parseDisplayDate(acneEntries[i].date)
+    const diffInDays = Math.round((currentDate.getTime() - prevDate.getTime()) / (1000 * 60 * 60 * 24))
 
     if (diffInDays === 1) {
-      currentGroup.push(currEntry)
+      currentGroup.push(acneEntries[i])
     } else {
       if (currentGroup.length > 1) {
         groups.push([...currentGroup])
       }
-      currentGroup = [currEntry]
+      currentGroup = [acneEntries[i]]
     }
   }
 
-  // Don't forget the last group
   if (currentGroup.length > 1) {
     groups.push(currentGroup)
   }
 
-  // Filter for ongoing periods (ending today only)
   const today = new Date()
   today.setHours(0, 0, 0, 0)
 
-  return groups.filter(group => {
-    const lastEntry = group[group.length - 1]
-    const [day, month, year] = lastEntry.date.split('/').map(Number)
-    const lastDate = new Date(year, month - 1, day)
-    lastDate.setHours(0, 0, 0, 0)
-
-    const diffInDays = Math.round((today.getTime() - lastDate.getTime()) / (1000 * 60 * 60 * 24))
-
-    // Period is ongoing if it ends today
-    return diffInDays === 0
-  }).map(group => ({
-    startDate: group[0].date,
-    endDate: group[group.length - 1].date,
-    duration: group.length,
-    entries: group,
-    avgIntensity: (() => {
-      const avg = group.reduce((sum: number, e: any) => sum + e.intensite, 0) / group.length
-      return avg % 1 === 0 ? avg.toString() : avg.toFixed(1)
-    })()
-  }))
+  return groups
+    .filter(group => {
+      const lastDate = parseDisplayDate(group[group.length - 1].date)
+      lastDate.setHours(0, 0, 0, 0)
+      return Math.round((today.getTime() - lastDate.getTime()) / (1000 * 60 * 60 * 24)) === 0
+    })
+    .map(group => ({
+      startDate: group[0].date,
+      endDate: group[group.length - 1].date,
+      duration: group.length,
+      entries: group,
+      avgIntensity: (() => {
+        const avg = group.reduce((sum: number, e: any) => sum + Number(e.intensite || 0), 0) / group.length
+        return avg % 1 === 0 ? avg.toString() : avg.toFixed(1)
+      })(),
+    }))
 })
 
-onMounted(() => {
-  fetchJoursRegles()
+const calendarValue = computed({
+  get: () => {
+    const [selectedYear, selectedMonth] = selectedMonthYear.value.split('-').map(Number)
+    return parseDate(`${selectedYear}-${String(selectedMonth).padStart(2, '0')}-01`)
+  },
+  set: (newValue) => {
+    if (!newValue) return
+    selectedMonthYear.value = `${newValue.year}-${String(newValue.month).padStart(2, '0')}`
+  }
+})
+
+const previousMonth = () => {
+  const [selectedYear, selectedMonth] = selectedMonthYear.value.split('-').map(Number)
+  selectedMonthYear.value = format(new Date(selectedYear, selectedMonth - 2, 1), 'yyyy-MM')
+}
+
+const nextMonth = () => {
+  const [selectedYear, selectedMonth] = selectedMonthYear.value.split('-').map(Number)
+  selectedMonthYear.value = format(new Date(selectedYear, selectedMonth, 1), 'yyyy-MM')
+}
+
+watch(calendarValue, (value) => {
+  month.value = value.month
+  year.value = value.year
+  calculateFertilePeriodsForMonth(joursRegles.value)
   refetch()
 })
 
-const handlePhotoIconClick = (e: Event) => {
-  const target = e.target as HTMLElement
+const handlePhotoIconClick = (event: Event) => {
+  const target = event.target as HTMLElement
   if (target.classList.contains('photo-icon') && target.dataset.url) {
     openPhotoModal(target.dataset.url)
   }
 }
 
 onMounted(() => {
+  fetchJoursRegles()
+  refetch()
+  refetchAcne()
+  hydrateAcneWindow()
+  refreshAcneMarkedToday()
   nextTick(() => {
     document.addEventListener('click', handlePhotoIconClick)
   })
@@ -1120,64 +1405,25 @@ onBeforeUnmount(() => {
   }
 })
 
-
-onMounted(async () => {
-  // Check if period was already marked today
-  try {
-    await offlineStorage.init()
-    const cachedData = await offlineStorage.getCarnetData(user!.carnetSanteId)
-
-    if (cachedData?.jourRegle?.date) {
-      const today = format(new Date(), 'yyyy-MM-dd')
-      const jourRegleDate = format(parseISO(cachedData.jourRegle.date), 'yyyy-MM-dd')
-      if (jourRegleDate === today) {
-        periodMarked.value = true
-      }
-    }
-  } catch (error) {
-    console.error('Error checking period status:', error)
-  } finally {
-    isLoadingPeriod.value = false
-  }
-})
-
-const calendarValue = computed({
-  get: () => {
-    const [year, month] = selectedMonthYear.value.split('-').map(Number)
-    const paddedMonth = month.toString().padStart(2, '0')
-    return parseDate(`${year}-${paddedMonth}-01`)
-  },
-  set: (value) => {
-    // Update selectedMonthYear when calendar changes
-    if (value) {
-      const newYear = value.year
-      const newMonth = value.month
-      selectedMonthYear.value = `${newYear}-${String(newMonth).padStart(2, '0')}`
-    }
-  }
-})
-
-const previousMonth = () => {
-  const [year, month] = selectedMonthYear.value.split('-').map(Number)
-  const newDate = new Date(year, month - 2, 1)
-  selectedMonthYear.value = format(newDate, 'yyyy-MM')
-}
-
-const nextMonth = () => {
-  const [year, month] = selectedMonthYear.value.split('-').map(Number)
-  const newDate = new Date(year, month, 1)
-  selectedMonthYear.value = format(newDate, 'yyyy-MM')
-}
-
-watch(calendarValue, (value) => {
-  month.value = value.month
-  year.value = value.year
-  calculateFertilePeriodsForMonth(joursRegles.value)
-  refetch()
-})
-
 watch(selectedMonthYear, () => {
   fetchJoursRegles()
+})
+
+watch(acnePhotoEntries, (photos) => {
+  const availableIds = new Set(photos.map((photo: any) => photo.id))
+  selectedComparePhotoIds.value = selectedComparePhotoIds.value.filter((id) => availableIds.has(id))
+})
+
+watch(acneMonthYear, () => {
+  refetchAcne()
+  hydrateAcneWindow()
+  showFullAcneHistory.value = false
+  isAcneHistoryExpanded.value = false
+  showAcneHistoryWithPhotos.value = false
+})
+
+watch(entriesAcne, (nextEntries) => {
+  acneWindowEntriesByMonth.value[acneMonthYear.value] = [...nextEntries]
 })
 
 const fetchJoursRegles = async () => {
@@ -1213,6 +1459,9 @@ const fetchJoursRegles = async () => {
     }
   } catch (error) {
     console.error('Erreur lors de la récupération des jours de règles:', error)
+  } finally {
+    // Always stop the loading skeleton to avoid blocking the period quick add UI.
+    isLoadingPeriod.value = false
   }
 }
 
@@ -1274,7 +1523,7 @@ const updateAverageCycle = (reglesDates: Date[]) => {
 
 const handleDelete = async (id: string | number) => {
   // Find the entry to determine if it's a group
-  const entry = processedEntries.value.find(e => e.id === id);
+  const entry = processedEntries.value.find(e => e.id === id) ?? processedAcneEntries.value.find(e => e.id === id);
 
   if (entry?.isGroup && entry.entryIds) {
     // Delete all entries in the group
@@ -1289,6 +1538,8 @@ const handleDelete = async (id: string | number) => {
       entries.value = entries.value.filter(
         e => !entry.entryIds.includes(e.id)
       );
+
+      await refreshSymptomesAndAcneViews()
 
       toast({
         title: 'Succès',
@@ -1310,6 +1561,8 @@ const handleDelete = async (id: string | number) => {
       errorMessage: 'Une erreur est survenue lors de la suppression du symptôme',
       endpoint: 'SymptomesCycle'
     });
+
+    await refreshSymptomesAndAcneViews()
   }
 }
 
@@ -1377,6 +1630,8 @@ watch(showAddDialog, (isOpen) => {
 })
 
 const onSubmit = form.handleSubmit(async (values) => {
+  const selectedType = isAcneOnlyDialog.value ? 'Acné' : values.typeSymptome
+
   // Handle period submission (multiple days)
   if (values.isPeriod) {
     const endDate = values.enCours ? new Date() : new Date(values.dateFin ?? '')
@@ -1406,7 +1661,7 @@ const onSubmit = form.handleSubmit(async (values) => {
       if (selectedPhoto.value) {
         const firstDate = dates[0]
         const firstDayFormData = buildSymptomeFormData({
-          typeSymptome: values.typeSymptome,
+          typeSymptome: selectedType,
           carnetSanteId: user!.carnetSanteId,
           dateIso: combineDateTime(format(firstDate, 'yyyy-MM-dd'), '12:00').toISOString(),
           intensite: values.intensite[0],
@@ -1418,10 +1673,10 @@ const onSubmit = form.handleSubmit(async (values) => {
         firstDayResponse = await apiService.postDonneesSymptomesCycle(firstDayFormData)
 
         if (dates.length === 1) {
-          await refetch()
+          await refreshSymptomesAndAcneViews()
           toast({
             title: 'Succès',
-            description: `Période ajoutée (${values.typeSymptome}, 1 jour)`,
+            description: `Période ajoutée (${selectedType}, 1 jour)`,
             variant: 'custom',
           })
 
@@ -1433,7 +1688,7 @@ const onSubmit = form.handleSubmit(async (values) => {
         const remainingDates = dates.slice(1)
         const remainingPromises = remainingDates.map(date => {
           const formData = buildSymptomeFormData({
-            typeSymptome: values.typeSymptome,
+            typeSymptome: selectedType,
             carnetSanteId: user!.carnetSanteId,
             dateIso: combineDateTime(format(date, 'yyyy-MM-dd'), '12:00').toISOString(),
             intensite: values.intensite[0],
@@ -1446,7 +1701,7 @@ const onSubmit = form.handleSubmit(async (values) => {
       } else {
         const promises = dates.map(date => {
           const formData = buildSymptomeFormData({
-            typeSymptome: values.typeSymptome,
+            typeSymptome: selectedType,
             carnetSanteId: user!.carnetSanteId,
             dateIso: combineDateTime(format(date, 'yyyy-MM-dd'), '12:00').toISOString(),
             intensite: values.intensite[0],
@@ -1458,11 +1713,11 @@ const onSubmit = form.handleSubmit(async (values) => {
         await Promise.all(promises)
       }
 
-      await refetch()
+      await refreshSymptomesAndAcneViews()
 
       toast({
         title: 'Succès',
-        description: `Période ajoutée (${values.typeSymptome}, ${dates.length} jour${dates.length > 1 ? 's' : ''})`,
+        description: `Période ajoutée (${selectedType}, ${dates.length} jour${dates.length > 1 ? 's' : ''})`,
         variant: 'custom',
       })
 
@@ -1483,7 +1738,7 @@ const onSubmit = form.handleSubmit(async (values) => {
       })
 
       if (firstDayResponse) {
-        await refetch()
+        await refreshSymptomesAndAcneViews()
       }
     }
   } else {
@@ -1492,11 +1747,11 @@ const onSubmit = form.handleSubmit(async (values) => {
       // Edit mode
       const dataToSend = buildSymptomeFormData({
         id: editingSymptomeId.value,
-        typeSymptome: values.typeSymptome,
+        typeSymptome: selectedType,
         carnetSanteId: user!.carnetSanteId,
         dateIso: combineDateTime(values.date ?? '', values.time ?? '').toISOString(),
         intensite: values.intensite[0],
-        commentaire: values.commentaire || 'Pas de commentaire',
+        commentaire: values.commentaire || '',
         photo: selectedPhoto.value,
         photoSource: selectedPhotoSource.value
       })
@@ -1506,7 +1761,7 @@ const onSubmit = form.handleSubmit(async (values) => {
         successMessage: 'Symptôme modifié avec succès',
         errorMessage: 'Une erreur est survenue lors de la modification',
         onSuccess: async () => {
-          await refetch()
+          await refreshSymptomesAndAcneViews()
         },
         resetFormData: () => {
           resetSymptomeFormState()
@@ -1515,7 +1770,7 @@ const onSubmit = form.handleSubmit(async (values) => {
     } else {
       // Create mode
       const formData = buildSymptomeFormData({
-        typeSymptome: values.typeSymptome,
+        typeSymptome: selectedType,
         carnetSanteId: user!.carnetSanteId,
         dateIso: combineDateTime(values.date ?? '', values.time ?? '').toISOString(),
         intensite: values.intensite[0],
@@ -1528,7 +1783,7 @@ const onSubmit = form.handleSubmit(async (values) => {
         successMessage: 'Symptôme ajouté avec succès',
         errorMessage: 'Une erreur est survenue lors de l\'ajout du symptôme',
         onSuccess: async () => {
-          await refetch()
+          await refreshSymptomesAndAcneViews()
         },
         resetFormData: () => {
           resetSymptomeFormState()
@@ -1537,29 +1792,6 @@ const onSubmit = form.handleSubmit(async (values) => {
     }
   }
 })
-
-const markPeriodToday = async () => {
-  const today = format(new Date(), 'yyyy-MM-dd')
-  const data = { date: today, carnetSanteId: user?.carnetSanteId }
-
-  await handleOfflineOperation(
-    () => apiService.postJourRegle(data),
-    {
-      endpoint: 'JourRegle',
-      method: 'POST',
-      data: data,
-      onSuccess: () => {
-        periodMarked.value = true
-        fetchJoursRegles() // Refresh the calendar to show the new period day
-      },
-      onOfflineQueued: () => {
-        periodMarked.value = true
-      },
-      successMessage: 'Règles marquées pour aujourd\'hui',
-      errorMessage: 'Impossible de marquer les règles',
-    }
-  )
-}
 
 const handleMarkPeriod = async (dateString: string) => {
   const data = { date: dateString, carnetSanteId: user?.carnetSanteId }
@@ -1607,7 +1839,7 @@ const extendAcnePeriod = async (period: any) => {
 
   try {
     await apiService.postDonneesSymptomesCycle(data)
-    await refetch()
+    await refreshSymptomesAndAcneViews()
 
     toast({
       title: 'Succès',
@@ -1664,7 +1896,7 @@ const confirmEndPeriod = async () => {
     await Promise.all(deletePromises)
 
     // Refresh data
-    await refetch()
+    await refreshSymptomesAndAcneViews()
 
     showEndPeriodDialog.value = false
     toast({
@@ -1780,29 +2012,12 @@ const confirmDeleteJourRegle = async () => {
 </script>
 
 <style scoped>
-.checkmark-animation {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  animation: fadeIn 0.5s ease-in-out;
-}
-
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: scale(0.5);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
 
 @media (max-width: 425px) {
   .cycle-tabs-list {
     width: 100%;
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 0.5rem;
   }
 
