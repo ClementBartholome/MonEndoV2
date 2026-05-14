@@ -177,41 +177,13 @@
       </TabsContent>
 
       <TabsContent value="acne">
-        <AcneTabContent
-          :isQuickAddingAcne="isQuickAddingAcne"
-          :acneMarkedToday="acneMarkedToday"
-          :acneMonthYear="acneMonthYear"
-          :acneWindowLabel="acneWindowLabel"
-          :ongoingAcnePeriods="ongoingAcnePeriods"
-          :acneWindowMonths="acneWindowMonths"
-          :acnePhotoEntries="acnePhotoEntries"
-          :orderedComparePhotos="orderedComparePhotos"
-          :displayedAcneHistoryEntries="displayedAcneHistoryEntries"
-          :processedAcneEntriesCount="processedAcneEntries.length"
-          :acneHistoryEntriesCount="acneHistorySourceEntries.length"
-          :acneHistoryHiddenByPhotoCount="acneHistoryHiddenByPhotoCount"
-          :acneHistoryInitialCount="acneHistoryInitialCount"
-          :showFullAcneHistory="showFullAcneHistory"
-          :isAcneHistoryExpanded="isAcneHistoryExpanded"
-          :showAcneHistoryWithPhotos="showAcneHistoryWithPhotos"
-          :iconConfig="symptomeIconConfig"
-          :historyExtraFields="acneHistoryExtraFields"
-          :isPhotoSelectedForCompare="isPhotoSelectedForCompare"
-          :onOpenAddAcneDialog="openAddAcneDialog"
-          :onQuickAddAcneToday="quickAddAcneToday"
-          :onExtendAcnePeriod="extendAcnePeriod"
-          :onOpenEndPeriodDialog="openEndPeriodDialog"
-          :onOpenPhotoModal="openPhotoModal"
-          :onSlideAcneWindow="slideAcneWindow"
-          :onSelectLatestComparePair="selectLatestComparePair"
-          :onTogglePhotoCompare="togglePhotoCompare"
-          :onResetPhotoCompare="resetPhotoCompare"
-          :onEditSymptome="handleEditSymptome"
-          :onDeleteSymptome="handleDelete"
-          :onToggleShowFullHistory="toggleShowFullAcneHistory"
-          :onToggleAcneHistoryExpanded="toggleAcneHistoryExpanded"
-          :onToggleAcneHistoryWithPhotos="toggleAcneHistoryWithPhotos"
-          :onAcneMonthYearChange="onAcneMonthYearChange"
+        <AcneTabSection
+          :carnetSanteId="user!.carnetSanteId"
+          :refreshKey="acneRefreshKey"
+          @open-add="openAddAcneDialog"
+          @edit-entry="handleEditAcneEntry"
+          @photo-click="openPhotoModal"
+          @changed="handleAcneChanged"
         />
       </TabsContent>
 
@@ -224,35 +196,6 @@
           <div class="flex justify-center">
             <img v-if="selectedPhotoUrl" :src="selectedPhotoUrl" alt="Photo symptôme" class="max-w-full max-h-[80vh] rounded-lg object-contain" />
           </div>
-        </DialogContent>
-      </Dialog>
-
-      <!-- End Period Dialog -->
-      <Dialog v-model:open="showEndPeriodDialog">
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle class="text-2xl">Terminer la période d'acné</DialogTitle>
-          </DialogHeader>
-          <div class="flex flex-col gap-4 py-4">
-            <p>Cette période a commencé le {{ selectedPeriodToEnd?.startDate }} et se termine actuellement le {{ selectedPeriodToEnd?.endDate }}.</p>
-            <FormField name="endDate">
-              <FormItem>
-                <FormLabel>Date de fin réelle</FormLabel>
-                <FormControl>
-                  <Input type="date" v-model="endPeriodDate" :max="format(new Date(), 'yyyy-MM-dd')" />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            </FormField>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" @click="showEndPeriodDialog = false">
-              Annuler
-            </Button>
-            <Button variant="custom" @click="confirmEndPeriod">
-              Confirmer
-            </Button>
-          </DialogFooter>
         </DialogContent>
       </Dialog>
 
@@ -487,7 +430,7 @@ import { format } from 'date-fns'
 import type { SymptomeCycle } from "@/features/cycle/types/symptome-cycle"
 import {Checkbox} from "@/shared/components/ui/checkbox";
 import PeriodQuickAdd from "@/features/cycle/components/PeriodQuickAdd.vue"
-import AcneTabContent from "@/features/cycle/components/AcneTabContent.vue"
+import AcneTabSection from "@/features/cycle/components/AcneTabSection.vue"
 import GenericCardList from "@/shared/components/GenericCardList.vue"
 import { symptomeIconConfig } from '@/shared/config/materialSymbols'
 import { preparePhotoForUpload } from '@/shared/utils/safeImageUpload'
@@ -540,59 +483,26 @@ const formatFileSize = (bytes: number): string => {
 const showAddDialog = ref(false)
 const { submitForm } = useDialogForm(showAddDialog)
 
-// End period dialog
-const showEndPeriodDialog = ref(false)
-const selectedPeriodToEnd = ref<any>(null)
-const endPeriodDate = ref('')
-
 const showPhotoModal = ref(false)
 const selectedPhotoUrl = ref('')
-const selectedComparePhotoIds = ref<number[]>([])
-const acneWindowEntriesByMonth = ref<Record<string, any[]>>({})
-const isAcneWindowLoading = ref(false)
-const acneHistoryInitialCount = 8
-const showFullAcneHistory = ref(false)
-const isAcneHistoryExpanded = ref(false)
-const showAcneHistoryWithPhotos = ref(false)
-const acneHistoryExtraFields = [{ key: 'commentaire', label: 'Note' }]
-const ACNE_WINDOW_RADIUS = 1
+const acneRefreshKey = ref(0)
+
+const notifyAcneRefresh = () => {
+  acneRefreshKey.value += 1
+}
+
+const refreshAfterSymptomeMutation = async () => {
+  await refetch()
+  notifyAcneRefresh()
+}
+
+const handleAcneChanged = async () => {
+  await refetch()
+}
 
 const openPhotoModal = (url: string) => {
   selectedPhotoUrl.value = url
   showPhotoModal.value = true
-}
-
-const togglePhotoCompare = (id: number) => {
-  if (selectedComparePhotoIds.value.includes(id)) {
-    selectedComparePhotoIds.value = selectedComparePhotoIds.value.filter(photoId => photoId !== id)
-    return
-  }
-
-  if (selectedComparePhotoIds.value.length === 2) {
-    selectedComparePhotoIds.value = [selectedComparePhotoIds.value[1], id]
-    return
-  }
-
-  selectedComparePhotoIds.value = [...selectedComparePhotoIds.value, id]
-}
-
-const isPhotoSelectedForCompare = (id: number) => selectedComparePhotoIds.value.includes(id)
-
-const resetPhotoCompare = () => {
-  selectedComparePhotoIds.value = []
-}
-
-const toggleShowFullAcneHistory = () => {
-  showFullAcneHistory.value = !showFullAcneHistory.value
-}
-
-const toggleAcneHistoryExpanded = () => {
-  isAcneHistoryExpanded.value = !isAcneHistoryExpanded.value
-}
-
-const toggleAcneHistoryWithPhotos = () => {
-  showAcneHistoryWithPhotos.value = !showAcneHistoryWithPhotos.value
-  showFullAcneHistory.value = false
 }
 
 
@@ -619,69 +529,9 @@ const selectedPhotoPreviewUrl = ref<string>('')
 const isProcessingPhoto = ref(false)
 const selectedPhotoSource = ref<'camera' | 'gallery' | null>(null)
 
-// Quick-add acné
-const isQuickAddingAcne = ref(false)
-const acneMarkedToday = ref(false)
-
-const refreshAcneMarkedToday = async () => {
-  if (!user?.carnetSanteId) {
-    acneMarkedToday.value = false
-    return
-  }
-
-  const now = new Date()
-  const currentMonth = now.getMonth() + 1
-  const currentYear = now.getFullYear()
-  const todayDisplay = format(now, 'dd/MM/yyyy')
-
-  try {
-    const currentMonthEntries = await apiService.getSymptomesByMonth(user.carnetSanteId, currentMonth, currentYear)
-    acneMarkedToday.value = currentMonthEntries
-      .some((entry: SymptomeCycle) => entry.typeSymptome === 'Acné' && formatDateDisplay(entry.date) === todayDisplay)
-  } catch {
-    acneMarkedToday.value = false
-  }
-}
-
-const refreshSymptomesAndAcneViews = async () => {
-  await Promise.all([refetch(), refetchAcne()])
-  await refreshAcneMarkedToday()
-}
-
-const quickAddAcneToday = async () => {
-  if (!user?.carnetSanteId) {
-    toast({
-      title: 'Session indisponible',
-      description: 'Impossible d\'ajouter ce bilan acné pour le moment. Reconnectez-vous puis réessayez.',
-      variant: 'destructive',
-    })
-    return
-  }
-
-  isQuickAddingAcne.value = true
-  try {
-    const formData = buildSymptomeFormData({
-      typeSymptome: 'Acné',
-      carnetSanteId: user.carnetSanteId,
-      dateIso: combineDateTime(format(new Date(), 'yyyy-MM-dd'), format(new Date(), 'HH:mm')).toISOString(),
-      intensite: 5,
-      commentaire: '',
-    })
-    await apiService.postDonneesSymptomesCycle(formData)
-    await refreshSymptomesAndAcneViews()
-
-    toast({ title: 'Acné enregistrée', description: 'Marquée pour aujourd\'hui', variant: 'custom' })
-  } catch (error) {
-    toast({ title: 'Erreur', description: getRequestErrorMessage(error, 'Impossible d\'enregistrer'), variant: 'destructive' })
-  } finally {
-    isQuickAddingAcne.value = false
-  }
-}
-
 // Edit symptôme — ouvre le dialog en mode édition
 const editingSymptomeId = ref<number | null>(null)
-const handleEditSymptome = (id: string | number) => {
-  const found = processedEntries.value.find(e => e.id === id) ?? processedAcneEntries.value.find(e => e.id === id)
+const openEditDialogFromEntry = (found: any) => {
   if (!found) return
 
   if (found.typeSymptome === 'Acné') {
@@ -718,6 +568,15 @@ const handleEditSymptome = (id: string | number) => {
 
   resetSelectedPhoto()
   showAddDialog.value = true
+}
+
+const handleEditSymptome = (id: string | number) => {
+  const found = processedEntries.value.find(e => e.id === id)
+  openEditDialogFromEntry(found)
+}
+
+const handleEditAcneEntry = (entry: any) => {
+  openEditDialogFromEntry(entry)
 }
 
 const MAX_PHOTO_SIZE_BYTES = 900 * 1024
@@ -931,125 +790,6 @@ const { selectedMonthYear: symptomesMonthYear, entries, isLoading, refetch } = u
   immediate: false
 })
 
-const { selectedMonthYear: acneMonthYear, entries: entriesAcne, refetch: refetchAcne } = useMonthData<SymptomeCycle>({
-  fetchFunction: async (month, year) => {
-    return apiService.getSymptomesByMonth(user!.carnetSanteId, month, year)
-  },
-  transformData: (response) => {
-    return response.map((symptomeCycle: SymptomeCycle) => mapSymptomeToViewModel(symptomeCycle))
-  },
-  immediate: false
-})
-
-const parseMonthYear = (monthYear: string): Date => {
-  const [yearValue, monthValue] = monthYear.split('-').map(Number)
-  return new Date(yearValue, monthValue - 1, 1)
-}
-
-const monthKeyFromDate = (date: Date): string => {
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`
-}
-
-const monthLabelFromKey = (monthKey: string): string => {
-  const [yearValue, monthValue] = monthKey.split('-').map(Number)
-  const date = new Date(yearValue, monthValue - 1, 1)
-  return date.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })
-}
-
-const acneWindowMonthKeys = computed(() => {
-  const center = parseMonthYear(acneMonthYear.value)
-  const keys: string[] = []
-
-  for (let offset = -ACNE_WINDOW_RADIUS; offset <= ACNE_WINDOW_RADIUS; offset++) {
-    const date = new Date(center)
-    date.setMonth(center.getMonth() + offset)
-    keys.push(monthKeyFromDate(date))
-  }
-
-  return keys
-})
-
-const acneWindowDisplayMonthKeys = computed(() => {
-  if (acneWindowMonthKeys.value.length === 0) {
-    return []
-  }
-
-  const selectedIndex = acneWindowMonthKeys.value.indexOf(acneMonthYear.value)
-  if (selectedIndex < 0) {
-    return acneWindowMonthKeys.value
-  }
-
-  const selectedKey = acneWindowMonthKeys.value[selectedIndex]
-  const before = acneWindowMonthKeys.value.slice(0, selectedIndex).reverse()
-  const after = acneWindowMonthKeys.value.slice(selectedIndex + 1)
-  return [selectedKey, ...before, ...after]
-})
-
-const acneWindowLabel = computed(() => {
-  if (acneWindowMonthKeys.value.length === 0) {
-    return ''
-  }
-
-  const firstLabel = monthLabelFromKey(acneWindowMonthKeys.value[0])
-  const lastLabel = monthLabelFromKey(acneWindowMonthKeys.value[acneWindowMonthKeys.value.length - 1])
-  return `${firstLabel} -> ${lastLabel}`
-})
-
-const acneWindowMonths = computed(() => {
-  return acneWindowDisplayMonthKeys.value.map((monthKey) => {
-    const monthEntries = acneWindowEntriesByMonth.value[monthKey] ?? []
-    const photoEntries = monthEntries
-      .filter((entry: any) => entry.typeSymptome === 'Acné' && !!entry.photoUrl)
-      .sort((a: any, b: any) => parseDisplayDate(b.date).getTime() - parseDisplayDate(a.date).getTime())
-
-    return {
-      key: monthKey,
-      label: monthLabelFromKey(monthKey),
-      entries: photoEntries,
-    }
-  })
-})
-
-const hydrateAcneWindow = async () => {
-  if (!user?.carnetSanteId) {
-    return
-  }
-
-  const missingMonthKeys = acneWindowMonthKeys.value.filter((monthKey) => !acneWindowEntriesByMonth.value[monthKey])
-  if (missingMonthKeys.length === 0) {
-    return
-  }
-
-  isAcneWindowLoading.value = true
-  try {
-    const responses = await Promise.all(
-      missingMonthKeys.map(async (monthKey) => {
-        const [yearValue, monthValue] = monthKey.split('-').map(Number)
-        const response = await apiService.getSymptomesByMonth(user.carnetSanteId, monthValue, yearValue)
-        const mapped = response.map((symptomeCycle: SymptomeCycle) => mapSymptomeToViewModel(symptomeCycle))
-        return { monthKey, mapped }
-      })
-    )
-
-    responses.forEach(({ monthKey, mapped }) => {
-      acneWindowEntriesByMonth.value[monthKey] = mapped
-    })
-  } catch (error) {
-    console.error('Erreur lors du chargement de la fenetre acné:', error)
-  } finally {
-    isAcneWindowLoading.value = false
-  }
-}
-
-const slideAcneWindow = (direction: -1 | 1) => {
-  const center = parseMonthYear(acneMonthYear.value)
-  center.setMonth(center.getMonth() + direction)
-  acneMonthYear.value = monthKeyFromDate(center)
-}
-
-const onAcneMonthYearChange = (value: string) => {
-  acneMonthYear.value = value
-}
 
 const { deleteEntry } = useCrudOperations(entries)
 
@@ -1108,86 +848,7 @@ const columns: any = [
   { data: null, defaultContent: '<span class="material-symbols-outlined delete-btn">delete</span>' }
 ]
 
-// Group consecutive acné entries
-const processedEntries = computed(() => {
-  if (!entries.value || entries.value.length === 0) return []
-
-  // Sort entries by date (parse DD/MM/YYYY format)
-  const sortedEntries = [...entries.value].sort((a, b) => {
-    const [dayA, monthA, yearA] = a.date.split('/').map(Number)
-    const [dayB, monthB, yearB] = b.date.split('/').map(Number)
-    const dateA = new Date(yearA, monthA - 1, dayA)
-    const dateB = new Date(yearB, monthB - 1, dayB)
-    return dateA.getTime() - dateB.getTime()
-  })
-
-  const result: any[] = []
-  let i = 0
-
-  while (i < sortedEntries.length) {
-    const entry = sortedEntries[i]
-
-    // If it's not an acné entry, just add it normally
-    if (entry.typeSymptome !== 'Acné') {
-      result.push(entry)
-      i++
-      continue
-    }
-
-    // It's an acné entry - check for consecutive days
-    const acneGroup = [entry]
-    let j = i + 1
-
-    while (j < sortedEntries.length && sortedEntries[j].typeSymptome === 'Acné') {
-      const currentEntry = sortedEntries[j]
-      const previousEntry = sortedEntries[j - 1]
-
-      // Parse dates
-      const [dayPrev, monthPrev, yearPrev] = previousEntry.date.split('/').map(Number)
-      const [dayCurr, monthCurr, yearCurr] = currentEntry.date.split('/').map(Number)
-      const datePrev = new Date(yearPrev, monthPrev - 1, dayPrev)
-      const dateCurr = new Date(yearCurr, monthCurr - 1, dayCurr)
-
-      // Check if dates are consecutive (difference of 1 day)
-      const diffInDays = Math.round((dateCurr.getTime() - datePrev.getTime()) / (1000 * 60 * 60 * 24))
-
-      if (diffInDays === 1) {
-        acneGroup.push(currentEntry)
-        j++
-      } else {
-        break
-      }
-    }
-
-    // If we have multiple consecutive acné days, group them
-    if (acneGroup.length > 1) {
-      const firstDate = acneGroup[0].date
-      const lastDate = acneGroup[acneGroup.length - 1].date
-      const avg = acneGroup.reduce((sum, e) => sum + e.intensite, 0) / acneGroup.length
-      const avgIntensity = avg % 1 === 0 ? avg.toString() : avg.toFixed(1)
-
-      result.push({
-        id: `acne-group-${acneGroup[0].id}`,
-        typeSymptome: 'Acné',
-        date: `${firstDate} - ${lastDate}`,
-        time: `${acneGroup.length} jour${acneGroup.length > 1 ? 's' : ''}`,
-        intensite: avgIntensity,
-        commentaire: acneGroup[0].commentaire,
-        photoUrl: acneGroup[0].photoUrl || '',
-        isGroup: true,
-        groupedEntries: acneGroup,
-        entryIds: acneGroup.map(e => e.id)
-      })
-    } else {
-      // Single acné day, add normally
-      result.push(entry)
-    }
-
-    i = j
-  }
-
-  return result
-})
+const processedEntries = computed(() => entries.value ?? [])
 
 const filteredProcessedEntries = computed(() => {
   if (selectedSymptomeFilter.value === 'Tous') {
@@ -1201,156 +862,6 @@ const filteredNonAcneEntries = computed(() => {
   return filteredProcessedEntries.value.filter((entry: any) => entry.typeSymptome !== 'Acné')
 })
 
-const processedAcneEntries = computed(() => {
-  if (!entriesAcne.value || entriesAcne.value.length === 0) return []
-
-  const sortedEntries = [...entriesAcne.value]
-    .filter((entry: any) => entry.typeSymptome === 'Acné')
-    .sort((a: any, b: any) => parseDisplayDate(a.date).getTime() - parseDisplayDate(b.date).getTime())
-
-  const result: any[] = []
-  let i = 0
-
-  while (i < sortedEntries.length) {
-    const acneGroup = [sortedEntries[i]]
-    let j = i + 1
-
-    while (j < sortedEntries.length) {
-      const prevDate = parseDisplayDate(sortedEntries[j - 1].date)
-      const currDate = parseDisplayDate(sortedEntries[j].date)
-      const diffInDays = Math.round((currDate.getTime() - prevDate.getTime()) / (1000 * 60 * 60 * 24))
-      if (diffInDays !== 1) break
-      acneGroup.push(sortedEntries[j])
-      j++
-    }
-
-    if (acneGroup.length > 1) {
-      const avg = acneGroup.reduce((sum, e) => sum + Number(e.intensite || 0), 0) / acneGroup.length
-      result.push({
-        id: `acne-group-${acneGroup[0].id}`,
-        typeSymptome: 'Acné',
-        date: `${acneGroup[0].date} - ${acneGroup[acneGroup.length - 1].date}`,
-        time: `${acneGroup.length} jour${acneGroup.length > 1 ? 's' : ''}`,
-        intensite: avg % 1 === 0 ? avg.toString() : avg.toFixed(1),
-        commentaire: acneGroup[0].commentaire,
-        photoUrl: acneGroup[0].photoUrl || '',
-        isGroup: true,
-        groupedEntries: acneGroup,
-        entryIds: acneGroup.map(e => e.id)
-      })
-    } else {
-      result.push(acneGroup[0])
-    }
-
-    i = j
-  }
-
-  return result
-})
-
-const acnePhotoEntries = computed(() => {
-  return acneWindowMonths.value.flatMap((month) => month.entries)
-})
-
-const parseDisplayDate = (displayDate: string): Date => {
-  const [day, month, year] = displayDate.split('/').map(Number)
-  return new Date(year, month - 1, day)
-}
-
-const displayedAcneHistoryEntries = computed(() => {
-  if (showFullAcneHistory.value) {
-    return acneHistorySourceEntries.value
-  }
-
-  return acneHistorySourceEntries.value.slice(0, acneHistoryInitialCount)
-})
-
-const acneHistoryEntriesWithoutPhoto = computed(() => {
-  return processedAcneEntries.value.filter((entry: any) => !entry.photoUrl)
-})
-
-const acneHistoryHiddenByPhotoCount = computed(() => {
-  return Math.max(0, processedAcneEntries.value.length - acneHistoryEntriesWithoutPhoto.value.length)
-})
-
-const acneHistorySourceEntries = computed(() => {
-  if (showAcneHistoryWithPhotos.value) {
-    return processedAcneEntries.value
-  }
-
-  return acneHistoryEntriesWithoutPhoto.value
-})
-
-const orderedComparePhotos = computed(() => {
-  return selectedComparePhotoIds.value
-    .map(id => acnePhotoEntries.value.find((entry: any) => entry.id === id))
-    .filter((entry): entry is any => !!entry)
-    .sort((a: any, b: any) => parseDisplayDate(a.date).getTime() - parseDisplayDate(b.date).getTime())
-})
-
-const selectLatestComparePair = () => {
-  const latestEntries = [...acnePhotoEntries.value]
-    .sort((a: any, b: any) => parseDisplayDate(b.date).getTime() - parseDisplayDate(a.date).getTime())
-    .slice(0, 2)
-
-  if (latestEntries.length < 2) {
-    return
-  }
-
-  selectedComparePhotoIds.value = latestEntries.map((entry: any) => entry.id)
-}
-
-const ongoingAcnePeriods = computed(() => {
-  if (!entriesAcne.value || entriesAcne.value.length === 0) return []
-
-  const acneEntries = entriesAcne.value
-    .filter(e => e.typeSymptome === 'Acné')
-    .sort((a, b) => parseDisplayDate(a.date).getTime() - parseDisplayDate(b.date).getTime())
-
-  if (acneEntries.length === 0) return []
-
-  const groups: any[] = []
-  let currentGroup = [acneEntries[0]]
-
-  for (let i = 1; i < acneEntries.length; i++) {
-    const prevDate = parseDisplayDate(acneEntries[i - 1].date)
-    const currentDate = parseDisplayDate(acneEntries[i].date)
-    const diffInDays = Math.round((currentDate.getTime() - prevDate.getTime()) / (1000 * 60 * 60 * 24))
-
-    if (diffInDays === 1) {
-      currentGroup.push(acneEntries[i])
-    } else {
-      if (currentGroup.length > 1) {
-        groups.push([...currentGroup])
-      }
-      currentGroup = [acneEntries[i]]
-    }
-  }
-
-  if (currentGroup.length > 1) {
-    groups.push(currentGroup)
-  }
-
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
-
-  return groups
-    .filter(group => {
-      const lastDate = parseDisplayDate(group[group.length - 1].date)
-      lastDate.setHours(0, 0, 0, 0)
-      return Math.round((today.getTime() - lastDate.getTime()) / (1000 * 60 * 60 * 24)) === 0
-    })
-    .map(group => ({
-      startDate: group[0].date,
-      endDate: group[group.length - 1].date,
-      duration: group.length,
-      entries: group,
-      avgIntensity: (() => {
-        const avg = group.reduce((sum: number, e: any) => sum + Number(e.intensite || 0), 0) / group.length
-        return avg % 1 === 0 ? avg.toString() : avg.toFixed(1)
-      })(),
-    }))
-})
 
 const calendarValue = computed({
   get: () => {
@@ -1390,9 +901,6 @@ const handlePhotoIconClick = (event: Event) => {
 onMounted(() => {
   fetchJoursRegles()
   refetch()
-  refetchAcne()
-  hydrateAcneWindow()
-  refreshAcneMarkedToday()
   nextTick(() => {
     document.addEventListener('click', handlePhotoIconClick)
   })
@@ -1409,22 +917,6 @@ watch(selectedMonthYear, () => {
   fetchJoursRegles()
 })
 
-watch(acnePhotoEntries, (photos) => {
-  const availableIds = new Set(photos.map((photo: any) => photo.id))
-  selectedComparePhotoIds.value = selectedComparePhotoIds.value.filter((id) => availableIds.has(id))
-})
-
-watch(acneMonthYear, () => {
-  refetchAcne()
-  hydrateAcneWindow()
-  showFullAcneHistory.value = false
-  isAcneHistoryExpanded.value = false
-  showAcneHistoryWithPhotos.value = false
-})
-
-watch(entriesAcne, (nextEntries) => {
-  acneWindowEntriesByMonth.value[acneMonthYear.value] = [...nextEntries]
-})
 
 const fetchJoursRegles = async () => {
   try {
@@ -1522,48 +1014,17 @@ const updateAverageCycle = (reglesDates: Date[]) => {
 }
 
 const handleDelete = async (id: string | number) => {
-  // Find the entry to determine if it's a group
-  const entry = processedEntries.value.find(e => e.id === id) ?? processedAcneEntries.value.find(e => e.id === id);
-
-  if (entry?.isGroup && entry.entryIds) {
-    // Delete all entries in the group
-    try {
-      const deletePromises = entry.entryIds.map((entryId: number) =>
-        apiService.deleteSymptomeCycle(entryId)
-      );
-
-      await Promise.all(deletePromises);
-
-      // Remove all from local state
-      entries.value = entries.value.filter(
-        e => !entry.entryIds.includes(e.id)
-      );
-
-      await refreshSymptomesAndAcneViews()
-
-      toast({
-        title: 'Succès',
-        description: 'Période d\'acné supprimée',
-        variant: 'custom',
-      });
-    } catch (error) {
-      console.error('Error deleting group:', error);
-      toast({
-        title: 'Erreur',
-        description: 'Erreur lors de la suppression',
-        variant: 'destructive',
-      });
-    }
-  } else {
-    // Single entry deletion
-    await deleteEntry(id as number, (id) => apiService.deleteSymptomeCycle(id as number), {
-      successMessage: 'Symptôme supprimé avec succès',
-      errorMessage: 'Une erreur est survenue lors de la suppression du symptôme',
-      endpoint: 'SymptomesCycle'
-    });
-
-    await refreshSymptomesAndAcneViews()
+  if (typeof id !== 'number') {
+    return
   }
+
+  await deleteEntry(id, (entryId) => apiService.deleteSymptomeCycle(entryId as number), {
+    successMessage: 'Symptôme supprimé avec succès',
+    errorMessage: 'Une erreur est survenue lors de la suppression du symptôme',
+    endpoint: 'SymptomesCycle'
+  })
+
+  await refreshAfterSymptomeMutation()
 }
 
 // Unified schema that handles both period and single-day entries
@@ -1673,7 +1134,7 @@ const onSubmit = form.handleSubmit(async (values) => {
         firstDayResponse = await apiService.postDonneesSymptomesCycle(firstDayFormData)
 
         if (dates.length === 1) {
-          await refreshSymptomesAndAcneViews()
+          await refreshAfterSymptomeMutation()
           toast({
             title: 'Succès',
             description: `Période ajoutée (${selectedType}, 1 jour)`,
@@ -1713,7 +1174,7 @@ const onSubmit = form.handleSubmit(async (values) => {
         await Promise.all(promises)
       }
 
-      await refreshSymptomesAndAcneViews()
+      await refreshAfterSymptomeMutation()
 
       toast({
         title: 'Succès',
@@ -1738,7 +1199,7 @@ const onSubmit = form.handleSubmit(async (values) => {
       })
 
       if (firstDayResponse) {
-        await refreshSymptomesAndAcneViews()
+        await refreshAfterSymptomeMutation()
       }
     }
   } else {
@@ -1761,7 +1222,7 @@ const onSubmit = form.handleSubmit(async (values) => {
         successMessage: 'Symptôme modifié avec succès',
         errorMessage: 'Une erreur est survenue lors de la modification',
         onSuccess: async () => {
-          await refreshSymptomesAndAcneViews()
+          await refreshAfterSymptomeMutation()
         },
         resetFormData: () => {
           resetSymptomeFormState()
@@ -1783,7 +1244,7 @@ const onSubmit = form.handleSubmit(async (values) => {
         successMessage: 'Symptôme ajouté avec succès',
         errorMessage: 'Une erreur est survenue lors de l\'ajout du symptôme',
         onSuccess: async () => {
-          await refreshSymptomesAndAcneViews()
+          await refreshAfterSymptomeMutation()
         },
         resetFormData: () => {
           resetSymptomeFormState()
@@ -1819,100 +1280,6 @@ const onPeriodMarked = () => {
   fetchJoursRegles()
 }
 
-const extendAcnePeriod = async (period: any) => {
-  const today = format(new Date(), 'yyyy-MM-dd')
-
-  // Get the last entry from the period to use its intensity and comment
-  const lastEntry = period.entries[period.entries.length - 1]
-
-  if (!user?.carnetSanteId) {
-    return
-  }
-
-  const data = buildSymptomeFormData({
-    typeSymptome: 'Acné',
-    carnetSanteId: user.carnetSanteId,
-    dateIso: combineDateTime(today, '12:00').toISOString(),
-    intensite: Number(lastEntry.intensite),
-    commentaire: lastEntry.commentaire
-  })
-
-  try {
-    await apiService.postDonneesSymptomesCycle(data)
-    await refreshSymptomesAndAcneViews()
-
-    toast({
-      title: 'Succès',
-      description: 'Jour ajouté à la période d\'acné',
-      variant: 'custom',
-    })
-  } catch (error) {
-    console.error('Error extending acné period:', error)
-    toast({
-      title: 'Erreur',
-      description: getRequestErrorMessage(error, 'Une erreur est survenue lors de l\'extension de la période'),
-      variant: 'destructive',
-    })
-  }
-}
-
-const openEndPeriodDialog = (period: any) => {
-  selectedPeriodToEnd.value = period
-  // Pre-fill with last date of period
-  const [day, month, year] = period.endDate.split('/').map(Number)
-  endPeriodDate.value = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`
-  showEndPeriodDialog.value = true
-}
-
-const confirmEndPeriod = async () => {
-  if (!selectedPeriodToEnd.value || !endPeriodDate.value) return
-
-  const period = selectedPeriodToEnd.value
-  const endDate = new Date(endPeriodDate.value)
-
-  // Find entries to delete (those after the selected end date)
-  const entriesToDelete = period.entries.filter((entry: any) => {
-    const [day, month, year] = entry.date.split('/').map(Number)
-    const entryDate = new Date(year, month - 1, day)
-    return entryDate > endDate
-  })
-
-  if (entriesToDelete.length === 0) {
-    // No entries to delete, just close
-    showEndPeriodDialog.value = false
-    toast({
-      title: 'Période terminée',
-      description: `Aucune modification nécessaire`,
-      variant: 'custom',
-    })
-    return
-  }
-
-  try {
-    // Delete entries after the end date
-    const deletePromises = entriesToDelete.map((entry: any) =>
-      apiService.deleteSymptomeCycle(entry.id)
-    )
-    await Promise.all(deletePromises)
-
-    // Refresh data
-    await refreshSymptomesAndAcneViews()
-
-    showEndPeriodDialog.value = false
-    toast({
-      title: 'Succès',
-      description: `Période terminée le ${format(endDate, 'dd/MM/yyyy')}`,
-      variant: 'custom',
-    })
-  } catch (error) {
-    console.error('Error ending period:', error)
-    toast({
-      title: 'Erreur',
-      description: 'Impossible de terminer la période',
-      variant: 'destructive',
-    })
-  }
-}
 
 const handleDayClick = async (date: any) => {
   // Convert DateValue to JS Date

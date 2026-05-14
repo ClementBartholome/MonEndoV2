@@ -6,7 +6,7 @@ import { createPinia } from 'pinia';
 import App from './App.vue'
 import router from './router'
 import ApiService from "@/shared/services/apiService";
-import { registerSW } from 'virtual:pwa-register';
+// import { registerSW } from 'virtual:pwa-register';
 
 const pinia = createPinia();
 

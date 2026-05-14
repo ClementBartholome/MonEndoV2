@@ -54,127 +54,127 @@ export default defineConfig({
     },
     plugins: [
         vue(),
-        VitePWA({
-            registerType: 'autoUpdate',
-            devOptions: {
-                enabled: true,
-                type: 'module',
-                navigateFallback: 'index.html'
-            },
-            workbox: {
-                globPatterns: ['**/*.{js,css,html,ico,png,svg,woff,woff2}'],
-                navigateFallback: 'index.html',
-                navigateFallbackDenylist: [/^\/_/, /\/[^/?]+\.[^/]+$/, /@vite/, /\/src\//],
-                runtimeCaching: [
-                    // Stale-While-Revalidate for GET API requests
-                    {
-                        urlPattern: ({ request, url }) => {
-                            return request.method === 'GET' &&
-                                   url.protocol === 'https:' &&
-                                   url.hostname === 'monendoapp.fr' &&
-                                   url.pathname.startsWith('/api/');
-                        },
-                        handler: 'StaleWhileRevalidate',
-                        options: {
-                            cacheName: 'api-cache',
-                            expiration: {
-                                maxEntries: 100,
-                                maxAgeSeconds: 60 * 60 * 24 * 7 // 7 days
-                            },
-                            cacheableResponse: {
-                                statuses: [0, 200]
-                            }
-                        }
-                    },
-                    // NetworkOnly with Background Sync for all write operations (POST, PUT, DELETE, PATCH)
-                    // Single route with single queue to avoid duplicate-queue-name error
-                    {
-                        urlPattern: ({ request, url }) => {
-                            const isWriteMethod = ['POST', 'PUT', 'DELETE', 'PATCH'].includes(request.method);
-                            const isApiUrl = url.protocol === 'https:' &&
-                                           url.hostname === 'monendoapp.fr' &&
-                                           url.pathname.startsWith('/api/');
-                            return isWriteMethod && isApiUrl;
-                        },
-                        handler: 'NetworkOnly',
-                        options: {
-                            backgroundSync: {
-                                name: 'api-queue',
-                                options: {
-                                    maxRetentionTime: 24 * 60 // Retry for up to 24 hours (in minutes)
-                                }
-                            }
-                        }
-                    },
-                    // Stale-While-Revalidate for Google Calendar API
-                    {
-                        urlPattern: ({ request, url }) => {
-                            return request.method === 'GET' &&
-                                   url.protocol === 'https:' &&
-                                   url.hostname === 'www.googleapis.com' &&
-                                   url.pathname.startsWith('/calendar/');
-                        },
-                        handler: 'StaleWhileRevalidate',
-                        options: {
-                            cacheName: 'google-calendar-cache',
-                            expiration: {
-                                maxEntries: 50,
-                                maxAgeSeconds: 60 * 60 * 4 // 4 hours
-                            },
-                            cacheableResponse: {
-                                statuses: [0, 200]
-                            }
-                        }
-                    },
-                    {
-                        urlPattern: ({ request, url }) => {
-                            return request.method === 'GET' && 
-                                   url.protocol === 'https:' && 
-                                   url.hostname === 'fonts.googleapis.com';
-                        },
-                        handler: 'StaleWhileRevalidate',
-                        options: {
-                            cacheName: 'google-fonts-stylesheets',
-                            expiration: {
-                                maxEntries: 10,
-                                maxAgeSeconds: 60 * 60 * 24 * 365 // 1 year
-                            }
-                        }
-                    },
-                    {
-                        urlPattern: ({ request, url }) => {
-                            return request.method === 'GET' && 
-                                   url.protocol === 'https:' && 
-                                   url.hostname === 'fonts.gstatic.com';
-                        },
-                        handler: 'CacheFirst',
-                        options: {
-                            cacheName: 'google-fonts-webfonts',
-                            expiration: {
-                                maxEntries: 30,
-                                maxAgeSeconds: 60 * 60 * 24 * 365 // 1 year
-                            }
-                        }
-                    }
-                ]
-            },
-            manifest: {
-                name: 'MonEndo',
-                short_name: 'MonEndo',
-                description: 'Application de suivi des symptômes de l\'endométriose',
-                theme_color: '#4DBA87',
-                background_color: '#ffffff',
-                display: 'standalone',
-                start_url: '/',
-                icons: [
-                    {
-                        src: 'https://monendoapp.fr/assets/MonEndoIconMobile-Bx93s-ND.jpg',
-                        sizes: '235x235',
-                        type: 'image/png'
-                    }
-                ]
-            }
-        })
+        // VitePWA({
+        //     registerType: 'autoUpdate',
+        //     devOptions: {
+        //         enabled: true,
+        //         type: 'module',
+        //         navigateFallback: 'index.html'
+        //     },
+        //     workbox: {
+        //         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff,woff2}'],
+        //         navigateFallback: 'index.html',
+        //         navigateFallbackDenylist: [/^\/_/, /\/[^/?]+\.[^/]+$/, /@vite/, /\/src\//],
+        //         runtimeCaching: [
+        //             // Stale-While-Revalidate for GET API requests
+        //             {
+        //                 urlPattern: ({ request, url }) => {
+        //                     return request.method === 'GET' &&
+        //                            url.protocol === 'https:' &&
+        //                            url.hostname === 'monendoapp.fr' &&
+        //                            url.pathname.startsWith('/api/');
+        //                 },
+        //                 handler: 'StaleWhileRevalidate',
+        //                 options: {
+        //                     cacheName: 'api-cache',
+        //                     expiration: {
+        //                         maxEntries: 100,
+        //                         maxAgeSeconds: 60 * 60 * 24 * 7 // 7 days
+        //                     },
+        //                     cacheableResponse: {
+        //                         statuses: [0, 200]
+        //                     }
+        //                 }
+        //             },
+        //             // NetworkOnly with Background Sync for all write operations (POST, PUT, DELETE, PATCH)
+        //             // Single route with single queue to avoid duplicate-queue-name error
+        //             {
+        //                 urlPattern: ({ request, url }) => {
+        //                     const isWriteMethod = ['POST', 'PUT', 'DELETE', 'PATCH'].includes(request.method);
+        //                     const isApiUrl = url.protocol === 'https:' &&
+        //                                    url.hostname === 'monendoapp.fr' &&
+        //                                    url.pathname.startsWith('/api/');
+        //                     return isWriteMethod && isApiUrl;
+        //                 },
+        //                 handler: 'NetworkOnly',
+        //                 options: {
+        //                     backgroundSync: {
+        //                         name: 'api-queue',
+        //                         options: {
+        //                             maxRetentionTime: 24 * 60 // Retry for up to 24 hours (in minutes)
+        //                         }
+        //                     }
+        //                 }
+        //             },
+        //             // Stale-While-Revalidate for Google Calendar API
+        //             {
+        //                 urlPattern: ({ request, url }) => {
+        //                     return request.method === 'GET' &&
+        //                            url.protocol === 'https:' &&
+        //                            url.hostname === 'www.googleapis.com' &&
+        //                            url.pathname.startsWith('/calendar/');
+        //                 },
+        //                 handler: 'StaleWhileRevalidate',
+        //                 options: {
+        //                     cacheName: 'google-calendar-cache',
+        //                     expiration: {
+        //                         maxEntries: 50,
+        //                         maxAgeSeconds: 60 * 60 * 4 // 4 hours
+        //                     },
+        //                     cacheableResponse: {
+        //                         statuses: [0, 200]
+        //                     }
+        //                 }
+        //             },
+        //             {
+        //                 urlPattern: ({ request, url }) => {
+        //                     return request.method === 'GET' && 
+        //                            url.protocol === 'https:' && 
+        //                            url.hostname === 'fonts.googleapis.com';
+        //                 },
+        //                 handler: 'StaleWhileRevalidate',
+        //                 options: {
+        //                     cacheName: 'google-fonts-stylesheets',
+        //                     expiration: {
+        //                         maxEntries: 10,
+        //                         maxAgeSeconds: 60 * 60 * 24 * 365 // 1 year
+        //                     }
+        //                 }
+        //             },
+        //             {
+        //                 urlPattern: ({ request, url }) => {
+        //                     return request.method === 'GET' && 
+        //                            url.protocol === 'https:' && 
+        //                            url.hostname === 'fonts.gstatic.com';
+        //                 },
+        //                 handler: 'CacheFirst',
+        //                 options: {
+        //                     cacheName: 'google-fonts-webfonts',
+        //                     expiration: {
+        //                         maxEntries: 30,
+        //                         maxAgeSeconds: 60 * 60 * 24 * 365 // 1 year
+        //                     }
+        //                 }
+        //             }
+        //         ]
+        //     },
+        //     manifest: {
+        //         name: 'MonEndo',
+        //         short_name: 'MonEndo',
+        //         description: 'Application de suivi des symptômes de l\'endométriose',
+        //         theme_color: '#4DBA87',
+        //         background_color: '#ffffff',
+        //         display: 'standalone',
+        //         start_url: '/',
+        //         icons: [
+        //             {
+        //                 src: 'https://monendoapp.fr/assets/MonEndoIconMobile-Bx93s-ND.jpg',
+        //                 sizes: '235x235',
+        //                 type: 'image/png'
+        //             }
+        //         ]
+        //     }
+        // })
     ],
     resolve: {
         alias: {
