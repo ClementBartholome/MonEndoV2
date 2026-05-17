@@ -135,6 +135,16 @@
             </Button>
           </div>
 
+          <div v-if="prolongableSymptomeEntry" class="mb-3 flex items-center justify-between gap-2 rounded-lg border border-amber-200 bg-amber-50/70 px-2.5 py-2">
+            <p class="text-xs text-amber-900 truncate">
+              <strong>{{ prolongableSymptomeEntry.typeSymptome }}</strong> · {{ prolongableSymptomeEntry.date }}
+            </p>
+            <Button size="sm" variant="outline" class="h-8 px-2.5" @click="prolongSymptomeToToday(prolongableSymptomeEntry)">
+              <i class="material-symbols-outlined text-base mr-1">schedule</i>
+              Prolonger
+            </Button>
+          </div>
+
           <div v-if="isLoading" class="flex flex-col space-y-3">
             <Skeleton class="h-[120px] w-full mt-2 rounded-xl"/>
             <Skeleton class="h-[120px] w-full rounded-xl"/>
@@ -442,6 +452,60 @@ const { formatDateDisplay, formatTimeDisplay, combineDateTime, getCurrentMonthYe
 const { toast } = useToast()
 const activeTab = ref<'cycles' | 'symptomes' | 'acne'>('cycles')
 const isAcneOnlyDialog = computed(() => activeTab.value === 'acne')
+
+const duplicateMonthCache = new Map<string, Set<string>>()
+
+const getMonthKey = (year: number, month: number, typeSymptome: string) => {
+  return `${year}-${String(month).padStart(2, '0')}::${typeSymptome}`
+}
+
+const getExistingDatesByTypeForMonth = async (params: {
+  carnetSanteId: number
+  typeSymptome: string
+  year: number
+  month: number
+}): Promise<Set<string>> => {
+  const cacheKey = getMonthKey(params.year, params.month, params.typeSymptome)
+  const cached = duplicateMonthCache.get(cacheKey)
+  if (cached) {
+    return cached
+  }
+
+  const response = await apiService.getSymptomesByMonth(params.carnetSanteId, params.month, params.year)
+  const entries = response
+    .filter((entry: SymptomeCycle) => entry.typeSymptome === params.typeSymptome)
+    .map((entry: SymptomeCycle) => formatDateDisplay(entry.date))
+
+  const dateSet = new Set<string>(entries)
+  duplicateMonthCache.set(cacheKey, dateSet)
+  return dateSet
+}
+
+const isDuplicateSymptomeDate = async (params: {
+  carnetSanteId: number
+  typeSymptome: string
+  date: Date
+}): Promise<boolean> => {
+  const year = params.date.getFullYear()
+  const month = params.date.getMonth() + 1
+  const dateLabel = format(params.date, 'dd/MM/yyyy')
+  const existingDates = await getExistingDatesByTypeForMonth({
+    carnetSanteId: params.carnetSanteId,
+    typeSymptome: params.typeSymptome,
+    year,
+    month,
+  })
+
+  return existingDates.has(dateLabel)
+}
+
+const invalidateDuplicateCacheForType = (typeSymptome: string) => {
+  for (const key of Array.from(duplicateMonthCache.keys())) {
+    if (key.endsWith(`::${typeSymptome}`)) {
+      duplicateMonthCache.delete(key)
+    }
+  }
+}
 
 const getRequestErrorMessage = (error: unknown, fallback: string): string => {
   const anyError = error as any
@@ -848,7 +912,78 @@ const columns: any = [
   { data: null, defaultContent: '<span class="material-symbols-outlined delete-btn">delete</span>' }
 ]
 
-const processedEntries = computed(() => entries.value ?? [])
+const toEntryTimestamp = (entry: any): number => {
+  if (!entry?.date || typeof entry.date !== 'string') {
+    return 0
+  }
+
+  const [day, month, year] = entry.date.split('/').map(Number)
+  const normalizedTime = typeof entry.time === 'string' ? entry.time.replace('h', ':') : '00:00'
+  const [hours, minutes] = normalizedTime.split(':').map(Number)
+
+  return new Date(
+    year,
+    (month || 1) - 1,
+    day || 1,
+    Number.isFinite(hours) ? hours : 0,
+    Number.isFinite(minutes) ? minutes : 0,
+    0,
+    0
+  ).getTime()
+}
+
+const processedEntries = computed(() => {
+  const rawEntries = entries.value ?? []
+  return [...rawEntries].sort((a: any, b: any) => toEntryTimestamp(b) - toEntryTimestamp(a))
+})
+
+const parseDisplayDate = (displayDate: string): Date | null => {
+  if (!displayDate) return null
+  const [day, month, year] = displayDate.split('/').map(Number)
+  if (!day || !month || !year) return null
+  return new Date(year, month - 1, day)
+}
+
+const isSameDay = (left: Date, right: Date): boolean => {
+  return left.getFullYear() === right.getFullYear()
+    && left.getMonth() === right.getMonth()
+    && left.getDate() === right.getDate()
+}
+
+const prolongableSymptomeEntry = computed(() => {
+  const now = new Date()
+  const currentMonthKey = format(now, 'yyyy-MM')
+  if (symptomesMonthYear.value !== currentMonthKey) {
+    return null
+  }
+
+  const yesterday = new Date(now)
+  yesterday.setHours(0, 0, 0, 0)
+  yesterday.setDate(yesterday.getDate() - 1)
+
+  const latestNonAcne = processedEntries.value.find((entry: any) => entry.typeSymptome !== 'Acné')
+  if (!latestNonAcne) {
+    return null
+  }
+
+  const latestDate = parseDisplayDate(latestNonAcne.date)
+  if (!latestDate) {
+    return null
+  }
+
+  latestDate.setHours(0, 0, 0, 0)
+  if (!isSameDay(latestDate, yesterday)) {
+    return null
+  }
+
+  const todayLabel = format(now, 'dd/MM/yyyy')
+  const alreadyLoggedToday = processedEntries.value.some((entry: any) => entry.typeSymptome === latestNonAcne.typeSymptome && entry.date === todayLabel)
+  if (alreadyLoggedToday) {
+    return null
+  }
+
+  return latestNonAcne
+})
 
 const filteredProcessedEntries = computed(() => {
   if (selectedSymptomeFilter.value === 'Tous') {
@@ -1027,6 +1162,54 @@ const handleDelete = async (id: string | number) => {
   await refreshAfterSymptomeMutation()
 }
 
+const prolongSymptomeToToday = async (entry: any) => {
+  if (!user?.carnetSanteId) {
+    return
+  }
+
+  const now = new Date()
+  const duplicate = await isDuplicateSymptomeDate({
+    carnetSanteId: user.carnetSanteId,
+    typeSymptome: entry.typeSymptome,
+    date: now,
+  })
+
+  if (duplicate) {
+    toast({
+      title: 'Déjà enregistré',
+      description: `${entry.typeSymptome} est déjà saisi aujourd'hui.`,
+      variant: 'custom',
+    })
+    return
+  }
+
+  try {
+    const formData = buildSymptomeFormData({
+      typeSymptome: entry.typeSymptome,
+      carnetSanteId: user.carnetSanteId,
+      dateIso: combineDateTime(format(now, 'yyyy-MM-dd'), format(now, 'HH:mm')).toISOString(),
+      intensite: Number(entry.intensite || 5),
+      commentaire: entry.commentaire === 'Pas de commentaire' ? '' : (entry.commentaire || ''),
+    })
+
+    await apiService.postDonneesSymptomesCycle(formData)
+    invalidateDuplicateCacheForType(entry.typeSymptome)
+    await refreshAfterSymptomeMutation()
+
+    toast({
+      title: 'Prolongation enregistrée',
+      description: `${entry.typeSymptome} prolongé jusqu'à aujourd'hui.`,
+      variant: 'custom',
+    })
+  } catch (error) {
+    toast({
+      title: 'Erreur',
+      description: getRequestErrorMessage(error, 'Impossible de prolonger ce symptôme'),
+      variant: 'destructive',
+    })
+  }
+}
+
 // Unified schema that handles both period and single-day entries
 const formSchema = toTypedSchema(z.object({
   typeSymptome: z.string({
@@ -1092,9 +1275,10 @@ watch(showAddDialog, (isOpen) => {
 
 const onSubmit = form.handleSubmit(async (values) => {
   const selectedType = isAcneOnlyDialog.value ? 'Acné' : values.typeSymptome
+  const shouldCreatePeriod = !!values.isPeriod
 
   // Handle period submission (multiple days)
-  if (values.isPeriod) {
+  if (shouldCreatePeriod) {
     const endDate = values.enCours ? new Date() : new Date(values.dateFin ?? '')
     const startDate = new Date(values.dateDebut ?? '')
 
@@ -1119,8 +1303,34 @@ const onSubmit = form.handleSubmit(async (values) => {
     let firstDayResponse = null
 
     try {
+      const duplicateChecks = await Promise.all(
+        dates.map(async (date) => {
+          const duplicate = await isDuplicateSymptomeDate({
+            carnetSanteId: user!.carnetSanteId,
+            typeSymptome: selectedType,
+            date,
+          })
+
+          return { date, duplicate }
+        })
+      )
+
+      const datesToCreate = duplicateChecks.filter((item) => !item.duplicate).map((item) => item.date)
+      const duplicateCount = duplicateChecks.length - datesToCreate.length
+
+      if (datesToCreate.length === 0) {
+        toast({
+          title: 'Aucun ajout nécessaire',
+          description: 'Tous les jours de cette période existent déjà.',
+          variant: 'custom',
+        })
+        showAddDialog.value = false
+        resetSymptomeFormState()
+        return
+      }
+
       if (selectedPhoto.value) {
-        const firstDate = dates[0]
+        const firstDate = datesToCreate[0]
         const firstDayFormData = buildSymptomeFormData({
           typeSymptome: selectedType,
           carnetSanteId: user!.carnetSanteId,
@@ -1133,11 +1343,13 @@ const onSubmit = form.handleSubmit(async (values) => {
 
         firstDayResponse = await apiService.postDonneesSymptomesCycle(firstDayFormData)
 
-        if (dates.length === 1) {
+        if (datesToCreate.length === 1) {
           await refreshAfterSymptomeMutation()
           toast({
             title: 'Succès',
-            description: `Période ajoutée (${selectedType}, 1 jour)`,
+            description: duplicateCount > 0
+              ? `1 jour ajouté, ${duplicateCount} déjà enregistré${duplicateCount > 1 ? 's' : ''}`
+              : `Période ajoutée (${selectedType}, 1 jour)`,
             variant: 'custom',
           })
 
@@ -1146,7 +1358,7 @@ const onSubmit = form.handleSubmit(async (values) => {
           return
         }
 
-        const remainingDates = dates.slice(1)
+        const remainingDates = datesToCreate.slice(1)
         const remainingPromises = remainingDates.map(date => {
           const formData = buildSymptomeFormData({
             typeSymptome: selectedType,
@@ -1160,7 +1372,7 @@ const onSubmit = form.handleSubmit(async (values) => {
 
         await Promise.all(remainingPromises)
       } else {
-        const promises = dates.map(date => {
+        const promises = datesToCreate.map(date => {
           const formData = buildSymptomeFormData({
             typeSymptome: selectedType,
             carnetSanteId: user!.carnetSanteId,
@@ -1175,10 +1387,13 @@ const onSubmit = form.handleSubmit(async (values) => {
       }
 
       await refreshAfterSymptomeMutation()
+      invalidateDuplicateCacheForType(selectedType)
 
       toast({
         title: 'Succès',
-        description: `Période ajoutée (${selectedType}, ${dates.length} jour${dates.length > 1 ? 's' : ''})`,
+        description: duplicateCount > 0
+          ? `Période mise à jour: ${datesToCreate.length} jour${datesToCreate.length > 1 ? 's' : ''} ajouté${datesToCreate.length > 1 ? 's' : ''}, ${duplicateCount} déjà enregistré${duplicateCount > 1 ? 's' : ''}`
+          : `Période ajoutée (${selectedType}, ${datesToCreate.length} jour${datesToCreate.length > 1 ? 's' : ''})`,
         variant: 'custom',
       })
 
@@ -1230,10 +1445,26 @@ const onSubmit = form.handleSubmit(async (values) => {
       })
     } else {
       // Create mode
+      const targetDate = combineDateTime(values.date ?? '', values.time ?? '')
+      const duplicate = await isDuplicateSymptomeDate({
+        carnetSanteId: user!.carnetSanteId,
+        typeSymptome: selectedType,
+        date: targetDate,
+      })
+
+      if (duplicate) {
+        toast({
+          title: 'Entrée déjà enregistrée',
+          description: `Un symptôme "${selectedType}" existe déjà pour le ${format(targetDate, 'dd/MM/yyyy')}.`,
+          variant: 'destructive',
+        })
+        return
+      }
+
       const formData = buildSymptomeFormData({
         typeSymptome: selectedType,
         carnetSanteId: user!.carnetSanteId,
-        dateIso: combineDateTime(values.date ?? '', values.time ?? '').toISOString(),
+        dateIso: targetDate.toISOString(),
         intensite: values.intensite[0],
         commentaire: values.commentaire,
         photo: selectedPhoto.value,
@@ -1245,6 +1476,7 @@ const onSubmit = form.handleSubmit(async (values) => {
         errorMessage: 'Une erreur est survenue lors de l\'ajout du symptôme',
         onSuccess: async () => {
           await refreshAfterSymptomeMutation()
+          invalidateDuplicateCacheForType(selectedType)
         },
         resetFormData: () => {
           resetSymptomeFormState()
