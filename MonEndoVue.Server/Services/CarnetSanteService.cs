@@ -155,7 +155,7 @@ public class CarnetSanteService(AppDbContext context, ILogger<CarnetSanteService
                     .OrderByDescending(t => t.Date)
                     .Select(t => new DonneesTransitViewModel
                     {
-                        TypeEvenement = t.TypeEvenement,
+                        Selles = t.Selles,
                         Date = t.Date
                     })
                     .FirstOrDefault(),
@@ -212,7 +212,7 @@ public class CarnetSanteService(AppDbContext context, ILogger<CarnetSanteService
                     .OrderByDescending(t => t.Date)
                     .Select(t => new DonneesTransitViewModel
                     {
-                        TypeEvenement = t.TypeEvenement,
+                        Selles = t.Selles,
                         Date = t.Date
                     })
                     .FirstOrDefault(),
@@ -288,7 +288,12 @@ public class CarnetSanteService(AppDbContext context, ILogger<CarnetSanteService
                 }).ToList(),
             DonneesTransit = carnetSante.DonneesTransit.Select(t => new DonneesTransitExportViewModel
             {
-                TypeEvenement = t.TypeEvenement,
+                Selles = t.Selles,
+                TypeBristol = t.TypeBristol,
+                CrampesEstomac = t.CrampesEstomac,
+                IntensiteCrampes = t.IntensiteCrampes,
+                Ballonnements = t.Ballonnements,
+                IntensiteBallonnements = t.IntensiteBallonnements,
                 Date = t.Date
             }).ToList(),
             BilansQuotidiens = carnetSante.BilansQuotidiens.Select(b => new BilanQuotidienExportViewModel

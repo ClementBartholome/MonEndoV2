@@ -49,7 +49,10 @@ namespace MonEndoVue.Server.Controllers
         {
             var securityCheck = await this.ValidateCarnetAccess(carnetSanteService, donneesTransit.CarnetSanteId);
             if (securityCheck != null) return securityCheck;
-            
+
+            var (estValide, erreur) = DonneesTransitValidator.Valider(donneesTransit);
+            if (!estValide) return BadRequest(erreur);
+
             context.DonneesTransit.Add(donneesTransit);
             await context.SaveChangesAsync();
 
@@ -71,6 +74,9 @@ namespace MonEndoVue.Server.Controllers
             {
                 return BadRequest();
             }
+
+            var (estValide, erreur) = DonneesTransitValidator.Valider(donneesTransit);
+            if (!estValide) return BadRequest(erreur);
 
             context.Entry(donneesTransit).State = EntityState.Modified;
 
