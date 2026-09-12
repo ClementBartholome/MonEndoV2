@@ -43,7 +43,12 @@ public class DonneesActivitePhysiqueExportViewModel
 
 public class DonneesTransitExportViewModel
 {
-    public string TypeEvenement { get; set; }
+    public bool Selles { get; set; }
+    public int? TypeBristol { get; set; }
+    public bool CrampesEstomac { get; set; }
+    public string? IntensiteCrampes { get; set; }
+    public bool Ballonnements { get; set; }
+    public string? IntensiteBallonnements { get; set; }
     public DateTime Date { get; set; }
 }
 

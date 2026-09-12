@@ -32,7 +32,7 @@ public class DonneesMedicamentHomepageViewModel
 
 public class DonneesTransitViewModel
 {
-    public string TypeEvenement { get; set; }
+    public bool Selles { get; set; }
     public DateTime Date { get; set; }
 }
 
