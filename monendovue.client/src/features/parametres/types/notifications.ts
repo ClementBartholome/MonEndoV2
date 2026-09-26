@@ -5,12 +5,22 @@ export interface AbonnementPush {
     auth: string;
 }
 
-/** Rappel quotidien du bilan : heure locale HH:mm dans un fuseau IANA. */
-export interface PreferenceRappel {
-    rappelActif: boolean;
-    heureRappel: string;
+export type TypeRappel = 'BilanQuotidien' | 'SuiviAcne';
+
+/**
+ * Réglage d'un rappel : heure locale HH:mm dans un fuseau IANA ; jour (0 = dimanche … 6 = samedi) pour un rappel hebdomadaire.
+ * `type` et `estHebdomadaire` sont fournis par l'API.
+ */
+export interface Rappel {
+    type: TypeRappel;
+    estHebdomadaire: boolean;
+    actif: boolean;
+    heure: string;
+    jourSemaine: number | null;
     fuseauHoraire: string;
 }
+
+export type ReglageRappel = Pick<Rappel, 'actif' | 'heure' | 'jourSemaine' | 'fuseauHoraire'>;
 
 export type EtatNotifications =
     | 'chargement'

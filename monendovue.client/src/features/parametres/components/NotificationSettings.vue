@@ -1,17 +1,16 @@
 <script setup lang="ts">
-import { onMounted, ref, watch } from 'vue';
+import { onMounted } from 'vue';
 import { Button } from '@/shared/components/ui/button';
-import { Switch } from '@/shared/components/ui/switch';
 import { Skeleton } from '@/shared/components/ui/skeleton';
 import { useToast } from '@/shared/components/ui/toast';
 import { usePushNotifications } from '@/features/parametres/composables/usePushNotifications';
+import ReglageRappelCard from '@/features/parametres/components/ReglageRappelCard.vue';
+import { presentationRappels } from '@/features/parametres/config/rappels';
+import type { ReglageRappel, TypeRappel } from '@/features/parametres/types/notifications';
 
 const { toast } = useToast();
-const { etat, enCours, preferences, initialiser, activer, desactiver, enregistrerPreferences, envoyerTest } =
+const { etat, enCours, rappels, initialiser, activer, desactiver, enregistrerRappel, envoyerTest } =
     usePushNotifications();
-
-const heure = ref(preferences.value.heureRappel);
-watch(() => preferences.value.heureRappel, (valeur) => { heure.value = valeur; });
 
 onMounted(() => {
   initialiser().catch((error) => {
@@ -42,22 +41,14 @@ const onDesactiver = async () => {
   }
 };
 
-const onRappel = async (rappelActif: boolean) => {
+const onModifierRappel = async (type: TypeRappel, modifications: Partial<ReglageRappel>) => {
   try {
-    await enregistrerPreferences({ rappelActif });
+    await enregistrerRappel(type, modifications);
+    if (modifications.heure || modifications.jourSemaine !== undefined) {
+      toast({ title: 'Rappel enregistré', description: presentationRappels[type].titre, variant: 'custom' });
+    }
   } catch {
     erreur("Le réglage du rappel n'a pas pu être enregistré.");
-  }
-};
-
-const onHeure = async () => {
-  if (!heure.value || heure.value === preferences.value.heureRappel) return;
-  try {
-    await enregistrerPreferences({ heureRappel: heure.value });
-    toast({ title: 'Heure du rappel enregistrée', description: `Rappel à ${heure.value} si ton bilan n'est pas rempli.`, variant: 'custom' });
-  } catch {
-    heure.value = preferences.value.heureRappel;
-    erreur("L'heure du rappel n'a pas pu être enregistrée.");
   }
 };
 
@@ -124,24 +115,14 @@ const onTest = async () => {
   </div>
 
   <div v-else class="flex flex-col gap-4">
-    <label class="flex items-center justify-between gap-4 min-h-11">
-      <span class="text-headline font-medium">Rappel du bilan quotidien</span>
-      <Switch :checked="preferences.rappelActif" :disabled="enCours" @update:checked="onRappel" />
-    </label>
-
-    <label v-if="preferences.rappelActif" class="flex items-center justify-between gap-4">
-      <span class="text-paragraph">Heure du rappel</span>
-      <input
-          v-model="heure"
-          type="time"
-          step="900"
-          class="rounded-md border border-input px-3 py-2 min-h-11"
-          @change="onHeure"
-      >
-    </label>
-    <p v-if="preferences.rappelActif" class="text-sm text-muted-foreground -mt-2">
-      Le rappel n'est envoyé que si ton bilan du jour n'est pas encore rempli.
-    </p>
+    <ReglageRappelCard
+        v-for="rappel in rappels.filter((r) => presentationRappels[r.type])"
+        :key="rappel.type"
+        :rappel="rappel"
+        :presentation="presentationRappels[rappel.type]"
+        :desactive="enCours"
+        @modifier="(modifications) => onModifierRappel(rappel.type, modifications)"
+    />
 
     <div class="flex flex-col sm:flex-row gap-2">
       <Button variant="outline" class="min-h-11" :disabled="enCours" @click="onTest">
