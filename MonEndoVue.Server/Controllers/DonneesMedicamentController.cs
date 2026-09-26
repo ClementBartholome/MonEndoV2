@@ -19,14 +19,14 @@ namespace MonEndoVue.Server.Controllers
         public async Task<ActionResult<DonneesMedicament>> GetDonneesMedicament(int id)
         {
             var donneesMedicament = await context.DonneesMedicaments.FindAsync(id);
-            
-            var securityCheck = await this.ValidateCarnetAccess(carnetSanteService, donneesMedicament?.CarnetSanteId ?? 0);
-            if (securityCheck != null) return securityCheck;
 
             if (donneesMedicament == null)
             {
                 return NotFound();
             }
+
+            var securityCheck = await this.ValidateCarnetAccess(carnetSanteService, donneesMedicament.CarnetSanteId);
+            if (securityCheck != null) return securityCheck;
 
             return donneesMedicament;
         }
@@ -61,29 +61,32 @@ namespace MonEndoVue.Server.Controllers
         [HttpPut("{id:int}")]
         public async Task<IActionResult> PutDonneesMedicament(int id, DonneesMedicament donneesMedicament)
         {
-            var securityCheck = await this.ValidateCarnetAccess(carnetSanteService, donneesMedicament.CarnetSanteId);
-            if (securityCheck != null) return securityCheck;
-            
             if (id != donneesMedicament.Id)
             {
                 return BadRequest();
             }
 
-            context.Entry(donneesMedicament).State = EntityState.Modified;
-
-            try
+            var existing = await context.DonneesMedicaments.FindAsync(id);
+            if (existing == null)
             {
-                await context.SaveChangesAsync();
+                return NotFound();
             }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!DonneesMedicamentExists(id))
-                {
-                    return NotFound();
-                }
 
-                throw;
+            var securityCheck = await this.ValidateCarnetAccess(carnetSanteService, existing.CarnetSanteId);
+            if (securityCheck != null) return securityCheck;
+
+            if (!await MedicamentAppartientAuCarnet(donneesMedicament.MedicamentId, existing.CarnetSanteId))
+            {
+                return BadRequest(new { message = "Traitement introuvable." });
             }
+
+            existing.MedicamentId = donneesMedicament.MedicamentId;
+            existing.NombreComprimes = donneesMedicament.NombreComprimes;
+            existing.Date = donneesMedicament.Date;
+            existing.Commentaire = donneesMedicament.Commentaire;
+
+            await context.SaveChangesAsync();
+            carnetSanteService.InvalidateCache(existing.CarnetSanteId);
 
             return NoContent();
         }
@@ -95,7 +98,15 @@ namespace MonEndoVue.Server.Controllers
         {
             var securityCheck = await this.ValidateCarnetAccess(carnetSanteService, donneesMedicament.CarnetSanteId);
             if (securityCheck != null) return securityCheck;
-            
+
+            if (!await MedicamentAppartientAuCarnet(donneesMedicament.MedicamentId, donneesMedicament.CarnetSanteId))
+            {
+                return BadRequest(new { message = "Traitement introuvable." });
+            }
+
+            // Ne jamais créer de traitement via la navigation envoyée par le client
+            donneesMedicament.Medicament = null;
+
             context.DonneesMedicaments.Add(donneesMedicament);
             await context.SaveChangesAsync();
 
@@ -106,9 +117,9 @@ namespace MonEndoVue.Server.Controllers
             return CreatedAtAction("GetDonneesMedicament", new { id = donneesMedicament.Id }, donneesMedicament);
         }
 
-        private bool DonneesMedicamentExists(int id)
+        private Task<bool> MedicamentAppartientAuCarnet(int medicamentId, int carnetSanteId)
         {
-            return context.DonneesMedicaments.Any(e => e.Id == id);
+            return context.Medicaments.AnyAsync(m => m.Id == medicamentId && m.CarnetSanteId == carnetSanteId);
         }
 
         // DELETE: DonneesMedicament/5

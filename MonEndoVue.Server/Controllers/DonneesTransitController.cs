@@ -64,38 +64,33 @@ namespace MonEndoVue.Server.Controllers
         [HttpPut("{id:int}")]
         public async Task<IActionResult> PutDonneesTransit(int id, DonneesTransit donneesTransit)
         {
-            var securityCheck = await this.ValidateCarnetAccess(carnetSanteService, donneesTransit.CarnetSanteId);
-            if (securityCheck != null) return securityCheck;
-            
             if (id != donneesTransit.Id)
             {
                 return BadRequest();
             }
 
-            context.Entry(donneesTransit).State = EntityState.Modified;
-
-            try
+            var existing = await context.DonneesTransit.FindAsync(id);
+            if (existing == null)
             {
-                await context.SaveChangesAsync();
+                return NotFound();
             }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!DonneesTransitExists(id))
-                {
-                    return NotFound();
-                }
 
-                throw;
-            }
+            var securityCheck = await this.ValidateCarnetAccess(carnetSanteService, existing.CarnetSanteId);
+            if (securityCheck != null) return securityCheck;
+
+            existing.Date = donneesTransit.Date;
+            existing.TypeEvenement = donneesTransit.TypeEvenement;
+            existing.Intensite = donneesTransit.Intensite;
+            existing.Saignement = donneesTransit.Saignement;
+            existing.Douleur = donneesTransit.Douleur;
+            existing.Commentaires = donneesTransit.Commentaires;
+
+            await context.SaveChangesAsync();
+            carnetSanteService.InvalidateCache(existing.CarnetSanteId);
 
             return NoContent();
         }
-        
-        private bool DonneesTransitExists(int id)
-        {
-            return context.DonneesTransit.Any(e => e.Id == id);
-        }
-        
+
         // DELETE: DonneesTransit/5
         [HttpDelete("{id:int}")]
         public async Task<IActionResult> DeleteDonneesTransit(int id)

@@ -21,13 +21,13 @@ namespace MonEndoVue.Server.Controllers
         {
             var donnees = await context.DonneesTraitementNonMedicamenteux.FindAsync(id);
 
-            var securityCheck = await this.ValidateCarnetAccess(carnetSanteService, donnees?.CarnetSanteId ?? 0);
-            if (securityCheck != null) return securityCheck;
-
             if (donnees == null)
             {
                 return NotFound();
             }
+
+            var securityCheck = await this.ValidateCarnetAccess(carnetSanteService, donnees.CarnetSanteId);
+            if (securityCheck != null) return securityCheck;
 
             return donnees;
         }
@@ -61,29 +61,32 @@ namespace MonEndoVue.Server.Controllers
         [HttpPut("{id:int}")]
         public async Task<IActionResult> PutDonneesTraitementNonMedicamenteux(int id, DonneesTraitementNonMedicamenteux donnees)
         {
-            var securityCheck = await this.ValidateCarnetAccess(carnetSanteService, donnees.CarnetSanteId);
-            if (securityCheck != null) return securityCheck;
-
             if (id != donnees.Id)
             {
                 return BadRequest();
             }
 
-            context.Entry(donnees).State = EntityState.Modified;
-
-            try
+            var existing = await context.DonneesTraitementNonMedicamenteux.FindAsync(id);
+            if (existing == null)
             {
-                await context.SaveChangesAsync();
+                return NotFound();
             }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!DonneesTraitementNonMedicamenteuxExists(id))
-                {
-                    return NotFound();
-                }
 
-                throw;
+            var securityCheck = await this.ValidateCarnetAccess(carnetSanteService, existing.CarnetSanteId);
+            if (securityCheck != null) return securityCheck;
+
+            if (!await MedicamentAppartientAuCarnet(donnees.MedicamentId, existing.CarnetSanteId))
+            {
+                return BadRequest(new { message = "Traitement introuvable." });
             }
+
+            existing.MedicamentId = donnees.MedicamentId;
+            existing.Duree = donnees.Duree;
+            existing.Date = donnees.Date;
+            existing.Commentaire = donnees.Commentaire;
+
+            await context.SaveChangesAsync();
+            carnetSanteService.InvalidateCache(existing.CarnetSanteId);
 
             return NoContent();
         }
@@ -94,6 +97,11 @@ namespace MonEndoVue.Server.Controllers
         {
             var securityCheck = await this.ValidateCarnetAccess(carnetSanteService, dto.CarnetSanteId);
             if (securityCheck != null) return securityCheck;
+
+            if (!await MedicamentAppartientAuCarnet(dto.MedicamentId, dto.CarnetSanteId))
+            {
+                return BadRequest(new { message = "Traitement introuvable." });
+            }
 
             var donnees = new DonneesTraitementNonMedicamenteux
             {
@@ -113,9 +121,9 @@ namespace MonEndoVue.Server.Controllers
             return CreatedAtAction("GetDonneesTraitementNonMedicamenteux", new { id = donnees.Id }, donnees);
         }
 
-        private bool DonneesTraitementNonMedicamenteuxExists(int id)
+        private Task<bool> MedicamentAppartientAuCarnet(int medicamentId, int carnetSanteId)
         {
-            return context.DonneesTraitementNonMedicamenteux.Any(e => e.Id == id);
+            return context.Medicaments.AnyAsync(m => m.Id == medicamentId && m.CarnetSanteId == carnetSanteId);
         }
 
         // DELETE: DonneesTraitementNonMedicamenteux/5

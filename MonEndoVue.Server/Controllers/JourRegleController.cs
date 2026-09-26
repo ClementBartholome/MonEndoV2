@@ -29,15 +29,15 @@ public class JourRegleController(AppDbContext context, CarnetSanteService carnet
     public async Task<ActionResult<JourRegle>> Get(int id)
     {
         var jourRegle = await context.JourRegles.FirstOrDefaultAsync(a => a.Id == id);
-        
-        var securityCheck = await this.ValidateCarnetAccess(carnetSanteService, jourRegle?.CarnetSanteId ?? 0);
-        if (securityCheck != null) return securityCheck;
-        
+
         if (jourRegle == null)
         {
             return NotFound();
         }
-        
+
+        var securityCheck = await this.ValidateCarnetAccess(carnetSanteService, jourRegle.CarnetSanteId);
+        if (securityCheck != null) return securityCheck;
+
         return jourRegle;
     }
 
@@ -60,12 +60,18 @@ public class JourRegleController(AppDbContext context, CarnetSanteService carnet
     [HttpPut]
     public async Task<ActionResult<JourRegle>> Put(JourRegle jourRegle)
     {
-        var securityCheck = await this.ValidateCarnetAccess(carnetSanteService, jourRegle.CarnetSanteId);
+        var existing = await context.JourRegles.FirstOrDefaultAsync(j => j.Id == jourRegle.Id);
+        if (existing == null) return NotFound();
+
+        var securityCheck = await this.ValidateCarnetAccess(carnetSanteService, existing.CarnetSanteId);
         if (securityCheck != null) return securityCheck;
-        
-        context.Entry(jourRegle).State = EntityState.Modified;
+
+        existing.Date = jourRegle.Date;
         await context.SaveChangesAsync();
-        return jourRegle;
+
+        carnetSanteService.InvalidateCache(existing.CarnetSanteId);
+
+        return existing;
     }
 
     [HttpDelete("{id:int}")]

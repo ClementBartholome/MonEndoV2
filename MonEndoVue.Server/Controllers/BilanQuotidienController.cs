@@ -18,14 +18,14 @@ namespace MonEndoVue.Server.Controllers
         public async Task<ActionResult<BilanQuotidien>> GetBilanQuotidien(int id)
         {
             var bilanQuotidien = await context.BilansQuotidiens.FindAsync(id);
-            
-            var securityCheck = await this.ValidateCarnetAccess(carnetSanteService, bilanQuotidien?.CarnetSanteId ?? 0);
-            if (securityCheck != null) return securityCheck;
 
             if (bilanQuotidien == null)
             {
                 return NotFound();
             }
+
+            var securityCheck = await this.ValidateCarnetAccess(carnetSanteService, bilanQuotidien.CarnetSanteId);
+            if (securityCheck != null) return securityCheck;
 
             return bilanQuotidien;
         }
@@ -71,29 +71,41 @@ namespace MonEndoVue.Server.Controllers
             var (transitValide, erreurTransit) = BilanTransitValidator.Valider(bilanQuotidien);
             if (!transitValide) return BadRequest(new { message = erreurTransit });
 
-            var securityCheck = await this.ValidateCarnetAccess(carnetSanteService, bilanQuotidien.CarnetSanteId);
-            if (securityCheck != null) return securityCheck;
-            
             if (id != bilanQuotidien.Id)
             {
                 return BadRequest();
             }
 
-            context.Entry(bilanQuotidien).State = EntityState.Modified;
-
-            try
+            var existing = await context.BilansQuotidiens.FindAsync(id);
+            if (existing == null)
             {
-                await context.SaveChangesAsync();
+                return NotFound();
             }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!BilanQuotidienExists(id))
-                {
-                    return NotFound();
-                }
 
-                throw;
-            }
+            var securityCheck = await this.ValidateCarnetAccess(carnetSanteService, existing.CarnetSanteId);
+            if (securityCheck != null) return securityCheck;
+
+            existing.Date = bilanQuotidien.Date;
+            existing.Mood = bilanQuotidien.Mood;
+            existing.StressPro = bilanQuotidien.StressPro;
+            existing.StressPerso = bilanQuotidien.StressPerso;
+            existing.Fatigue = bilanQuotidien.Fatigue;
+            existing.Pas = bilanQuotidien.Pas;
+            existing.DouleurMoyenne = bilanQuotidien.DouleurMoyenne;
+            existing.Hydratation = bilanQuotidien.Hydratation;
+            existing.Gluten = bilanQuotidien.Gluten;
+            existing.Lactose = bilanQuotidien.Lactose;
+            existing.Grignotage = bilanQuotidien.Grignotage;
+            existing.Commentaire = bilanQuotidien.Commentaire;
+            existing.Selles = bilanQuotidien.Selles;
+            existing.TypeBristol = bilanQuotidien.TypeBristol;
+            existing.CrampesEstomac = bilanQuotidien.CrampesEstomac;
+            existing.IntensiteCrampes = bilanQuotidien.IntensiteCrampes;
+            existing.Ballonnements = bilanQuotidien.Ballonnements;
+            existing.IntensiteBallonnements = bilanQuotidien.IntensiteBallonnements;
+
+            await context.SaveChangesAsync();
+            carnetSanteService.InvalidateCache(existing.CarnetSanteId);
 
             return NoContent();
         }
@@ -115,11 +127,6 @@ namespace MonEndoVue.Server.Controllers
             return CreatedAtAction("GetBilanQuotidien", new { id = bilanQuotidien.Id }, bilanQuotidien);
         }
 
-        private bool BilanQuotidienExists(int id)
-        {
-            return context.BilansQuotidiens.Any(e => e.Id == id);
-        }
-        
         // DELETE: BilanQuotidien/5
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteBilanQuotidien(int id)

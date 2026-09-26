@@ -19,14 +19,14 @@ namespace MonEndoVue.Server.Controllers
         public async Task<ActionResult<DonneesDouleur>> GetDonneesDouleur(int id)
         {
             var donneesDouleur = await context.DonneesDouleurs.FindAsync(id);
-            
-            var securityCheck = await this.ValidateCarnetAccess(carnetSanteService, donneesDouleur?.CarnetSanteId ?? 0);
-            if (securityCheck != null) return securityCheck;
 
             if (donneesDouleur == null)
             {
                 return NotFound();
             }
+
+            var securityCheck = await this.ValidateCarnetAccess(carnetSanteService, donneesDouleur.CarnetSanteId);
+            if (securityCheck != null) return securityCheck;
 
             return donneesDouleur;
         }
