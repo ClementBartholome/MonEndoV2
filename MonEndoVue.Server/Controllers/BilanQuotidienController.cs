@@ -68,6 +68,9 @@ namespace MonEndoVue.Server.Controllers
         [HttpPut("{id}")]
         public async Task<IActionResult> PutBilanQuotidien(int id, BilanQuotidien bilanQuotidien)
         {
+            var (transitValide, erreurTransit) = BilanTransitValidator.Valider(bilanQuotidien);
+            if (!transitValide) return BadRequest(new { message = erreurTransit });
+
             var securityCheck = await this.ValidateCarnetAccess(carnetSanteService, bilanQuotidien.CarnetSanteId);
             if (securityCheck != null) return securityCheck;
             
@@ -100,6 +103,9 @@ namespace MonEndoVue.Server.Controllers
         [HttpPost]
         public async Task<ActionResult<BilanQuotidien>> PostBilanQuotidien(BilanQuotidien bilanQuotidien)
         {
+            var (transitValide, erreurTransit) = BilanTransitValidator.Valider(bilanQuotidien);
+            if (!transitValide) return BadRequest(new { message = erreurTransit });
+
             var securityCheck = await this.ValidateCarnetAccess(carnetSanteService, bilanQuotidien.CarnetSanteId);
             if (securityCheck != null) return securityCheck;
             

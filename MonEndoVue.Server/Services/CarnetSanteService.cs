@@ -303,7 +303,13 @@ public class CarnetSanteService(AppDbContext context, ILogger<CarnetSanteService
                 Hydratation = b.Hydratation,
                 StressMoyenne = b.StressPro + b.StressPerso > 0
                     ? (b.StressPro + b.StressPerso) / 2.0
-                    : 0
+                    : 0,
+                Selles = b.Selles,
+                TypeBristol = b.TypeBristol,
+                CrampesEstomac = b.CrampesEstomac,
+                IntensiteCrampes = b.IntensiteCrampes,
+                Ballonnements = b.Ballonnements,
+                IntensiteBallonnements = b.IntensiteBallonnements
             }).ToList()
         };
     }
