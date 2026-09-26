@@ -26,7 +26,7 @@ const semaine = computed(() => emotionDeLaSemaine(props.bilans));
             <li
                 v-for="code in semaine.principales"
                 :key="code"
-                class="flex items-center gap-1 rounded-full bg-button/10 px-3 py-1 text-sm text-headline"
+                class="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-pink-100 text-pink-700 text-xs"
             >
               <span aria-hidden="true">{{ presentationEmotion[code].emoji }}</span>{{ presentationEmotion[code].libelle }}
             </li>

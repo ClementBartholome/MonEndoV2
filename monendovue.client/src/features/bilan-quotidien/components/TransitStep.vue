@@ -42,7 +42,7 @@ const choisirIntensite = (champ: ChampIntensite, intensite: IntensiteTransit) =>
 <template>
   <div class="flex flex-col gap-6">
     <h2 class="text-2xl font-bold flex items-center justify-center">
-      <i class="material-symbols-outlined mr-2">gastroenterology</i>Transit
+      <i class="material-symbols-outlined mr-2 text-[3.2rem] leading-none">gastroenterology</i>Transit
     </h2>
     <p class="text-sm text-paragraph text-center -mt-4">
       Toutes les questions sont facultatives.

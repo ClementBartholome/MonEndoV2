@@ -21,7 +21,7 @@ const ancienne = computed(() => (props.bilan.mood ? anciennesHumeurs[props.bilan
       <li
           v-for="emotion in emotions"
           :key="emotion.code"
-          class="flex items-center gap-1 rounded-full bg-button/10 px-3 py-1 text-sm font-medium text-headline"
+          class="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-pink-100 text-pink-700 text-xs"
       >
         <span aria-hidden="true">{{ emotion.emoji }}</span>{{ emotion.libelle }}
       </li>
