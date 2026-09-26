@@ -14,7 +14,7 @@ const ancienne = computed(() => (props.bilan.mood ? anciennesHumeurs[props.bilan
 <template>
   <div class="bg-white rounded-xl border border-gray-100 p-3">
     <p class="text-xs text-muted-foreground flex items-center gap-1">
-      <i class="material-symbols-outlined text-base">{{ !emotions.length && ancienne ? ancienne.icone : 'mood' }}</i>
+      <i class="material-symbols-outlined text-2xl leading-6">{{ !emotions.length && ancienne ? ancienne.icone : 'mood' }}</i>
       {{ emotions.length ? 'Émotions' : 'Humeur' }}
     </p>
     <ul v-if="emotions.length" class="flex flex-wrap gap-2 mt-2">
