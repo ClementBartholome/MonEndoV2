@@ -32,7 +32,6 @@ const googleApiService = {
         return response.data;
     },
     async getThreeNextEvents() {
-        localStorage.removeItem('events');
         let pageToken;
         let allEvents: Item[] = [];
         const now = new Date().toISOString();
@@ -44,7 +43,6 @@ const googleApiService = {
         } while (pageToken);
 
         allEvents = allEvents.filter(event => event.start.dateTime).sort((a, b) => Date.parse(a.start.dateTime!) - Date.parse(b.start.dateTime!));
-        localStorage.setItem('events', JSON.stringify(allEvents));
         return allEvents.slice(0, 3);
     }
 }

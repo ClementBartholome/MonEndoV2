@@ -14,3 +14,13 @@ createApp(App).use(router).use(pinia).use(OneSignalVuePlugin, {
 }).mount('#app')
 
 ApiService.init(pinia);
+
+// Nettoyage ponctuel des données laissées par l'ancien mode hors ligne (abandonné) :
+// base IndexedDB contenant des données de santé et cache localStorage des événements.
+// À retirer après le 2026-12-31.
+try {
+    indexedDB?.deleteDatabase('MonEndoOffline');
+    localStorage.removeItem('events');
+} catch {
+    // Stockage indisponible (navigation privée, etc.) : rien à nettoyer.
+}

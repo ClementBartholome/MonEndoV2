@@ -1,16 +1,14 @@
 import { ref, watch, onMounted, type Ref } from 'vue';
 import { useDateTimeFormat } from './useDateTimeFormat';
-import offlineStorage from '@/shared/services/offlineStorage';
 
 interface UseMonthDataOptions<T> {
   fetchFunction: (month: number, year: number) => Promise<T[]>;
   transformData?: (data: T[]) => any[];
   immediate?: boolean;
-  dataType?: string;
 }
 
 export function useMonthData<T = any>(options: UseMonthDataOptions<T>) {
-  const { fetchFunction, transformData, immediate = true, dataType } = options;
+  const { fetchFunction, transformData, immediate = true } = options;
   const { getCurrentMonthYear } = useDateTimeFormat();
 
   const selectedMonthYear = ref(getCurrentMonthYear());
@@ -22,36 +20,14 @@ export function useMonthData<T = any>(options: UseMonthDataOptions<T>) {
     isLoading.value = true;
     error.value = null;
 
-    if (dataType) {
-      const cachedData = await offlineStorage.getMonthData(dataType, month, year);
-      if (cachedData) {
-        entries.value = cachedData;
-        isLoading.value = false;
-      }
-    }
-
-    if (navigator.onLine) {
-      try {
-        const data = await fetchFunction(month, year);
-        const processedData = transformData ? transformData(data) : data;
-        entries.value = processedData;
-
-        if (dataType) {
-          await offlineStorage.saveMonthData(dataType, month, year, processedData);
-        }
-      } catch (err) {
-        error.value = err as Error;
-        console.error('Error fetching month data:', err);
-        if (!dataType || entries.value.length === 0) {
-          entries.value = [];
-        }
-      } finally {
-        isLoading.value = false;
-      }
-    } else if (!dataType) {
+    try {
+      const data = await fetchFunction(month, year);
+      entries.value = transformData ? transformData(data) : data;
+    } catch (err) {
+      error.value = err as Error;
+      console.error('Error fetching month data:', err);
       entries.value = [];
-      isLoading.value = false;
-    } else {
+    } finally {
       isLoading.value = false;
     }
   };
