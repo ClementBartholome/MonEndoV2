@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using MonEndoVue.Server.Controllers;
+using MonEndoVue.Server.Dto;
 using MonEndoVue.Server.Models;
 using MonEndoVue.Server.Tests.Support;
 
@@ -58,6 +59,49 @@ public class DonneesDouleursControllerCloisonnementTests : IDisposable
         var resultat = await _controller.GetDonneesDouleur(douleur.Id);
 
         Assert.Same(douleur, resultat.Value);
+    }
+
+    private static DonneesDouleurDto Modification() => new()
+    {
+        TypeDouleur = "Lombaire",
+        Intensite = 8,
+        Date = new DateTime(2026, 9, 2),
+        Commentaire = "Modifié",
+    };
+
+    [Fact]
+    public async Task Put_Inexistante_RetourneNotFound()
+    {
+        var resultat = await _controller.PutDonneesDouleur(999, Modification(), CancellationToken.None);
+
+        Assert.IsType<NotFoundResult>(resultat);
+    }
+
+    [Fact]
+    public async Task Put_DouleurDUneAutreUtilisatrice_RetourneForbidSansModifier()
+    {
+        var douleur = Existante(CarnetDeTest.AutreCarnetSanteId);
+
+        var resultat = await _controller.PutDonneesDouleur(douleur.Id, Modification(), CancellationToken.None);
+
+        Assert.IsType<ForbidResult>(resultat);
+        Assert.Equal("Pelvienne", douleur.TypeDouleur);
+        Assert.Equal(5, douleur.Intensite);
+    }
+
+    [Fact]
+    public async Task Put_SaDouleur_CopieLesChampsSansChangerDeCarnet()
+    {
+        var douleur = Existante(CarnetDeTest.CarnetSanteId);
+
+        var resultat = await _controller.PutDonneesDouleur(douleur.Id, Modification(), CancellationToken.None);
+
+        Assert.IsType<NoContentResult>(resultat);
+        Assert.Equal(CarnetDeTest.CarnetSanteId, douleur.CarnetSanteId);
+        Assert.Equal("Lombaire", douleur.TypeDouleur);
+        Assert.Equal(8, douleur.Intensite);
+        Assert.Equal(new DateTime(2026, 9, 2), douleur.Date);
+        Assert.Equal("Modifié", douleur.Commentaire);
     }
 
     public void Dispose() => _carnet.Dispose();
