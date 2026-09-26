@@ -49,32 +49,13 @@ namespace MonEndoVue.Server
             builder.Host.UseSerilog();
 
             // Add services to the container.
-            if (builder.Environment.IsDevelopment())
-            {
-                builder.Services.AddDbContext<AppDbContext>(options =>
-                    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
-            }
-            else
-            {
-                builder.Services.AddDbContext<AppDbContext>(options =>
-                    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
-            }
+            builder.Services.AddDbContext<AppDbContext>(options =>
+                options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
             builder.Services.AddScoped<CarnetSanteService>();
             builder.Services.AddScoped<TokenService>();
             builder.Services.AddScoped<DeviceTokenService>();
             builder.Services.AddScoped<NotificationService>();
-            // builder.Services.AddHostedService<NotificationService>(serviceProvider =>
-            // {
-            //     var logger = serviceProvider.GetRequiredService<ILogger<NotificationService>>();
-            //     var httpClientFactory = serviceProvider.GetRequiredService<IHttpClientFactory>();
-            //     return new NotificationService(serviceProvider, logger, httpClientFactory);
-            // });
-            // builder.Services.AddHttpClient("PingClient", client =>
-            // {
-            //     client.Timeout = TimeSpan.FromMinutes(2);
-            // });
-
 
             builder.Services.AddCors(options =>
             {
@@ -213,31 +194,9 @@ namespace MonEndoVue.Server
                     .ForJob(notificationJobKey)
                     .WithIdentity("SendPushNotifications-trigger")
                     .WithCronSchedule("0 00 21 * * ?"));
-
-                // // Job du ping (toutes les 30 minutes)
-                // var pingJobKey = JobKey.Create("PingApplication");
-                // q.AddJob<PingJob>(opts => opts.WithIdentity(pingJobKey));
-                // q.AddTrigger(opts => opts
-                //     .ForJob(pingJobKey)
-                //     .WithIdentity("PingApplication-trigger")
-                //     .WithSimpleSchedule(s => s
-                //         .WithIntervalInMinutes(30)
-                //         .RepeatForever()));
             });
 
             builder.Services.AddQuartzHostedService(opts => { opts.WaitForJobsToComplete = true; });
-
-            // builder.Services.AddHttpClient("PingClient", client =>
-            // {
-            //     client.Timeout = TimeSpan.FromMinutes(2);
-            // });
-
-            builder.Services.AddHttpClient("OneSignalClient", client =>
-            {
-                client.BaseAddress = new Uri("https://onesignal.com");
-                client.DefaultRequestHeaders.Add("Authorization", $"Basic {builder.Configuration["OneSignal:ApiKey"]}");
-                client.DefaultRequestHeaders.Add("Content-Type", "application/json");
-            });
 
             builder.Services.AddSwaggerGen(option =>
             {
@@ -277,7 +236,6 @@ namespace MonEndoVue.Server
             {
                 using var scope = app.Services.CreateScope();
                 var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-                // await dbContext.Database.MigrateAsync();
 
                 await RootUserSeeder.Seed(scope, builder.Configuration, dbContext);
             }
