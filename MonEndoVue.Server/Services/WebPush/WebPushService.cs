@@ -1,4 +1,5 @@
 using System.Net;
+using System.Security.Cryptography;
 using System.Text.Json;
 using Lib.Net.Http.WebPush;
 using Lib.Net.Http.WebPush.Authentication;
@@ -25,17 +26,25 @@ public class WebPushService : IEnvoiPush
         var config = options.Value;
         if (!config.EstConfiguree)
         {
-            return;
+            return; // raison journalisée au démarrage (Program.cs)
         }
 
-        _client = new PushServiceClient(httpClient)
+        // Une clé mal formée ne doit pas faire échouer la résolution du service, donc toutes les routes Notifications/*.
+        try
         {
-            DefaultAuthentication = new VapidAuthentication(config.PublicKey, config.PrivateKey)
+            _client = new PushServiceClient(httpClient)
             {
-                Subject = config.Subject,
-            },
-            DefaultAuthenticationScheme = VapidAuthenticationScheme.Vapid,
-        };
+                DefaultAuthentication = new VapidAuthentication(config.PublicKey, config.PrivateKey)
+                {
+                    Subject = config.Subject,
+                },
+                DefaultAuthenticationScheme = VapidAuthenticationScheme.Vapid,
+            };
+        }
+        catch (Exception ex) when (ex is ArgumentException or FormatException or CryptographicException)
+        {
+            _logger.LogWarning("Web Push disabled: VAPID keys rejected ({ExceptionType})", ex.GetType().Name);
+        }
     }
 
     public static string SerialiserMessage(MessagePush message) =>

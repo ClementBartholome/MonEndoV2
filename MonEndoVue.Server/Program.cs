@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using MonEndoVue.Server.Data;
@@ -227,6 +228,12 @@ namespace MonEndoVue.Server
             builder.Services.AddSingleton<IConfiguration>(builder.Configuration);
 
             var app = builder.Build();
+
+            var erreurWebPush = app.Services.GetRequiredService<IOptions<WebPushOptions>>().Value.Erreur();
+            if (erreurWebPush is not null)
+            {
+                app.Logger.LogWarning("Web Push notifications disabled: {Raison}", erreurWebPush);
+            }
 
             if (app.Environment.IsDevelopment())
             {
