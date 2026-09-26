@@ -2,6 +2,13 @@
 # Aucun secret ici : ils vivent uniquement sur le VPS (.env écrit par la CI, dossier config/).
 name: monendovue-prod
 
+# Rotation des logs console des conteneurs (sinon le fichier json de Docker grossit sans limite)
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
 services:
   # Base de données SQL Server (port interne seulement)
   db:
@@ -11,7 +18,8 @@ services:
       - ACCEPT_EULA=Y
       - SA_PASSWORD=${DB_PASSWORD:?DB_PASSWORD absent du fichier .env}
       - MSSQL_PID=Express
-      - MSSQL_MEMORY_LIMIT_MB=1024
+      # VPS de 2 Go partagé avec d'autres conteneurs : SQL Server plafonné pour éviter la swap
+      - MSSQL_MEMORY_LIMIT_MB=768
     expose:
       - "1433"
     volumes:
@@ -20,10 +28,11 @@ services:
     networks:
       - monendo_network
     restart: unless-stopped
+    logging: *logging
     deploy:
       resources:
         limits:
-          memory: 1.5G
+          memory: 1G
         reservations:
           memory: 512M
 
@@ -50,6 +59,7 @@ services:
     networks:
       - monendo_network
     restart: unless-stopped
+    logging: *logging
     # curl est absent de l'image aspnet : ce healthcheck est toujours en échec, se fier au contrôle /health de la CI
     healthcheck:
       test: [ "CMD-SHELL", "curl -f http://localhost:80/ || exit 1" ]
@@ -72,6 +82,26 @@ services:
     networks:
       - monendo_network
     restart: unless-stopped
+    logging: *logging
+
+  # Consultation des logs des conteneurs MonEndo dans le navigateur (lecture seule).
+  # Accessible uniquement depuis le VPS : tunnel SSH, voir deploy/README.md.
+  dozzle:
+    image: amir20/dozzle:latest
+    container_name: monendo_dozzle_prod
+    environment:
+      - DOZZLE_FILTER=name=monendo_
+      - DOZZLE_NO_ANALYTICS=true
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    ports:
+      - "127.0.0.1:8888:8080"
+    restart: unless-stopped
+    logging: *logging
+    deploy:
+      resources:
+        limits:
+          memory: 96M
 
 volumes:
   sqlserver_data:
