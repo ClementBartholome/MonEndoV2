@@ -214,6 +214,8 @@ namespace MonEndoVue.Server
 
             builder.Services.AddSignalR();
 
+            builder.Services.AddHealthChecks();
+
             builder.Services.AddSingleton<IConfiguration>(builder.Configuration);
 
             var app = builder.Build();
@@ -282,6 +284,8 @@ namespace MonEndoVue.Server
             app.UseAuthorization();
             app.UseRateLimiter();
             app.MapControllers().RequireRateLimiting("api");
+            // Sonde de disponibilité utilisée par le pipeline de déploiement (anonyme, hors rate limit).
+            app.MapHealthChecks("/health").AllowAnonymous();
             app.MapFallbackToFile("/index.html");
             await app.RunAsync();
         }
