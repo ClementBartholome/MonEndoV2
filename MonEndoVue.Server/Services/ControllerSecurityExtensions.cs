@@ -17,7 +17,7 @@ namespace MonEndoVue.Server.Services
             CarnetSanteService carnetSanteService, 
             int carnetSanteId)
         {
-            var currentUserId = (ClaimsPrincipal.Current ?? controller.User).GetCurrentUserId();
+            var currentUserId = controller.User.GetCurrentUserId();
             
             if (string.IsNullOrEmpty(currentUserId))
                 return controller.Unauthorized();
@@ -26,7 +26,7 @@ namespace MonEndoVue.Server.Services
             {
                 var userCarnet = await carnetSanteService.GetCarnetSanteByUserId(currentUserId);
                 
-                return carnetSanteId != userCarnet.Id ? controller.Forbid("Accès non autorisé") : null; // Accès autorisé
+                return carnetSanteId != userCarnet.Id ? controller.Forbid() : null; // Accès autorisé
             }
             catch
             {

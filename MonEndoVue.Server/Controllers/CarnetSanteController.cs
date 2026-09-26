@@ -29,7 +29,7 @@ namespace MonEndoVue.Server.Controllers
 
             // Vérifier que l'utilisateur demande ses propres données
             if (userId != currentUserId)
-                return Forbid("Accès non autorisé");
+                return Forbid();
 
             try
             {
@@ -54,7 +54,7 @@ namespace MonEndoVue.Server.Controllers
                 // Vérifier que l'utilisateur demande ses propres données
                 var currentUser = await context.Users.FirstOrDefaultAsync(u => u.Id == currentUserId);
                 if (currentUser?.UserName != username)
-                    return Forbid("Accès non autorisé");
+                    return Forbid();
 
                 var carnet = await carnetSanteService.GetCarnetSanteByUsername(username);
                 return Ok(carnet);
@@ -79,7 +79,7 @@ namespace MonEndoVue.Server.Controllers
             }
             catch (UnauthorizedAccessException)
             {
-                return Forbid("Accès non autorisé à ce carnet de santé");
+                return Forbid();
             }
             catch (Exception ex)
             {
@@ -101,7 +101,7 @@ namespace MonEndoVue.Server.Controllers
             }
             catch (UnauthorizedAccessException)
             {
-                return Forbid("Accès non autorisé à ce carnet de santé");
+                return Forbid();
             }
             catch (Exception ex)
             {
@@ -143,7 +143,7 @@ namespace MonEndoVue.Server.Controllers
             }
             catch (UnauthorizedAccessException)
             {
-                return Forbid("Accès non autorisé à ce carnet de santé");
+                return Forbid();
             }
             catch (Exception ex)
             {
