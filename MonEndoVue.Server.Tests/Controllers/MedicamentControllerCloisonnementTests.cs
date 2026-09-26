@@ -5,7 +5,7 @@ using MonEndoVue.Server.Tests.Support;
 
 namespace MonEndoVue.Server.Tests.Controllers;
 
-public class MedicamentControllerCloisonnementTests : IDisposable
+public sealed class MedicamentControllerCloisonnementTests : IDisposable
 {
     private readonly CarnetDeTest _carnet = new();
     private readonly MedicamentController _controller;

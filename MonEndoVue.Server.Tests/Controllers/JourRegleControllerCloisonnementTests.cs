@@ -6,7 +6,7 @@ using MonEndoVue.Server.Tests.Support;
 
 namespace MonEndoVue.Server.Tests.Controllers;
 
-public class JourRegleControllerCloisonnementTests : IDisposable
+public sealed class JourRegleControllerCloisonnementTests : IDisposable
 {
     private readonly CarnetDeTest _carnet = new();
     private readonly JourRegleController _controller;

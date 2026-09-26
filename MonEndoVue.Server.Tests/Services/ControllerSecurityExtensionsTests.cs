@@ -8,7 +8,7 @@ using MonEndoVue.Server.Tests.Support;
 
 namespace MonEndoVue.Server.Tests.Services;
 
-public class ControllerSecurityExtensionsTests : IDisposable
+public sealed class ControllerSecurityExtensionsTests : IDisposable
 {
     private readonly CarnetDeTest _carnet = new();
 
