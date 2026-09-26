@@ -53,6 +53,16 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : IdentityDbCo
             .WithMany(c => c.BilansQuotidiens)
             .HasForeignKey(b => b.CarnetSanteId)
             .OnDelete(DeleteBehavior.Cascade);
+
+        // Les émotions n'existent qu'au sein de leur bilan : type possédé, chargé et supprimé avec lui.
+        modelBuilder.Entity<BilanQuotidien>().OwnsMany(b => b.Emotions, emotion =>
+        {
+            emotion.ToTable("EmotionsBilan");
+            emotion.WithOwner().HasForeignKey("BilanQuotidienId");
+            emotion.HasKey(e => e.Id);
+            emotion.Property(e => e.Emotion).HasConversion<string>().HasMaxLength(32);
+            emotion.HasIndex("BilanQuotidienId", nameof(EmotionBilan.Emotion)).IsUnique();
+        });
         
         modelBuilder.Entity<SymptomeCycle>()
             .HasOne<CarnetSante>()

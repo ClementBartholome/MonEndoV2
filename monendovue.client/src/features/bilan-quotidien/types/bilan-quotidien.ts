@@ -10,11 +10,24 @@ export interface TransitBilan {
     intensiteBallonnements: IntensiteTransit | null;
 }
 
+/** Codes des émotions (enum Emotion côté serveur) ; libellés dans config/emotions.ts. */
+export type CodeEmotion =
+    | 'Joie' | 'Calme' | 'Soulagement' | 'Motivation' | 'Fierte'
+    | 'Tristesse' | 'Anxiete' | 'Irritabilite' | 'Frustration' | 'Decouragement';
+
+export interface EmotionBilan {
+    id?: number;
+    emotion: CodeEmotion;
+}
+
 export interface BilanQuotidien extends Partial<TransitBilan> {
     id: number;
     carnetSanteId: number;
     date: Date;
-    mood: string;
+    /** Ancienne humeur (Heureuse, Neutre, Triste) des bilans saisis avant les émotions ; null ensuite. */
+    mood?: string | null;
+    /** Une à trois émotions (bilans récents). */
+    emotions: EmotionBilan[];
     stressPro: number;
     stressPerso: number;
     fatigue: number;

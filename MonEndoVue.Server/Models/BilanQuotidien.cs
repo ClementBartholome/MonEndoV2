@@ -5,7 +5,10 @@
         public int Id { get; set; }
         public int CarnetSanteId { get; set; }
         public DateTime Date { get; set; }
-        public string Mood { get; set; }
+        // Ancienne humeur (Heureuse, Neutre, Triste) des bilans saisis avant les émotions ; null pour les nouveaux bilans.
+        public string? Mood { get; set; }
+        // Une à trois émotions (table EmotionsBilan), chargées automatiquement avec le bilan.
+        public List<EmotionBilan> Emotions { get; set; } = [];
         public int StressPro { get; set; }
         public int StressPerso { get; set; }
         public int Fatigue { get; set; }

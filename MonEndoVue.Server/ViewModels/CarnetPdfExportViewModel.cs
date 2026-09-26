@@ -50,6 +50,9 @@ public class DonneesTransitExportViewModel
 public class BilanQuotidienExportViewModel
 {
     public DateTime Date { get; set; }
+    // Émotions du jour (codes), ou ancienne humeur pour un bilan saisi avant les émotions.
+    public List<string> Emotions { get; set; } = [];
+    public string? Mood { get; set; }
     public bool Lactose { get; set; }
     public bool Grignotage { get; set; }
     public bool Gluten { get; set; }
