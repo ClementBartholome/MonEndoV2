@@ -25,6 +25,10 @@ MonEndoV2 est une application destinée aux personnes souffrant d'endométriose,
 - Outils externes : Google Calendar
 - Qualité : tests xUnit du serveur, CI GitHub Actions (vérification, image Docker, déploiement sur VPS), analyse SonarCloud
 
+## Versions
+
+- Versions numérotées (SemVer) depuis la 1.0.0, historique dans `CHANGELOG.md` ; la version courante est affichée dans Paramètres.
+
 ## Développement
 
 - Règles de travail, commandes, architecture et déploiement : `CLAUDE.md` (et `MonEndoVue.Server/CLAUDE.md`, `monendovue.client/CLAUDE.md`)

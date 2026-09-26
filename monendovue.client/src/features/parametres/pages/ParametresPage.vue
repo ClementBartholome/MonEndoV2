@@ -55,6 +55,7 @@
       <hr class="mb-4 border-gray-300">      
       <ChangePassword/>
     </section>
+    <p class="mt-6 text-center text-sm text-muted-foreground">MonEndo v{{ version }}</p>
   </div>
 </template>
 
@@ -65,6 +66,8 @@ import NotificationSettings from "@/features/parametres/components/NotificationS
 import ChangePassword from "@/features/auth/components/ChangePassword.vue";
 import { Button } from '@/shared/components/ui/button';
 import { ref } from 'vue';
+
+const version = __APP_VERSION__;
 import { useToast } from '@/shared/components/ui/toast';
 import {
   DEFAULT_WELLBEING_GOALS,
