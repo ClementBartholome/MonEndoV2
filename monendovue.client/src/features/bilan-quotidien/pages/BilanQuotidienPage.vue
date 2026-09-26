@@ -489,6 +489,10 @@ const endYear = ref(new Date().getFullYear());
 
 const bilans = ref<BilanQuotidien[]>([]);
 
+// Les bilans arrivent dans l'ordre de chargement (API non triée, saisies ajoutées en fin) : toujours les garder par date croissante.
+const trierParDate = (liste: BilanQuotidien[]): BilanQuotidien[] =>
+    [...liste].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
 const completedSteps = ref<Set<number>>(new Set());
 const editingBilanId = ref<number | null>(null);
 
@@ -686,7 +690,7 @@ const submitForm = async () => {
     };
 
     const response = await apiService.postBilanQuotidien(newBilan);
-    bilans.value = [...bilans.value, {...newBilan, id: response.id}];
+    bilans.value = trierParDate([...bilans.value, {...newBilan, id: response.id}]);
     toast({
       title: 'Bilan enregistré',
       description: 'Le bilan a été créé avec succès.',
@@ -758,7 +762,7 @@ const fetchBilans = async () => {
   try {
     const [year, week] = selectedWeekYear.value.split('-W');
     const response = await apiService.getBilanQuotidienByWeek(carnetSanteId, week, endYear.value.toString());
-    bilans.value = [...bilans.value, ...(response || [])];
+    bilans.value = trierParDate([...bilans.value, ...(response || [])]);
     const today = format(new Date(), 'yyyy-MM-dd');
     const bilan = response.find((bilan: any) => format(new Date(bilan.date), 'yyyy-MM-dd') === today);
     if (bilan) {
