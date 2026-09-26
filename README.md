@@ -5,7 +5,7 @@ MonEndoV2 est une application destinée aux personnes souffrant d'endométriose,
 ## Fonctionnalités principales
 
 - Suivi quotidien personnalisé : Ajout et suivi des symptômes, douleurs, activité physiques, traitements et événements du cycle (spotting, nausée...).
-- Bilan quotidien : humeur, stress, fatigue, activité, hydratation, alimentation, douleur et transit (aspect des selles selon l'échelle de Bristol, crampes d'estomac, ballonnements).
+- Bilan quotidien : émotions du jour (1 à 3 parmi dix, avec l'émotion de la semaine), stress, fatigue, activité, hydratation, alimentation, douleur et transit (aspect des selles selon l'échelle de Bristol, crampes d'estomac, ballonnements).
 - Export PDF : Génération d’un bilan à partager facilement avec un professionnel de santé.
 - Statistiques et visualisations : Vue d’ensemble de l'historique des symptômes. 
 - Connexion Google Calendar : Synchronisation des prochains rendez-vous médicaux.
