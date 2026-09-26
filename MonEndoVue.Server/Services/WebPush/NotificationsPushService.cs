@@ -1,28 +1,18 @@
 using Microsoft.EntityFrameworkCore;
 using MonEndoVue.Server.Data;
+using MonEndoVue.Server.Services.WebPush.Rappels;
 
 namespace MonEndoVue.Server.Services.WebPush;
 
-/// <summary>Envoi des notifications d'un carnet et des rappels quotidiens du bilan.</summary>
+/// <summary>Envoi des notifications d'un carnet et des rappels dus, quel que soit leur type.</summary>
 public class NotificationsPushService(
     AppDbContext context,
     IEnvoiPush envoiPush,
+    IEnumerable<IRegleRappel> regles,
     TimeProvider timeProvider,
     ILogger<NotificationsPushService> logger)
 {
-    public static readonly MessagePush MessageRappelBilan =
-        new("MonEndo", "N'oublie pas de remplir ton bilan quotidien.", "/bilan-quotidien");
-
-    public static bool EstFuseauValide(string? fuseau) =>
-        !string.IsNullOrWhiteSpace(fuseau) && TimeZoneInfo.TryFindSystemTimeZoneById(fuseau, out _);
-
-    /// <summary>Bornes UTC [début, fin[ d'une journée locale dans le fuseau donné.</summary>
-    public static (DateTime Debut, DateTime Fin) JourneeEnUtc(DateOnly jour, TimeZoneInfo fuseau)
-    {
-        var debutLocal = jour.ToDateTime(TimeOnly.MinValue, DateTimeKind.Unspecified);
-        return (TimeZoneInfo.ConvertTimeToUtc(debutLocal, fuseau),
-            TimeZoneInfo.ConvertTimeToUtc(debutLocal.AddDays(1), fuseau));
-    }
+    private readonly Dictionary<Models.TypeRappel, IRegleRappel> _regles = regles.ToDictionary(r => r.Type);
 
     /// <summary>Envoie le message à tous les appareils du carnet ; supprime les abonnements expirés.</summary>
     /// <returns>Nombre d'appareils ayant reçu le message.</returns>
@@ -51,50 +41,53 @@ public class NotificationsPushService(
     }
 
     /// <summary>
-    /// Envoie le rappel aux carnets dont l'heure de rappel locale est atteinte, qui ne l'ont pas encore reçu aujourd'hui
-    /// et dont le bilan du jour (journée locale) n'est pas rempli.
+    /// Envoie les rappels actifs dont l'heure locale est atteinte (et le jour, pour un rappel hebdomadaire), pas encore
+    /// envoyés aujourd'hui, et dont la règle indique que le suivi n'est pas déjà fait.
     /// </summary>
-    /// <returns>Nombre de carnets notifiés.</returns>
+    /// <returns>Nombre de rappels envoyés.</returns>
     public async Task<int> EnvoyerRappelsDusAsync(CancellationToken cancellationToken)
     {
         var maintenant = timeProvider.GetUtcNow();
-        var preferences = await context.PreferencesRappel
-            .Where(p => p.RappelActif)
+        var rappels = await context.Rappels
+            .Where(r => r.Actif)
             .ToListAsync(cancellationToken);
 
-        var notifies = 0;
-        foreach (var preference in preferences)
+        var envoyes = 0;
+        foreach (var rappel in rappels)
         {
-            if (!TimeZoneInfo.TryFindSystemTimeZoneById(preference.FuseauHoraire, out var fuseau))
+            if (!_regles.TryGetValue(rappel.Type, out var regle))
             {
-                logger.LogWarning("Unknown time zone for reminder of carnet {CarnetSanteId}", preference.CarnetSanteId);
+                continue;
+            }
+
+            if (!TimeZoneInfo.TryFindSystemTimeZoneById(rappel.FuseauHoraire, out var fuseau))
+            {
+                logger.LogWarning("Unknown time zone for reminder {Type} of carnet {CarnetSanteId}", rappel.Type, rappel.CarnetSanteId);
                 continue;
             }
 
             var local = TimeZoneInfo.ConvertTime(maintenant, fuseau).DateTime;
             var aujourdhui = DateOnly.FromDateTime(local);
-            if (TimeOnly.FromDateTime(local) < preference.HeureRappel || preference.DernierRappelLe == aujourdhui)
+            var pasEncoreLHeure = TimeOnly.FromDateTime(local) < rappel.Heure;
+            var mauvaisJour = regle.EstHebdomadaire && local.DayOfWeek != rappel.JourSemaine;
+            if (pasEncoreLHeure || mauvaisJour || rappel.DernierEnvoiLe == aujourdhui)
             {
                 continue;
             }
 
-            var (debut, fin) = JourneeEnUtc(aujourdhui, fuseau);
-            var bilanRempli = await context.BilansQuotidiens.AnyAsync(
-                b => b.CarnetSanteId == preference.CarnetSanteId && b.Date >= debut && b.Date < fin,
-                cancellationToken);
-            if (bilanRempli)
+            if (await regle.SuiviDejaFaitAsync(rappel.CarnetSanteId, aujourdhui, fuseau, cancellationToken))
             {
                 continue;
             }
 
-            if (await EnvoyerAuCarnetAsync(preference.CarnetSanteId, MessageRappelBilan, cancellationToken) > 0)
+            if (await EnvoyerAuCarnetAsync(rappel.CarnetSanteId, regle.Message, cancellationToken) > 0)
             {
-                preference.DernierRappelLe = aujourdhui;
-                notifies++;
+                rappel.DernierEnvoiLe = aujourdhui;
+                envoyes++;
             }
         }
 
         await context.SaveChangesAsync(cancellationToken);
-        return notifies;
+        return envoyes;
     }
 }

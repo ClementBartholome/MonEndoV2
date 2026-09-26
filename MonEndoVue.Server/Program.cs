@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using MonEndoVue.Server.Data;
@@ -12,6 +13,7 @@ using MonEndoVue.Server.Jobs;
 using MonEndoVue.Server.Models;
 using MonEndoVue.Server.Services;
 using MonEndoVue.Server.Services.WebPush;
+using MonEndoVue.Server.Services.WebPush.Rappels;
 using Quartz;
 using Serilog;
 using Serilog.Events;
@@ -55,6 +57,10 @@ namespace MonEndoVue.Server
             builder.Services.AddHttpClient<IEnvoiPush, WebPushService>();
             builder.Services.AddSingleton(TimeProvider.System);
             builder.Services.AddScoped<NotificationsPushService>();
+            builder.Services.AddScoped<NotificationsService>();
+            // Un rappel = une règle (ajouter un type : nouvelle implémentation de IRegleRappel)
+            builder.Services.AddScoped<IRegleRappel, RappelBilanQuotidien>();
+            builder.Services.AddScoped<IRegleRappel, RappelSuiviAcne>();
 
             builder.Services.AddCors(options =>
             {
@@ -222,6 +228,12 @@ namespace MonEndoVue.Server
             builder.Services.AddSingleton<IConfiguration>(builder.Configuration);
 
             var app = builder.Build();
+
+            var erreurWebPush = app.Services.GetRequiredService<IOptions<WebPushOptions>>().Value.Erreur();
+            if (erreurWebPush is not null)
+            {
+                app.Logger.LogWarning("Web Push notifications disabled: {Raison}", erreurWebPush);
+            }
 
             if (app.Environment.IsDevelopment())
             {

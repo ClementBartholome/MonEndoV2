@@ -14,12 +14,13 @@ Lire d'abord `MonEndoVue.Server/CLAUDE.md` et la section sécurité du CLAUDE.md
    - GET/PUT/DELETE par id : **charger l'entité**, `NotFound()` si absente, puis `ValidateCarnetAccess(entity.CarnetSanteId)`.
    - POST : `ValidateCarnetAccess(dto.CarnetSanteId)` + vérifier que chaque clé étrangère (ex. `MedicamentId`) appartient au même carnet.
    - Ressource propre à l'utilisatrice connectée (réglages, appareils) : **aucun identifiant de carnet en entrée**, carnet déduit
-     de la session (modèle : `CarnetCourantAsync` dans `NotificationsController`).
+     de la session (modèle : `CarnetDeAsync` dans `Services/WebPush/NotificationsService.cs`).
 3. **Contrat** : DTO d'entrée (`Dto/XxxDto.cs`) avec uniquement les champs modifiables ; ViewModel de sortie
    (`ViewModels/XxxViewModel.cs`). Jamais `Id`/`CarnetSanteId`/`PhotoUrl` modifiables via le body d'un PUT.
 4. **SOLID** (voir `MonEndoVue.Server/CLAUDE.md`) :
    - le contrôleur ne fait que du HTTP : pas d'`AppDbContext`, pas de requête ;
-   - la logique et les requêtes vont dans un service du domaine (`Services/XxxService.cs`, `AddScoped` dans `Program.cs`) ;
+   - la logique et les requêtes vont dans un service du domaine (`Services/XxxService.cs`, `AddScoped` dans `Program.cs`),
+     qui renvoie un `ResultatOperation` que le contrôleur traduit par `VersReponse` (modèle : `NotificationsService`) ;
    - la validation métier va dans une classe dédiée ;
    - tout accès extérieur passe par une interface injectée, et l'heure par `TimeProvider`.
    

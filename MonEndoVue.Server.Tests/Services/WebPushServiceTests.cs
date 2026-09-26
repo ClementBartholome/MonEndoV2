@@ -90,6 +90,21 @@ public class WebPushServiceTests
     }
 
     [Fact]
+    public async Task Constructeur_ClesDeBonneLongueurMaisIllisibles_DesactiveLEnvoiSansException()
+    {
+        var options = PushDeTest.OptionsConfigurees();
+        options.Value.PublicKey = new string('A', 87);
+        options.Value.PrivateKey = new string('A', 43);
+        var handler = new FauxServicePush(_ => new HttpResponseMessage(HttpStatusCode.Created));
+
+        var service = new WebPushService(new HttpClient(handler), options, NullLogger<WebPushService>.Instance);
+        var resultat = await service.EnvoyerAsync(PushDeTest.Abonnement(1), Message, CancellationToken.None);
+
+        Assert.Equal(ResultatEnvoiPush.NonConfigure, resultat);
+        Assert.Null(handler.DerniereRequete);
+    }
+
+    [Fact]
     public void SerialiserMessage_ProduitLeFormatLuParLeServiceWorker()
     {
         var json = JsonDocument.Parse(WebPushService.SerialiserMessage(Message)).RootElement;

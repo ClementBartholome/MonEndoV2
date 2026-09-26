@@ -176,6 +176,9 @@ Regles:
 - [x] Notifications push generiques pour toutes les utilisatrices (rappels personnalises), envoyees cote serveur
   - idealement sans service tiers : Web Push standard (VAPID) avec un service worker dedie au push
   - aucune cle secrete cote client ; preferences de rappel par utilisatrice
+- [x] Rappel hebdomadaire de la photo de suivi acné (remplace le Zap), rappels generalises (`IRegleRappel`), notification qui ouvre la bonne page
+- [ ] Supprimer la table `PreferencesRappel` (non mappee depuis `GeneraliseRappels`) quand aucun rollback anterieur n'est plus envisage
+- [x] Configuration VAPID validee au demarrage (avertissement explicite, aucune route en echec)
 
 ## Ce qui est deja implemente dans cette iteration
 - UX medicaments/sessions non medicamenteuses amelioree (`MedicamentPage.vue`):
@@ -215,6 +218,8 @@ Regles:
   - premier projet de tests serveur (xUnit) execute par la CI, couverture envoyee a SonarCloud (seuil 80 % sur le nouveau code)
   - notifications Web Push standard envoyees par le serveur : abonnement par appareil depuis Parametres (guide
     d'installation iOS), rappel du bilan a l'heure choisie seulement si le bilan du jour n'est pas rempli, notification de test
+  - rappel hebdomadaire de la photo de suivi acne (jour et heure au choix, seulement sans photo depuis 7 jours) ; chaque
+    notification ouvre sa page (`/bilan-quotidien`, `/cycle?onglet=acne`)
 
 ## Definition of Done (pour chaque lot)
 - UX: test manuel mobile + desktop + accessibilite clavier

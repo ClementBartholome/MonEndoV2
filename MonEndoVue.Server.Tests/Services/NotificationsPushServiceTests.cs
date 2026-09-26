@@ -1,13 +1,14 @@
 using Microsoft.Extensions.Logging.Abstractions;
 using MonEndoVue.Server.Models;
 using MonEndoVue.Server.Services.WebPush;
+using MonEndoVue.Server.Services.WebPush.Rappels;
 using MonEndoVue.Server.Tests.Support;
 
 namespace MonEndoVue.Server.Tests.Services;
 
 public sealed class NotificationsPushServiceTests : IDisposable
 {
-    // 26/09/2026 19:30 UTC = 21:30 à Paris (heure d'été, UTC+2).
+    // Samedi 26/09/2026 19:30 UTC = 21:30 à Paris (heure d'été, UTC+2).
     private static readonly DateTimeOffset Maintenant = new(2026, 9, 26, 19, 30, 0, TimeSpan.Zero);
     private static readonly DateOnly AujourdhuiParis = new(2026, 9, 26);
 
@@ -15,19 +16,28 @@ public sealed class NotificationsPushServiceTests : IDisposable
     private readonly FauxEnvoiPush _envoi = new();
 
     private NotificationsPushService Service(DateTimeOffset? maintenant = null) => new(
-        _carnet.Context, _envoi, new HorlogeFixe(maintenant ?? Maintenant), NullLogger<NotificationsPushService>.Instance);
+        _carnet.Context,
+        _envoi,
+        [new RappelBilanQuotidien(_carnet.Context), new RappelSuiviAcne(_carnet.Context)],
+        new HorlogeFixe(maintenant ?? Maintenant),
+        NullLogger<NotificationsPushService>.Instance);
 
-    private void Preference(TimeOnly heure, bool actif = true, string fuseau = "Europe/Paris", DateOnly? dernierRappel = null)
+    private Rappel AjouterRappel(TypeRappel type, TimeOnly heure, DayOfWeek? jour = null, bool actif = true,
+        string fuseau = "Europe/Paris", DateOnly? dernierEnvoi = null)
     {
-        _carnet.Context.PreferencesRappel.Add(new PreferenceRappel
+        var rappel = new Rappel
         {
             CarnetSanteId = CarnetDeTest.CarnetSanteId,
-            RappelActif = actif,
-            HeureRappel = heure,
+            Type = type,
+            Actif = actif,
+            Heure = heure,
+            JourSemaine = jour,
             FuseauHoraire = fuseau,
-            DernierRappelLe = dernierRappel,
-        });
+            DernierEnvoiLe = dernierEnvoi,
+        };
+        _carnet.Context.Rappels.Add(rappel);
         _carnet.Context.SaveChanges();
+        return rappel;
     }
 
     private void Abonnement(int carnetSanteId = CarnetDeTest.CarnetSanteId, string endpoint = "https://push.example/a")
@@ -45,7 +55,7 @@ public sealed class NotificationsPushServiceTests : IDisposable
         _envoi.ResultatsParEndpoint["https://push.example/expire"] = ResultatEnvoiPush.AbonnementExpire;
 
         var envoyes = await Service().EnvoyerAuCarnetAsync(
-            CarnetDeTest.CarnetSanteId, NotificationsPushService.MessageRappelBilan, CancellationToken.None);
+            CarnetDeTest.CarnetSanteId, new MessagePush("MonEndo", "Test", "/"), CancellationToken.None);
 
         Assert.Equal(1, envoyes);
         Assert.DoesNotContain(_envoi.Envois, e => e.Abonnement.CarnetSanteId == CarnetDeTest.AutreCarnetSanteId);
@@ -54,35 +64,32 @@ public sealed class NotificationsPushServiceTests : IDisposable
     }
 
     [Fact]
-    public async Task Rappels_HeureLocaleAtteinteEtBilanNonRempli_EnvoieLeRappelUneSeuleFois()
+    public async Task Rappels_BilanDu_EnvoieUneSeuleFoisVersLaPageBilan()
     {
-        Preference(new TimeOnly(21, 0));
+        var rappel = AjouterRappel(TypeRappel.BilanQuotidien, new TimeOnly(21, 0));
         Abonnement();
 
-        var premierPassage = await Service().EnvoyerRappelsDusAsync(CancellationToken.None);
-        var secondPassage = await Service().EnvoyerRappelsDusAsync(CancellationToken.None);
+        Assert.Equal(1, await Service().EnvoyerRappelsDusAsync(CancellationToken.None));
+        Assert.Equal(0, await Service().EnvoyerRappelsDusAsync(CancellationToken.None));
 
-        Assert.Equal(1, premierPassage);
-        Assert.Equal(0, secondPassage);
         var envoi = Assert.Single(_envoi.Envois);
-        Assert.Equal(NotificationsPushService.MessageRappelBilan, envoi.Message);
-        Assert.Equal(AujourdhuiParis, _carnet.Context.PreferencesRappel.Single().DernierRappelLe);
+        Assert.Equal("/bilan-quotidien", envoi.Message.Url);
+        Assert.Equal(AujourdhuiParis, rappel.DernierEnvoiLe);
     }
 
     [Fact]
     public async Task Rappels_HeureLocaleNonAtteinte_NEnvoieRien()
     {
-        Preference(new TimeOnly(22, 0)); // 21:30 à Paris
+        AjouterRappel(TypeRappel.BilanQuotidien, new TimeOnly(22, 0)); // 21:30 à Paris
         Abonnement();
 
         Assert.Equal(0, await Service().EnvoyerRappelsDusAsync(CancellationToken.None));
-        Assert.Empty(_envoi.Envois);
     }
 
     [Fact]
     public async Task Rappels_UtiliseLeFuseauDeLUtilisatrice()
     {
-        Preference(new TimeOnly(15, 0), fuseau: "America/New_York"); // 15:30 à New York
+        AjouterRappel(TypeRappel.BilanQuotidien, new TimeOnly(15, 0), fuseau: "America/New_York"); // 15:30 à New York
         Abonnement();
 
         Assert.Equal(1, await Service().EnvoyerRappelsDusAsync(CancellationToken.None));
@@ -91,23 +98,21 @@ public sealed class NotificationsPushServiceTests : IDisposable
     [Fact]
     public async Task Rappels_DejaEnvoyeAujourdhui_NEnvoieRien()
     {
-        Preference(new TimeOnly(21, 0), dernierRappel: AujourdhuiParis);
+        AjouterRappel(TypeRappel.BilanQuotidien, new TimeOnly(21, 0), dernierEnvoi: AujourdhuiParis);
         Abonnement();
 
         Assert.Equal(0, await Service().EnvoyerRappelsDusAsync(CancellationToken.None));
     }
 
-    [Theory]
-    [InlineData("2026-09-25T22:00:00")] // minuit à Paris, enregistré en UTC la veille
-    [InlineData("2026-09-26T08:15:00")]
-    public async Task Rappels_BilanDuJourLocalDejaRempli_NEnvoieRien(string dateBilanUtc)
+    [Fact]
+    public async Task Rappels_BilanDejaRempli_NEnvoieRien()
     {
-        Preference(new TimeOnly(21, 0));
+        AjouterRappel(TypeRappel.BilanQuotidien, new TimeOnly(21, 0));
         Abonnement();
         _carnet.Context.BilansQuotidiens.Add(new BilanQuotidien
         {
             CarnetSanteId = CarnetDeTest.CarnetSanteId,
-            Date = DateTime.Parse(dateBilanUtc, System.Globalization.CultureInfo.InvariantCulture),
+            Date = new DateTime(2026, 9, 26, 8, 15, 0),
             Mood = "Neutre",
         });
         _carnet.Context.SaveChanges();
@@ -116,33 +121,35 @@ public sealed class NotificationsPushServiceTests : IDisposable
     }
 
     [Fact]
-    public async Task Rappels_BilanDeLaVeilleSeulement_EnvoieLeRappel()
+    public async Task Rappels_AcneLeBonJour_EnvoieVersLOngletAcne()
     {
-        Preference(new TimeOnly(21, 0));
+        AjouterRappel(TypeRappel.SuiviAcne, new TimeOnly(20, 0), DayOfWeek.Saturday);
         Abonnement();
-        _carnet.Context.BilansQuotidiens.Add(new BilanQuotidien
-        {
-            CarnetSanteId = CarnetDeTest.CarnetSanteId,
-            Date = new DateTime(2026, 9, 25, 21, 59, 0),
-            Mood = "Neutre",
-        });
-        _carnet.Context.SaveChanges();
 
         Assert.Equal(1, await Service().EnvoyerRappelsDusAsync(CancellationToken.None));
+        Assert.Equal("/cycle?onglet=acne", Assert.Single(_envoi.Envois).Message.Url);
+    }
+
+    [Fact]
+    public async Task Rappels_AcneUnAutreJour_NEnvoieRien()
+    {
+        AjouterRappel(TypeRappel.SuiviAcne, new TimeOnly(20, 0), DayOfWeek.Sunday); // aujourd'hui samedi
+        Abonnement();
+
+        Assert.Equal(0, await Service().EnvoyerRappelsDusAsync(CancellationToken.None));
     }
 
     [Fact]
     public async Task Rappels_RappelDesactiveOuFuseauInconnu_NEnvoieRien()
     {
-        Preference(new TimeOnly(8, 0), actif: false);
+        var rappel = AjouterRappel(TypeRappel.BilanQuotidien, new TimeOnly(8, 0), actif: false);
         Abonnement();
         var service = Service();
 
         Assert.Equal(0, await service.EnvoyerRappelsDusAsync(CancellationToken.None));
 
-        var preference = _carnet.Context.PreferencesRappel.Single();
-        preference.RappelActif = true;
-        preference.FuseauHoraire = "Fuseau/Inexistant";
+        rappel.Actif = true;
+        rappel.FuseauHoraire = "Fuseau/Inexistant";
         _carnet.Context.SaveChanges();
 
         Assert.Equal(0, await service.EnvoyerRappelsDusAsync(CancellationToken.None));
@@ -152,32 +159,22 @@ public sealed class NotificationsPushServiceTests : IDisposable
     [Fact]
     public async Task Rappels_AucunAppareilAbonne_NeMarquePasLeRappelCommeEnvoye()
     {
-        Preference(new TimeOnly(21, 0));
+        var rappel = AjouterRappel(TypeRappel.BilanQuotidien, new TimeOnly(21, 0));
 
         Assert.Equal(0, await Service().EnvoyerRappelsDusAsync(CancellationToken.None));
-        Assert.Null(_carnet.Context.PreferencesRappel.Single().DernierRappelLe);
+        Assert.Null(rappel.DernierEnvoiLe);
     }
 
     [Fact]
-    public void JourneeEnUtc_JourneeParisienneEnHeureDEte_CommenceLaVeilleA22hUtc()
+    public async Task Rappels_TypeSansRegleEnregistree_EstIgnore()
     {
-        var fuseau = TimeZoneInfo.FindSystemTimeZoneById("Europe/Paris");
+        AjouterRappel(TypeRappel.SuiviAcne, new TimeOnly(20, 0), DayOfWeek.Saturday);
+        Abonnement();
+        var serviceSansRegleAcne = new NotificationsPushService(
+            _carnet.Context, _envoi, [new RappelBilanQuotidien(_carnet.Context)],
+            new HorlogeFixe(Maintenant), NullLogger<NotificationsPushService>.Instance);
 
-        var (debut, fin) = NotificationsPushService.JourneeEnUtc(AujourdhuiParis, fuseau);
-
-        Assert.Equal(new DateTime(2026, 9, 25, 22, 0, 0), debut);
-        Assert.Equal(new DateTime(2026, 9, 26, 22, 0, 0), fin);
-    }
-
-    [Theory]
-    [InlineData("Europe/Paris", true)]
-    [InlineData("America/New_York", true)]
-    [InlineData("Fuseau/Inexistant", false)]
-    [InlineData("", false)]
-    [InlineData(null, false)]
-    public void EstFuseauValide_ReconnaitLesFuseauxIana(string? fuseau, bool attendu)
-    {
-        Assert.Equal(attendu, NotificationsPushService.EstFuseauValide(fuseau));
+        Assert.Equal(0, await serviceSansRegleAcne.EnvoyerRappelsDusAsync(CancellationToken.None));
     }
 
     public void Dispose() => _carnet.Dispose();

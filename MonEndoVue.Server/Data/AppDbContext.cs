@@ -17,7 +17,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : IdentityDbCo
     public DbSet<BilanQuotidien> BilansQuotidiens { get; set; }
     public DbSet<SymptomeCycle> SymptomesCycles { get; set; }
     public DbSet<AbonnementPush> AbonnementsPush { get; set; }
-    public DbSet<PreferenceRappel> PreferencesRappel { get; set; }
+    public DbSet<Rappel> Rappels { get; set; }
     
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -113,13 +113,14 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : IdentityDbCo
                 .OnDelete(DeleteBehavior.Cascade);
         });
 
-        modelBuilder.Entity<PreferenceRappel>(entity =>
+        modelBuilder.Entity<Rappel>(entity =>
         {
-            entity.HasKey(p => p.CarnetSanteId);
-            entity.Property(p => p.FuseauHoraire).HasMaxLength(64);
-            entity.HasOne(p => p.CarnetSante)
-                .WithOne()
-                .HasForeignKey<PreferenceRappel>(p => p.CarnetSanteId)
+            entity.Property(r => r.Type).HasConversion<string>().HasMaxLength(32);
+            entity.Property(r => r.FuseauHoraire).HasMaxLength(64);
+            entity.HasIndex(r => new { r.CarnetSanteId, r.Type }).IsUnique();
+            entity.HasOne(r => r.CarnetSante)
+                .WithMany()
+                .HasForeignKey(r => r.CarnetSanteId)
                 .OnDelete(DeleteBehavior.Cascade);
         });
     }

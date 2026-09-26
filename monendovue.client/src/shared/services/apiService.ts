@@ -5,7 +5,7 @@ import type { Pinia } from 'pinia';
 import { tokenService } from '@/features/auth/services/tokenService';
 import router from "@/router";
 import type { DonneesDouleurModification } from '@/features/douleurs/types/donnees-douleur';
-import type { AbonnementPush, PreferenceRappel } from '@/features/parametres/types/notifications';
+import type { AbonnementPush, Rappel, ReglageRappel, TypeRappel } from '@/features/parametres/types/notifications';
 
 const API_URL = import.meta.env.VITE_DOCKER === 'true'
     ? '' 
@@ -237,12 +237,13 @@ class ApiService {
         return this.request('DELETE', 'Notifications/abonnements', { endpoint });
     }
 
-    async getPreferencesRappel(): Promise<PreferenceRappel> {
-        return this.request('GET', 'Notifications/preferences');
+    async getRappels(): Promise<Rappel[]> {
+        const response = await this.request<Rappel[] | { $values: Rappel[] }>('GET', 'Notifications/rappels');
+        return Array.isArray(response) ? response : response.$values;
     }
 
-    async putPreferencesRappel(preferences: PreferenceRappel): Promise<void> {
-        return this.request('PUT', 'Notifications/preferences', preferences);
+    async putRappel(type: TypeRappel, reglage: ReglageRappel): Promise<void> {
+        return this.request('PUT', `Notifications/rappels/${type}`, reglage);
     }
 
     async envoyerNotificationTest(): Promise<void> {

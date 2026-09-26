@@ -417,6 +417,7 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "
 import { Button } from "@/shared/components/ui/button"
 import { Input } from "@/shared/components/ui/input"
 import { FormControl, FormItem, FormLabel, FormField, FormMessage } from "@/shared/components/ui/form"
+import { useRoute } from 'vue-router'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/components/ui/tabs"
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@/shared/components/ui/select'
 import { useForm } from 'vee-validate'
@@ -449,7 +450,13 @@ type SymptomFilter = 'Tous' | 'Acné' | 'Spotting' | 'Nausée' | 'Fatigue' | 'Au
 const { user } = useAuthStore()
 const { formatDateDisplay, formatTimeDisplay, combineDateTime, getCurrentMonthYear } = useDateTimeFormat()
 const { toast } = useToast()
-const activeTab = ref<'cycles' | 'symptomes' | 'acne'>('cycles')
+type OngletCycle = 'cycles' | 'symptomes' | 'acne'
+const ONGLETS: OngletCycle[] = ['cycles', 'symptomes', 'acne']
+// Lien profond (ex. notification de rappel acné) : /cycle?onglet=acne
+const ongletDemande = useRoute().query.onglet
+const activeTab = ref<OngletCycle>(
+  ONGLETS.includes(ongletDemande as OngletCycle) ? (ongletDemande as OngletCycle) : 'cycles'
+)
 const isAcneOnlyDialog = computed(() => activeTab.value === 'acne')
 
 const duplicateMonthCache = new Map<string, Set<string>>()
