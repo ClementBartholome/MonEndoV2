@@ -48,8 +48,9 @@ dotnet ef migrations add NomEnPascalCase --project MonEndoVue.Server
   **`JourRegle`** (jours de règles) — page `/cycle` (onglets symptômes, acné, cycles).
 - **`Medicament`** (traitement, `TypeTraitement` médicamenteux ou non, en cours ou passé), **`DonneesMedicament`** (prises),
   **`DonneesTraitementNonMedicamenteux`** (séances) — page `/medicaments`.
-- **`DonneesTransit`** — `/transit` ; **`DonneesActivitePhysique`** — `/activite`.
-- **`BilanQuotidien`** (humeur, stress, fatigue, pas, douleur moyenne, hydratation, alimentation) — `/bilan-quotidien`,
+- **`DonneesTransit`** — `/transit` (ancien suivi par événements ; le suivi quotidien passe désormais par le bilan) ; **`DonneesActivitePhysique`** — `/activite`.
+- **`BilanQuotidien`** (humeur, stress, fatigue, pas, douleur moyenne, hydratation, alimentation, et une catégorie
+  **transit** facultative : selles avec type de Bristol 1-7, crampes d'estomac et ballonnements avec intensité) — `/bilan-quotidien`,
   avec des objectifs bien-être réglables dans `/parametres`.
 - Accueil `/` (carnet : dernières entrées), agenda `/agenda` (Google Calendar), export PDF `/export`.
 - Notifications push via **OneSignal** (envoyées notamment depuis Zapier) et rappel quotidien à 21h (Quartz + SignalR).

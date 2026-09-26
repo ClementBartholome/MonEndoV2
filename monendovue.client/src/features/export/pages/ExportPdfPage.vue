@@ -143,6 +143,24 @@
             {{ getBilanValueForDay('stressMoyenne', day) }}
           </td>
         </tr>
+        <tr>
+          <td>Selles (type Bristol)</td>
+          <td v-for="day in daysInMonth" :key="day">
+            {{ getTransitCodeForDay('selles', day) }}
+          </td>
+        </tr>
+        <tr>
+          <td>Crampes d'estomac</td>
+          <td v-for="day in daysInMonth" :key="day">
+            {{ getTransitCodeForDay('crampes', day) }}
+          </td>
+        </tr>
+        <tr>
+          <td>Ballonnements</td>
+          <td v-for="day in daysInMonth" :key="day">
+            {{ getTransitCodeForDay('ballonnements', day) }}
+          </td>
+        </tr>
         </tbody>
       </table>
       <Skeleton class="h-[300px] w-full mt-4 rounded-xl" v-else></Skeleton>
@@ -279,6 +297,21 @@ const getBilanValueForDay = (field, day) => {
   return bilan ? bilan[field] ?? 0 : 0;
 };
 
+// Transit du bilan : selles = type de Bristol (1-7), x si non précisé, 0 si aucune ;
+// crampes / ballonnements = initiale de l'intensité (L, M, F), 0 si absents. Vide = non renseigné.
+const getTransitCodeForDay = (champ: 'selles' | 'crampes' | 'ballonnements', day: number): string => {
+  const bilan = computedDonneesCarnetSante.value.bilansQuotidiens.$values.find(b => new Date(b.date).getDate() === day);
+  if (!bilan) return '';
+  if (champ === 'selles') {
+    if (bilan.selles === true) return bilan.typeBristol ? String(bilan.typeBristol) : 'x';
+    return bilan.selles === false ? '0' : '';
+  }
+  const present = champ === 'crampes' ? bilan.crampesEstomac : bilan.ballonnements;
+  const intensite = champ === 'crampes' ? bilan.intensiteCrampes : bilan.intensiteBallonnements;
+  if (present === true) return intensite ? intensite.charAt(0) : 'x';
+  return present === false ? '0' : '';
+};
+
 const getPasIcon = (value) => {
   if (value === undefined || value === null || value === 0) return '💤';
   if (value < 5000) return '🚶';
@@ -363,6 +396,11 @@ const exportToPDF = () => {
 
   // Hydratation
   rows.push(['Hydratation', ...Array.from({length: daysInMonth}, (_, i) => getBilanValueForDay('hydratation', i + 1) || '')]);
+
+  // Transit (voir getTransitCodeForDay pour la légende des codes)
+  rows.push(['Selles (Bristol)', ...Array.from({length: daysInMonth}, (_, i) => getTransitCodeForDay('selles', i + 1))]);
+  rows.push(['Crampes', ...Array.from({length: daysInMonth}, (_, i) => getTransitCodeForDay('crampes', i + 1))]);
+  rows.push(['Ballonnements', ...Array.from({length: daysInMonth}, (_, i) => getTransitCodeForDay('ballonnements', i + 1))]);
 
   // Traitements 
   const medicamentRows: any[] = [];
