@@ -13,3 +13,5 @@ Première version numérotée de l'application.
 ### Modifié
 
 ### Sécurité
+- Les identifiants de connexion et de réinitialisation du mot de passe sont transmis uniquement dans le corps des requêtes.
+- Limitation du nombre de tentatives sur les points d'accès d'authentification.
