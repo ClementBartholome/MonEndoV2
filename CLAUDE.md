@@ -149,8 +149,10 @@ Objectif : que l'utilisateur n'ait jamais à répéter une consigne ou une infor
   rebaser ou réécrire l'historique dans la copie principale sans vérifier `git status` / `git worktree list` ; travailler
   dans un worktree dédié (`git worktree add ../MonEndoVue-<sujet> -b <branche> origin/main`) puis le supprimer après merge.
 - Pas de Docker sur le poste : le build d'image n'est validé que par la CI d'une PR (job `image`, sans push).
-- `gh` n'est pas authentifié : lire les PR/issues/runs via l'API publique (`curl https://api.github.com/repos/ClementBartholome/MonEndoV2/…`)
-  et donner à l'utilisateur le lien de création de PR.
+- `gh` est authentifié (jeton dans le trousseau Windows, scopes `repo` et `workflow`) : l'utiliser pour lire PR, checks et runs.
+  Si `gh auth status` signale un jeton invalide, demander à l'utilisateur de lancer lui-même
+  `gh auth login -h github.com -p https -w` (connexion par navigateur) ; ne jamais demander ni manipuler de jeton.
+  Ouvrir ou merger une PR reste soumis à une demande explicite.
 - Contrôle visuel sans backend : lancer `npx vite --port <port>` puis, dans le navigateur intégré, poser un faux `user` dans
   `localStorage` (le garde de routes ne vérifie que sa présence) ; les appels API échouent, l'UI reste testable.
 

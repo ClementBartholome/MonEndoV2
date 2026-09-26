@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using MonEndoVue.Server.Data;
+using MonEndoVue.Server.Dto;
 using MonEndoVue.Server.Models;
 using MonEndoVue.Server.Services;
 
@@ -19,14 +20,14 @@ namespace MonEndoVue.Server.Controllers
         public async Task<ActionResult<DonneesDouleur>> GetDonneesDouleur(int id)
         {
             var donneesDouleur = await context.DonneesDouleurs.FindAsync(id);
-            
-            var securityCheck = await this.ValidateCarnetAccess(carnetSanteService, donneesDouleur?.CarnetSanteId ?? 0);
-            if (securityCheck != null) return securityCheck;
 
             if (donneesDouleur == null)
             {
                 return NotFound();
             }
+
+            var securityCheck = await this.ValidateCarnetAccess(carnetSanteService, donneesDouleur.CarnetSanteId);
+            if (securityCheck != null) return securityCheck;
 
             return donneesDouleur;
         }
@@ -60,6 +61,27 @@ namespace MonEndoVue.Server.Controllers
             carnetSanteService.InvalidateCache(carnetSanteId);
 
             return CreatedAtAction("GetDonneesDouleur", new { id = donneesDouleur.Id }, donneesDouleur);
+        }
+
+        // PUT: DonneesDouleurs/5
+        [HttpPut("{id:int}")]
+        public async Task<IActionResult> PutDonneesDouleur(int id, DonneesDouleurDto dto, CancellationToken ct)
+        {
+            var existing = await context.DonneesDouleurs.FindAsync([id], ct);
+            if (existing is null) return NotFound();
+
+            var securityCheck = await this.ValidateCarnetAccess(carnetSanteService, existing.CarnetSanteId);
+            if (securityCheck != null) return securityCheck;
+
+            existing.TypeDouleur = dto.TypeDouleur;
+            existing.Intensite = dto.Intensite;
+            existing.Date = dto.Date;
+            existing.Commentaire = dto.Commentaire;
+
+            await context.SaveChangesAsync(ct);
+            carnetSanteService.InvalidateCache(existing.CarnetSanteId);
+
+            return NoContent();
         }
 
         // DELETE: DonneesDouleurs/5

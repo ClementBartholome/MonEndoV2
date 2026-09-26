@@ -4,6 +4,7 @@ import { useAuthStore } from '@/features/auth/store/auth';
 import type { Pinia } from 'pinia';
 import { tokenService } from '@/features/auth/services/tokenService';
 import router from "@/router";
+import type { DonneesDouleurModification } from '@/features/douleurs/types/donnees-douleur';
 
 const API_URL = import.meta.env.VITE_DOCKER === 'true'
     ? '' 
@@ -208,7 +209,7 @@ class ApiService {
         return this.request('PUT', `Medicament/${medicamentId}`, donneesMedicament);
     }
     
-    async editDonneesDouleurs(donneesDouleursId: number, donneesDouleurs: any): Promise<any> {
+    async editDonneesDouleurs(donneesDouleursId: number, donneesDouleurs: DonneesDouleurModification): Promise<void> {
         return this.request('PUT', `DonneesDouleurs/${donneesDouleursId}`, donneesDouleurs);
     }
 

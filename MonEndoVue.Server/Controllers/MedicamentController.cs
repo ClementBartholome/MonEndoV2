@@ -43,14 +43,14 @@ namespace MonEndoVue.Server.Controllers
         public async Task<ActionResult<Medicament>> GetMedicament(int id)
         {
             var medicament = await context.Medicaments.FindAsync(id);
-            
-            var securityCheck = await this.ValidateCarnetAccess(carnetSanteService, medicament?.CarnetSanteId ?? 0);
-            if (securityCheck != null) return securityCheck;
 
             if (medicament == null)
             {
                 return NotFound();
             }
+
+            var securityCheck = await this.ValidateCarnetAccess(carnetSanteService, medicament.CarnetSanteId);
+            if (securityCheck != null) return securityCheck;
 
             return medicament;
         }
@@ -65,20 +65,20 @@ namespace MonEndoVue.Server.Controllers
                 return BadRequest();
             }
 
-            var securityCheck = await this.ValidateCarnetAccess(carnetSanteService, medicamentUpdate.CarnetSanteId);
+            // Récupérer l'entité existante de la base de données
+            var existingMedicament = await context.Medicaments.FindAsync(id);
+            if (existingMedicament == null)
+            {
+                return NotFound();
+            }
+
+            var securityCheck = await this.ValidateCarnetAccess(carnetSanteService, existingMedicament.CarnetSanteId);
             if (securityCheck != null) return securityCheck;
 
             // Validation : La posologie est obligatoire pour les traitements médicamenteux
             if (medicamentUpdate.Type == TypeTraitement.Medicamenteux && string.IsNullOrWhiteSpace(medicamentUpdate.Posologie))
             {
                 return BadRequest(new { message = "La posologie est obligatoire pour les traitements médicamenteux." });
-            }
-
-            // Récupérer l'entité existante de la base de données
-            var existingMedicament = await context.Medicaments.FindAsync(id);
-            if (existingMedicament == null)
-            {
-                return NotFound();
             }
 
             // Mettre à jour uniquement les propriétés modifiables
@@ -89,21 +89,8 @@ namespace MonEndoVue.Server.Controllers
             existingMedicament.DateDebutTraitement = medicamentUpdate.DateDebutTraitement;
             existingMedicament.DateFinTraitement = medicamentUpdate.DateFinTraitement;
 
-            try
-            {
-                await context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!MedicamentExists(id))
-                {
-                    return NotFound();
-                }
-                else
-                {
-                    throw;
-                }
-            }
+            await context.SaveChangesAsync();
+            carnetSanteService.InvalidateCache(existingMedicament.CarnetSanteId);
 
             return NoContent();
         }
@@ -156,11 +143,6 @@ namespace MonEndoVue.Server.Controllers
             await context.SaveChangesAsync();
 
             return NoContent();
-        }
-
-        private bool MedicamentExists(int id)
-        {
-            return context.Medicaments.Any(e => e.Id == id);
         }
     }
 }

@@ -23,14 +23,14 @@ namespace MonEndoVue.Server.Controllers
         public async Task<ActionResult<DonneesActivitePhysique>> GetDonneesActivitePhysique(int id)
         {
             var donneesActivitePhysique = await context.DonneesActivitePhysique.FindAsync(id);
-            
-            var securityCheck = await this.ValidateCarnetAccess(carnetSanteService, donneesActivitePhysique?.CarnetSanteId ?? 0);
-            if (securityCheck != null) return securityCheck;
 
             if (donneesActivitePhysique == null)
             {
                 return NotFound();
             }
+
+            var securityCheck = await this.ValidateCarnetAccess(carnetSanteService, donneesActivitePhysique.CarnetSanteId);
+            if (securityCheck != null) return securityCheck;
 
             return donneesActivitePhysique;
         }
@@ -55,29 +55,29 @@ namespace MonEndoVue.Server.Controllers
         public async Task<IActionResult> PutDonneesActivitePhysique(int id,
             DonneesActivitePhysique donneesActivitePhysique)
         {
-            var securityCheck = await this.ValidateCarnetAccess(carnetSanteService, donneesActivitePhysique.CarnetSanteId);
-            if (securityCheck != null) return securityCheck;
-            
             if (id != donneesActivitePhysique.Id)
             {
                 return BadRequest();
             }
 
-            context.Entry(donneesActivitePhysique).State = EntityState.Modified;
-
-            try
+            var existing = await context.DonneesActivitePhysique.FindAsync(id);
+            if (existing == null)
             {
-                await context.SaveChangesAsync();
+                return NotFound();
             }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!DonneesActivitePhysiqueExists(id))
-                {
-                    return NotFound();
-                }
 
-                throw;
-            }
+            var securityCheck = await this.ValidateCarnetAccess(carnetSanteService, existing.CarnetSanteId);
+            if (securityCheck != null) return securityCheck;
+
+            existing.TypeActivite = donneesActivitePhysique.TypeActivite;
+            existing.Date = donneesActivitePhysique.Date;
+            existing.Duree = donneesActivitePhysique.Duree;
+            existing.Intensite = donneesActivitePhysique.Intensite;
+            existing.EffetDouleur = donneesActivitePhysique.EffetDouleur;
+            existing.Commentaire = donneesActivitePhysique.Commentaire;
+
+            await context.SaveChangesAsync();
+            carnetSanteService.InvalidateCache(existing.CarnetSanteId);
 
             return NoContent();
         }
@@ -124,11 +124,6 @@ namespace MonEndoVue.Server.Controllers
 
 
             return NoContent();
-        }
-
-        private bool DonneesActivitePhysiqueExists(int id)
-        {
-            return context.DonneesActivitePhysique.Any(e => e.Id == id);
         }
     }
 }

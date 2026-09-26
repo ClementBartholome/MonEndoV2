@@ -54,7 +54,7 @@ public async Task<IActionResult> Put(int id, DonneesXxxDto dto, CancellationToke
 - GET par id : charger, `NotFound()` si absent, **puis** vérifier le carnet.
 - POST : vérifier le `CarnetSanteId` reçu **et** les clés étrangères (ex. `MedicamentId` doit appartenir au même carnet).
 - Refus d'accès : `Forbid()` **sans argument** (son paramètre est un nom de schéma d'authentification ; passer un message
-  provoque une erreur 500). `ValidateCarnetAccess` a encore ce défaut, à corriger quand on y touche.
+  provoque une erreur 500).
 
 ## Erreurs et réponses
 - `BadRequest(new { message = "Message en français" })` : format lu par `useDialogForm.getErrorDescription` côté client.
@@ -98,12 +98,15 @@ Clés attendues (noms seulement) : `ConnectionStrings:DefaultConnection`, `Azure
 Projet `MonEndoVue.Server.Tests` (xUnit, **net8.0** comme la CI et le Dockerfile), lancé par `dotnet test` et par la CI.
 - Règles métier pures (validateurs statiques, ex. `BilanTransitValidator`) : tests unitaires dans `Services/`, nommés
   `Methode_Situation_ResultatAttendu` en français, `[Theory]` pour les cas limites.
-- Contrôleurs et services : tests avec EF InMemory via `Support/CarnetDeTest.cs` (base isolée + utilisatrice + carnet,
-  `ContexteAuthentifie()` pour instancier un contrôleur authentifié). Modèles : `Controllers/BilanQuotidienControllerTransitTests.cs`,
+- Contrôleurs et services : tests avec EF InMemory via `Support/CarnetDeTest.cs` (base isolée + utilisatrice connectée et
+  son carnet + une autre utilisatrice et son carnet `AutreCarnetSanteId` ; `ContexteAuthentifie()` / `ContexteAnonyme()`
+  pour instancier un contrôleur). Modèles : `Controllers/BilanQuotidienControllerTransitTests.cs`,
   `Services/CarnetSanteServiceExportTests.cs`.
+- **Cloisonnement** : tout contrôleur de données du carnet a son fichier `Controllers/<Controleur>CloisonnementTests.cs`
+  (GET/PUT : `NotFound` si absent, `Forbid` sur le carnet de l'autre sans rien modifier, copie des champs sans changer de
+  carnet ; clés étrangères d'un autre carnet refusées). Un nouvel endpoint ou champ modifiable s'y ajoute.
 - **Quality gate SonarCloud (plan gratuit, non modifiable) : 80 % de couverture sur le nouveau code.** La CI envoie la couverture
   (coverlet, OpenCover) ; migrations et client sont exclus. Donc **toute ligne C# ajoutée ou modifiée hors migration doit être
   exécutée par un test**, sinon le check Sonar de la PR échoue. Vérifier en local :
   `dotnet test --collect:"XPlat Code Coverage;Format=opencover"`.
-- Prochaine étape : tests d'intégration avec `WebApplicationFactory` pour le cloisonnement (une utilisatrice ne peut ni lire
-  ni modifier le carnet d'une autre).
+- Prochaine étape : tests d'intégration avec `WebApplicationFactory` (routage, `[Authorize]`, code HTTP réel des refus).
