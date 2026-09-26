@@ -29,7 +29,6 @@ import dayGridMonth from "@fullcalendar/daygrid";
 import dayGridWeek from "@fullcalendar/daygrid";
 import frLocale from '@fullcalendar/core/locales/fr';
 import interactionPlugin from "@fullcalendar/interaction";
-import 'vue-popperjs/dist/vue-popper.css';
 import {Button} from '@/shared/components/ui/button';
 import type {CalendarEvent} from '@/features/schedule/models/calendar-events/calendar-event';
 import type { CalendarOptions } from '@fullcalendar/core' 
