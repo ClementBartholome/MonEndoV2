@@ -284,7 +284,7 @@ namespace MonEndoVue.Server
             app.UseAuthentication();
             app.UseAuthorization();
             app.UseRateLimiter();
-            app.MapControllers().RequireRateLimiting("api");
+            app.MapControllers().Add(endpoint => PolitiquesDebit.AppliquerParDefaut(endpoint, PolitiquesDebit.Api));
             // Sonde de disponibilité utilisée par le pipeline de déploiement (anonyme, hors rate limit).
             app.MapHealthChecks("/health").AllowAnonymous();
             app.MapFallbackToFile("/index.html");

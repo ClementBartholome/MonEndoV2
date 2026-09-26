@@ -161,10 +161,10 @@ Regles:
 - [ ] Tests E2E mobile des flux de saisie principaux
 
 ### Lot D - Security baseline
-- [ ] Rate limiting endpoint-level
-- [ ] Security headers globaux
-- [ ] Validation JWT stricte conditionnelle
-- [ ] Revue obsolete API de credentials Google
+- [x] Rate limiting endpoint-level (politique `auth` reellement appliquee aux endpoints d'authentification, 2026-09)
+- [x] Security headers globaux
+- [x] Validation JWT stricte conditionnelle
+- [x] Revue obsolete API de credentials Google (supprimee avec Firebase, 2026-09)
 
 ### Lot E - Notifications
 - [x] Notifications push generiques pour toutes les utilisatrices (rappels personnalises), envoyees cote serveur

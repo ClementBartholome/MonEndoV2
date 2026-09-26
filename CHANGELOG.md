@@ -13,3 +13,5 @@ Première version numérotée de l'application.
 ### Modifié
 
 ### Sécurité
+- Les identifiants (connexion, inscription, changement de mot de passe) sont transmis uniquement dans le corps des requêtes.
+- Limitation du nombre de tentatives sur les points d'accès d'authentification ; aucune adresse e-mail dans les journaux de connexion.

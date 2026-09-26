@@ -2,7 +2,9 @@ using System.IdentityModel.Tokens.Jwt;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
+using MonEndoVue.Server.Dto;
 using MonEndoVue.Server.Models;
 using MonEndoVue.Server.Services;
 
@@ -20,10 +22,11 @@ namespace MonEndoVue.Server.Controllers
     {
         
         [HttpPost("register")]
-        public async Task<IActionResult> Register(string email, string password)
+        [EnableRateLimiting("auth")]
+        public async Task<IActionResult> Register([FromBody] IdentifiantsDto identifiants)
         {
-            var user = new ApplicationUser { UserName = email, Email = email, EmailConfirmed = true };
-            var result = await userManager.CreateAsync(user, password);
+            var user = new ApplicationUser { UserName = identifiants.Email, Email = identifiants.Email, EmailConfirmed = true };
+            var result = await userManager.CreateAsync(user, identifiants.Password);
 
             if (!result.Succeeded)
             {
@@ -65,18 +68,18 @@ namespace MonEndoVue.Server.Controllers
         }
 
         [HttpPost("login")]
-        public async Task<IActionResult> Login(string email, string password)
+        [EnableRateLimiting("auth")]
+        public async Task<IActionResult> Login([FromBody] IdentifiantsDto identifiants)
         {
-            logger.LogInformation("Login method called with email: {Email}", email);
             try
             {
-                var user = await userManager.FindByEmailAsync(email);
+                var user = await userManager.FindByEmailAsync(identifiants.Email);
                 if (user == null)
                 {
                     return Unauthorized();
                 }
 
-                var result = await signInManager.CheckPasswordSignInAsync(user, password, lockoutOnFailure: false);
+                var result = await signInManager.CheckPasswordSignInAsync(user, identifiants.Password, lockoutOnFailure: false);
                 if (!result.Succeeded) return Unauthorized();
 
                 var (accessToken, tokenExpiry) = tokenService.GenerateAccessToken(user);
@@ -112,9 +115,8 @@ namespace MonEndoVue.Server.Controllers
             }
             catch (Exception ex)
             {
-                logger.LogError(ex.Message);
-                Console.WriteLine(ex.Message);
-                return StatusCode(500, ex.Message);
+                logger.LogError(ex, "Login failed");
+                return StatusCode(500, new { message = "Une erreur est survenue lors de la connexion." });
             }
         }
 
@@ -222,7 +224,8 @@ namespace MonEndoVue.Server.Controllers
         
         [Authorize]
         [HttpPost("change-password")]
-        public async Task<IActionResult> ChangePassword(string currentPassword, string newPassword)
+        [EnableRateLimiting("auth")]
+        public async Task<IActionResult> ChangePassword([FromBody] ChangementMotDePasseDto changement)
         {
             var user = await userManager.GetUserAsync(User);
             if (user == null)
@@ -230,7 +233,7 @@ namespace MonEndoVue.Server.Controllers
                 return BadRequest();
             }
 
-            var result = await userManager.ChangePasswordAsync(user, currentPassword, newPassword);
+            var result = await userManager.ChangePasswordAsync(user, changement.CurrentPassword, changement.NewPassword);
             if (result.Succeeded)
             {
                 return Ok();
