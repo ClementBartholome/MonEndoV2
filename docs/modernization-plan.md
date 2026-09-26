@@ -228,6 +228,9 @@ Regles:
     d'installation iOS), rappel du bilan a l'heure choisie seulement si le bilan du jour n'est pas rempli, notification de test
   - rappel hebdomadaire de la photo de suivi acne (jour et heure au choix, seulement sans photo depuis 7 jours) ; chaque
     notification ouvre sa page (`/bilan-quotidien`, `/cycle?onglet=acne`)
+  - logs de production : conservation 30 jours (Serilog quotidien, logrotate nginx, rotation Docker), niveaux adaptes,
+    consultation via Dozzle en tunnel SSH ; compose de production versionne dans `deploy/` (sans secret)
+  - suivi des tests Playwright (Piwi Dashboard) reporte : a reevaluer une fois les tests E2E executes en CI
 
 ## Definition of Done (pour chaque lot)
 - UX: test manuel mobile + desktop + accessibilite clavier
