@@ -35,12 +35,19 @@ namespace MonEndoVue.Server
                 .AddEnvironmentVariables()
                 .AddUserSecrets<Program>();
 
+            // Hors dev : Information pour l'application, Warning pour le framework (EF Core, ASP.NET Core).
+            // Un fichier par jour, supprimé automatiquement au bout de 30 jours.
+            var estDev = builder.Environment.IsDevelopment();
             Log.Logger = new LoggerConfiguration()
-                .MinimumLevel.Debug()
-                .MinimumLevel.Override("Microsoft", LogEventLevel.Information)
+                .MinimumLevel.Is(estDev ? LogEventLevel.Debug : LogEventLevel.Information)
+                .MinimumLevel.Override("Microsoft", estDev ? LogEventLevel.Information : LogEventLevel.Warning)
+                .MinimumLevel.Override("System", estDev ? LogEventLevel.Information : LogEventLevel.Warning)
+                .MinimumLevel.Override("Microsoft.Hosting.Lifetime", LogEventLevel.Information)
                 .Enrich.FromLogContext()
                 .WriteTo.Console()
-                .WriteTo.File("Logs/MonEndoVue-.log", rollingInterval: RollingInterval.Month)
+                .WriteTo.File("Logs/MonEndoVue-.log",
+                    rollingInterval: RollingInterval.Day,
+                    retainedFileTimeLimit: TimeSpan.FromDays(30))
                 .CreateLogger();
 
             builder.Host.UseSerilog();
