@@ -1,7 +1,6 @@
 import './assets/index.css'
 
 import { createApp } from 'vue'
-import OneSignalVuePlugin from '@onesignal/onesignal-vue3'
 import { createPinia } from 'pinia';
 import App from './App.vue'
 import router from './router'
@@ -9,18 +8,21 @@ import ApiService from "@/shared/services/apiService";
 
 const pinia = createPinia();
 
-createApp(App).use(router).use(pinia).use(OneSignalVuePlugin, {
-    appId: "d3434227-a679-4122-b83d-3d1a4e7c1b19",
-}).mount('#app')
+createApp(App).use(router).use(pinia).mount('#app')
 
 ApiService.init(pinia);
 
-// Nettoyage ponctuel des données laissées par l'ancien mode hors ligne (abandonné) :
-// base IndexedDB contenant des données de santé et cache localStorage des événements.
+// Nettoyage ponctuel des données laissées par l'ancien mode hors ligne et par OneSignal (abandonnés) :
+// base IndexedDB contenant des données de santé, caches localStorage et ancien service worker OneSignal.
 // À retirer après le 2026-12-31.
 try {
     indexedDB?.deleteDatabase('MonEndoOffline');
     localStorage.removeItem('events');
+    localStorage.removeItem('notification-permission');
+    navigator.serviceWorker?.getRegistrations().then((registrations) => registrations
+        .filter((registration) => registration.active?.scriptURL.endsWith('/OneSignalSDKWorker.js'))
+        .forEach((registration) => registration.unregister()))
+        .catch(() => undefined);
 } catch {
     // Stockage indisponible (navigation privée, etc.) : rien à nettoyer.
 }
