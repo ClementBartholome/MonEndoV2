@@ -16,14 +16,14 @@
 
       <div class="mb-6">
         <div class="flex justify-between mb-2">
-          <span class="text-sm font-medium">Étape {{ currentStep }}/7</span>
-          <span class="text-sm text-gray-500">{{ Math.round((currentStep / 7) * 100) }}%</span>
+          <span class="text-sm font-medium">Étape {{ currentStep }}/{{ TOTAL_STEPS }}</span>
+          <span class="text-sm text-gray-500">{{ Math.round((currentStep / TOTAL_STEPS) * 100) }}%</span>
         </div>
-        <Progress :model-value="(currentStep / 7) * 100" class="h-3 mb-4"/>
+        <Progress :model-value="(currentStep / TOTAL_STEPS) * 100" class="h-3 mb-4"/>
 
         <div class="flex justify-between gap-2 bilan-stepper">
           <button
-              v-for="step in 7"
+              v-for="step in TOTAL_STEPS"
               :key="step"
               @click="goToStep(step)"
               :disabled="!canAccessStep(step)"
@@ -263,6 +263,9 @@
         </div>
       </div>
 
+      <!-- Étape 8: Transit -->
+      <TransitStep v-if="currentStep === 8" v-model="transitData"/>
+
       <!-- Boutons de navigation -->
       <div class="mt-auto flex justify-between pt-6">
         <Button
@@ -278,7 +281,7 @@
 
         <Button
             @click="nextStep"
-            v-if="currentStep < 7"
+            v-if="currentStep < TOTAL_STEPS"
             :disabled="!isStepValid"
             variant="custom"
             class="flex items-center gap-2"
@@ -288,7 +291,7 @@
         </Button>
         <Button
             @click="submitForm"
-            v-if="currentStep === 7"
+            v-if="currentStep === TOTAL_STEPS"
             variant="custom"
             :disabled="!isStepValid"
             class="flex items-center gap-2"
@@ -405,6 +408,8 @@
                     </div>
                   </div>
 
+                  <TransitRecap :bilan="selectedBilan"/>
+
                   <div v-if="selectedBilan.commentaire" class="bg-white rounded-xl border border-gray-100 p-3">
                     <p class="text-xs text-muted-foreground flex items-center gap-1 mb-1">
                       <i class="material-symbols-outlined text-base">comment</i>
@@ -489,6 +494,11 @@ import DashboardBilanQuotidien from "@/features/bilan-quotidien/components/Dashb
 import {Tabs, TabsContent, TabsList, TabsTrigger} from "@/shared/components/ui/tabs";
 import BilanWeekSelector from "@/features/bilan-quotidien/components/BilanWeekSelector.vue";
 import {toast} from "@/shared/components/ui/toast";
+import TransitStep from "@/features/bilan-quotidien/components/TransitStep.vue";
+import TransitRecap from "@/features/bilan-quotidien/components/TransitRecap.vue";
+import {estTransitComplet, transitVide} from "@/features/bilan-quotidien/config/transit";
+
+const TOTAL_STEPS = 8;
 
 const currentStep = ref(1);
 const isSubmitted = ref(false);
@@ -545,6 +555,8 @@ const formData = ref({
   commentaire: ''
 });
 
+const transitData = ref(transitVide());
+
 const todayBilan = ref({
   mood: '',
   stressPro: 0,
@@ -586,7 +598,8 @@ const stepTitles = {
   4: 'Activité',
   5: 'Hydratation',
   6: 'Alimentation',
-  7: 'Douleur'
+  7: 'Douleur',
+  8: 'Transit'
 };
 
 const selectedBilan = computed(() => {
@@ -667,7 +680,7 @@ const markStepCompleted = (step: number) => {
 };
 
 const nextStep = () => {
-  if (currentStep.value < 7 && isStepValid.value) {
+  if (currentStep.value < TOTAL_STEPS && isStepValid.value) {
     markStepCompleted(currentStep.value);
     currentStep.value++;
   }
@@ -714,6 +727,7 @@ const submitForm = async () => {
       stressPerso: formData.value.stressPerso[0],
       fatigue: formData.value.fatigue[0],
       douleurMoyenne: formData.value.douleurMoyenne[0],
+      ...transitData.value,
     };
 
     const response = await apiService.postBilanQuotidien(newBilan);
@@ -758,6 +772,7 @@ const resetForm = () => {
     grignotage: false,
     commentaire: ''
   };
+  transitData.value = transitVide();
 };
 
 const isStepValid = computed(() => {
@@ -776,6 +791,8 @@ const isStepValid = computed(() => {
       return true; // Toujours valide (commentaire optionnel)
     case 7:
       return formData.value.douleurMoyenne[0] !== undefined;
+    case 8:
+      return estTransitComplet(transitData.value);
     default:
       return false;
   }
@@ -956,6 +973,7 @@ label:active {
   .bilan-stepper {
     flex-wrap: wrap;
     justify-content: center;
+    gap: 0.25rem;
   }
 
   .bilan-step-dot {

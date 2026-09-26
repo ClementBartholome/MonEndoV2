@@ -35,7 +35,9 @@ Gabarits : [templates.md](templates.md).
 2. Ajouter une méthode typée dans `shared/services/apiService.ts` (`Promise<T>`, listes sous `$values`).
 
 ## Vérifier
-- `dotnet build -c Release` sans nouvelle erreur ni nouvel avertissement.
+- `dotnet build -c Release` sans nouvelle erreur ni nouvel avertissement, puis `dotnet test`.
+- Toute règle de validation ajoutée est extraite dans une classe testable (modèle : `Services/BilanTransitValidator.cs`)
+  et couverte dans `MonEndoVue.Server.Tests`.
 - Tester l'endpoint en local (Swagger en Development ou via l'UI) : cas nominal, id inexistant (404), **carnet d'une autre
   utilisatrice (403)**, payload invalide (400), sans authentification (401).
 - `npm run type-check` si le client est touché.

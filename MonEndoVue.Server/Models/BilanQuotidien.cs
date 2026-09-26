@@ -16,5 +16,16 @@
         public bool Lactose { get; set; }
         public bool Grignotage { get; set; }
         public string? Commentaire { get; set; }
+
+        // Transit (catégorie facultative du bilan) : null = non renseigné.
+        public bool? Selles { get; set; }
+        // Échelle de Bristol (1 à 7), uniquement si Selles == true ; null = « ne pas renseigner ».
+        public int? TypeBristol { get; set; }
+        public bool? CrampesEstomac { get; set; }
+        // Légère, Modérée ou Forte, uniquement si CrampesEstomac == true.
+        public string? IntensiteCrampes { get; set; }
+        public bool? Ballonnements { get; set; }
+        // Légère, Modérée ou Forte, uniquement si Ballonnements == true.
+        public string? IntensiteBallonnements { get; set; }
     }
 }

@@ -14,6 +14,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		.dockerignore = .dockerignore
 	EndProjectSection
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MonEndoVue.Server.Tests", "MonEndoVue.Server.Tests\MonEndoVue.Server.Tests.csproj", "{50A696C0-EC37-4034-98CD-2F487991B634}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -30,6 +32,10 @@ Global
 		{5B3AF86B-B2C1-4A90-934A-9EA62CCFCE54}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{5B3AF86B-B2C1-4A90-934A-9EA62CCFCE54}.Release|Any CPU.Build.0 = Release|Any CPU
 		{5B3AF86B-B2C1-4A90-934A-9EA62CCFCE54}.Release|Any CPU.Deploy.0 = Release|Any CPU
+		{50A696C0-EC37-4034-98CD-2F487991B634}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{50A696C0-EC37-4034-98CD-2F487991B634}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{50A696C0-EC37-4034-98CD-2F487991B634}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{50A696C0-EC37-4034-98CD-2F487991B634}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

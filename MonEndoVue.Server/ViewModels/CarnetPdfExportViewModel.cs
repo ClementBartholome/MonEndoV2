@@ -58,4 +58,10 @@ public class BilanQuotidienExportViewModel
     public int DouleurMoyenne { get; set; }
     public double Hydratation { get; set; }
     public double StressMoyenne { get; set; }
+    public bool? Selles { get; set; }
+    public int? TypeBristol { get; set; }
+    public bool? CrampesEstomac { get; set; }
+    public string? IntensiteCrampes { get; set; }
+    public bool? Ballonnements { get; set; }
+    public string? IntensiteBallonnements { get; set; }
 }
