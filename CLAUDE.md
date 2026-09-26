@@ -125,3 +125,43 @@ Utiliser le skill `revue-securite` avant de commiter un changement touchant auth
 - `endpoint-api` — ajouter ou modifier un endpoint ASP.NET Core de façon sûre (cloisonnement, DTO, migration, type TS).
 - `revue-securite` — revue ciblée MonEndo d'un diff ou d'une zone de code.
 - `commit` — préparer un commit conforme (vérifications, découpage, message).
+- `revue-pr` — évaluer une PR existante avant merge (conflits, fichiers parasites, migrations, cohérence front/back, impact déploiement).
+- `capitaliser` — en fin de tâche, reporter ce qui a été appris dans CLAUDE.md, les skills ou la mémoire.
+
+## Amélioration continue
+Objectif : que l'utilisateur n'ait jamais à répéter une consigne ou une information.
+- À la fin de chaque tâche significative, appliquer le skill `capitaliser` : décision produit, convention, piège d'outillage
+  ou correction de l'utilisateur → le bon fichier (CLAUDE.md racine ou de couche, skill, mémoire personnelle).
+- Si une instruction de ce fichier ou d'un skill s'avère fausse ou incomplète, la corriger dans la même branche que le travail
+  concerné (commit `docs(claude): …` séparé) plutôt que de la contourner.
+- Ces fichiers suivent le circuit normal : branche + PR, jamais de push direct sur `main`, rien de secret (dépôt public).
+
+## Pièges connus de l'environnement (Windows, Git Bash)
+- `python` lance le stub du Microsoft Store et bloque : utiliser **node** pour les scripts ponctuels (JSON, remplacements).
+- Git Bash convertit les arguments `/xxx` en chemins : `dotnet publish … -p:UseAppHost=false` (et non `/p:`).
+- Ne jamais mettre de backticks Markdown dans une chaîne bash entre guillemets doubles (substitution de commande silencieuse) :
+  écrire ou modifier le Markdown avec les outils d'édition de fichiers.
+- Beaucoup de fichiers sont en CRLF : un script de remplacement doit normaliser (`\r\n` → `\n`) puis restaurer les fins de ligne.
+- Chemins trop longs lors d'un checkout d'anciens commits (dossier `packages/` historique) : `git -c core.longpaths=true …`.
+- **Plusieurs sessions Claude peuvent travailler en parallèle dans le même dossier** : ne jamais changer de branche,
+  rebaser ou réécrire l'historique dans la copie principale sans vérifier `git status` / `git worktree list` ; travailler
+  dans un worktree dédié (`git worktree add ../MonEndoVue-<sujet> -b <branche> origin/main`) puis le supprimer après merge.
+- Pas de Docker sur le poste : le build d'image n'est validé que par la CI d'une PR (job `image`, sans push).
+- `gh` n'est pas authentifié : lire les PR/issues/runs via l'API publique (`curl https://api.github.com/repos/ClementBartholome/MonEndoV2/…`)
+  et donner à l'utilisateur le lien de création de PR.
+- Contrôle visuel sans backend : lancer `npx vite --port <port>` puis, dans le navigateur intégré, poser un faux `user` dans
+  `localStorage` (le garde de routes ne vérifie que sa présence) ; les appels API échouent, l'UI reste testable.
+
+## Tester une branche de bout en bout en local
+Procédure validée (sans jamais lire les fichiers de secrets) :
+1. **Base** : base de dev `MonEndo` sur l'instance `localhost\MSSQLSERVER01` (authentification Windows, `sqlcmd -E -C`).
+   Appliquer les migrations de la branche depuis son worktree avec la configuration factice `appsettings.DesignTime.json`
+   (voir `MonEndoVue.Server/CLAUDE.md`) et
+   `ASPNETCORE_ENVIRONMENT=DesignTime dotnet ef database update --connection "Server=localhost\MSSQLSERVER01;Database=MonEndo;Trusted_Connection=True;TrustServerCertificate=True"`.
+2. **API** : `dotnet build -c Release` dans le worktree, puis lancer la DLL en se plaçant dans `MonEndoVue.Server/` de la
+   copie principale (qui contient `appsettings.Development.json`, lu par l'application et non par Claude) :
+   `ASPNETCORE_ENVIRONMENT=Development ASPNETCORE_URLS=https://localhost:7206 dotnet <worktree>/MonEndoVue.Server/bin/Release/net8.0/MonEndoVue.Server.dll`.
+3. **Front** : dans le worktree, `monendovue.client/.env.local` avec `VITE_API_URL=https://localhost:7206/` (ignoré par git),
+   puis `npx vite --port 5173 --strictPort` (5173 est l'origine autorisée par CORS).
+4. Attendre `https://localhost:7206/health` = `Healthy`, ouvrir `https://localhost:5173/login` : **l'utilisateur se connecte
+   lui-même** avec son compte local, puis on teste à 375px et en desktop.
