@@ -139,6 +139,7 @@
 </template>
 
 <script setup lang="ts">
+import { scoreHumeur } from '@/features/bilan-quotidien/utils/humeur';
 import {computed} from 'vue';
 import {Card, CardContent, CardHeader, CardTitle} from "@/shared/components/ui/card";
 import type {BilanQuotidien} from "@/features/bilan-quotidien/types/bilan-quotidien";
@@ -153,10 +154,7 @@ const props = defineProps<{
 
 const wellbeingGoals = getWellbeingGoals();
 
-const getMoodScore = (mood: string): number => {
-  const mapping: Record<string, number> = {'Heureuse': 20, 'Neutre': 10, 'Triste': 0};
-  return mapping[mood] || 10;
-};
+const getMoodScore = (bilan: BilanQuotidien): number => (scoreHumeur(bilan) ?? 0.5) * 20;
 
 const getScoreColor = (score: number): string => {
   if (score >= 70) return 'text-green-500';
@@ -250,7 +248,7 @@ const scoreBreakdown = computed((): ScoreMetric[] => {
   const recent = props.bilans.slice(-7);
   if (recent.length === 0) return [];
 
-  const avgMoodScore = recent.reduce((sum, b) => sum + getMoodScore(b.mood), 0) / recent.length;
+  const avgMoodScore = recent.reduce((sum, b) => sum + getMoodScore(b), 0) / recent.length;
   const avgStress = recent.reduce((sum, b) => sum + ((b.stressPro || 0) + (b.stressPerso || 0)) / 2, 0) / recent.length;
   const avgFatigue = recent.reduce((sum, b) => sum + (b.fatigue || 0), 0) / recent.length;
   const avgPain = recent.reduce((sum, b) => sum + (b.douleurMoyenne || 0), 0) / recent.length;

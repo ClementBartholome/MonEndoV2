@@ -316,7 +316,6 @@ namespace MonEndoVue.Server.Migrations
                         .HasColumnType("bit");
 
                     b.Property<string>("Mood")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<int>("Pas")
@@ -589,12 +588,21 @@ namespace MonEndoVue.Server.Migrations
                     b.ToTable("Medicaments");
                 });
 
-            modelBuilder.Entity("MonEndoVue.Server.Models.PreferenceRappel", b =>
+            modelBuilder.Entity("MonEndoVue.Server.Models.Rappel", b =>
                 {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<bool>("Actif")
+                        .HasColumnType("bit");
+
                     b.Property<int>("CarnetSanteId")
                         .HasColumnType("int");
 
-                    b.Property<DateOnly?>("DernierRappelLe")
+                    b.Property<DateOnly?>("DernierEnvoiLe")
                         .HasColumnType("date");
 
                     b.Property<string>("FuseauHoraire")
@@ -602,15 +610,23 @@ namespace MonEndoVue.Server.Migrations
                         .HasMaxLength(64)
                         .HasColumnType("nvarchar(64)");
 
-                    b.Property<TimeOnly>("HeureRappel")
+                    b.Property<TimeOnly>("Heure")
                         .HasColumnType("time");
 
-                    b.Property<bool>("RappelActif")
-                        .HasColumnType("bit");
+                    b.Property<int?>("JourSemaine")
+                        .HasColumnType("int");
 
-                    b.HasKey("CarnetSanteId");
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("nvarchar(32)");
 
-                    b.ToTable("PreferencesRappel");
+                    b.HasKey("Id");
+
+                    b.HasIndex("CarnetSanteId", "Type")
+                        .IsUnique();
+
+                    b.ToTable("Rappels");
                 });
 
             modelBuilder.Entity("MonEndoVue.Server.Models.SymptomeCycle", b =>
@@ -716,6 +732,35 @@ namespace MonEndoVue.Server.Migrations
                         .HasForeignKey("CarnetSanteId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.OwnsMany("MonEndoVue.Server.Models.EmotionBilan", "Emotions", b1 =>
+                        {
+                            b1.Property<int>("Id")
+                                .ValueGeneratedOnAdd()
+                                .HasColumnType("int");
+
+                            SqlServerPropertyBuilderExtensions.UseIdentityColumn(b1.Property<int>("Id"));
+
+                            b1.Property<int>("BilanQuotidienId")
+                                .HasColumnType("int");
+
+                            b1.Property<string>("Emotion")
+                                .IsRequired()
+                                .HasMaxLength(32)
+                                .HasColumnType("nvarchar(32)");
+
+                            b1.HasKey("Id");
+
+                            b1.HasIndex("BilanQuotidienId", "Emotion")
+                                .IsUnique();
+
+                            b1.ToTable("EmotionsBilan", (string)null);
+
+                            b1.WithOwner()
+                                .HasForeignKey("BilanQuotidienId");
+                        });
+
+                    b.Navigation("Emotions");
                 });
 
             modelBuilder.Entity("MonEndoVue.Server.Models.CarnetSante", b =>
@@ -810,11 +855,11 @@ namespace MonEndoVue.Server.Migrations
                     b.Navigation("CarnetSante");
                 });
 
-            modelBuilder.Entity("MonEndoVue.Server.Models.PreferenceRappel", b =>
+            modelBuilder.Entity("MonEndoVue.Server.Models.Rappel", b =>
                 {
                     b.HasOne("MonEndoVue.Server.Models.CarnetSante", "CarnetSante")
-                        .WithOne()
-                        .HasForeignKey("MonEndoVue.Server.Models.PreferenceRappel", "CarnetSanteId")
+                        .WithMany()
+                        .HasForeignKey("CarnetSanteId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 

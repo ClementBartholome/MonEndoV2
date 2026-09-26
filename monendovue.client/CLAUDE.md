@@ -43,6 +43,28 @@ Nouveau composant shadcn : `npx shadcn-vue add <nom>` (alias configurés vers `@
    - `components/AcneTabSection.vue` : conteneur qui instancie le composable et relie callbacks ↔ emits.
    - `components/AcneTabContent.vue` : présentation pure, deux props (`model`, `actions`), aucun état ni appel API.
 
+## SOLID côté client
+- **Responsabilité unique** :
+  - la page orchestre ;
+  - le composable porte la logique et les appels API ;
+  - le composant de présentation ne fait que du rendu ;
+  - un service ne fait que de l'I/O.
+  
+  Un fichier qui mélange ces rôles se découpe.
+- **Ouvert/fermé** : les variations par type passent par de la configuration typée (`shared/config/materialSymbols.ts`,
+  `features/bilan-quotidien/config/transit.ts`, `extraFields` de `GenericCardList`), pas par des chaînes de `v-if` / `switch`.
+- **Substitution** : un composant partagé se comporte de la même façon quel que soit le parent. Pas de prop ajoutée
+  « pour un seul écran » qui change son contrat ; préférer un slot ou un nouveau composant.
+- **Interfaces ciblées** : props minimales et typées. Un composant de présentation reçoit un `model` et des `actions`
+  dédiés, jamais l'objet métier complet « au cas où ».
+- **Inversion des dépendances** :
+  - un composant ne dépend jamais d'axios ou de `fetch` : il passe par un composable, qui passe par `apiService` ;
+  - un composable reçoit ses collaborateurs (callbacks, identifiants) via ses `options`, pour rester testable.
+- **Dette connue** (lot C de la roadmap) :
+  - `authService` / `tokenService` appellent axios directement ;
+  - `apiService` renvoie des `Promise<any>` ;
+  - `CyclePage`, `MedicamentPage` et `BilanQuotidienPage` mélangent orchestration, logique et rendu.
+
 ## Typage
 - **Aucun nouveau `any`** : typer avec les interfaces de `features/*/types`, sinon `unknown` + rétrécissement.
   L'existant en contient beaucoup (`apiService`, `useAcneTracking`) : les réduire quand on y touche.
@@ -77,8 +99,12 @@ Nouveau composant shadcn : `npx shadcn-vue add <nom>` (alias configurés vers `@
   en même temps que `public/sw.js`.
 
 ## Notifications Web Push
-- Tout passe par `features/parametres/composables/usePushNotifications.ts` (états, activation, préférences) et
+- Tout passe par `features/parametres/composables/usePushNotifications.ts` (états, activation, réglage des rappels) et
   `components/NotificationSettings.vue` ; le worker `public/push-sw.js` ne fait qu'afficher les notifications (aucun cache).
+- Rappels : une carte `ReglageRappelCard.vue` par type renvoyé par `GET Notifications/rappels` ; libellés dans
+  `config/rappels.ts` (un type sans entrée n'est pas affiché). Jours : 0 = dimanche, comme `DayOfWeek` côté serveur.
+- Une notification ouvre `data.url` : une page à onglets doit accepter un lien profond (`/cycle?onglet=acne|symptomes|cycles`,
+  lu dans `CyclePage.vue` au montage).
 - La clé publique VAPID vient de l'API (`GET Notifications/cle-publique`), jamais d'une variable `VITE_*`.
 - **iOS** : push disponible seulement dans l'app ouverte depuis l'écran d'accueil (iOS 16.4+), sinon afficher le guide
   d'installation. `Notification.requestPermission()` doit être le **premier `await`** d'un gestionnaire de clic (geste utilisateur),

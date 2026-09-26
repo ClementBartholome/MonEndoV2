@@ -9,9 +9,9 @@ Rappel : **merger sur `main` = déployer en production** (migrations EF appliqu�
 est toujours « qu'est-ce qui casse ou se perd en prod si on merge maintenant ? ».
 
 ## 1. Récupérer la PR sans toucher à la copie de travail
-- `gh` n'est pas authentifié : métadonnées via l'API publique
-  `curl -s https://api.github.com/repos/ClementBartholome/MonEndoV2/pulls/<n>` (titre, description, `mergeable`, `mergeable_state`,
-  nombre de fichiers) et l'issue liée (`/issues/<n>`) pour le besoin réel.
+- Métadonnées avec `gh` (authentifié) : `gh pr view <n> --json title,body,baseRefName,mergeable,files,statusCheckRollup`
+  et l'issue liée (`gh issue view <n>`) pour le besoin réel. Vérifier la **base** : `main` (= déploiement) ou `release/X.Y.Z`
+  (livraison groupée, voir le skill `release`) ; une PR de fonctionnalité doit aussi compléter `CHANGELOG.md`.
 - `git fetch origin main pull/<n>/head:pr-<n>` puis `git log --oneline origin/main..pr-<n>` et `git diff --stat $(git merge-base origin/main pr-<n>) pr-<n>`.
 - Pour construire ou tester : worktree temporaire dans le scratchpad (`git -c core.longpaths=true worktree add --detach <dossier> pr-<n>`),
   supprimé à la fin. Ne jamais faire de checkout dans la copie principale (d'autres sessions peuvent y travailler).
@@ -37,6 +37,14 @@ est toujours « qu'est-ce qui casse ou se perd en prod si on merge maintenant ? 
 
 **Qualité et sécurité**
 - Conventions de `CLAUDE.md` (couches, DTO, erreurs `{ message }`, logs, `any`, taille des composants, mobile-first).
+- **SOLID** sur le code ajouté ou modifié (sections « SOLID » des CLAUDE.md de couche). Signaler notamment :
+  - un contrôleur avec `AppDbContext` ou des requêtes ;
+  - un service fourre-tout ;
+  - une dépendance externe ou `DateTime.Now` non injectés ;
+  - un composant qui appelle l'API ou mélange logique et rendu ;
+  - des chaînes de `if` / `switch` par type au lieu de configuration.
+  
+  Ne pas exiger de refonte de l'existant non touché.
 - Cloisonnement par carnet sur tout endpoint touché (skill `revue-securite` si auth, endpoint ou upload).
 - Tests : présents pour les règles métier, projet de tests en **net8.0**, exécutés par `dotnet test`.
 

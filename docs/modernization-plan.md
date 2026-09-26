@@ -154,22 +154,33 @@ Regles:
 - [ ] Cartes d'insights hebdo (2-3 max, explicables)
 - [ ] Comparaison glissante 4 semaines
 - [x] Suivi photo acné en fenetre glissante multi-mois (comparaison visuelle au-dela du mois courant)
+- [x] Humeur du bilan en emotions multiples (1 a 3 parmi 10) et emotion de la semaine (issue #2) ; anciens bilans conserves
 
 ### Lot C - Engineering quality
 - [ ] Suppression progressive des `any` critiques
 - [ ] Normalisation handlers `onDelete` / `onEdit` (`string | number`)
 - [ ] Tests E2E mobile des flux de saisie principaux
+- [ ] SOLID serveur : controleurs sans `AppDbContext` ni requetes (logique dans un service par domaine)
+- [ ] SOLID serveur : decouper `CarnetSanteService` (lecture carnet / page d'accueil / export PDF)
+- [ ] SOLID serveur : abstraction du stockage des photos (`AzureBlobStorageService`) pour tester l'upload sans Azure (pas d'interface pour `TokenService` : KISS)
+- [ ] SOLID serveur : `TimeProvider` a la place de `DateTime.Now` (authentification)
+- [ ] SOLID client : `authService` / `tokenService` via l'instance axios de `apiService`, methodes `apiService` typees
+- [ ] SOLID client : decoupage de `CyclePage`, `MedicamentPage`, `BilanQuotidienPage` (pattern model/actions)
 
 ### Lot D - Security baseline
-- [ ] Rate limiting endpoint-level
-- [ ] Security headers globaux
-- [ ] Validation JWT stricte conditionnelle
-- [ ] Revue obsolete API de credentials Google
+- [x] Rate limiting endpoint-level (politique `auth` reellement appliquee aux endpoints d'authentification, 2026-09)
+- [x] Security headers globaux
+- [x] Validation JWT stricte conditionnelle
+- [x] Revue obsolete API de credentials Google (supprimee avec Firebase, 2026-09)
 
 ### Lot E - Notifications
 - [x] Notifications push generiques pour toutes les utilisatrices (rappels personnalises), envoyees cote serveur
   - idealement sans service tiers : Web Push standard (VAPID) avec un service worker dedie au push
   - aucune cle secrete cote client ; preferences de rappel par utilisatrice
+- [x] Rappel hebdomadaire de la photo de suivi acné (remplace le Zap), rappels generalises (`IRegleRappel`), notification qui ouvre la bonne page
+- [ ] Supprimer la table `PreferencesRappel` (non mappee depuis `GeneraliseRappels`) en 1.1, par une migration dediee, une fois
+  la 1.0.0 stable en production (le point de retour devient alors la 1.0.0, qui n'utilise plus cette table)
+- [x] Configuration VAPID validee au demarrage (avertissement explicite, aucune route en echec)
 
 ## Ce qui est deja implemente dans cette iteration
 - UX medicaments/sessions non medicamenteuses amelioree (`MedicamentPage.vue`):
@@ -209,6 +220,8 @@ Regles:
   - premier projet de tests serveur (xUnit) execute par la CI, couverture envoyee a SonarCloud (seuil 80 % sur le nouveau code)
   - notifications Web Push standard envoyees par le serveur : abonnement par appareil depuis Parametres (guide
     d'installation iOS), rappel du bilan a l'heure choisie seulement si le bilan du jour n'est pas rempli, notification de test
+  - rappel hebdomadaire de la photo de suivi acne (jour et heure au choix, seulement sans photo depuis 7 jours) ; chaque
+    notification ouvre sa page (`/bilan-quotidien`, `/cycle?onglet=acne`)
 
 ## Definition of Done (pour chaque lot)
 - UX: test manuel mobile + desktop + accessibilite clavier
@@ -218,6 +231,7 @@ Regles:
 - Produit: metrique avant/apres mesuree sur 2 semaines
 
 ## Pratiques Vue/SOLID a appliquer (obligatoire)
+- Regles completes (serveur et client) : sections « SOLID » de `MonEndoVue.Server/CLAUDE.md` et `monendovue.client/CLAUDE.md`.
 - Limiter la taille des pages: extraire tout bloc UI metier depassant ~150-200 lignes vers un composant dedie.
 - Garder la logique d'orchestration dans la page et deleguer le rendu aux composants presentational.
 - Eviter la duplication de markup: reutiliser les composants partages (`GenericCardList`, `SectionKpiHeader`, etc.).

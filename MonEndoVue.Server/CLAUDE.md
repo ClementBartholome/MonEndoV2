@@ -4,20 +4,52 @@ Complète le [CLAUDE.md racine](../CLAUDE.md). S'applique à tout le code de `Mo
 
 ## Organisation
 - `Controllers/` : un contrôleur par entité du carnet (`DonneesDouleursController`, `SymptomesCycleController`…),
-  `AccountController` (auth) et `NotificationsController` (abonnements push, préférences de rappel).
+  `AccountController` (auth) et `NotificationsController` (abonnements push, réglage des rappels).
 - `Services/` : logique métier (`CarnetSanteService`, validateurs comme `BilanTransitValidator`), auth (`TokenService`),
   stockage photos (`AzureBlobStorageService`), extensions (`ControllerSecurityExtensions`, `UserExtensions`).
 - `Models/` : entités EF. `Dto/` : entrées (`*Dto`). `ViewModels/` : sorties (`*ViewModel`).
 - `Data/AppDbContext.cs` : DbSets + relations en Fluent API. `Migrations/` : migrations EF (SQL Server uniquement).
 - `Jobs/` (Quartz : `RappelBilanJob` toutes les 15 min) et `Services/WebPush/` (envoi Web Push derrière `IEnvoiPush`,
-  rappels dans `NotificationsPushService`).
+  logique des endpoints dans `NotificationsService`, boucle d'envoi des rappels dans `NotificationsPushService`).
+- **Ajouter un type de rappel** : une valeur de `TypeRappel`, une classe `IRegleRappel` dans `Services/WebPush/Rappels/`
+  (calendrier par défaut, message avec l'URL à ouvrir, « suivi déjà fait ? »), son `AddScoped<IRegleRappel, …>` dans
+  `Program.cs` et ses tests ; côté client, une entrée dans `features/parametres/config/rappels.ts`. Rien d'autre à toucher.
 
 ## Couches (cible pour tout nouveau code)
-- **Contrôleur mince** : validation d'entrée, appel du service, mapping vers la réponse HTTP.
+- **Contrôleur mince** : validation d'entrée, appel du service, mapping vers la réponse HTTP. Le service renvoie un
+  `ResultatOperation` (`Services/ResultatOperation.cs`, statut métier sans dépendance HTTP) que le contrôleur traduit avec
+  `VersReponse` (`Controllers/ResultatOperationExtensions.cs`). Modèle : `NotificationsController` / `NotificationsService`.
 - **Service** : logique métier et requêtes EF, toujours scopées par carnet. Enregistré en `AddScoped` dans `Program.cs`.
 - Pas de repository générique au-dessus d'EF : n'extraire une classe d'accès aux données que si des requêtes sont partagées entre services.
 - **Entrée en DTO, sortie en ViewModel** : ne pas binder ni retourner d'entité EF dans le nouveau code (évite le sur-postage
   de `Id`, `CarnetSanteId`, `PhotoUrl`…). L'existant retourne encore des entités : ne pas étendre ce pattern.
+
+## SOLID côté serveur
+- **Responsabilité unique**
+  - Un contrôleur ne fait que du HTTP : il reçoit un DTO, appelle **un** service et traduit le résultat en réponse
+    (`Ok`, `NotFound`, `Forbid`…). Il n'injecte pas `AppDbContext` et n'écrit pas de requête LINQ (nouveau code).
+  - Un service par domaine métier (`BilanQuotidienService`, `NotificationsPushService`…) ; au-delà de ~200 lignes ou de
+    responsabilités hétérogènes (lecture, export, cache), le découper.
+  - Les règles de validation métier vont dans une classe dédiée, pure et testable (modèle : `BilanTransitValidator`).
+- **Ouvert/fermé** : un nouveau canal ou comportement s'ajoute par une nouvelle implémentation ou une nouvelle entrée
+  de configuration (politiques de débit, `IEnvoiPush`), pas en modifiant un `switch` existant.
+- **Substitution** : les faux de test (`FauxEnvoiPush`, `HorlogeFixe`) respectent exactement le contrat de l'abstraction.
+- **Interfaces ciblées** : une interface expose ce dont un consommateur a besoin, pas plus (modèle : `IEnvoiPush`, une méthode).
+- **Inversion des dépendances**
+  - Une interface seulement quand elle sert un besoin concret (**KISS**) :
+    - dépendance externe à remplacer dans les tests (push : `IEnvoiPush`) ;
+    - plusieurs implémentations réelles (règles de rappel : `IRegleRappel`).
+    
+    Heure via `TimeProvider` (jamais `DateTime.Now` dans le nouveau code), appels HTTP via un `HttpClient` typé.
+    Un service métier pur (ex. `TokenService`) reste une classe concrète.
+  - `AppDbContext` est l'abstraction d'accès aux données : il s'injecte dans les services, sans repository générique
+    par-dessus (voir « Couches »).
+  - Pas de `new` d'un service dans le code applicatif : tout passe par l'injection de dépendances (`Program.cs`).
+- **Dette connue** (lot C de la roadmap), à résorber quand on touche la zone :
+  - les contrôleurs injectent `AppDbContext` et contiennent des requêtes (sauf `NotificationsController`, déjà conforme) ;
+  - `CarnetSanteService` mélange lecture du carnet, page d'accueil, export PDF et cache ;
+  - `AzureBlobStorageService` (réseau) sans abstraction : en introduire une seulement pour tester l'upload sans Azure ;
+  - `DateTime.Now` subsiste dans l'authentification.
 
 ## Style C#
 - Namespace **file-scoped**, **primary constructors** pour l'injection, `Nullable` activé (déclarer `?` ou `required`).
@@ -34,28 +66,12 @@ Toute action qui touche une donnée d'un carnet vérifie la propriété avec `Va
 **chargée en base**, jamais sur le corps de la requête. Modèle : `PutSymptomeCycle` dans `Controllers/SymptomesCycleController.cs`.
 
 Pour une ressource propre à l'utilisatrice connectée (réglages, appareils…), préférer **déduire le carnet de la session**
-sans accepter d'identifiant en entrée : aucun IDOR possible. Modèle : `CarnetCourantAsync` dans `Controllers/NotificationsController.cs`.
+sans accepter d'identifiant en entrée : aucun IDOR possible. Modèle : `CarnetDeAsync` dans `Services/WebPush/NotificationsService.cs`.
 
-```csharp
-[HttpPut("{id:int}")]
-public async Task<IActionResult> Put(int id, DonneesXxxDto dto, CancellationToken ct)
-{
-    var existing = await context.DonneesXxx.FindAsync([id], ct);
-    if (existing is null) return NotFound();
-
-    var securityCheck = await this.ValidateCarnetAccess(carnetSanteService, existing.CarnetSanteId);
-    if (securityCheck != null) return securityCheck;
-
-    // Copier uniquement les champs modifiables ; jamais Entry(dto).State = Modified,
-    // jamais de changement de CarnetSanteId.
-    existing.Intensite = dto.Intensite;
-    existing.Commentaire = dto.Commentaire;
-
-    await context.SaveChangesAsync(ct);
-    carnetSanteService.InvalidateCache(existing.CarnetSanteId);
-    return NoContent();
-}
-```
+**Nouveau code (SOLID)** : le contrôle de propriété se fait **dans le service** (`EstProprietaireAsync` sur l'entité chargée,
+statut `Interdit`/`Introuvable` traduit par le contrôleur) : voir le gabarit du skill `endpoint-api` (`templates.md`).
+Le code existant utilise encore `ValidateCarnetAccess` dans les contrôleurs. Dans tous les cas : copier uniquement les champs
+modifiables, jamais `Entry(dto).State = Modified`, jamais de changement de `CarnetSanteId`.
 - GET par id : charger, `NotFound()` si absent, **puis** vérifier le carnet.
 - POST : vérifier le `CarnetSanteId` reçu **et** les clés étrangères (ex. `MedicamentId` doit appartenir au même carnet).
 - Refus d'accès : `Forbid()` **sans argument** (son paramètre est un nom de schéma d'authentification ; passer un message
@@ -73,7 +89,10 @@ public async Task<IActionResult> Put(int id, DonneesXxxDto dto, CancellationToke
 - Interdits dans les logs : email, nom d'utilisateur, token, code OAuth, contenu d'une donnée de santé. Les identifiants numériques suffisent.
 
 ## Sécurité transverse
-- Rate limiting : politiques `api` (appliquée à tous les contrôleurs) et `auth` ; `[EnableRateLimiting("auth")]` sur les endpoints d'authentification.
+- Rate limiting : politiques `api` (par défaut) et `auth` (20 req/min), constantes dans `Services/PolitiquesDebit.cs`.
+  La politique `api` n'est posée que sur les endpoints qui n'en déclarent pas (`PolitiquesDebit.AppliquerParDefaut`) :
+  un `[EnableRateLimiting(PolitiquesDebit.Auth)]` sur une action est donc réellement appliqué. À mettre sur tout endpoint
+  d'authentification ou d'envoi coûteux. Vérifier en local par une rafale de requêtes (429 attendu au-delà de la limite).
 - Identifiants et mots de passe dans le **corps** des requêtes, jamais en query string.
 - Uploads photo : réutiliser `IsPhotoValid`/`ResolveFileExtension` (`SymptomesCycleController`) et `AzureBlobStorageService`
   (chemin `symptomes/{carnetSanteId}/{guid}{ext}`). Ne jamais supprimer un blob à partir d'une URL fournie par le client.
@@ -86,6 +105,10 @@ public async Task<IActionResult> Put(int id, DonneesXxxDto dto, CancellationToke
 - **Appliquées automatiquement au démarrage en production** : migrations rétro-compatibles, relire le fichier généré,
   signaler toute opération destructive. Ne jamais modifier une migration déjà déployée.
 - En développement, les migrations ne sont pas appliquées au démarrage (`dotnet ef database update` à la main).
+- **Table conservée hors modèle : `PreferencesRappel`** (ancien réglage du rappel, recopié dans `Rappels` par
+  `GeneraliseRappels`, gardé pour un retour à une image antérieure à la 1.0.0). EF ne la connaît plus : **toute nouvelle
+  migration générée contiendra un `DropTable("PreferencesRappel")` à retirer à la main**, sauf dans la migration dédiée
+  à sa suppression (prévue en 1.1, voir la roadmap).
 - **Générer une migration sans lire les secrets** : l'outil EF démarre l'hôte, qui exige `appsettings.{Environment}.json`.
   Plutôt que de lire ou copier `appsettings.Development.json` (interdit), créer temporairement dans `MonEndoVue.Server/`
   un `appsettings.DesignTime.json` contenant uniquement une chaîne de connexion factice (fichier ignoré par git, l'écrire
@@ -97,7 +120,8 @@ Chargée depuis `appsettings.{Environment}.json` (**obligatoire**, non versionn�
 Clés attendues (noms seulement) : `ConnectionStrings:DefaultConnection`, `AzureBlobStorage:ConnectionString`,
 `AzureBlobStorage:ContainerName` (ou variables `AZURE_STORAGE_CONNECTION_STRING`/`AZURE_CONTAINER_NAME`),
 `Authentication:Schemes:Bearer:{Secret,ValidIssuer,ValidAudiences}`, `Jwt:Key`, `RootUser:{UserName,Email,Password}`,
-`WebPush:{Subject,PublicKey,PrivateKey}` (clés VAPID ; absentes = notifications désactivées sans bloquer le démarrage ;
+`WebPush:{Subject,PublicKey,PrivateKey}` (clés VAPID ; absentes ou invalides — sujet sans `mailto:`/`https:`, clés ≠ 87/43 caractères — = notifications désactivées
+ avec un avertissement au démarrage, sans bloquer ni faire échouer les routes ;
  en dev via `dotnet user-secrets`), `GoogleApi:{ClientId,ClientSecret}`. Ne jamais lire ni afficher les valeurs.
 
 ## Tests

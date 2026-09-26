@@ -26,7 +26,7 @@ const lignes = computed(() => {
 <template>
   <div class="bg-white rounded-xl border border-gray-100 p-3 mb-3">
     <p class="text-xs text-muted-foreground flex items-center gap-1 mb-2">
-      <i class="material-symbols-outlined text-base">gastroenterology</i>
+      <i class="material-symbols-outlined text-2xl leading-6">gastroenterology</i>
       Transit
     </p>
     <ul v-if="lignes.length" class="flex flex-col gap-1">

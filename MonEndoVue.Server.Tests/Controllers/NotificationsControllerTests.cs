@@ -6,6 +6,7 @@ using MonEndoVue.Server.Controllers;
 using MonEndoVue.Server.Dto;
 using MonEndoVue.Server.Models;
 using MonEndoVue.Server.Services.WebPush;
+using MonEndoVue.Server.Services.WebPush.Rappels;
 using MonEndoVue.Server.Tests.Support;
 
 namespace MonEndoVue.Server.Tests.Controllers;
@@ -18,11 +19,12 @@ public sealed class NotificationsControllerTests : IDisposable
     private NotificationsController Controller(bool configure = true, bool authentifie = true)
     {
         var horloge = new HorlogeFixe(new DateTimeOffset(2026, 9, 26, 12, 0, 0, TimeSpan.Zero));
+        IRegleRappel[] regles = [new RappelBilanQuotidien(_carnet.Context), new RappelSuiviAcne(_carnet.Context)];
         var notifications = new NotificationsPushService(
-            _carnet.Context, _envoi, horloge, NullLogger<NotificationsPushService>.Instance);
+            _carnet.Context, _envoi, regles, horloge, NullLogger<NotificationsPushService>.Instance);
         IOptions<WebPushOptions> options = configure ? PushDeTest.OptionsConfigurees() : PushDeTest.OptionsNonConfigurees();
 
-        return new NotificationsController(_carnet.Context, notifications, options, horloge)
+        return new NotificationsController(new NotificationsService(_carnet.Context, notifications, regles, options, horloge))
         {
             ControllerContext = authentifie ? CarnetDeTest.ContexteAuthentifie() : CarnetDeTest.ContexteAnonyme(),
         };
@@ -32,6 +34,12 @@ public sealed class NotificationsControllerTests : IDisposable
         new() { Endpoint = endpoint, P256dh = "cle-p256dh", Auth = "secret-auth" };
 
     private static int? StatutDe(IActionResult resultat) => (resultat as IStatusCodeActionResult)?.StatusCode;
+
+    private static List<RappelDto> Rappels(IActionResult resultat) =>
+        Assert.IsType<List<RappelDto>>(Assert.IsType<OkObjectResult>(resultat).Value);
+
+    private static RappelDto Reglage(bool actif, string heure, int? jour = null, string fuseau = "Europe/Paris") =>
+        new() { Actif = actif, Heure = heure, JourSemaine = jour, FuseauHoraire = fuseau };
 
     [Fact]
     public void GetClePublique_Configuree_RetourneLaCle()
@@ -104,46 +112,73 @@ public sealed class NotificationsControllerTests : IDisposable
     }
 
     [Fact]
-    public async Task GetPreferences_SansReglage_RetourneLesValeursParDefaut()
+    public async Task GetRappels_SansReglage_RetourneTousLesTypesAvecLeursValeursParDefaut()
     {
-        var preferences = (await Controller().GetPreferences(CancellationToken.None)).Value!;
+        var rappels = Rappels(await Controller().GetRappels(CancellationToken.None));
 
-        Assert.False(preferences.RappelActif);
-        Assert.Equal("21:00", preferences.HeureRappel);
-        Assert.Equal("Europe/Paris", preferences.FuseauHoraire);
+        Assert.Collection(rappels,
+            bilan =>
+            {
+                Assert.Equal(("BilanQuotidien", false, false, "21:00", (int?)null), (bilan.Type, bilan.EstHebdomadaire, bilan.Actif, bilan.Heure, bilan.JourSemaine));
+            },
+            acne =>
+            {
+                Assert.Equal(("SuiviAcne", true, false, "20:00", (int?)0), (acne.Type, acne.EstHebdomadaire, acne.Actif, acne.Heure, acne.JourSemaine));
+            });
     }
 
     [Fact]
-    public async Task PutPreferences_ValeursValides_EnregistrePuisMetAJour()
+    public async Task PutRappel_ValeursValides_EnregistrePuisMetAJour()
     {
         var controller = Controller();
 
-        await controller.PutPreferences(
-            new PreferenceRappelDto { RappelActif = true, HeureRappel = "20:30", FuseauHoraire = "Europe/Paris" },
-            CancellationToken.None);
-        var resultat = await controller.PutPreferences(
-            new PreferenceRappelDto { RappelActif = true, HeureRappel = "07:45", FuseauHoraire = "America/New_York" },
-            CancellationToken.None);
+        await controller.PutRappel("SuiviAcne", Reglage(true, "19:30", 0), CancellationToken.None);
+        var resultat = await controller.PutRappel("suiviacne", Reglage(true, "18:15", 6, "America/New_York"), CancellationToken.None);
+        await controller.PutRappel("BilanQuotidien", Reglage(true, "21:30", jour: 3), CancellationToken.None);
 
         Assert.IsType<NoContentResult>(resultat);
-        var preferences = (await controller.GetPreferences(CancellationToken.None)).Value!;
-        Assert.True(preferences.RappelActif);
-        Assert.Equal("07:45", preferences.HeureRappel);
-        Assert.Equal("America/New_York", preferences.FuseauHoraire);
+        var rappels = Rappels(await controller.GetRappels(CancellationToken.None));
+        var acne = rappels.Single(r => r.Type == "SuiviAcne");
+        Assert.Equal((true, "18:15", (int?)6, "America/New_York"), (acne.Actif, acne.Heure, acne.JourSemaine, acne.FuseauHoraire));
+        var bilan = rappels.Single(r => r.Type == "BilanQuotidien");
+        Assert.Equal((true, "21:30", (int?)null), (bilan.Actif, bilan.Heure, bilan.JourSemaine)); // jour ignoré : quotidien
+        Assert.Equal(2, _carnet.Context.Rappels.Count());
     }
 
     [Theory]
-    [InlineData("25:00", "Europe/Paris")]
-    [InlineData("9h", "Europe/Paris")]
-    [InlineData("21:00", "Fuseau/Inexistant")]
-    public async Task PutPreferences_ValeursInvalides_RetourneBadRequest(string heure, string fuseau)
+    [InlineData("BilanQuotidien", "25:00", null, "Europe/Paris")]
+    [InlineData("BilanQuotidien", "9h", null, "Europe/Paris")]
+    [InlineData("BilanQuotidien", "21:00", null, "Fuseau/Inexistant")]
+    [InlineData("SuiviAcne", "20:00", null, "Europe/Paris")]
+    [InlineData("SuiviAcne", "20:00", 7, "Europe/Paris")]
+    public async Task PutRappel_ValeursInvalides_RetourneBadRequest(string type, string heure, int? jour, string fuseau)
     {
-        var resultat = await Controller().PutPreferences(
-            new PreferenceRappelDto { RappelActif = true, HeureRappel = heure, FuseauHoraire = fuseau },
-            CancellationToken.None);
+        var resultat = await Controller().PutRappel(type, Reglage(true, heure, jour, fuseau), CancellationToken.None);
 
         Assert.IsType<BadRequestObjectResult>(resultat);
-        Assert.Empty(_carnet.Context.PreferencesRappel);
+        Assert.Empty(_carnet.Context.Rappels);
+    }
+
+    [Fact]
+    public async Task PutRappel_TypeInconnu_RetourneNotFound()
+    {
+        Assert.IsType<NotFoundResult>(await Controller().PutRappel("Inconnu", Reglage(true, "20:00"), CancellationToken.None));
+    }
+
+    [Fact]
+    public async Task PutRappel_NeModifieQueLesRappelsDuCarnetConnecte()
+    {
+        _carnet.Context.Rappels.Add(new Rappel
+        {
+            CarnetSanteId = CarnetDeTest.AutreCarnetSanteId, Type = TypeRappel.BilanQuotidien, Actif = false, Heure = new TimeOnly(8, 0),
+        });
+        _carnet.Context.SaveChanges();
+
+        await Controller().PutRappel("BilanQuotidien", Reglage(true, "21:00"), CancellationToken.None);
+
+        var autre = _carnet.Context.Rappels.Single(r => r.CarnetSanteId == CarnetDeTest.AutreCarnetSanteId);
+        Assert.False(autre.Actif);
+        Assert.Equal(new TimeOnly(8, 0), autre.Heure);
     }
 
     [Fact]
@@ -176,8 +211,8 @@ public sealed class NotificationsControllerTests : IDisposable
 
         Assert.IsType<UnauthorizedResult>(await controller.Abonner(AbonnementDto(), CancellationToken.None));
         Assert.IsType<UnauthorizedResult>(await controller.Desabonner(new DesabonnementPushDto { Endpoint = "x" }, CancellationToken.None));
-        Assert.IsType<UnauthorizedResult>((await controller.GetPreferences(CancellationToken.None)).Result);
-        Assert.IsType<UnauthorizedResult>(await controller.PutPreferences(new PreferenceRappelDto(), CancellationToken.None));
+        Assert.IsType<UnauthorizedResult>(await controller.GetRappels(CancellationToken.None));
+        Assert.IsType<UnauthorizedResult>(await controller.PutRappel("BilanQuotidien", new RappelDto(), CancellationToken.None));
         Assert.IsType<UnauthorizedResult>(await controller.EnvoyerTest(CancellationToken.None));
     }
 

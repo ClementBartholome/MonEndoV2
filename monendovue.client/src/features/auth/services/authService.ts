@@ -7,7 +7,7 @@ const API_URL = import.meta.env.VITE_DOCKER === 'true'
 const authService = {
     async login(email: string, password: string) {
         try {
-            const response = await axios.post(`${API_URL}Account/login?email=${encodeURIComponent(email)}&password=${encodeURIComponent(password)}`, null, {
+            const response = await axios.post(`${API_URL}Account/login`, { email, password }, {
                 headers: {
                     'Content-Type': 'application/json'
                 },
@@ -28,7 +28,7 @@ const authService = {
 
     async register(email: string, password: string) {
         try {
-            const response = await axios.post(`${API_URL}Account/register?email=${encodeURIComponent(email)}&password=${encodeURIComponent(password)}`, null, {
+            const response = await axios.post(`${API_URL}Account/register`, { email, password }, {
                 headers: {
                     'Content-Type': 'application/json'
                 },
@@ -42,7 +42,7 @@ const authService = {
             }
         } catch (error: any) {
             if (error.response && error.response.status === 400) {
-                throw new Error(error.response.data.$values[0]);
+                throw new Error(error.response.data?.$values?.[0] ?? "Requête invalide.");
             }
             throw error;
         }
@@ -63,7 +63,7 @@ const authService = {
     
     async changePassword(currentPassword: string, newPassword: string) {
         try {
-            const response = await axios.post(`${API_URL}Account/change-password?currentPassword=${encodeURIComponent(currentPassword)}&newPassword=${encodeURIComponent(newPassword)}`, null, {
+            const response = await axios.post(`${API_URL}Account/change-password`, { currentPassword, newPassword }, {
                 headers: {
                     'Content-Type': 'application/json'
                 },
@@ -77,7 +77,7 @@ const authService = {
             }
         } catch (error: any) {
             if (error.response && error.response.status === 400) {
-                throw new Error(error.response.data.$values[0]);
+                throw new Error(error.response.data?.$values?.[0] ?? "Requête invalide.");
             }
             throw error;
         }

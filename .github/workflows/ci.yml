@@ -1,18 +1,22 @@
 name: CI/CD VPS Docker
 
 # Pipeline en 3 étapes :
-#   1. verifier  (PR + main) : dépendances, type-check + build du client, lint, build .NET, SonarCloud
-#   2. image     (PR + main) : build de l'image Docker ; poussée sur GHCR uniquement pour main
-#   3. deployer  (main)      : déploiement sur le VPS puis vérification de /health
-# Tout push sur main déploie en production.
+#   1. verifier  (PR, main, release/**, tags v*) : dépendances, type-check + build du client, lint, build .NET, SonarCloud
+#   2. image     (idem) : build de l'image Docker ; poussée sur GHCR uniquement pour main et les tags de version v*
+#   3. deployer  (main)  : déploiement sur le VPS puis vérification de /health
+# Tout push sur main déploie en production. Un tag vX.Y.Z publie l'image :vX.Y.Z (rollback) sans déployer.
 
 on:
   push:
     branches:
       - main
+      - 'release/**'
+    tags:
+      - 'v*'
   pull_request:
     branches:
       - main
+      - 'release/**'
 
 concurrency:
   group: ci-${{ github.ref }}
@@ -124,6 +128,9 @@ jobs:
   image:
     needs: verifier
     runs-on: ubuntu-latest
+    env:
+      # Seuls main et les tags de version publient une image ; les PR et les branches release/** la construisent seulement.
+      PUBLIER: ${{ github.event_name == 'push' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v')) }}
     permissions:
       contents: read
       packages: write
@@ -136,7 +143,7 @@ jobs:
         uses: docker/setup-buildx-action@v3
 
       - name: Log in to Container Registry
-        if: github.event_name == 'push'
+        if: env.PUBLIER == 'true'
         uses: docker/login-action@v3
         with:
           registry: ${{ env.REGISTRY }}
@@ -151,16 +158,17 @@ jobs:
           # Tags historiques conservés (le compose du VPS peut référencer latest, main ou main-<sha>)
           tags: |
             type=ref,event=branch
-            type=sha,prefix={{branch}}-,enable=${{ github.event_name == 'push' }}
+            type=sha,prefix={{branch}}-,enable=${{ github.ref == 'refs/heads/main' }}
             type=sha,prefix=sha-,format=short
             type=raw,value=latest,enable={{is_default_branch}}
+            type=semver,pattern=v{{version}}
 
-      # Sur PR : l'image est construite (validation du Dockerfile) mais jamais poussée.
-      - name: Build (and push on main) Docker image
+      # Sur PR et release/** : l'image est construite (validation du Dockerfile) mais jamais poussée.
+      - name: Build (and push on main / version tags) Docker image
         uses: docker/build-push-action@v5
         with:
           context: .
-          push: ${{ github.event_name == 'push' }}
+          push: ${{ env.PUBLIER == 'true' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha

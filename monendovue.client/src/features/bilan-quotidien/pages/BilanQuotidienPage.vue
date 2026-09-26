@@ -43,34 +43,8 @@
         </div>
       </div>
 
-      <!-- Étape 1: Humeur -->
-      <div v-if="currentStep === 1">
-        <h2 class="text-2xl font-bold mb-14 flex items-center justify-center">
-          <i class="material-symbols-outlined mr-2">mood</i>Humeur du jour
-        </h2>
-        <div class="grid grid-cols-3 gap-4 mb-4">
-          <Button
-              v-for="mood in moods"
-              :key="mood.value"
-              @click="selectMood(mood.value)"
-              :variant="formData.mood === mood.value ? 'selected' : 'outline'"
-              :class="[
-                'h-32 flex flex-col items-center justify-center transition-all duration-300',
-                formData.mood === mood.value 
-                  ? 'scale-110 shadow-2xl ring-4 ring-button/50' 
-                  : 'hover:scale-105 hover:shadow-lg'
-              ]"
-          >
-            <span
-                class="material-symbols-outlined text-6xl mb-2 transition-transform"
-                :class="{ 'animate-bounce': formData.mood === mood.value }"
-            >
-              {{ mood.icon }}
-            </span>
-            <span class="font-semibold">{{ mood.label }}</span>
-          </Button>
-        </div>
-      </div>
+      <!-- Étape 1: Émotions -->
+      <EmotionsStep v-if="currentStep === 1" v-model="formData.emotions"/>
 
       <!-- Étape 2: Stress -->
       <div v-if="currentStep === 2">
@@ -232,13 +206,13 @@
               <textarea
                   v-model="formData.commentaire"
                   placeholder="Ajoute des détails sur ton alimentation, ton ressenti, des événements particuliers..."
-                  class="w-full p-4 rounded-xl border-2 border-gray-200 focus:border-button transition-all duration-200 resize-none min-h-[120px] bg-form-input text-paragraph placeholder:text-form-placeholder/60"
+                  class="w-full p-4 rounded-xl border-2 border-gray-200 focus:border-button transition-all duration-200 resize-y min-h-[160px] bg-form-input text-paragraph placeholder:text-form-placeholder/60"
                   :class="{ 'border-button bg-button/5': formData.commentaire }"
-                  maxlength="100"
+                  :maxlength="COMMENTAIRE_MAX"
               ></textarea>
 
               <div class="absolute bottom-2 right-3 text-xs text-paragraph/60">
-                {{ formData.commentaire.length }}/100
+                {{ formData.commentaire.length }}/{{ COMMENTAIRE_MAX }}
               </div>
             </div>
           </FormItem>
@@ -333,13 +307,7 @@
               <CardContent>
                 <div v-if="selectedBilan">
                   <div class="grid grid-cols-2 md:grid-cols-3 gap-2 mb-4">
-                    <div class="bg-white rounded-xl border border-gray-100 p-3">
-                      <p class="text-xs text-muted-foreground flex items-center gap-1">
-                        <span :class="`material-symbols-outlined text-base`">{{ moodIconMapping[selectedBilan.mood] }}</span>
-                        Humeur
-                      </p>
-                      <p class="text-base font-semibold text-headline mt-1">{{ selectedBilan.mood }}</p>
-                    </div>
+                    <HumeurResume :bilan="selectedBilan" class="col-span-2 md:col-span-3"/>
                     <div class="bg-white rounded-xl border border-gray-100 p-3">
                       <p class="text-xs text-muted-foreground flex items-center gap-1">
                         <i class="material-symbols-outlined text-base">psychology</i>
@@ -441,6 +409,8 @@
               </CardContent>
             </Card>
 
+            <EmotionSemaineCard :bilans="filteredBilans"/>
+
             <!-- Section Historique avec graphique -->
             <Card class="container !mx-0 mt-4 w-full bg-clearer rounded-3xl shadow-xl ml-auto flex flex-col">
               <CardHeader>
@@ -497,6 +467,12 @@ import {toast} from "@/shared/components/ui/toast";
 import TransitStep from "@/features/bilan-quotidien/components/TransitStep.vue";
 import TransitRecap from "@/features/bilan-quotidien/components/TransitRecap.vue";
 import {estTransitComplet, transitVide} from "@/features/bilan-quotidien/config/transit";
+import EmotionsStep from "@/features/bilan-quotidien/components/EmotionsStep.vue";
+import HumeurResume from "@/features/bilan-quotidien/components/HumeurResume.vue";
+import EmotionSemaineCard from "@/features/bilan-quotidien/components/EmotionSemaineCard.vue";
+import {COMMENTAIRE_MAX} from "@/features/bilan-quotidien/config/emotions";
+import {scoreHumeur} from "@/features/bilan-quotidien/utils/humeur";
+import type {CodeEmotion} from "@/features/bilan-quotidien/types/bilan-quotidien";
 
 const TOTAL_STEPS = 8;
 
@@ -542,7 +518,7 @@ const handleUpdateYears = ({startYear: start, endYear: end}) => {
 const formData = ref({
   date: new Date(),
   carnetSanteId: carnetSanteId,
-  mood: '',
+  emotions: [] as CodeEmotion[],
   stressPro: [5],
   stressPerso: [5],
   fatigue: [5],
@@ -558,7 +534,6 @@ const formData = ref({
 const transitData = ref(transitVide());
 
 const todayBilan = ref({
-  mood: '',
   stressPro: 0,
   stressPerso: 0,
   fatigue: 0,
@@ -567,24 +542,6 @@ const todayBilan = ref({
   douleurMoyenne: 0,
 });
 
-const moods = [
-  {value: 'Heureuse', label: 'Positive', icon: 'sentiment_satisfied'},
-  {value: 'Neutre', label: 'Neutre', icon: 'sentiment_neutral'},
-  {value: 'Triste', label: 'Négative', icon: 'sentiment_dissatisfied'},
-];
-
-const moodMapping = {
-  'Heureuse': 5,
-  'Neutre': 3,
-  'Triste': 0
-};
-
-const moodIconMapping = {
-  'Heureuse': 'sentiment_satisfied',
-  'Neutre': 'sentiment_neutral',
-  'Triste': 'sentiment_dissatisfied'
-};
-
 const dietOptions = [
   {key: 'gluten', label: 'Consommation de gluten', icon: 'bakery_dining'},
   {key: 'lactose', label: 'Consommation de lactose', icon: 'icecream'},
@@ -592,7 +549,7 @@ const dietOptions = [
 ];
 
 const stepTitles = {
-  1: 'Humeur',
+  1: 'Émotions',
   2: 'Stress',
   3: 'Fatigue',
   4: 'Activité',
@@ -649,7 +606,8 @@ const chartData = computed(() => {
     date: format(new Date(bilan.date), 'dd/MM/yyyy'),
     stress: (bilan.stressPro + bilan.stressPerso) / 2,
     fatigue: bilan.fatigue,
-    humeur: moodMapping[bilan.mood],
+    // Même échelle que le stress et la fatigue (0 à 5) ; les anciens bilans comptent par leur humeur.
+    humeur: Math.round((scoreHumeur(bilan) ?? 0.5) * 50) / 10,
     douleur: bilan.douleurMoyenne
   }));
 });
@@ -670,11 +628,6 @@ const getStepTitle = (step: number) => {
   return stepTitles[step] || `Étape ${step}`;
 };
 
-const selectMood = (mood: string) => {
-  formData.value.mood = mood;
-  markStepCompleted(1);
-};
-
 const markStepCompleted = (step: number) => {
   completedSteps.value.add(step);
 };
@@ -692,8 +645,8 @@ const prevStep = () => {
   }
 };
 
-watch(() => formData.value.mood, (newVal) => {
-  if (newVal) markStepCompleted(1);
+watch(() => formData.value.emotions, (emotions) => {
+  if (emotions.length > 0) markStepCompleted(1);
 });
 
 watch(() => [formData.value.stressPro, formData.value.stressPerso], () => {
@@ -723,6 +676,8 @@ const submitForm = async () => {
     const newBilan: BilanQuotidien = {
       id: editingBilanId.value || 0,
       ...formData.value,
+      mood: null,
+      emotions: formData.value.emotions.map((emotion) => ({emotion})),
       stressPro: formData.value.stressPro[0],
       stressPerso: formData.value.stressPerso[0],
       fatigue: formData.value.fatigue[0],
@@ -760,7 +715,7 @@ const resetForm = () => {
   formData.value = {
     date: formData.value.date,
     carnetSanteId: carnetSanteId,
-    mood: '',
+    emotions: [],
     stressPro: [5],
     stressPerso: [5],
     fatigue: [5],
@@ -778,7 +733,7 @@ const resetForm = () => {
 const isStepValid = computed(() => {
   switch (currentStep.value) {
     case 1:
-      return !!formData.value.mood;
+      return formData.value.emotions.length > 0;
     case 2:
       return formData.value.stressPro[0] !== undefined && formData.value.stressPerso[0] !== undefined;
     case 3:

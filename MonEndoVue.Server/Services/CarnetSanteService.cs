@@ -294,6 +294,8 @@ public class CarnetSanteService(AppDbContext context, ILogger<CarnetSanteService
             BilansQuotidiens = carnetSante.BilansQuotidiens.Select(b => new BilanQuotidienExportViewModel
             {
                 Date = b.Date,
+                Emotions = b.Emotions.Select(e => e.Emotion.ToString()).ToList(),
+                Mood = b.Mood,
                 Lactose = b.Lactose,
                 Grignotage = b.Grignotage,
                 Gluten = b.Gluten,

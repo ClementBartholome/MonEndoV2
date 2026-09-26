@@ -17,7 +17,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : IdentityDbCo
     public DbSet<BilanQuotidien> BilansQuotidiens { get; set; }
     public DbSet<SymptomeCycle> SymptomesCycles { get; set; }
     public DbSet<AbonnementPush> AbonnementsPush { get; set; }
-    public DbSet<PreferenceRappel> PreferencesRappel { get; set; }
+    public DbSet<Rappel> Rappels { get; set; }
     
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -53,6 +53,16 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : IdentityDbCo
             .WithMany(c => c.BilansQuotidiens)
             .HasForeignKey(b => b.CarnetSanteId)
             .OnDelete(DeleteBehavior.Cascade);
+
+        // Les émotions n'existent qu'au sein de leur bilan : type possédé, chargé et supprimé avec lui.
+        modelBuilder.Entity<BilanQuotidien>().OwnsMany(b => b.Emotions, emotion =>
+        {
+            emotion.ToTable("EmotionsBilan");
+            emotion.WithOwner().HasForeignKey("BilanQuotidienId");
+            emotion.HasKey(e => e.Id);
+            emotion.Property(e => e.Emotion).HasConversion<string>().HasMaxLength(32);
+            emotion.HasIndex("BilanQuotidienId", nameof(EmotionBilan.Emotion)).IsUnique();
+        });
         
         modelBuilder.Entity<SymptomeCycle>()
             .HasOne<CarnetSante>()
@@ -113,13 +123,14 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : IdentityDbCo
                 .OnDelete(DeleteBehavior.Cascade);
         });
 
-        modelBuilder.Entity<PreferenceRappel>(entity =>
+        modelBuilder.Entity<Rappel>(entity =>
         {
-            entity.HasKey(p => p.CarnetSanteId);
-            entity.Property(p => p.FuseauHoraire).HasMaxLength(64);
-            entity.HasOne(p => p.CarnetSante)
-                .WithOne()
-                .HasForeignKey<PreferenceRappel>(p => p.CarnetSanteId)
+            entity.Property(r => r.Type).HasConversion<string>().HasMaxLength(32);
+            entity.Property(r => r.FuseauHoraire).HasMaxLength(64);
+            entity.HasIndex(r => new { r.CarnetSanteId, r.Type }).IsUnique();
+            entity.HasOne(r => r.CarnetSante)
+                .WithMany()
+                .HasForeignKey(r => r.CarnetSanteId)
                 .OnDelete(DeleteBehavior.Cascade);
         });
     }
