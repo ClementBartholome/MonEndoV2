@@ -56,9 +56,12 @@ docker-compose*
 README.md
 **/*.md
 
-# Configuration locale
-appsettings.Development.json
-appsettings.Local.json
+# Configuration et secrets : jamais dans l'image
+# (la production monte appsettings.Production.json via docker-compose.prod.yml sur le VPS)
+**/appsettings*.json
+**/serviceAccountKey.json
+**/.env
+**/.env.*
 
 # Certificats et clés
 **/*.pfx
@@ -79,6 +82,7 @@ yarn-error.log*
 .eslintcache
 .stylelintcache
 
-# Package lock files (on utilise npm ci dans le Dockerfile)
-package-lock.json
-yarn.lock
+# Packages NuGet locaux (non versionnés)
+packages/
+
+# package-lock.json est volontairement inclus : installation npm reproductible

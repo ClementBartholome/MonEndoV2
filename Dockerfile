@@ -6,7 +6,7 @@ EXPOSE 80
 # Build stage avec Node.js intégré
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS with-node
 RUN apt-get update
-RUN apt-get install curl
+RUN apt-get install -y curl
 RUN curl -sL https://deb.nodesource.com/setup_20.x | bash
 RUN apt-get -y install nodejs
 
