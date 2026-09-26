@@ -151,3 +151,17 @@ Objectif : que l'utilisateur n'ait jamais à répéter une consigne ou une infor
   et donner à l'utilisateur le lien de création de PR.
 - Contrôle visuel sans backend : lancer `npx vite --port <port>` puis, dans le navigateur intégré, poser un faux `user` dans
   `localStorage` (le garde de routes ne vérifie que sa présence) ; les appels API échouent, l'UI reste testable.
+
+## Tester une branche de bout en bout en local
+Procédure validée (sans jamais lire les fichiers de secrets) :
+1. **Base** : base de dev `MonEndo` sur l'instance `localhost\MSSQLSERVER01` (authentification Windows, `sqlcmd -E -C`).
+   Appliquer les migrations de la branche depuis son worktree avec la configuration factice `appsettings.DesignTime.json`
+   (voir `MonEndoVue.Server/CLAUDE.md`) et
+   `ASPNETCORE_ENVIRONMENT=DesignTime dotnet ef database update --connection "Server=localhost\MSSQLSERVER01;Database=MonEndo;Trusted_Connection=True;TrustServerCertificate=True"`.
+2. **API** : `dotnet build -c Release` dans le worktree, puis lancer la DLL en se plaçant dans `MonEndoVue.Server/` de la
+   copie principale (qui contient `appsettings.Development.json`, lu par l'application et non par Claude) :
+   `ASPNETCORE_ENVIRONMENT=Development ASPNETCORE_URLS=https://localhost:7206 dotnet <worktree>/MonEndoVue.Server/bin/Release/net8.0/MonEndoVue.Server.dll`.
+3. **Front** : dans le worktree, `monendovue.client/.env.local` avec `VITE_API_URL=https://localhost:7206/` (ignoré par git),
+   puis `npx vite --port 5173 --strictPort` (5173 est l'origine autorisée par CORS).
+4. Attendre `https://localhost:7206/health` = `Healthy`, ouvrir `https://localhost:5173/login` : **l'utilisateur se connecte
+   lui-même** avec son compte local, puis on teste à 375px et en desktop.
