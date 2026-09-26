@@ -1,8 +1,5 @@
 using System.Text;
 using System.Text.Json.Serialization;
-using FirebaseAdmin;
-using FirebaseAdmin.Messaging;
-using Google.Apis.Auth.OAuth2;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Http.Features;
@@ -52,7 +49,6 @@ namespace MonEndoVue.Server
 
             builder.Services.AddScoped<CarnetSanteService>();
             builder.Services.AddScoped<TokenService>();
-            builder.Services.AddScoped<DeviceTokenService>();
             builder.Services.AddScoped<NotificationService>();
 
             builder.Services.AddCors(options =>
@@ -173,15 +169,6 @@ namespace MonEndoVue.Server
                     };
                 });
 
-
-            FirebaseApp.Create(new AppOptions()
-            {
-                Credential =
-                    GoogleCredential.FromFile(Path.Combine(AppDomain.CurrentDomain.BaseDirectory,
-                        "serviceAccountKey.json")),
-            });
-
-            builder.Services.AddSingleton(FirebaseMessaging.DefaultInstance);
 
             builder.Services.AddQuartz(q =>
             {

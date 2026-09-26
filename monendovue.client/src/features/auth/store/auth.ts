@@ -15,7 +15,6 @@ export const useAuthStore = defineStore({
                     email: response.userName,
                     carnetSanteId: response.carnetSanteId,
                     tokenExpiry: response.tokenExpiry,
-                    deviceToken: '',
                 };
                 this.setAuth(this.user);
             }
@@ -29,7 +28,6 @@ export const useAuthStore = defineStore({
                         email: response.userName,
                         carnetSanteId: response.carnetSanteId,
                         tokenExpiry: response.tokenExpiry,
-                        deviceToken: '',
                     };
                     this.setAuth(this.user);
                     return response;

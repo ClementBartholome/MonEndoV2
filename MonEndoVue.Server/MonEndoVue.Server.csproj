@@ -13,8 +13,6 @@
 
   <ItemGroup>
     <PackageReference Include="Azure.Storage.Blobs" Version="12.27.0" />
-    <PackageReference Include="CorePush" Version="4.2.1" />
-    <PackageReference Include="FirebaseAdmin" Version="3.0.1" />
     <PackageReference Include="Google.Apis.Auth" Version="1.73.0" />
     <PackageReference Include="Google.Apis.Calendar.v3" Version="1.68.0.3430" />
     <PackageReference Include="Google.Cloud.Storage.V1" Version="4.13.0" />

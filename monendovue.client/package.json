@@ -38,7 +38,6 @@
     "datatables.net-vue3": "^3.0.1",
     "date-fns": "^3.6.0",
     "dotenv": "^16.4.5",
-    "firebase": "^11.0.1",
     "flowbite": "^2.3.0",
     "googleapis": "^140.0.0",
     "heic2any": "^0.0.4",

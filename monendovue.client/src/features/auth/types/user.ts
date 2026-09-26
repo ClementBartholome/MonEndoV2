@@ -2,5 +2,4 @@
     email: string;
     carnetSanteId: number;
     tokenExpiry: Date;
-    deviceToken: string;
 };
