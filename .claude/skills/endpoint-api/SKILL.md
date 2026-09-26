@@ -18,7 +18,8 @@ Lire d'abord `MonEndoVue.Server/CLAUDE.md` et la section sécurité du CLAUDE.md
 4. **Logique** dans un service (`Services/XxxService.cs`, `AddScoped` dans `Program.cs`) si elle dépasse le simple CRUD.
 5. **Erreurs** : `BadRequest(new { message = "…" })` en français, `NotFound()`, `NoContent()`, `CreatedAtAction` ; jamais `ex.Message`.
 6. **Logs** : `ILogger<T>` structuré, identifiants numériques seulement (pas d'email, de token ni de contenu de santé).
-7. **Entrées sensibles** : jamais de mot de passe/token en query string ; endpoints d'auth avec `[EnableRateLimiting("auth")]`.
+7. **Entrées sensibles** : jamais de mot de passe/token en query string ; endpoints d'auth avec `[EnableRateLimiting(PolitiquesDebit.Auth)]` ; identifiants lus depuis un DTO `[FromBody]`
+   (modèle : `Dto/IdentifiantsDto.cs`), tests avec `Support/IdentityDeTest.cs`.
 8. **Uploads** : réutiliser la validation photo de `SymptomesCycleController` et `AzureBlobStorageService`.
 
 Gabarits : [templates.md](templates.md).

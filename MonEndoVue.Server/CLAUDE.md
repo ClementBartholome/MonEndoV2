@@ -68,7 +68,10 @@ public async Task<IActionResult> Put(int id, DonneesXxxDto dto, CancellationToke
 - Interdits dans les logs : email, nom d'utilisateur, token, code OAuth, contenu d'une donnée de santé. Les identifiants numériques suffisent.
 
 ## Sécurité transverse
-- Rate limiting : politiques `api` (appliquée à tous les contrôleurs) et `auth` ; `[EnableRateLimiting("auth")]` sur les endpoints d'authentification.
+- Rate limiting : politiques `api` (par défaut) et `auth` (20 req/min), constantes dans `Services/PolitiquesDebit.cs`.
+  La politique `api` n'est posée que sur les endpoints qui n'en déclarent pas (`PolitiquesDebit.AppliquerParDefaut`) :
+  un `[EnableRateLimiting(PolitiquesDebit.Auth)]` sur une action est donc réellement appliqué. À mettre sur tout endpoint
+  d'authentification ou d'envoi coûteux. Vérifier en local par une rafale de requêtes (429 attendu au-delà de la limite).
 - Identifiants et mots de passe dans le **corps** des requêtes, jamais en query string.
 - Uploads photo : réutiliser `IsPhotoValid`/`ResolveFileExtension` (`SymptomesCycleController`) et `AzureBlobStorageService`
   (chemin `symptomes/{carnetSanteId}/{guid}{ext}`). Ne jamais supprimer un blob à partir d'une URL fournie par le client.
