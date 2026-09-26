@@ -24,6 +24,33 @@ Complète le [CLAUDE.md racine](../CLAUDE.md). S'applique à tout le code de `Mo
 - **Entrée en DTO, sortie en ViewModel** : ne pas binder ni retourner d'entité EF dans le nouveau code (évite le sur-postage
   de `Id`, `CarnetSanteId`, `PhotoUrl`…). L'existant retourne encore des entités : ne pas étendre ce pattern.
 
+## SOLID côté serveur
+- **Responsabilité unique**
+  - Un contrôleur ne fait que du HTTP : il reçoit un DTO, appelle **un** service et traduit le résultat en réponse
+    (`Ok`, `NotFound`, `Forbid`…). Il n'injecte pas `AppDbContext` et n'écrit pas de requête LINQ (nouveau code).
+  - Un service par domaine métier (`BilanQuotidienService`, `NotificationsPushService`…) ; au-delà de ~200 lignes ou de
+    responsabilités hétérogènes (lecture, export, cache), le découper.
+  - Les règles de validation métier vont dans une classe dédiée, pure et testable (modèle : `BilanTransitValidator`).
+- **Ouvert/fermé** : un nouveau canal ou comportement s'ajoute par une nouvelle implémentation ou une nouvelle entrée
+  de configuration (politiques de débit, `IEnvoiPush`), pas en modifiant un `switch` existant.
+- **Substitution** : les faux de test (`FauxEnvoiPush`, `HorlogeFixe`) respectent exactement le contrat de l'abstraction.
+- **Interfaces ciblées** : une interface expose ce dont un consommateur a besoin, pas plus (modèle : `IEnvoiPush`, une méthode).
+- **Inversion des dépendances**
+  - Une interface seulement quand elle sert un besoin concret (**KISS**) :
+    - dépendance externe à remplacer dans les tests (push : `IEnvoiPush`) ;
+    - plusieurs implémentations réelles (règles de rappel : `IRegleRappel`).
+    
+    Heure via `TimeProvider` (jamais `DateTime.Now` dans le nouveau code), appels HTTP via un `HttpClient` typé.
+    Un service métier pur (ex. `TokenService`) reste une classe concrète.
+  - `AppDbContext` est l'abstraction d'accès aux données : il s'injecte dans les services, sans repository générique
+    par-dessus (voir « Couches »).
+  - Pas de `new` d'un service dans le code applicatif : tout passe par l'injection de dépendances (`Program.cs`).
+- **Dette connue** (lot C de la roadmap), à résorber quand on touche la zone :
+  - les contrôleurs injectent `AppDbContext` et contiennent des requêtes (sauf `NotificationsController`, déjà conforme) ;
+  - `CarnetSanteService` mélange lecture du carnet, page d'accueil, export PDF et cache ;
+  - `AzureBlobStorageService` (réseau) sans abstraction : en introduire une seulement pour tester l'upload sans Azure ;
+  - `DateTime.Now` subsiste dans l'authentification.
+
 ## Style C#
 - Namespace **file-scoped**, **primary constructors** pour l'injection, `Nullable` activé (déclarer `?` ou `required`).
 - Contrôleur : `[Route("[controller]")]`, `[ApiController]`, `[Authorize]` sur la classe ; segments d'action en kebab-case
@@ -41,26 +68,10 @@ Toute action qui touche une donnée d'un carnet vérifie la propriété avec `Va
 Pour une ressource propre à l'utilisatrice connectée (réglages, appareils…), préférer **déduire le carnet de la session**
 sans accepter d'identifiant en entrée : aucun IDOR possible. Modèle : `CarnetDeAsync` dans `Services/WebPush/NotificationsService.cs`.
 
-```csharp
-[HttpPut("{id:int}")]
-public async Task<IActionResult> Put(int id, DonneesXxxDto dto, CancellationToken ct)
-{
-    var existing = await context.DonneesXxx.FindAsync([id], ct);
-    if (existing is null) return NotFound();
-
-    var securityCheck = await this.ValidateCarnetAccess(carnetSanteService, existing.CarnetSanteId);
-    if (securityCheck != null) return securityCheck;
-
-    // Copier uniquement les champs modifiables ; jamais Entry(dto).State = Modified,
-    // jamais de changement de CarnetSanteId.
-    existing.Intensite = dto.Intensite;
-    existing.Commentaire = dto.Commentaire;
-
-    await context.SaveChangesAsync(ct);
-    carnetSanteService.InvalidateCache(existing.CarnetSanteId);
-    return NoContent();
-}
-```
+**Nouveau code (SOLID)** : le contrôle de propriété se fait **dans le service** (`EstProprietaireAsync` sur l'entité chargée,
+statut `Interdit`/`Introuvable` traduit par le contrôleur) : voir le gabarit du skill `endpoint-api` (`templates.md`).
+Le code existant utilise encore `ValidateCarnetAccess` dans les contrôleurs. Dans tous les cas : copier uniquement les champs
+modifiables, jamais `Entry(dto).State = Modified`, jamais de changement de `CarnetSanteId`.
 - GET par id : charger, `NotFound()` si absent, **puis** vérifier le carnet.
 - POST : vérifier le `CarnetSanteId` reçu **et** les clés étrangères (ex. `MedicamentId` doit appartenir au même carnet).
 - Refus d'accès : `Forbid()` **sans argument** (son paramètre est un nom de schéma d'authentification ; passer un message
