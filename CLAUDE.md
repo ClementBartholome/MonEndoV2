@@ -18,7 +18,7 @@ transit, activité, bilan quotidien) et à préparer leurs rendez-vous médicaux
 ## Stack et carte du dépôt
 | Zone | Techno |
 |---|---|
-| `MonEndoVue.Server/` | ASP.NET Core 8, EF Core + SQL Server, Identity + JWT en cookies HttpOnly, Serilog, Quartz, SignalR, Azure Blob (photos) |
+| `MonEndoVue.Server/` | ASP.NET Core 8, EF Core + SQL Server, Identity + JWT en cookies HttpOnly, Serilog, Quartz, Web Push (VAPID), Azure Blob (photos) |
 | `monendovue.client/` | Vue 3.4 + TypeScript, Vite 5, Pinia, shadcn-vue (radix-vue), Tailwind 3, vee-validate + zod, Playwright |
 | `.github/workflows/ci.yml` | CI/CD : vérification → image Docker → déploiement VPS |
 | `Dockerfile` | Image unique : le client est buildé par `dotnet publish` (esproj) et servi depuis `wwwroot` |
@@ -54,7 +54,11 @@ dotnet ef migrations add NomEnPascalCase --project MonEndoVue.Server
   **transit** facultative : selles avec type de Bristol 1-7, crampes d'estomac et ballonnements avec intensité) — `/bilan-quotidien`,
   avec des objectifs bien-être réglables dans `/parametres`.
 - Accueil `/` (carnet : dernières entrées), agenda `/agenda` (Google Calendar), export PDF `/export`.
-- Notifications push via **OneSignal** (envoyées notamment depuis Zapier) et rappel quotidien à 21h (Quartz + SignalR).
+- Notifications **Web Push standard** envoyées par le serveur (clés VAPID, sans service tiers) : chaque appareil s'abonne
+  depuis `/parametres` ; rappel du bilan à l'heure choisie, envoyé seulement si le bilan du jour n'est pas rempli
+  (job Quartz toutes les 15 min). Sur iOS (16.4+), uniquement dans l'app ajoutée à l'écran d'accueil.
+  Entités : **`AbonnementPush`** (un par appareil, endpoint unique, rattaché au carnet) et **`PreferenceRappel`**
+  (une par carnet : rappel actif, heure locale, fuseau IANA, date du dernier rappel envoyé).
 
 ## Principes produit (non négociables)
 - **Mobile-first** : écrans pensés d'abord pour ≤ 425px, aucune information clé tronquée ; le desktop enrichit ensuite.
@@ -64,7 +68,7 @@ dotnet ef migrations add NomEnPascalCase --project MonEndoVue.Server
 
 ## Décisions d'architecture
 - **Pas de PWA, pas de cache service worker, pas de mode hors ligne** (abandonnés en 2026-09). Le seul service worker
-  légitime est celui du push OneSignal (`public/OneSignalSDKWorker.js`, à ne pas supprimer ni déplacer).
+  légitime est `public/push-sw.js` (affichage des notifications, aucun cache). OneSignal, Zapier et SignalR sont abandonnés.
   `public/sw.js` est un worker d'autodestruction temporaire (à retirer après le 2026-12-31).
 - **Pas de génération de types** (TypeGen retiré) : les types TS de `features/*/types` sont maintenus à la main et
   modifiés **dans le même commit** que le DTO/modèle C# correspondant.
@@ -120,7 +124,9 @@ Utiliser le skill `revue-securite` avant de commiter un changement touchant auth
 - Test manuel à 375px **et** sur desktop des écrans touchés, clavier compris.
 - Revue sécurité (skill `revue-securite`) si auth, endpoint, upload ou données partagées sont touchés.
 - Types TS alignés sur les contrats C# modifiés ; migration relue si le modèle change.
-- Case correspondante cochée dans `docs/modernization-plan.md` quand un lot du backlog est terminé.
+- **Documentation à jour dans la même PR** que l'évolution : `README.md` (fonctionnalités, technologies),
+  `docs/modernization-plan.md` (case du backlog cochée, section « déjà implémenté »), `CLAUDE.md` racine et de couche
+  (glossaire, décisions, conventions, pièges), skills concernés. Faire le point avec le skill `capitaliser`.
 
 ## Skills du projet (`.claude/skills/`)
 - `fonctionnalite-front` — créer ou refactoriser une page/un composant Vue selon les patterns du projet.
@@ -139,6 +145,12 @@ Objectif : que l'utilisateur n'ait jamais à répéter une consigne ou une infor
 - Ces fichiers suivent le circuit normal : branche + PR, jamais de push direct sur `main`, rien de secret (dépôt public).
 
 ## Pièges connus de l'environnement (Windows, Git Bash)
+- Les serveurs lancés en arrière-plan (Vite, API) **survivent à la fin de la session** et verrouillent les fichiers
+  (build « fichier utilisé par un autre processus », `git worktree remove` en échec) : les arrêter explicitement à la fin
+  d'un test, en filtrant **sur le nom du processus** (`dotnet.exe`, `node.exe`, `esbuild.exe`) en plus du chemin du worktree :
+  un filtre sur le seul chemin tue aussi les shells bash en cours, y compris celui qui exécute la commande.
+- Web Push : le package NuGet `WebPush` ne gère que l'ancien encodage `aesgcm`, refusé par Apple ; utiliser
+  `Lib.Net.Http.WebPush` (`aes128gcm`, schéma `vapid`).
 - `python` lance le stub du Microsoft Store et bloque : utiliser **node** pour les scripts ponctuels (JSON, remplacements).
 - Git Bash convertit les arguments `/xxx` en chemins : `dotnet publish … -p:UseAppHost=false` (et non `/p:`).
 - Ne jamais mettre de backticks Markdown dans une chaîne bash entre guillemets doubles (substitution de commande silencieuse) :

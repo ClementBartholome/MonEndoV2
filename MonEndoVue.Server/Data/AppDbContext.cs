@@ -16,6 +16,8 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : IdentityDbCo
     public DbSet<JourRegle> JourRegles { get; set; }
     public DbSet<BilanQuotidien> BilansQuotidiens { get; set; }
     public DbSet<SymptomeCycle> SymptomesCycles { get; set; }
+    public DbSet<AbonnementPush> AbonnementsPush { get; set; }
+    public DbSet<PreferenceRappel> PreferencesRappel { get; set; }
     
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -99,5 +101,26 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : IdentityDbCo
             .WithMany()
             .HasForeignKey(d => d.MedicamentId)
             .OnDelete(DeleteBehavior.Restrict); // ← IMPORTANT : Pas de cascade
+
+        // Notifications Web Push : un abonnement par appareil (endpoint unique), supprimés avec le carnet
+        modelBuilder.Entity<AbonnementPush>(entity =>
+        {
+            entity.Property(a => a.Endpoint).HasMaxLength(450);
+            entity.HasIndex(a => a.Endpoint).IsUnique();
+            entity.HasOne(a => a.CarnetSante)
+                .WithMany()
+                .HasForeignKey(a => a.CarnetSanteId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<PreferenceRappel>(entity =>
+        {
+            entity.HasKey(p => p.CarnetSanteId);
+            entity.Property(p => p.FuseauHoraire).HasMaxLength(64);
+            entity.HasOne(p => p.CarnetSante)
+                .WithOne()
+                .HasForeignKey<PreferenceRappel>(p => p.CarnetSanteId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
     }
 }

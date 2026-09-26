@@ -70,9 +70,21 @@ Nouveau composant shadcn : `npx shadcn-vue add <nom>` (alias configurés vers `@
 
 ## État et stockage
 - Pinia uniquement pour l'authentification (`features/auth/store/auth.ts`) ; le reste en état local ou composable.
-- `localStorage` réservé aux préférences non sensibles (`user` sans token, `notification-permission`,
-  `monendo.wellbeing-goals`). **Jamais** de token ni de donnée de santé dans `localStorage`/IndexedDB.
+- `localStorage` réservé aux préférences non sensibles (`user` sans token, `monendo.wellbeing-goals`).
+  **Jamais** de token ni de donnée de santé dans `localStorage`/IndexedDB.
 - Pas de cache hors ligne ni de service worker applicatif (voir les décisions d'architecture du CLAUDE.md racine).
+- Le bloc daté de `src/main.ts` nettoie les restes des anciens systèmes (mode hors ligne, OneSignal) : à retirer après le 2026-12-31,
+  en même temps que `public/sw.js`.
+
+## Notifications Web Push
+- Tout passe par `features/parametres/composables/usePushNotifications.ts` (états, activation, préférences) et
+  `components/NotificationSettings.vue` ; le worker `public/push-sw.js` ne fait qu'afficher les notifications (aucun cache).
+- La clé publique VAPID vient de l'API (`GET Notifications/cle-publique`), jamais d'une variable `VITE_*`.
+- **iOS** : push disponible seulement dans l'app ouverte depuis l'écran d'accueil (iOS 16.4+), sinon afficher le guide
+  d'installation. `Notification.requestPermission()` doit être le **premier `await`** d'un gestionnaire de clic (geste utilisateur),
+  donc toute donnée nécessaire (clé publique) est chargée avant.
+- Un ancien abonnement signé avec une autre clé (ex. OneSignal) bloque `pushManager.subscribe` : le désabonner d'abord.
+- Le navigateur intégré de l'app Claude bloque les notifications : tester la réception dans Chrome sur le poste.
 
 ## Vérifications
 - `npm run type-check` après chaque changement significatif, `npm run build` avant de commiter.

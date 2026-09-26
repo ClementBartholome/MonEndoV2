@@ -19,8 +19,6 @@
     "@fullcalendar/google-calendar": "^6.1.14",
     "@fullcalendar/interaction": "^6.1.14",
     "@fullcalendar/vue3": "^6.1.14",
-    "@microsoft/signalr": "^8.0.7",
-    "@onesignal/onesignal-vue3": "^2.0.1",
     "@unovis/ts": "^1.4.1",
     "@unovis/vue": "^1.4.1",
     "@vee-validate/zod": "^4.12.8",
