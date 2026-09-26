@@ -607,7 +607,7 @@ const chartData = computed(() => {
     stress: (bilan.stressPro + bilan.stressPerso) / 2,
     fatigue: bilan.fatigue,
     // Même échelle que le stress et la fatigue (0 à 5) ; les anciens bilans comptent par leur humeur.
-    humeur: (scoreHumeur(bilan) ?? 0.5) * 5,
+    humeur: Math.round((scoreHumeur(bilan) ?? 0.5) * 50) / 10,
     douleur: bilan.douleurMoyenne
   }));
 });
