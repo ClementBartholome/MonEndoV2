@@ -146,6 +146,7 @@
     --headline: #33272a;
     --paragraph: #594a4e;
     --button: #ff8ba7;
+    --button-rgb: 255 139 167; /* même couleur que --button, en composantes pour les opacités Tailwind */
     --form-input: white;
     --form-button-text: #3c2a36;
     --form-placeholder: #7a6774;
