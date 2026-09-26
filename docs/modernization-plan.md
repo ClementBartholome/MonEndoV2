@@ -154,6 +154,7 @@ Regles:
 - [ ] Cartes d'insights hebdo (2-3 max, explicables)
 - [ ] Comparaison glissante 4 semaines
 - [x] Suivi photo acné en fenetre glissante multi-mois (comparaison visuelle au-dela du mois courant)
+- [x] Humeur du bilan en emotions multiples (1 a 3 parmi 10) et emotion de la semaine (issue #2) ; anciens bilans conserves
 
 ### Lot C - Engineering quality
 - [ ] Suppression progressive des `any` critiques

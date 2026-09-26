@@ -50,9 +50,12 @@ dotnet ef migrations add NomEnPascalCase --project MonEndoVue.Server
 - **`Medicament`** (traitement, `TypeTraitement` médicamenteux ou non, en cours ou passé), **`DonneesMedicament`** (prises),
   **`DonneesTraitementNonMedicamenteux`** (séances) — page `/medicaments`.
 - **`DonneesTransit`** — `/transit` (ancien suivi par événements ; le suivi quotidien passe désormais par le bilan) ; **`DonneesActivitePhysique`** — `/activite`.
-- **`BilanQuotidien`** (humeur, stress, fatigue, pas, douleur moyenne, hydratation, alimentation, et une catégorie
+- **`BilanQuotidien`** (émotions, stress, fatigue, pas, douleur moyenne, hydratation, alimentation, notes, et une catégorie
   **transit** facultative : selles avec type de Bristol 1-7, crampes d'estomac et ballonnements avec intensité) — `/bilan-quotidien`,
-  avec des objectifs bien-être réglables dans `/parametres`.
+  avec des objectifs bien-être réglables dans `/parametres`. Émotions : 1 à 3 **`EmotionBilan`** par bilan (table
+  `EmotionsBilan`, type possédé chargé avec le bilan ; enum `Emotion`, libellés et tonalité dans `config/emotions.ts`).
+  Les bilans antérieurs gardent leur ancienne humeur `Mood` (`Heureuse`/`Neutre`/`Triste`) : tout calcul d'humeur passe
+  par `features/bilan-quotidien/utils/humeur.ts`, qui prend en compte les deux.
 - Accueil `/` (carnet : dernières entrées), agenda `/agenda` (Google Calendar), export PDF `/export`.
 - Notifications **Web Push standard** envoyées par le serveur (clés VAPID, sans service tiers) : chaque appareil s'abonne
   depuis `/parametres` ; rappels réglables (job Quartz toutes les 15 min), chacun omis si le suivi est déjà fait :

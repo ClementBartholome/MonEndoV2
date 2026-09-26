@@ -23,6 +23,11 @@ module.exports = {
             },
         },
         extend: {
+            // Couleur d'accent (--button) utilisable avec opacité : border-button, bg-button/15, ring-button/50...
+            // Pas de textColor : la classe text-button existante désigne la couleur de texte des boutons (--button-text).
+            borderColor: { button: "rgb(var(--button-rgb) / <alpha-value>)" },
+            backgroundColor: { button: "rgb(var(--button-rgb) / <alpha-value>)" },
+            ringColor: { button: "rgb(var(--button-rgb) / <alpha-value>)" },
             colors: {
                 border: "hsl(var(--border))",
                 input: "hsl(var(--input))",

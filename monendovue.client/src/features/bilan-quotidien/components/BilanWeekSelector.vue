@@ -52,6 +52,7 @@
 </template>
 
 <script setup lang="ts">
+import { scoreHumeur } from '@/features/bilan-quotidien/utils/humeur';
 import { ref, computed, watch } from 'vue';
 import { format, startOfWeek, addDays, addWeeks, subWeeks, isSameDay, isToday } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -79,12 +80,9 @@ const emit = defineEmits<{
 const currentWeekStart = ref(startOfWeek(props.selectedDate || new Date(), { weekStartsOn: 1 }));
 
 const calculateBilanScore = (bilan: BilanQuotidien): number => {
-  const getMoodScore = (mood: string): number => {
-    const mapping: Record<string, number> = {'Heureuse': 20, 'Neutre': 10, 'Triste': 0};
-    return mapping[mood] || 10;
-  };
+  const getMoodScore = (bilan: BilanQuotidien): number => (scoreHumeur(bilan) ?? 0.5) * 20;
 
-  const moodScore = getMoodScore(bilan.mood);
+  const moodScore = getMoodScore(bilan);
   const stressScore = (5 - Math.min(Math.max((bilan.stressPro + bilan.stressPerso) / 2, 0), 5)) / 5 * 20;
   const fatigueScore = (5 - Math.min(Math.max(bilan.fatigue, 0), 5)) / 5 * 20;
   const painScore = (10 - Math.min(Math.max(bilan.douleurMoyenne, 0), 10)) / 10 * 20;

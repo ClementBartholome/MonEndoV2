@@ -68,6 +68,9 @@ namespace MonEndoVue.Server.Controllers
         [HttpPut("{id}")]
         public async Task<IActionResult> PutBilanQuotidien(int id, BilanQuotidien bilanQuotidien)
         {
+            var (humeurValide, erreurHumeur) = BilanHumeurValidator.Valider(bilanQuotidien);
+            if (!humeurValide) return BadRequest(new { message = erreurHumeur });
+
             var (transitValide, erreurTransit) = BilanTransitValidator.Valider(bilanQuotidien);
             if (!transitValide) return BadRequest(new { message = erreurTransit });
 
@@ -87,6 +90,8 @@ namespace MonEndoVue.Server.Controllers
 
             existing.Date = bilanQuotidien.Date;
             existing.Mood = bilanQuotidien.Mood;
+            existing.Emotions.Clear();
+            existing.Emotions.AddRange(NouvellesEmotions(bilanQuotidien));
             existing.StressPro = bilanQuotidien.StressPro;
             existing.StressPerso = bilanQuotidien.StressPerso;
             existing.Fatigue = bilanQuotidien.Fatigue;
@@ -115,17 +120,25 @@ namespace MonEndoVue.Server.Controllers
         [HttpPost]
         public async Task<ActionResult<BilanQuotidien>> PostBilanQuotidien(BilanQuotidien bilanQuotidien)
         {
+            var (humeurValide, erreurHumeur) = BilanHumeurValidator.Valider(bilanQuotidien);
+            if (!humeurValide) return BadRequest(new { message = erreurHumeur });
+
             var (transitValide, erreurTransit) = BilanTransitValidator.Valider(bilanQuotidien);
             if (!transitValide) return BadRequest(new { message = erreurTransit });
 
             var securityCheck = await this.ValidateCarnetAccess(carnetSanteService, bilanQuotidien.CarnetSanteId);
             if (securityCheck != null) return securityCheck;
             
+            bilanQuotidien.Emotions = NouvellesEmotions(bilanQuotidien);
             context.BilansQuotidiens.Add(bilanQuotidien);
             await context.SaveChangesAsync();
 
             return CreatedAtAction("GetBilanQuotidien", new { id = bilanQuotidien.Id }, bilanQuotidien);
         }
+
+        // Seul le choix des émotions vient du client : leurs identifiants éventuels sont ignorés.
+        private static List<EmotionBilan> NouvellesEmotions(BilanQuotidien bilan) =>
+            bilan.Emotions.Select(e => new EmotionBilan { Emotion = e.Emotion }).ToList();
 
         // DELETE: BilanQuotidien/5
         [HttpDelete("{id}")]

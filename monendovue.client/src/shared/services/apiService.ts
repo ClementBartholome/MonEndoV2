@@ -6,6 +6,8 @@ import { tokenService } from '@/features/auth/services/tokenService';
 import router from "@/router";
 import type { DonneesDouleurModification } from '@/features/douleurs/types/donnees-douleur';
 import type { AbonnementPush, Rappel, ReglageRappel, TypeRappel } from '@/features/parametres/types/notifications';
+import type { BilanQuotidien, EmotionBilan } from '@/features/bilan-quotidien/types/bilan-quotidien';
+import { enTableau } from '@/shared/utils/json';
 
 const API_URL = import.meta.env.VITE_DOCKER === 'true'
     ? '' 
@@ -116,8 +118,11 @@ class ApiService {
         return this.request('GET', `DonneesTransit/${carnetSanteId}/${month}/${year}`);
     }
 
-    async getBilanQuotidienByWeek(carnetSanteId: number, week: string, year: string): Promise<any> {
-        return this.request('GET', `BilanQuotidien/by-week/${carnetSanteId}/${week}/${year}`);
+    async getBilanQuotidienByWeek(carnetSanteId: number, week: string, year: string): Promise<BilanQuotidien[]> {
+        type Liste<T> = T[] | { $values: T[] };
+        const response = await this.request<Liste<Omit<BilanQuotidien, 'emotions'> & { emotions?: Liste<EmotionBilan> }>>(
+            'GET', `BilanQuotidien/by-week/${carnetSanteId}/${week}/${year}`);
+        return enTableau(response).map((bilan) => ({ ...bilan, emotions: enTableau(bilan.emotions) }));
     }
 
     async getAllMedicaments(carnetSanteId: number, ): Promise<any> {

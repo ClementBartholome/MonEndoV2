@@ -112,6 +112,12 @@
           <td :colspan="daysInMonth.length + 1">Bilans quotidiens</td>
         </tr>
         <tr>
+          <td>Humeur</td>
+          <td v-for="day in daysInMonth" :key="day">
+            <span :title="getHumeurForDay(day).titre">{{ getHumeurForDay(day).emojis }}</span>
+          </td>
+        </tr>
+        <tr>
           <td>Fatigue</td>
           <td v-for="day in daysInMonth" :key="day">
             {{ getBilanValueForDay('fatigue', day) }}
@@ -178,6 +184,9 @@ import apiService from '@/shared/services/apiService';
 import {Button} from "@/shared/components/ui/button";
 import {useAuthStore} from "@/features/auth/store/auth";
 import {Skeleton} from "@/shared/components/ui/skeleton";
+import {anciennesHumeurs, presentationEmotion} from '@/features/bilan-quotidien/config/emotions';
+import type {CodeEmotion} from '@/features/bilan-quotidien/types/bilan-quotidien';
+import {enTableau} from '@/shared/utils/json';
 
 const selectedMonthYear = ref(format(new Date(), 'yyyy-MM'));
 const carnetSanteId = useAuthStore().user?.carnetSanteId;
@@ -295,6 +304,22 @@ const getBilanValueForDay = (field, day) => {
     return date.getDate() === day;
   });
   return bilan ? bilan[field] ?? 0 : 0;
+};
+
+// Humeur du bilan : emojis des émotions du jour, ou symbole de l'ancienne humeur (+, =, -).
+const SYMBOLES_ANCIENNE_HUMEUR: Record<string, string> = {Heureuse: '+', Neutre: '=', Triste: '-'};
+const getHumeurForDay = (day: number): { emojis: string; titre: string } => {
+  const bilan = computedDonneesCarnetSante.value.bilansQuotidiens.$values.find(b => new Date(b.date).getDate() === day);
+  if (!bilan) return {emojis: '', titre: ''};
+  const codes: CodeEmotion[] = enTableau(bilan.emotions);
+  if (codes.length > 0) {
+    return {
+      emojis: codes.map((code) => presentationEmotion[code]?.emoji ?? '').join(''),
+      titre: codes.map((code) => presentationEmotion[code]?.libelle ?? code).join(', '),
+    };
+  }
+  const ancienne = bilan.mood ? anciennesHumeurs[bilan.mood] : undefined;
+  return ancienne ? {emojis: SYMBOLES_ANCIENNE_HUMEUR[bilan.mood] ?? '', titre: ancienne.libelle} : {emojis: '', titre: ''};
 };
 
 // Transit du bilan : selles = type de Bristol (1-7), x si non précisé, 0 si aucune ;
