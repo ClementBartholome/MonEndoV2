@@ -22,7 +22,7 @@ public sealed class NotificationsControllerTests : IDisposable
             _carnet.Context, _envoi, horloge, NullLogger<NotificationsPushService>.Instance);
         IOptions<WebPushOptions> options = configure ? PushDeTest.OptionsConfigurees() : PushDeTest.OptionsNonConfigurees();
 
-        return new NotificationsController(_carnet.Context, notifications, options, horloge)
+        return new NotificationsController(new NotificationsService(_carnet.Context, notifications, options, horloge))
         {
             ControllerContext = authentifie ? CarnetDeTest.ContexteAuthentifie() : CarnetDeTest.ContexteAnonyme(),
         };
@@ -32,6 +32,9 @@ public sealed class NotificationsControllerTests : IDisposable
         new() { Endpoint = endpoint, P256dh = "cle-p256dh", Auth = "secret-auth" };
 
     private static int? StatutDe(IActionResult resultat) => (resultat as IStatusCodeActionResult)?.StatusCode;
+
+    private static PreferenceRappelDto Preferences(IActionResult resultat) =>
+        Assert.IsType<PreferenceRappelDto>(Assert.IsType<OkObjectResult>(resultat).Value);
 
     [Fact]
     public void GetClePublique_Configuree_RetourneLaCle()
@@ -106,7 +109,7 @@ public sealed class NotificationsControllerTests : IDisposable
     [Fact]
     public async Task GetPreferences_SansReglage_RetourneLesValeursParDefaut()
     {
-        var preferences = (await Controller().GetPreferences(CancellationToken.None)).Value!;
+        var preferences = Preferences(await Controller().GetPreferences(CancellationToken.None));
 
         Assert.False(preferences.RappelActif);
         Assert.Equal("21:00", preferences.HeureRappel);
@@ -126,7 +129,7 @@ public sealed class NotificationsControllerTests : IDisposable
             CancellationToken.None);
 
         Assert.IsType<NoContentResult>(resultat);
-        var preferences = (await controller.GetPreferences(CancellationToken.None)).Value!;
+        var preferences = Preferences(await controller.GetPreferences(CancellationToken.None));
         Assert.True(preferences.RappelActif);
         Assert.Equal("07:45", preferences.HeureRappel);
         Assert.Equal("America/New_York", preferences.FuseauHoraire);
@@ -176,7 +179,7 @@ public sealed class NotificationsControllerTests : IDisposable
 
         Assert.IsType<UnauthorizedResult>(await controller.Abonner(AbonnementDto(), CancellationToken.None));
         Assert.IsType<UnauthorizedResult>(await controller.Desabonner(new DesabonnementPushDto { Endpoint = "x" }, CancellationToken.None));
-        Assert.IsType<UnauthorizedResult>((await controller.GetPreferences(CancellationToken.None)).Result);
+        Assert.IsType<UnauthorizedResult>(await controller.GetPreferences(CancellationToken.None));
         Assert.IsType<UnauthorizedResult>(await controller.PutPreferences(new PreferenceRappelDto(), CancellationToken.None));
         Assert.IsType<UnauthorizedResult>(await controller.EnvoyerTest(CancellationToken.None));
     }

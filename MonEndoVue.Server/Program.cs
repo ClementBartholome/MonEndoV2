@@ -55,6 +55,7 @@ namespace MonEndoVue.Server
             builder.Services.AddHttpClient<IEnvoiPush, WebPushService>();
             builder.Services.AddSingleton(TimeProvider.System);
             builder.Services.AddScoped<NotificationsPushService>();
+            builder.Services.AddScoped<NotificationsService>();
 
             builder.Services.AddCors(options =>
             {
