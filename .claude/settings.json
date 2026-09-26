@@ -1,0 +1,27 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm run type-check:*)",
+      "Bash(npm run build:*)",
+      "Bash(npx eslint:*)",
+      "Bash(dotnet build:*)",
+      "Bash(git status:*)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)",
+      "Bash(git show:*)"
+    ],
+    "ask": [
+      "Bash(git push:*)"
+    ],
+    "deny": [
+      "Read(**/appsettings*.json)",
+      "Read(**/.env)",
+      "Read(**/.env.*)",
+      "Read(**/serviceAccountKey.json)",
+      "Read(**/keys/**)",
+      "Read(**/logs/**)",
+      "Read(**/Logs/**)",
+      "Read(**/*.log)"
+    ]
+  }
+}
