@@ -95,8 +95,11 @@ jobs:
           mkdir -p ./.sonar/scanner
           dotnet tool update dotnet-sonarscanner --tool-path ./.sonar/scanner
 
+      # Analyse SonarCloud non bloquante : un token expiré ou une panne Sonar ne doit pas empêcher le déploiement.
       - name: SonarQube - Begin Analysis
+        id: sonar-begin
         if: env.SONAR_TOKEN != ''
+        continue-on-error: true
         run: |
           ./.sonar/scanner/dotnet-sonarscanner begin /k:"ClementBartholome_MonEndoV2" /o:"clementbartholome" /d:sonar.token="${{ env.SONAR_TOKEN }}" /d:sonar.host.url="https://sonarcloud.io"
 
@@ -107,7 +110,8 @@ jobs:
         run: dotnet build --configuration Release --no-restore
 
       - name: SonarQube - End Analysis
-        if: env.SONAR_TOKEN != ''
+        if: env.SONAR_TOKEN != '' && steps.sonar-begin.outcome == 'success'
+        continue-on-error: true
         run: ./.sonar/scanner/dotnet-sonarscanner end /d:sonar.token="${{ env.SONAR_TOKEN }}"
 
   image:
