@@ -42,3 +42,11 @@ Sur le VPS, repointer le service `app` du `docker-compose.prod.yml` sur l'image 
 (`ghcr.io/clementbartholome/monendov2:vX.Y.Z`, ou `sha-<court>` pour une image antérieure aux versions),
 puis `docker compose -f docker-compose.prod.yml up -d app`. Une migration déjà appliquée n'est pas annulée : c'est pour
 cela qu'elles doivent rester rétro-compatibles. Revenir ensuite à `:latest` au déploiement suivant.
+
+Points d'attention connus :
+- **Retour à une image antérieure à la 1.0.0** : les bilans saisis depuis la 1.0.0 ont `Mood` à NULL, que l'ancienne image
+  (propriété `Mood` obligatoire) ne sait pas lire. Avant de repointer l'image, exécuter sur la base de prod
+  `UPDATE BilansQuotidiens SET Mood = 'Neutre' WHERE Mood IS NULL` (sans effet sur la 1.0.0 et suivantes, où les émotions
+  priment sur `Mood`). Les réglages de rappel modifiés depuis la 1.0.0 ne sont pas vus par l'ancienne image
+  (elle relit `PreferencesRappel`).
+- Toute version qui rend un champ nullable ou supprime une table ajoute ici sa propre consigne de retour arrière.

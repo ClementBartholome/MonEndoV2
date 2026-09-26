@@ -3,7 +3,7 @@
 Toutes les évolutions notables de MonEndo. Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/),
 versions en [SemVer](https://semver.org/lang/fr/) (voir la section Déploiement de `CLAUDE.md`).
 
-## [1.0.0] - non publiée
+## [1.0.0] - 2026-09-26
 
 Première version numérotée de l'application.
 
@@ -25,6 +25,10 @@ Première version numérotée de l'application.
   le réglage existant du rappel du bilan est conservé.
 - Une configuration des notifications incorrecte côté serveur désactive seulement les notifications, avec un message
   explicite dans les journaux, au lieu de bloquer la page de réglages.
+
+### Corrigé
+- Bilan quotidien : les options d'alimentation et le type de selles choisis sont de nouveau mis en évidence.
+- Bilan quotidien : tailles d'icônes homogènes entre les étapes et les cartes du récapitulatif.
 
 ### Sécurité
 - Les identifiants (connexion, inscription, changement de mot de passe) sont transmis uniquement dans le corps des requêtes.

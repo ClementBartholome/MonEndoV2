@@ -178,7 +178,8 @@ Regles:
   - idealement sans service tiers : Web Push standard (VAPID) avec un service worker dedie au push
   - aucune cle secrete cote client ; preferences de rappel par utilisatrice
 - [x] Rappel hebdomadaire de la photo de suivi acné (remplace le Zap), rappels generalises (`IRegleRappel`), notification qui ouvre la bonne page
-- [ ] Supprimer la table `PreferencesRappel` (non mappee depuis `GeneraliseRappels`) quand aucun rollback anterieur n'est plus envisage
+- [ ] Supprimer la table `PreferencesRappel` (non mappee depuis `GeneraliseRappels`) en 1.1, par une migration dediee, une fois
+  la 1.0.0 stable en production (le point de retour devient alors la 1.0.0, qui n'utilise plus cette table)
 - [x] Configuration VAPID validee au demarrage (avertissement explicite, aucune route en echec)
 
 ## Ce qui est deja implemente dans cette iteration

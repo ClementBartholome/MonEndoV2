@@ -38,6 +38,8 @@ Gabarits : [templates.md](templates.md).
 2. `dotnet ef migrations add NomEnPascalCase --project MonEndoVue.Server` (ex. `AjouteHydratationCible`).
 3. **Relire la migration** : elle sera appliquée automatiquement au démarrage en production. Préférer des changements
    additifs (colonne nullable, valeur par défaut) ; signaler explicitement toute suppression de colonne/table.
+   Retirer le `DropTable("PreferencesRappel")` que EF ajoute tant que cette table n'est pas supprimée volontairement
+   (voir « Base de données et migrations » dans `MonEndoVue.Server/CLAUDE.md`).
 4. Ne jamais modifier une migration déjà déployée.
 
 ## Côté client (même commit que le contrat C#)

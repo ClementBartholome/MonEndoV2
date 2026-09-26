@@ -105,6 +105,10 @@ modifiables, jamais `Entry(dto).State = Modified`, jamais de changement de `Carn
 - **Appliquées automatiquement au démarrage en production** : migrations rétro-compatibles, relire le fichier généré,
   signaler toute opération destructive. Ne jamais modifier une migration déjà déployée.
 - En développement, les migrations ne sont pas appliquées au démarrage (`dotnet ef database update` à la main).
+- **Table conservée hors modèle : `PreferencesRappel`** (ancien réglage du rappel, recopié dans `Rappels` par
+  `GeneraliseRappels`, gardé pour un retour à une image antérieure à la 1.0.0). EF ne la connaît plus : **toute nouvelle
+  migration générée contiendra un `DropTable("PreferencesRappel")` à retirer à la main**, sauf dans la migration dédiée
+  à sa suppression (prévue en 1.1, voir la roadmap).
 - **Générer une migration sans lire les secrets** : l'outil EF démarre l'hôte, qui exige `appsettings.{Environment}.json`.
   Plutôt que de lire ou copier `appsettings.Development.json` (interdit), créer temporairement dans `MonEndoVue.Server/`
   un `appsettings.DesignTime.json` contenant uniquement une chaîne de connexion factice (fichier ignoré par git, l'écrire
