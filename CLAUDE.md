@@ -75,6 +75,20 @@ dotnet ef migrations add NomEnPascalCase --project MonEndoVue.Server
 - Front : logique métier dans des composables, pages qui orchestrent, composants de présentation sans effet de bord.
 - Back : contrôleurs minces → services ; entités EF jamais exposées directement dans le nouveau code (DTO/ViewModel).
 
+## Principes SOLID, avec KISS (décision du 2026-09-26)
+Tout code nouveau ou modifié respecte SOLID ; la déclinaison concrète est dans le CLAUDE.md de chaque couche.
+**Keep it simple prime sur l'abstraction préventive** : une interface ou une couche n'existe que pour un besoin concret
+actuel (plusieurs implémentations réelles, dépendance externe à remplacer dans les tests, point d'extension utilisé).
+Sinon, une classe concrète simple injectée telle quelle. Pas d'interface « au cas où », pas de repository générique.
+- **S** : une classe / un composable / un composant = une responsabilité (HTTP, métier, accès aux données, rendu).
+- **O** : étendre par ajout (nouvelle implémentation, nouvelle entrée de configuration) plutôt qu'en modifiant des `switch`/`if` existants.
+- **L** : toute implémentation (y compris les faux de test) respecte le contrat de son abstraction, sans cas particulier.
+- **I** : interfaces et props petites et ciblées ; pas d'interface « fourre-tout ».
+- **D** : tout passe par l'injection de dépendances ; une abstraction (interface, `TimeProvider`) seulement pour ce qui sort
+  du process et doit être remplacé en test (push, stockage externe, heure).
+- **Code existant non conforme** : ne pas le recopier. Quand on modifie une zone, la remettre d'aplomb dans un commit
+  `refactor(…)` séparé, **sans refonte massive non demandée**. La dette connue est listée dans le lot C de `docs/modernization-plan.md`.
+
 ## Sécurité — règles à appliquer sur tout changement
 1. **Cloisonnement** : toute lecture/écriture est limitée au carnet de l'utilisatrice connectée. Pour une modification ou
    une suppression, charger l'entité **en base** et vérifier **son** `CarnetSanteId` — jamais celui envoyé par le client.

@@ -25,6 +25,12 @@ Gabarits prêts à adapter : [templates.md](templates.md).
 1. **Types** dans `features/<domaine>/types/` : miroir exact du DTO/ViewModel C#, aucun `any`.
 2. **API** : ajouter une méthode typée dans `shared/services/apiService.ts` (`Promise<T>`, gérer `$values` pour les listes).
 3. **Logique** dans le composable ; la page ne fait qu'orchestrer ; les composants de présentation n'appellent jamais l'API.
+   **SOLID** (voir `monendovue.client/CLAUDE.md`) :
+   - une responsabilité par fichier ;
+   - les variations par type en configuration, pas en `v-if` en chaîne ;
+   - des props minimales (`model` / `actions`) ;
+   - dépendances reçues via les `options` du composable ;
+   - jamais d'axios dans un composant.
 4. **Formulaire** : vee-validate + `toTypedSchema(z.object(...))`, messages en français, bouton de validation désactivé si incomplet, presets pour la saisie rapide.
 5. **Affichage** : `GenericCardList` en mobile (`md:hidden`), `Datatable` en desktop (`hidden md:block`), `SectionKpiHeader` pour les KPI, `EmptyStateAction` pour l'état vide, `Skeleton` pendant le chargement.
 6. **Retours** : `useToast()` variante `custom` (ou `destructive` en erreur), textes en français, ton non anxiogène.

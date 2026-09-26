@@ -17,7 +17,13 @@ Lire d'abord `MonEndoVue.Server/CLAUDE.md` et la section sécurité du CLAUDE.md
      de la session (modèle : `CarnetCourantAsync` dans `NotificationsController`).
 3. **Contrat** : DTO d'entrée (`Dto/XxxDto.cs`) avec uniquement les champs modifiables ; ViewModel de sortie
    (`ViewModels/XxxViewModel.cs`). Jamais `Id`/`CarnetSanteId`/`PhotoUrl` modifiables via le body d'un PUT.
-4. **Logique** dans un service (`Services/XxxService.cs`, `AddScoped` dans `Program.cs`) si elle dépasse le simple CRUD.
+4. **SOLID** (voir `MonEndoVue.Server/CLAUDE.md`) :
+   - le contrôleur ne fait que du HTTP : pas d'`AppDbContext`, pas de requête ;
+   - la logique et les requêtes vont dans un service du domaine (`Services/XxxService.cs`, `AddScoped` dans `Program.cs`) ;
+   - la validation métier va dans une classe dédiée ;
+   - tout accès extérieur passe par une interface injectée, et l'heure par `TimeProvider`.
+   
+   Si l'endpoint touche un contrôleur existant non conforme, le remettre d'aplomb dans un commit `refactor(…)` séparé.
 5. **Erreurs** : `BadRequest(new { message = "…" })` en français, `NotFound()`, `NoContent()`, `CreatedAtAction` ; jamais `ex.Message`.
 6. **Logs** : `ILogger<T>` structuré, identifiants numériques seulement (pas d'email, de token ni de contenu de santé).
 7. **Entrées sensibles** : jamais de mot de passe/token en query string ; endpoints d'auth avec `[EnableRateLimiting(PolitiquesDebit.Auth)]` ; identifiants lus depuis un DTO `[FromBody]`
