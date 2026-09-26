@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Microsoft.AspNetCore.Mvc;
 using MonEndoVue.Server.Controllers;
 using MonEndoVue.Server.Dto;
@@ -6,7 +7,7 @@ using MonEndoVue.Server.Tests.Support;
 
 namespace MonEndoVue.Server.Tests.Controllers;
 
-public class DonneesDouleursControllerCloisonnementTests : IDisposable
+public sealed class DonneesDouleursControllerCloisonnementTests : IDisposable
 {
     private readonly CarnetDeTest _carnet = new();
     private readonly DonneesDouleursController _controller;
@@ -102,6 +103,16 @@ public class DonneesDouleursControllerCloisonnementTests : IDisposable
         Assert.Equal(8, douleur.Intensite);
         Assert.Equal(new DateTime(2026, 9, 2), douleur.Date);
         Assert.Equal("Modifié", douleur.Commentaire);
+    }
+
+    [Theory]
+    [InlineData("""{"typeDouleur":"Lombaire","date":"2026-09-02T10:00:00"}""")]
+    [InlineData("""{"typeDouleur":"Lombaire","intensite":5}""")]
+    public void Dto_IntensiteOuDateAbsente_EstRefuseALaDeserialisation(string json)
+    {
+        var options = new JsonSerializerOptions(JsonSerializerDefaults.Web);
+
+        Assert.Throws<JsonException>(() => JsonSerializer.Deserialize<DonneesDouleurDto>(json, options));
     }
 
     public void Dispose() => _carnet.Dispose();

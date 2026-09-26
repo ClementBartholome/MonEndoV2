@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.Text.Json.Serialization;
 
 namespace MonEndoVue.Server.Dto;
 
@@ -10,9 +11,11 @@ public class DonneesDouleurDto
     [Required]
     public string TypeDouleur { get; set; } = string.Empty;
 
+    [JsonRequired]
     [Range(0, 10)]
     public int Intensite { get; set; }
 
+    [JsonRequired]
     public DateTime Date { get; set; }
 
     public string? Commentaire { get; set; }
