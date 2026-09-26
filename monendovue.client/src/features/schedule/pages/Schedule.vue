@@ -29,7 +29,6 @@ import dayGridMonth from "@fullcalendar/daygrid";
 import dayGridWeek from "@fullcalendar/daygrid";
 import frLocale from '@fullcalendar/core/locales/fr';
 import interactionPlugin from "@fullcalendar/interaction";
-import 'vue-popperjs/dist/vue-popper.css';
 import {Button} from '@/shared/components/ui/button';
 import type {CalendarEvent} from '@/features/schedule/models/calendar-events/calendar-event';
 import type { CalendarOptions } from '@fullcalendar/core' 
@@ -44,7 +43,6 @@ const popperPosition: Ref<PositionType> = ref({x: 0, y: 0});
 let refreshIntervalId: number;
 
 const fetchEvents = async () => {
-  localStorage.removeItem('events')
   events.value = [];
   loading.value = true;
 
@@ -77,9 +75,7 @@ const fetchEvents = async () => {
 
     } while (pageToken);
 
-    // Sauvegarder et mettre à jour l'état
     events.value = allEvents;
-    localStorage.setItem('events', JSON.stringify(allEvents));
   } catch (error) {
     console.error('Erreur lors de la récupération des événements:', error);
   } finally {
@@ -124,19 +120,7 @@ const calendarOptions = computed<CalendarOptions>(() => {
 });
 
 onMounted(async () => {
-  const localEvents = localStorage.getItem('events');
-
-  if (localEvents) {
-    try {
-      events.value = JSON.parse(localEvents) as CalendarEvent[];
-      loading.value = false;
-    } catch (error) {
-      console.error('Erreur lors du parsing des événements localStorage:', error);
-      await fetchEvents();
-    }
-  } else {
-    await fetchEvents();
-  }
+  await fetchEvents();
 
   // Actualiser les événements toutes les 60 secondes
   refreshIntervalId = setInterval(fetchEvents, 60000);

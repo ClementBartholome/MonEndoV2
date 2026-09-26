@@ -15,7 +15,6 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : IdentityDbCo
     public DbSet<DonneesTransit> DonneesTransit { get; set; }
     public DbSet<JourRegle> JourRegles { get; set; }
     public DbSet<BilanQuotidien> BilansQuotidiens { get; set; }
-    public DbSet<DeviceToken> DeviceTokens { get; set; }
     public DbSet<SymptomeCycle> SymptomesCycles { get; set; }
     
     protected override void OnModelCreating(ModelBuilder modelBuilder)

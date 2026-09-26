@@ -1,8 +1,5 @@
-﻿using TypeGen.Core.TypeAnnotations;
+﻿namespace MonEndoVue.Server.Models;
 
-namespace MonEndoVue.Server.Models;
-
-[ExportTsInterface]
 public class SymptomeCycle
 {
     public int Id { get; set; }
@@ -10,7 +7,6 @@ public class SymptomeCycle
     public string TypeSymptome { get; set; }
     public DateTime Date { get; set; }
     public int Intensite { get; set; }
-    [TsOptional]
     public string? Commentaire { get; set; }
     public string? PhotoUrl { get; set; }
 }

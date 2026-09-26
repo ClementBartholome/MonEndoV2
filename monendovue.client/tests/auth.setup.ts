@@ -1,36 +1,22 @@
-﻿import { test as setup } from '@playwright/test';
+import { test as setup, expect } from '@playwright/test';
 
 const authFile = 'playwright/.auth/user.json';
 
-setup('authenticate', async ({ request }) => {
-    await request.post('https://monendoapp.fr/login?email=testuser@gmail.com&password=Password123$', {
-        headers: {
-            'Content-Type': 'application/json'
-        },
-    });
-    await request.storageState({ path: authFile });
+// Compte de test d'un environnement local : identifiants fournis par variables
+// d'environnement, jamais versionnés. Ne jamais lancer ces tests contre la production.
+const email = process.env.E2E_EMAIL;
+const password = process.env.E2E_PASSWORD;
+
+setup('authenticate', async ({ page }) => {
+    if (!email || !password) {
+        throw new Error('Définir E2E_EMAIL et E2E_PASSWORD pour lancer les tests E2E.');
+    }
+
+    await page.goto('/login');
+    await page.fill('input[placeholder="mail@gmail.com"]', email);
+    await page.fill('input[placeholder="********"]', password);
+    await page.click('button:has-text("Connexion")');
+    await expect(page).toHaveURL('/', { timeout: 10000 });
+
+    await page.context().storageState({ path: authFile });
 });
-
-/*
-
-async login(email: string, password: string) {
-        try {
-            const response = await axios.post(`${API_URL}Account/login?email=${encodeURIComponent(email)}&password=${encodeURIComponent(password)}`, null, {
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                withCredentials: true
-            });
-
-            if (response.status === 200) {
-                return response.data;
-            }
-        } catch (error: any) {
-            console.error(error);
-            if (error.response) {
-                console.error(error.response.data);
-            }
-            return null;
-        }
-    },
- */

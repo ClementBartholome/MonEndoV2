@@ -434,7 +434,6 @@ import { useMonthData } from '@/shared/composables/useMonthData'
 import { useDateTimeFormat } from '@/shared/composables/useDateTimeFormat'
 import { useCrudOperations } from '@/shared/composables/useCrudOperations'
 import { useDialogForm } from '@/shared/composables/useDialogForm'
-import { useSync } from '@/shared/composables/useSync'
 import { useToast } from '@/shared/components/ui/toast'
 import { format } from 'date-fns'
 import type { SymptomeCycle } from "@/features/cycle/types/symptome-cycle"
@@ -573,7 +572,6 @@ const openPhotoModal = (url: string) => {
 // Period marking
 const periodMarked = ref(false)
 const isLoadingPeriod = ref(true)
-const { handleOfflineOperation } = useSync()
 
 const selectedMonthYear = ref(getCurrentMonthYear())
 const value = ref(today(getLocalTimeZone())) as Ref<DateValue>
@@ -1155,8 +1153,7 @@ const handleDelete = async (id: string | number) => {
 
   await deleteEntry(id, (entryId) => apiService.deleteSymptomeCycle(entryId as number), {
     successMessage: 'Symptôme supprimé avec succès',
-    errorMessage: 'Une erreur est survenue lors de la suppression du symptôme',
-    endpoint: 'SymptomesCycle'
+    errorMessage: 'Une erreur est survenue lors de la suppression du symptôme'
   })
 
   await refreshAfterSymptomeMutation()
@@ -1489,23 +1486,9 @@ const onSubmit = form.handleSubmit(async (values) => {
 const handleMarkPeriod = async (dateString: string) => {
   const data = { date: dateString, carnetSanteId: user?.carnetSanteId }
 
-  await handleOfflineOperation(
-    () => apiService.postJourRegle(data),
-    {
-      endpoint: 'JourRegle',
-      method: 'POST',
-      data: data,
-      onSuccess: () => {
-        periodMarked.value = true
-        fetchJoursRegles()
-      },
-      onOfflineQueued: () => {
-        periodMarked.value = true
-      },
-      successMessage: 'Règles enregistrées',
-      errorMessage: 'Impossible de marquer les règles',
-    }
-  )
+  // Les toasts et le rechargement (@marked) sont gérés par PeriodQuickAdd : l'erreur doit remonter.
+  await apiService.postJourRegle(data)
+  periodMarked.value = true
 }
 
 const onPeriodMarked = () => {
@@ -1547,35 +1530,25 @@ const confirmAddJourRegle = async () => {
   // Mark this day as a period day
   const data = { date: clickedDate, carnetSanteId: user?.carnetSanteId }
 
-  await handleOfflineOperation(
-    () => apiService.postJourRegle(data),
-    {
-      endpoint: 'JourRegle',
-      method: 'POST',
-      data: data,
-      onSuccess: () => {
-        fetchJoursRegles() // Refresh the calendar to show the new period day
+  try {
+    await apiService.postJourRegle(data)
+    await fetchJoursRegles() // Refresh the calendar to show the new period day
 
-        // If it's today, also mark periodMarked as true
-        const today = format(new Date(), 'yyyy-MM-dd')
-        if (clickedDate === today) {
-          periodMarked.value = true
-        }
-      },
-      onOfflineQueued: () => {
-        // If it's today, also mark periodMarked as true
-        const today = format(new Date(), 'yyyy-MM-dd')
-        if (clickedDate === today) {
-          periodMarked.value = true
-        }
-      },
-      successMessage: 'Jour de règles marqué avec succès',
-      errorMessage: 'Impossible de marquer ce jour',
+    // If it's today, also mark periodMarked as true
+    const today = format(new Date(), 'yyyy-MM-dd')
+    if (clickedDate === today) {
+      periodMarked.value = true
     }
-  )
-
-  // Close the dialog
-  showConfirmJourRegleDialog.value = false
+  } catch (error) {
+    console.error('Erreur lors de l\'ajout du jour de règles:', error)
+    toast({
+      title: 'Erreur',
+      description: 'Impossible de marquer ce jour',
+      variant: 'destructive',
+    })
+  } finally {
+    showConfirmJourRegleDialog.value = false
+  }
 }
 
 const confirmDeleteJourRegle = async () => {

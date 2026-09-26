@@ -510,7 +510,6 @@ import { useDateTimeFormat } from '@/shared/composables/useDateTimeFormat'
 import { useCrudOperations } from '@/shared/composables/useCrudOperations'
 import { useDialogForm } from '@/shared/composables/useDialogForm'
 import { useToast } from '@/shared/components/ui/toast'
-import { useSync } from '@/shared/composables/useSync'
 import { format, parseISO } from 'date-fns'
 import { TypeTraitement } from '@/features/medicament/types/type-traitement'
 import { materialSymbols, traitementPriseIconConfig } from '@/shared/config/materialSymbols'
@@ -518,7 +517,6 @@ import { materialSymbols, traitementPriseIconConfig } from '@/shared/config/mate
 const authStore = useAuthStore()
 const { formatDateDisplay, formatTimeDisplay, combineDateTime, getCurrentDateInput, getCurrentTimeInput } = useDateTimeFormat()
 const { toast } = useToast()
-const { handleOfflineOperation } = useSync()
 
 // Contrôle des dialogs
 const showAddPriseDialog = ref(false)
@@ -568,8 +566,7 @@ const { selectedMonthYear, entries: listePrises, isLoading } = useMonthData({
       commentaire: d.commentaire || 'Pas de détails',
     }))
   },
-  immediate: false,
-  dataType: 'medicament'
+  immediate: false
 })
 
 const { deleteEntry } = useCrudOperations(listePrises)
@@ -779,8 +776,7 @@ onMounted(async () => {
 const handleDeletePrise = async (id: string | number) => {
   await deleteEntry(id as number, (entryId) => apiService.deleteDonneesMedicament(entryId as number), {
     successMessage: 'La prise de médicament a été supprimée avec succès',
-    errorMessage: 'Une erreur est survenue lors de la suppression de la prise de médicament',
-    endpoint: 'DonneesMedicament'
+    errorMessage: 'Une erreur est survenue lors de la suppression de la prise de médicament'
   })
 }
 
@@ -1055,25 +1051,25 @@ const handleDeleteMedicament = async () => {
     }
   }
 
-  await handleOfflineOperation(
-    () => apiService.deleteMedicament(Number(medicamentId)),
-    {
-      endpoint: 'Medicament',
-      method: 'DELETE',
-      resourceId: medicamentId,
-      onSuccess: () => {
-        removeMedicamentFromLists()
-      },
-      onOfflineQueued: () => {
-        removeMedicamentFromLists()
-      },
-      successMessage: 'Le traitement a été supprimé avec succès',
-      errorMessage: 'Une erreur est survenue lors de la suppression du traitement',
-    }
-  )
-
-  showDeleteDialog.value = false
-  medicamentToDelete.value = null
+  try {
+    await apiService.deleteMedicament(Number(medicamentId))
+    removeMedicamentFromLists()
+    toast({
+      title: 'Succès',
+      description: 'Le traitement a été supprimé avec succès',
+      variant: 'custom'
+    })
+  } catch (error) {
+    console.error('Delete medicament error:', error)
+    toast({
+      title: 'Erreur',
+      description: 'Une erreur est survenue lors de la suppression du traitement',
+      variant: 'destructive'
+    })
+  } finally {
+    showDeleteDialog.value = false
+    medicamentToDelete.value = null
+  }
 }
 </script>
 

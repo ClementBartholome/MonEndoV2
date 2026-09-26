@@ -1,8 +1,5 @@
 using System.Text;
 using System.Text.Json.Serialization;
-using FirebaseAdmin;
-using FirebaseAdmin.Messaging;
-using Google.Apis.Auth.OAuth2;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Http.Features;
@@ -36,8 +33,6 @@ namespace MonEndoVue.Server
                 .AddEnvironmentVariables()
                 .AddUserSecrets<Program>();
 
-            // TypeGen generate --project-folder "C:\\Users\\Clementoss\\source\\repos\\MonEndoVue\\MonEndoVue.Server" --output-folder "C:\\Users\\Clementoss\\source\\repos\\MonEndoVue\\monendovue.client\\src\\interfaces"
-
             Log.Logger = new LoggerConfiguration()
                 .MinimumLevel.Debug()
                 .MinimumLevel.Override("Microsoft", LogEventLevel.Information)
@@ -49,32 +44,13 @@ namespace MonEndoVue.Server
             builder.Host.UseSerilog();
 
             // Add services to the container.
-            if (builder.Environment.IsDevelopment())
-            {
-                builder.Services.AddDbContext<AppDbContext>(options =>
-                    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
-            }
-            else
-            {
-                builder.Services.AddDbContext<AppDbContext>(options =>
-                    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
-            }
+            builder.Services.AddDbContext<AppDbContext>(options =>
+                options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
+            builder.Services.AddMemoryCache();
             builder.Services.AddScoped<CarnetSanteService>();
             builder.Services.AddScoped<TokenService>();
-            builder.Services.AddScoped<DeviceTokenService>();
             builder.Services.AddScoped<NotificationService>();
-            // builder.Services.AddHostedService<NotificationService>(serviceProvider =>
-            // {
-            //     var logger = serviceProvider.GetRequiredService<ILogger<NotificationService>>();
-            //     var httpClientFactory = serviceProvider.GetRequiredService<IHttpClientFactory>();
-            //     return new NotificationService(serviceProvider, logger, httpClientFactory);
-            // });
-            // builder.Services.AddHttpClient("PingClient", client =>
-            // {
-            //     client.Timeout = TimeSpan.FromMinutes(2);
-            // });
-
 
             builder.Services.AddCors(options =>
             {
@@ -195,15 +171,6 @@ namespace MonEndoVue.Server
                 });
 
 
-            FirebaseApp.Create(new AppOptions()
-            {
-                Credential =
-                    GoogleCredential.FromFile(Path.Combine(AppDomain.CurrentDomain.BaseDirectory,
-                        "serviceAccountKey.json")),
-            });
-
-            builder.Services.AddSingleton(FirebaseMessaging.DefaultInstance);
-
             builder.Services.AddQuartz(q =>
             {
                 // Job des notifications (21h)
@@ -213,31 +180,9 @@ namespace MonEndoVue.Server
                     .ForJob(notificationJobKey)
                     .WithIdentity("SendPushNotifications-trigger")
                     .WithCronSchedule("0 00 21 * * ?"));
-
-                // // Job du ping (toutes les 30 minutes)
-                // var pingJobKey = JobKey.Create("PingApplication");
-                // q.AddJob<PingJob>(opts => opts.WithIdentity(pingJobKey));
-                // q.AddTrigger(opts => opts
-                //     .ForJob(pingJobKey)
-                //     .WithIdentity("PingApplication-trigger")
-                //     .WithSimpleSchedule(s => s
-                //         .WithIntervalInMinutes(30)
-                //         .RepeatForever()));
             });
 
             builder.Services.AddQuartzHostedService(opts => { opts.WaitForJobsToComplete = true; });
-
-            // builder.Services.AddHttpClient("PingClient", client =>
-            // {
-            //     client.Timeout = TimeSpan.FromMinutes(2);
-            // });
-
-            builder.Services.AddHttpClient("OneSignalClient", client =>
-            {
-                client.BaseAddress = new Uri("https://onesignal.com");
-                client.DefaultRequestHeaders.Add("Authorization", $"Basic {builder.Configuration["OneSignal:ApiKey"]}");
-                client.DefaultRequestHeaders.Add("Content-Type", "application/json");
-            });
 
             builder.Services.AddSwaggerGen(option =>
             {
@@ -269,6 +214,8 @@ namespace MonEndoVue.Server
 
             builder.Services.AddSignalR();
 
+            builder.Services.AddHealthChecks();
+
             builder.Services.AddSingleton<IConfiguration>(builder.Configuration);
 
             var app = builder.Build();
@@ -277,7 +224,6 @@ namespace MonEndoVue.Server
             {
                 using var scope = app.Services.CreateScope();
                 var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-                // await dbContext.Database.MigrateAsync();
 
                 await RootUserSeeder.Seed(scope, builder.Configuration, dbContext);
             }
@@ -338,6 +284,8 @@ namespace MonEndoVue.Server
             app.UseAuthorization();
             app.UseRateLimiter();
             app.MapControllers().RequireRateLimiting("api");
+            // Sonde de disponibilité utilisée par le pipeline de déploiement (anonyme, hors rate limit).
+            app.MapHealthChecks("/health").AllowAnonymous();
             app.MapFallbackToFile("/index.html");
             await app.RunAsync();
         }

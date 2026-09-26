@@ -228,8 +228,7 @@ const { selectedMonthYear, entries, isLoading } = useMonthData({
       saignement: entry.saignement ? 'Oui' : 'Non',
       commentaire: entry.commentaires || 'Pas de commentaire'
     }))
-  },
-  dataType: 'transit'
+  }
 })
 
 const { deleteEntry } = useCrudOperations(entries)
@@ -275,8 +274,7 @@ watch(entries, (value) => {
 const handleDelete = async (id: string | number) => {
   await deleteEntry(id as number, (entryId) => apiService.deleteDonneesTransit(entryId as number), {
     successMessage: 'Donnée supprimée avec succès',
-    errorMessage: 'Une erreur est survenue lors de la suppression de la donnée',
-    endpoint: 'DonneesTransit'
+    errorMessage: 'Une erreur est survenue lors de la suppression de la donnée'
   })
 }
 

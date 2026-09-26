@@ -228,8 +228,7 @@ const { selectedMonthYear, entries, isLoading } = useMonthData({
         }]
       }
     })
-  },
-  dataType: 'douleurs'
+  }
 })
 
 const { deleteEntry } = useCrudOperations(entries)
@@ -284,8 +283,7 @@ const averageIntensity = computed(() => {
 const handleDelete = async (id: string | number) => {
   await deleteEntry(id as number, (id) => apiService.deleteDonneesDouleurs(id as number), {
     successMessage: 'La douleur a été supprimée avec succès',
-    errorMessage: 'Un problème est survenu lors de la suppression de la douleur',
-    endpoint: 'DonneesDouleurs'
+    errorMessage: 'Un problème est survenu lors de la suppression de la douleur'
   })
 }
 

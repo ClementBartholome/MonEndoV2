@@ -15,8 +15,14 @@ Ce plan combine:
 - Desktop ensuite: enrichissement progressif (grilles, details, densite) sans degrader l'experience mobile.
 
 ## Convention de commit
-- Format obligatoire: `feat(perimetre cible): court message descriptif`
+- Format obligatoire: `type(perimetre): court message descriptif` (types: feat, fix, refactor, style, docs, test, chore, ci, build, perf)
 - Messages en francais.
+- Reference complete (et regles de travail des agents): `CLAUDE.md` a la racine du depot.
+
+## Decisions (2026-09)
+- PWA, cache service worker et mode hors ligne abandonnes : code retire. Seul le service worker de push OneSignal est conserve.
+- Generation de types TypeGen abandonnee : les types TypeScript sont maintenus a la main.
+- Firebase/FCM retire (code mort) ; notifications via OneSignal (dont envois Zapier).
 
 ## Reference de marche (patterns apps sante populaires)
 Patterns repris des apps de suivi sante/cycle et chronic care:
@@ -89,7 +95,15 @@ Patterns repris des apps de suivi sante/cycle et chronic care:
    - revue OWASP Top 10 (XSS, CSRF, injections, exposition de donnees)
    - revue gestion secrets, logs, permissions et dependances (CVE)
 
-4. Autres idees a fort impact
+4. Redaction des tests end-to-end (Playwright)
+   - couvrir les parcours critiques (auth, saisie, modification, suppression)
+   - prioriser les scenarios mobile-first sur les ecrans <= 425px
+   - integrer ces tests dans la CI pour securiser les regressions avant merge
+
+5. Autres idees a fort impact
+   - timeline photos acné (semaine/mois) pour suivre l'evolution de facon elegante
+   - vue comparative avant/apres sur une periode selectionnee
+   - filtres utiles (periode, intensite, presence de photo) pour faciliter le suivi
    - mode "resume hebdo" partageable (patient + medecin)
    - alertes intelligentes basees sur inactivite et derive des objectifs
    - personnalisation plus fine des objectifs (par section et par phase du cycle)
@@ -139,6 +153,7 @@ Regles:
 - [ ] Timeline mensuelle unifiee (douleurs, symptomes, activite, traitements)
 - [ ] Cartes d'insights hebdo (2-3 max, explicables)
 - [ ] Comparaison glissante 4 semaines
+- [x] Suivi photo acné en fenetre glissante multi-mois (comparaison visuelle au-dela du mois courant)
 
 ### Lot C - Engineering quality
 - [ ] Suppression progressive des `any` critiques
@@ -150,6 +165,11 @@ Regles:
 - [ ] Security headers globaux
 - [ ] Validation JWT stricte conditionnelle
 - [ ] Revue obsolete API de credentials Google
+
+### Lot E - Notifications
+- [ ] Notifications push generiques pour toutes les utilisatrices (rappels personnalises), envoyees cote serveur
+  - idealement sans service tiers : Web Push standard (VAPID) avec un service worker dedie au push
+  - aucune cle secrete cote client ; preferences de rappel par utilisatrice
 
 ## Ce qui est deja implemente dans cette iteration
 - UX medicaments/sessions non medicamenteuses amelioree (`MedicamentPage.vue`):
@@ -175,6 +195,10 @@ Regles:
 - Personnalisation Analyse & Tendances:
   - `ParametresPage.vue`: section "Objectifs bien-etre" (hydratation, pas, stress, fatigue, douleur)
   - `DashboardBilanQuotidien.vue`: calcul des objectifs/insights pilote par ces cibles utilisateur
+- Separation UX du suivi acné (dans `CyclePage.vue`):
+  - onglet dedie `Acné` distinct des autres symptomes
+  - conservation du quick-add acné et des actions de periode en cours dans cet onglet
+  - nouvelle galerie "Evolution photo" avec comparaison rapide de 2 photos
 
 ## Definition of Done (pour chaque lot)
 - UX: test manuel mobile + desktop + accessibilite clavier
@@ -182,4 +206,40 @@ Regles:
 - Securite: revue headers/CORS/rate limits + logs sans donnees sensibles
 - Produit: metrique avant/apres mesuree sur 2 semaines
 
+## Pratiques Vue/SOLID a appliquer (obligatoire)
+- Limiter la taille des pages: extraire tout bloc UI metier depassant ~150-200 lignes vers un composant dedie.
+- Garder la logique d'orchestration dans la page et deleguer le rendu aux composants presentational.
+- Eviter la duplication de markup: reutiliser les composants partages (`GenericCardList`, `SectionKpiHeader`, etc.).
+- Exposer des interfaces/props explicites pour chaque composant extrait (Single Responsibility).
+- Garder des handlers stables et simples (`onEdit`, `onDelete`, `onPhotoClick`) pour minimiser le couplage.
+- Ajouter une verification `npm run type-check` apres chaque extraction significative.
 
+## Journal des modifications recentes (session courante)
+- `CyclePage.vue`:
+  - separation stricte des tabs `Symptomes` et `Acne` (plus de contenu melange)
+  - correction du skeleton infini dans `Mes cycles` (stop loading en `finally`)
+  - uniformisation des cartes acné/symptomes via `GenericCardList`
+  - historique acné allege (pas de preview photo inline systematique)
+  - comparaison photo acné plus visuelle (selection + vue cote a cote)
+  - debut de refactor: extraction de l'onglet acné vers `AcneTabContent.vue`
+  - ajout d'un select de mois dedie pour l'onglet acné (dissocie de `Symptomes`)
+  - separation des sources de donnees acné/symptomes pour eviter les interferences de filtres
+  - comparaison inter-mois active via fenetre glissante (navigation mois precedent/suivant + conservation de la comparaison si photos toujours visibles)
+  - priorisation UX de la fenetre glissante: mois selectionne affiche en premier + indicateur de fenetre active
+  - comparaison assistee: action rapide pour comparer les 2 photos les plus recentes
+  - historique acné repositionne en vue secondaire (panneau repliable par defaut)
+  - historique acné cible d'abord les entrees sans photo pour eviter le doublon avec la galerie
+- `GenericCardList.vue`:
+  - ajout des props `hideTitle` et `hideIcon` pour des variantes compactes de cartes
+- `DouleursPage.vue`:
+  - correction UX mobile: bouton `+` aligne sur la meme ligne que le titre de section
+- `AcneTabSection.vue`:
+  - orchestration allegee: branchement des evenements + rendu du dialog "terminer la periode"
+  - suppression de la logique metier lourde de ce composant
+- `useAcneTracking.ts` (nouveau composable):
+  - centralise la logique metier acné (chargement multi-mois, quick-add, comparaison photo, historique, periodes, suppression)
+  - expose un `model` et des `actions` testables/reutilisables
+- `AcneTabContent.vue`:
+  - API simplifiee de nombreuses props vers 2 props (`model`, `actions`) pour reduire le couplage et la prop-drilling
+- `acne-tab.ts` (nouveau type partage):
+  - contrat explicite `AcneTabModel` / `AcneTabActions` pour fiabiliser l'integration et la maintenance

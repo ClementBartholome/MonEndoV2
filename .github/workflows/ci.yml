@@ -1,5 +1,11 @@
 name: CI/CD VPS Docker
 
+# Pipeline en 3 étapes :
+#   1. verifier  (PR + main) : dépendances, type-check + build du client, lint, build .NET, SonarCloud
+#   2. image     (PR + main) : build de l'image Docker ; poussée sur GHCR uniquement pour main
+#   3. deployer  (main)      : déploiement sur le VPS puis vérification de /health
+# Tout push sur main déploie en production.
+
 on:
   push:
     branches:
@@ -8,44 +14,55 @@ on:
     branches:
       - main
 
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
 
 jobs:
-  build-and-deploy:
+  verifier:
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      packages: write
+    env:
+      # Vide sur les PR venant d'un fork : les étapes SonarCloud sont alors ignorées.
+      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0
+          fetch-depth: 0 # historique complet requis par SonarCloud
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
+          cache: npm
+          cache-dependency-path: monendovue.client/package-lock.json
 
-      - name: Cache Node.js modules
-        uses: actions/cache@v4
-        with:
-          path: ./monendovue.client/node_modules
-          key: ${{ runner.os }}-node-modules-${{ hashFiles('./monendovue.client/package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-node-modules-
-
-      - name: Install dependencies
-        run: npm install
-        working-directory: ./monendovue.client
-
+      # .NET avant le build client : vite.config.ts exporte les certificats via dotnet dev-certs.
       - name: Set up .NET
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '8.0.x'
+
+      - name: Install client dependencies
+        run: npm ci
+        working-directory: ./monendovue.client
+
+      - name: Type-check and build client
+        run: npm run build
+        working-directory: ./monendovue.client
+
+      - name: Run ESLint
+        run: npx eslint . --ext .vue,.ts,.js --ignore-path ../.gitignore
+        working-directory: ./monendovue.client
+        continue-on-error: true
 
       - name: Cache NuGet packages
         uses: actions/cache@v4
@@ -56,6 +73,7 @@ jobs:
             ${{ runner.os }}-nuget-
 
       - name: Cache SonarQube Cloud packages
+        if: env.SONAR_TOKEN != ''
         uses: actions/cache@v4
         with:
           path: ~/.sonar/cache
@@ -63,6 +81,7 @@ jobs:
           restore-keys: ${{ runner.os }}-sonar
 
       - name: Cache SonarQube Cloud scanner
+        if: env.SONAR_TOKEN != ''
         id: cache-sonar-scanner
         uses: actions/cache@v4
         with:
@@ -71,21 +90,18 @@ jobs:
           restore-keys: ${{ runner.os }}-sonar-scanner
 
       - name: Install SonarQube Cloud scanner
-        if: steps.cache-sonar-scanner.outputs.cache-hit != 'true'
+        if: env.SONAR_TOKEN != '' && steps.cache-sonar-scanner.outputs.cache-hit != 'true'
         run: |
           mkdir -p ./.sonar/scanner
           dotnet tool update dotnet-sonarscanner --tool-path ./.sonar/scanner
 
+      # Analyse SonarCloud non bloquante : un token expiré ou une panne Sonar ne doit pas empêcher le déploiement.
       - name: SonarQube - Begin Analysis
-        env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        run: |
-          ./.sonar/scanner/dotnet-sonarscanner begin /k:"ClementBartholome_MonEndoV2" /o:"clementbartholome" /d:sonar.token="${{ secrets.SONAR_TOKEN }}" /d:sonar.host.url="https://sonarcloud.io"
-
-      - name: Run ESLint
-        run: npx eslint . --ext .ts,.js
-        working-directory: ./monendovue.client
+        id: sonar-begin
+        if: env.SONAR_TOKEN != ''
         continue-on-error: true
+        run: |
+          ./.sonar/scanner/dotnet-sonarscanner begin /k:"ClementBartholome_MonEndoV2" /o:"clementbartholome" /d:sonar.token="${{ env.SONAR_TOKEN }}" /d:sonar.host.url="https://sonarcloud.io"
 
       - name: Restore .NET dependencies
         run: dotnet restore
@@ -94,12 +110,26 @@ jobs:
         run: dotnet build --configuration Release --no-restore
 
       - name: SonarQube - End Analysis
-        env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        run: ./.sonar/scanner/dotnet-sonarscanner end /d:sonar.token="${{ secrets.SONAR_TOKEN }}"
+        if: env.SONAR_TOKEN != '' && steps.sonar-begin.outcome == 'success'
+        continue-on-error: true
+        run: ./.sonar/scanner/dotnet-sonarscanner end /d:sonar.token="${{ env.SONAR_TOKEN }}"
 
-      # === DOCKER ===
+  image:
+    needs: verifier
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
       - name: Log in to Container Registry
+        if: github.event_name == 'push'
         uses: docker/login-action@v3
         with:
           registry: ${{ env.REGISTRY }}
@@ -111,59 +141,86 @@ jobs:
         uses: docker/metadata-action@v5
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          # Tags historiques conservés (le compose du VPS peut référencer latest, main ou main-<sha>)
           tags: |
             type=ref,event=branch
-            type=ref,event=pr
-            type=sha,prefix={{branch}}-
+            type=sha,prefix={{branch}}-,enable=${{ github.event_name == 'push' }}
+            type=sha,prefix=sha-,format=short
             type=raw,value=latest,enable={{is_default_branch}}
 
-      - name: Build and push Docker image
+      # Sur PR : l'image est construite (validation du Dockerfile) mais jamais poussée.
+      - name: Build (and push on main) Docker image
         uses: docker/build-push-action@v5
         with:
           context: .
-          push: true
+          push: ${{ github.event_name == 'push' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
           build-args: |
             VITE_API_URL_PROD=https://monendoapp.fr/
             VITE_GOOGLE_CALENDAR_API_KEY=${{ secrets.VITE_GOOGLE_CALENDAR_API_KEY }}
             VITE_GOOGLE_CALENDAR_ID=${{ secrets.VITE_GOOGLE_CALENDAR_ID }}
             VITE_ONESIGNAL_API_KEY=${{ secrets.VITE_ONESIGNAL_API_KEY }}
 
-      # === DÉPLOIEMENT SUR VPS ===
+  deployer:
+    needs: image
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: read # le VPS tire l'image GHCR avec le GITHUB_TOKEN de ce job
+    environment:
+      name: production
+      url: https://monendoapp.fr
+    concurrency:
+      group: deploy-production
+      cancel-in-progress: false
+
+    steps:
       - name: Deploy to VPS
-        if: github.ref == 'refs/heads/main'
-        uses: appleboy/ssh-action@v1.0.0
+        uses: appleboy/ssh-action@v1.2.5
         with:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USERNAME }}
           key: ${{ secrets.VPS_SSH_KEY }}
           passphrase: ${{ secrets.VPS_SSH_PASSPHRASE }}
           script: |
+            set -e
             cd ~/app
-            
+
             # Création du fichier .env pour la production
             cat > .env << EOF
             DB_PASSWORD=${{ secrets.DB_PASSWORD }}
             ASPNETCORE_ENVIRONMENT=Production
             EOF
-            
+
             # Connexion au registry
             echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
-            
+
             # Pull de la nouvelle image de l'app seulement
             docker compose -f docker-compose.prod.yml pull app
-            
-            # Redémarrage des services (app sera recréée, db/adminer gardés)
+
+            # Redémarrage des services (app sera recréée, db gardée)
             docker compose -f docker-compose.prod.yml up -d
-            
-            # Vérification que l'app est bien démarrée
-            sleep 10
+
             docker compose -f docker-compose.prod.yml ps
-            
+
             # Nettoyage des anciennes images
             docker image prune -f
-            
-            echo "Deployment completed successfully!"
-            echo "App: https://monendoapp.fr"
-            echo "Adminer: disponible via tunnel SSH sur port 8080"
+
+      # L'ancienne version renvoie index.html sur /health (fallback SPA) : seul "Healthy"
+      # prouve que la nouvelle version a démarré (migrations EF comprises).
+      - name: Check production health
+        run: |
+          for i in $(seq 1 30); do
+            if [ "$(curl -fsS --max-time 10 https://monendoapp.fr/health || true)" = "Healthy" ]; then
+              echo "Production healthy (tentative $i)."
+              exit 0
+            fi
+            echo "En attente de /health (tentative $i/30)..."
+            sleep 10
+          done
+          echo "::error::https://monendoapp.fr/health ne répond pas Healthy après 5 minutes."
+          exit 1

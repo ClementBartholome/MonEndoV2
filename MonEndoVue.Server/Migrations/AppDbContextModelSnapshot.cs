@@ -306,29 +306,6 @@ namespace MonEndoVue.Server.Migrations
                     b.ToTable("CarnetSantes");
                 });
 
-            modelBuilder.Entity("MonEndoVue.Server.Models.DeviceToken", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Token")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("UserId")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(450)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("UserId");
-
-                    b.ToTable("DeviceTokens");
-                });
-
             modelBuilder.Entity("MonEndoVue.Server.Models.DonneesActivitePhysique", b =>
                 {
                     b.Property<int>("Id")
@@ -662,17 +639,6 @@ namespace MonEndoVue.Server.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("MonEndoVue.Server.Models.DeviceToken", b =>
-                {
-                    b.HasOne("MonEndoVue.Server.Models.ApplicationUser", "User")
-                        .WithMany("DeviceToken")
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("User");
-                });
-
             modelBuilder.Entity("MonEndoVue.Server.Models.DonneesActivitePhysique", b =>
                 {
                     b.HasOne("MonEndoVue.Server.Models.CarnetSante", null)
@@ -766,8 +732,6 @@ namespace MonEndoVue.Server.Migrations
             modelBuilder.Entity("MonEndoVue.Server.Models.ApplicationUser", b =>
                 {
                     b.Navigation("CarnetSante");
-
-                    b.Navigation("DeviceToken");
                 });
 
             modelBuilder.Entity("MonEndoVue.Server.Models.CarnetSante", b =>

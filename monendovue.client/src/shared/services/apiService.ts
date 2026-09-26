@@ -167,9 +167,6 @@ class ApiService {
         return this.request('POST', 'SymptomesCycle', symptomesCycle);
     }
 
-    async saveDeviceToken(deviceToken: string): Promise<any> {
-        return this.request('POST', 'Account/device-token', { deviceToken });
-    }
     
     // DELETE
 

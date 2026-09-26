@@ -1,8 +1,5 @@
-﻿using TypeGen.Core.TypeAnnotations;
-
-namespace MonEndoVue.Server.Models
+﻿namespace MonEndoVue.Server.Models
 {
-    [ExportTsInterface]
     public class BilanQuotidien
     {
         public int Id { get; set; }
@@ -18,7 +15,6 @@ namespace MonEndoVue.Server.Models
         public bool Gluten { get; set; }
         public bool Lactose { get; set; }
         public bool Grignotage { get; set; }
-        [TsOptional]
         public string? Commentaire { get; set; }
     }
 }

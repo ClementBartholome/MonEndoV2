@@ -1,8 +1,5 @@
-﻿using TypeGen.Core.TypeAnnotations;
+﻿namespace MonEndoVue.Server.Models;
 
-namespace MonEndoVue.Server.Models;
-
-[ExportTsInterface]
 public class DonneesActivitePhysique
 {
     public int Id { get; set; }
@@ -12,6 +9,5 @@ public class DonneesActivitePhysique
     public int Duree { get; set; }
     public int Intensite { get; set; }
     public int EffetDouleur { get; set; }
-    [TsOptional]
     public string? Commentaire { get; set; }
 }

@@ -1,0 +1,127 @@
+# MonEndo — instructions pour Claude
+
+Référence unique des règles de travail sur ce dépôt. Les conventions détaillées par couche sont dans
+[MonEndoVue.Server/CLAUDE.md](MonEndoVue.Server/CLAUDE.md) (API .NET) et
+[monendovue.client/CLAUDE.md](monendovue.client/CLAUDE.md) (front Vue), chargés automatiquement quand on y travaille.
+La feuille de route produit est dans [docs/modernization-plan.md](docs/modernization-plan.md).
+
+## Le projet
+MonEndo aide les personnes atteintes d'endométriose à suivre leur quotidien (douleurs, cycle, symptômes, traitements,
+transit, activité, bilan quotidien) et à préparer leurs rendez-vous médicaux (export PDF). Production : https://monendoapp.fr.
+
+- **Données de santé = données sensibles (RGPD art. 9)** : minimisation, cloisonnement strict par utilisatrice, aucune fuite dans les logs.
+- **Le dépôt GitHub est public.** Jamais de secret, de donnée personnelle, d'identifiant (même de test) ni de description
+  d'une faille non corrigée dans un fichier versionné, un message de commit ou une PR. Les constats de sécurité exploitables
+  vont dans `docs/private/` (ignoré par git).
+- Développeur unique, francophone : échanges, docs, commits et UI en **français**.
+
+## Stack et carte du dépôt
+| Zone | Techno |
+|---|---|
+| `MonEndoVue.Server/` | ASP.NET Core 8, EF Core + SQL Server, Identity + JWT en cookies HttpOnly, Serilog, Quartz, SignalR, Azure Blob (photos) |
+| `monendovue.client/` | Vue 3.4 + TypeScript, Vite 5, Pinia, shadcn-vue (radix-vue), Tailwind 3, vee-validate + zod, Playwright |
+| `.github/workflows/ci.yml` | CI/CD : vérification → image Docker → déploiement VPS |
+| `Dockerfile` | Image unique : le client est buildé par `dotnet publish` (esproj) et servi depuis `wwwroot` |
+| `docs/` | Roadmap (`modernization-plan.md`) ; `docs/private/` local et non versionné |
+
+## Commandes
+```bash
+# Client (depuis monendovue.client/)
+npm run dev          # serveur Vite https://localhost:5173
+npm run type-check   # vue-tsc, à lancer après chaque changement significatif
+npm run build        # type-check + build (même commande que la CI et le Dockerfile)
+npx eslint <fichiers>  # préférer au `npm run lint`, qui fait --fix sur tout le client
+
+# Serveur (depuis la racine)
+dotnet build -c Release
+dotnet ef migrations add NomEnPascalCase --project MonEndoVue.Server
+```
+- Lancement complet en dev : profil `https` de `MonEndoVue.Server` (démarre Vite via SpaProxy). API : https://localhost:7206.
+- Configuration locale : `MonEndoVue.Server/appsettings.Development.json` et `monendovue.client/.env` (non versionnés, **ne pas les lire ni les afficher**).
+- Tests E2E Playwright : `E2E_EMAIL`/`E2E_PASSWORD` d'un compte **local**, jamais contre la production. Pas de tests unitaires aujourd'hui.
+
+## Domaine fonctionnel
+- **`CarnetSante`** : un carnet par utilisatrice (1-1 avec `ApplicationUser`), racine de toutes les données.
+  Chaque entité porte un `CarnetSanteId` : c'est la clé du cloisonnement.
+- **`DonneesDouleur`** (type, intensité 0-10, date, commentaire) — page `/douleurs`.
+- **`SymptomeCycle`** (type, intensité, date, commentaire, photo optionnelle) dont l'**acné** avec suivi photo ;
+  **`JourRegle`** (jours de règles) — page `/cycle` (onglets symptômes, acné, cycles).
+- **`Medicament`** (traitement, `TypeTraitement` médicamenteux ou non, en cours ou passé), **`DonneesMedicament`** (prises),
+  **`DonneesTraitementNonMedicamenteux`** (séances) — page `/medicaments`.
+- **`DonneesTransit`** — `/transit` ; **`DonneesActivitePhysique`** — `/activite`.
+- **`BilanQuotidien`** (humeur, stress, fatigue, pas, douleur moyenne, hydratation, alimentation) — `/bilan-quotidien`,
+  avec des objectifs bien-être réglables dans `/parametres`.
+- Accueil `/` (carnet : dernières entrées), agenda `/agenda` (Google Calendar), export PDF `/export`.
+- Notifications push via **OneSignal** (envoyées notamment depuis Zapier) et rappel quotidien à 21h (Quartz + SignalR).
+
+## Principes produit (non négociables)
+- **Mobile-first** : écrans pensés d'abord pour ≤ 425px, aucune information clé tronquée ; le desktop enrichit ensuite.
+- Saisie rapide (1-2 taps, presets, états vides avec action), lisibilité avant densité.
+- Ton **non anxiogène**, aucune sur-promesse médicale : on montre des tendances, on ne pose pas de diagnostic.
+- Privacy by design : l'utilisatrice contrôle ses données, rien n'est stocké sans nécessité.
+
+## Décisions d'architecture
+- **Pas de PWA, pas de cache service worker, pas de mode hors ligne** (abandonnés en 2026-09). Le seul service worker
+  légitime est celui du push OneSignal (`public/OneSignalSDKWorker.js`, à ne pas supprimer ni déplacer).
+  `public/sw.js` est un worker d'autodestruction temporaire (à retirer après le 2026-12-31).
+- **Pas de génération de types** (TypeGen retiré) : les types TS de `features/*/types` sont maintenus à la main et
+  modifiés **dans le même commit** que le DTO/modèle C# correspondant.
+- Front : logique métier dans des composables, pages qui orchestrent, composants de présentation sans effet de bord.
+- Back : contrôleurs minces → services ; entités EF jamais exposées directement dans le nouveau code (DTO/ViewModel).
+
+## Sécurité — règles à appliquer sur tout changement
+1. **Cloisonnement** : toute lecture/écriture est limitée au carnet de l'utilisatrice connectée. Pour une modification ou
+   une suppression, charger l'entité **en base** et vérifier **son** `CarnetSanteId` — jamais celui envoyé par le client.
+   Vérifier aussi que les clés étrangères référencées (ex. `MedicamentId`) appartiennent au même carnet.
+2. `[Authorize]` par défaut. Tout endpoint anonyme ou « admin » doit être justifié et protégé (rôle, propriété).
+3. **Rien de secret côté client** : toute variable `VITE_*` finit dans le bundle public. Un appel tiers nécessitant une clé secrète passe par le serveur.
+4. Jamais de mot de passe, token ou code OAuth dans une URL (query string, redirection) : body JSON ou cookie HttpOnly.
+5. Logs structurés **sans** email, token, donnée de santé ; jamais `ex.Message` renvoyé au client.
+6. Pas de `v-html` ni de rendu HTML de texte saisi (attention aux colonnes DataTables).
+7. Uploads : valider taille et type côté serveur, ne jamais réutiliser une URL fournie par le client.
+8. Ne pas lire, afficher ou copier les fichiers de secrets (`appsettings*.json`, `.env*`, `serviceAccountKey.json`, `keys/`, logs).
+
+Le code existant n'est pas encore partout conforme aux conventions : **ne pas recopier un pattern existant sans vérifier
+qu'il respecte ces règles** (ex. `Promise<any>` dans `apiService`, pages de plus de 1000 lignes).
+Utiliser le skill `revue-securite` avant de commiter un changement touchant auth, endpoints ou uploads.
+
+## Déploiement (tout push sur `main` = production)
+- `ci.yml` : **verifier** (npm ci, type-check + build client, ESLint non bloquant, build .NET, SonarCloud) → **image**
+  (build Docker ; poussée sur GHCR avec les tags `latest`, `main`, `main-<sha>` et `sha-<court>` uniquement sur `main`) → **deployer**
+  (SSH vers le VPS, `docker compose -f docker-compose.prod.yml pull app && up -d`, puis contrôle de `https://monendoapp.fr/health`).
+- Le VPS (`~/app`, hors dépôt) fournit `docker-compose.prod.yml` avec trois services sur un réseau interne :
+  `db` (SQL Server, port non exposé, mot de passe via `DB_PASSWORD` du `.env` écrit par la CI), `app` (image GHCR
+  `:latest`, écoute en HTTP sur le port 80 interne) et `nginx` (seul service exposé, 80/443, TLS). Montés dans `app` :
+  `config/appsettings.Production.json` → `/app/appsettings.Production.json` (**obligatoire**, `optional: false`),
+  `keys/` → `/app/keys` (Data Protection), `logs/` → `/app/Logs`. Les secrets de production vivent uniquement sur le VPS
+  (`config/`, `.env`, variables du compose) : ne jamais les demander ni les recopier.
+- Le healthcheck Docker du compose de prod appelle `curl`, absent de l'image aspnet : il est toujours en échec, se fier
+  au contrôle `/health` de la CI. Une modification du compose de prod se fait à la main sur le VPS.
+- **Les migrations EF sont appliquées automatiquement au démarrage en production** : elles doivent être rétro-compatibles ;
+  toute migration destructive (DROP, colonne supprimée) doit être signalée explicitement avant merge.
+- Rollback : repointer l'image du service `app` sur un tag précédent (`sha-…` ou `main-<sha>`), puis `docker compose up -d`.
+  Les images antérieures à 2026-09 chargent encore `serviceAccountKey.json` au démarrage : garder ce montage tant qu'un tel retour est envisageable.
+- Ne jamais pousser sur `main` ni ouvrir/merger une PR sans demande explicite. Travailler sur une branche.
+
+## Convention de commit
+- Format : `type(perimetre): message court` — **en français**, impératif ou présent, sans point final.
+- Types : `feat`, `fix`, `refactor`, `style`, `docs`, `test`, `chore`, `ci`, `build`, `perf`.
+- Périmètre en kebab-case : dossier de feature (`cycle`, `douleurs`, `medicament`, `bilan-quotidien`…) ou domaine transverse
+  (`auth`, `securite`, `front`, `back`, `serveur`, `ci`, `docker`, `deps`, `docs`).
+- Un commit = un sujet ; ne pas mélanger refacto, fonctionnalité et nettoyage.
+- **Pas de trailer `Co-Authored-By`** ni d'autre attribution dans les messages.
+- Exemples : `feat(cycle): ajoute la fenêtre glissante pour la comparaison photo acné`,
+  `fix(auth): corrige le path des cookies JWT`. Contre-exemples : `fix: petits correctifs`, `feat(cycle) ajout` (pas de `:`), message en anglais.
+
+## Definition of Done
+- `npm run build` (client) et `dotnet build -c Release` (serveur) verts.
+- Test manuel à 375px **et** sur desktop des écrans touchés, clavier compris.
+- Revue sécurité (skill `revue-securite`) si auth, endpoint, upload ou données partagées sont touchés.
+- Types TS alignés sur les contrats C# modifiés ; migration relue si le modèle change.
+- Case correspondante cochée dans `docs/modernization-plan.md` quand un lot du backlog est terminé.
+
+## Skills du projet (`.claude/skills/`)
+- `fonctionnalite-front` — créer ou refactoriser une page/un composant Vue selon les patterns du projet.
+- `endpoint-api` — ajouter ou modifier un endpoint ASP.NET Core de façon sûre (cloisonnement, DTO, migration, type TS).
+- `revue-securite` — revue ciblée MonEndo d'un diff ou d'une zone de code.
+- `commit` — préparer un commit conforme (vérifications, découpage, message).

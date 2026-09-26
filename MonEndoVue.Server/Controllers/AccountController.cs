@@ -14,7 +14,7 @@ namespace MonEndoVue.Server.Controllers
         UserManager<ApplicationUser> userManager,
         SignInManager<ApplicationUser> signInManager,
         CarnetSanteService carnetSanteService, TokenService tokenService,
-        DeviceTokenService deviceTokenService, ILogger<AccountController> logger
+        ILogger<AccountController> logger
         )
         : ControllerBase
     {
@@ -243,29 +243,6 @@ namespace MonEndoVue.Server.Controllers
             }
 
             return BadRequest(addPasswordResult.Errors);
-        }
-        
-        [Authorize]
-        [HttpPost("device-token")]
-        public async Task<IActionResult> SaveDeviceToken([FromBody] SaveDeviceTokenRequest request)
-        {
-            var user = await userManager.GetUserAsync(User);
-            if (user == null)
-            {
-                return BadRequest();
-            }
-
-            var existingToken = await deviceTokenService.GetExistingTokenAsync(request.DeviceToken, user.Id);
-
-            if (existingToken != null)
-            {
-                logger.LogInformation("Device token already exists for user: " + user.UserName);
-                return Ok();
-            }
-
-            await deviceTokenService.SaveDeviceTokenAsync(request.DeviceToken, user.Id);
-
-            return Ok();
         }
         
         [Authorize]

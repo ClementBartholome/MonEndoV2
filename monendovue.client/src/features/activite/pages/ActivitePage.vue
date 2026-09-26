@@ -197,8 +197,7 @@ const { selectedMonthYear, entries, isLoading } = useMonthData<DonneesActivitePh
       intensite: entry.intensite,
       commentaire: entry.commentaire || 'Pas de détails'
     }))
-  },
-  dataType: 'activite'
+  }
 })
 
 const { deleteEntry } = useCrudOperations(entries)
@@ -231,8 +230,7 @@ const chartData = computed(() => {
 const handleDelete = async (id: string | number) => {
   await deleteEntry(id as number, (id) => apiService.deleteDonneesActivitePhysique(id as number), {
     successMessage: 'La session a été supprimée avec succès',
-    errorMessage: 'Une erreur est survenue lors de la suppression de la session',
-    endpoint: 'DonneesActivitePhysique'
+    errorMessage: 'Une erreur est survenue lors de la suppression de la session'
   })
 }
 

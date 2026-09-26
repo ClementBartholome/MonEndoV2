@@ -1,17 +1,12 @@
-using TypeGen.Core.TypeAnnotations;
-
 namespace MonEndoVue.Server.Models;
 
-[ExportTsInterface]
 public class DonneesTraitementNonMedicamenteux
 {
     public int Id { get; set; }
     public int CarnetSanteId { get; set; }
     public int MedicamentId { get; set; }
     public Medicament? Medicament { get; set; }
-    [TsOptional]
     public int? Duree { get; set; }
     public DateTime Date { get; set; }
-    [TsOptional]
     public string? Commentaire { get; set; }
 }
