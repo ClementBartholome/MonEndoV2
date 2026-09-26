@@ -81,6 +81,11 @@ public async Task<IActionResult> Put(int id, DonneesXxxDto dto, CancellationToke
 - **Appliquées automatiquement au démarrage en production** : migrations rétro-compatibles, relire le fichier généré,
   signaler toute opération destructive. Ne jamais modifier une migration déjà déployée.
 - En développement, les migrations ne sont pas appliquées au démarrage (`dotnet ef database update` à la main).
+- **Générer une migration sans lire les secrets** : l'outil EF démarre l'hôte, qui exige `appsettings.{Environment}.json`.
+  Plutôt que de lire ou copier `appsettings.Development.json` (interdit), créer temporairement dans `MonEndoVue.Server/`
+  un `appsettings.DesignTime.json` contenant uniquement une chaîne de connexion factice (fichier ignoré par git, l'écrire
+  avec node pour un JSON valide), lancer `ASPNETCORE_ENVIRONMENT=DesignTime dotnet ef migrations add Nom`, puis le supprimer.
+  Aucune connexion à une base n'est nécessaire pour `migrations add`.
 
 ## Configuration
 Chargée depuis `appsettings.{Environment}.json` (**obligatoire**, non versionné), variables d'environnement puis user-secrets.
