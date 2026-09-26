@@ -1,8 +1,5 @@
-﻿using TypeGen.Core.TypeAnnotations;
+﻿namespace MonEndoVue.Server.Models;
 
-namespace MonEndoVue.Server.Models;
-
-[ExportTsInterface]
 public class DonneesTransit
 {
     public int Id { get; set; }
@@ -12,6 +9,5 @@ public class DonneesTransit
     public string Intensite { get; set; } // Légère, Modérée, Sévère
     public bool Saignement { get; set; }
     public bool Douleur { get; set; }
-    [TsOptional]
     public string? Commentaires { get; set; } 
 }

@@ -1,8 +1,5 @@
-﻿using TypeGen.Core.TypeAnnotations;
+﻿namespace MonEndoVue.Server.Models;
 
-namespace MonEndoVue.Server.Models;
-
-[ExportTsInterface]
 public class JourRegle
 {
     public int Id { get; set; }

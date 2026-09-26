@@ -51,7 +51,6 @@
     <PackageReference Include="Quartz.Extensions.Hosting" Version="3.13.1" />
     <PackageReference Include="Serilog.AspNetCore" Version="8.0.2" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.4.0" />
-    <PackageReference Include="TypeGen" Version="5.0.1" />
   </ItemGroup>
 
   <ItemGroup>
