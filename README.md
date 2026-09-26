@@ -20,7 +20,8 @@ MonEndoV2 est une application destinée aux personnes souffrant d'endométriose,
 - Frontend : VueJS
 - Backend : ASP.NET Core
 - Base de données : SQL Server
-- Outils externes : OneSignal (notifications), Google Calendar
+- Notifications : Web Push standard (VAPID) envoyé par le serveur
+- Outils externes : Google Calendar
 
 ## Roadmap modernisation
 

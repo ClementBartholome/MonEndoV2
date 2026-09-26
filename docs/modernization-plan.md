@@ -20,9 +20,9 @@ Ce plan combine:
 - Reference complete (et regles de travail des agents): `CLAUDE.md` a la racine du depot.
 
 ## Decisions (2026-09)
-- PWA, cache service worker et mode hors ligne abandonnes : code retire. Seul le service worker de push OneSignal est conserve.
+- PWA, cache service worker et mode hors ligne abandonnes : code retire. Seul le service worker de push (push-sw.js) est conserve.
 - Generation de types TypeGen abandonnee : les types TypeScript sont maintenus a la main.
-- Firebase/FCM retire (code mort) ; notifications via OneSignal (dont envois Zapier).
+- Firebase/FCM, OneSignal, Zapier et SignalR retires ; notifications Web Push standard (VAPID) envoyees par le serveur.
 
 ## Reference de marche (patterns apps sante populaires)
 Patterns repris des apps de suivi sante/cycle et chronic care:
@@ -167,7 +167,7 @@ Regles:
 - [ ] Revue obsolete API de credentials Google
 
 ### Lot E - Notifications
-- [ ] Notifications push generiques pour toutes les utilisatrices (rappels personnalises), envoyees cote serveur
+- [x] Notifications push generiques pour toutes les utilisatrices (rappels personnalises), envoyees cote serveur
   - idealement sans service tiers : Web Push standard (VAPID) avec un service worker dedie au push
   - aucune cle secrete cote client ; preferences de rappel par utilisatrice
 

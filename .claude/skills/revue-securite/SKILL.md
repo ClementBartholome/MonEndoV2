@@ -20,7 +20,7 @@ Complète le skill générique `/security-review` avec les points propres au pro
 - Aucune requête sans filtre `CarnetSanteId` sur des données de carnet.
 
 **Authentification et autorisation**
-- `[Authorize]` présent ; tout `[AllowAnonymous]`, hub SignalR ou endpoint technique justifié.
+- `[Authorize]` présent ; tout `[AllowAnonymous]` ou endpoint technique justifié.
 - Aucune action « admin » accessible à une utilisatrice ordinaire (changement de mot de passe d'autrui, envoi de notifications…).
 - Mots de passe et tokens jamais en query string ni dans une URL de redirection ; cookies `HttpOnly`, `Secure`, `SameSite`.
 - Rate limiting `auth` sur les endpoints d'authentification.

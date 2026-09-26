@@ -8,7 +8,8 @@ Complète le [CLAUDE.md racine](../CLAUDE.md). S'applique à tout le code de `Mo
   notifications (`NotificationService`), extensions (`ControllerSecurityExtensions`, `UserExtensions`).
 - `Models/` : entités EF. `Dto/` : entrées (`*Dto`). `ViewModels/` : sorties (`*ViewModel`).
 - `Data/AppDbContext.cs` : DbSets + relations en Fluent API. `Migrations/` : migrations EF (SQL Server uniquement).
-- `Jobs/` (Quartz, rappel 21h) et `Hubs/` (SignalR `/notificationHub`).
+- `Jobs/` (Quartz : `RappelBilanJob` toutes les 15 min) et `Services/WebPush/` (envoi Web Push derrière `IEnvoiPush`,
+  rappels dans `NotificationsPushService`).
 
 ## Couches (cible pour tout nouveau code)
 - **Contrôleur mince** : validation d'entrée, appel du service, mapping vers la réponse HTTP.
@@ -92,7 +93,8 @@ Chargée depuis `appsettings.{Environment}.json` (**obligatoire**, non versionn�
 Clés attendues (noms seulement) : `ConnectionStrings:DefaultConnection`, `AzureBlobStorage:ConnectionString`,
 `AzureBlobStorage:ContainerName` (ou variables `AZURE_STORAGE_CONNECTION_STRING`/`AZURE_CONTAINER_NAME`),
 `Authentication:Schemes:Bearer:{Secret,ValidIssuer,ValidAudiences}`, `Jwt:Key`, `RootUser:{UserName,Email,Password}`,
-`OneSignal:ApiKey`, `GoogleApi:{ClientId,ClientSecret}`. Ne jamais lire ni afficher les valeurs.
+`WebPush:{Subject,PublicKey,PrivateKey}` (clés VAPID ; absentes = notifications désactivées sans bloquer le démarrage ;
+ en dev via `dotnet user-secrets`), `GoogleApi:{ClientId,ClientSecret}`. Ne jamais lire ni afficher les valeurs.
 
 ## Tests
 Projet `MonEndoVue.Server.Tests` (xUnit, **net8.0** comme la CI et le Dockerfile), lancé par `dotnet test` et par la CI.
