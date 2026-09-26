@@ -34,11 +34,12 @@ npx eslint <fichiers>  # préférer au `npm run lint`, qui fait --fix sur tout l
 
 # Serveur (depuis la racine)
 dotnet build -c Release
+dotnet test          # tests xUnit de MonEndoVue.Server.Tests (aussi exécutés par la CI)
 dotnet ef migrations add NomEnPascalCase --project MonEndoVue.Server
 ```
 - Lancement complet en dev : profil `https` de `MonEndoVue.Server` (démarre Vite via SpaProxy). API : https://localhost:7206.
 - Configuration locale : `MonEndoVue.Server/appsettings.Development.json` et `monendovue.client/.env` (non versionnés, **ne pas les lire ni les afficher**).
-- Tests E2E Playwright : `E2E_EMAIL`/`E2E_PASSWORD` d'un compte **local**, jamais contre la production. Pas de tests unitaires aujourd'hui.
+- Tests E2E Playwright : `E2E_EMAIL`/`E2E_PASSWORD` d'un compte **local**, jamais contre la production. Tests backend : projet `MonEndoVue.Server.Tests` (xUnit) ; pas encore de tests unitaires front.
 
 ## Domaine fonctionnel
 - **`CarnetSante`** : un carnet par utilisatrice (1-1 avec `ApplicationUser`), racine de toutes les données.
@@ -87,7 +88,7 @@ qu'il respecte ces règles** (ex. `Promise<any>` dans `apiService`, pages de plu
 Utiliser le skill `revue-securite` avant de commiter un changement touchant auth, endpoints ou uploads.
 
 ## Déploiement (tout push sur `main` = production)
-- `ci.yml` : **verifier** (npm ci, type-check + build client, ESLint non bloquant, build .NET, SonarCloud) → **image**
+- `ci.yml` : **verifier** (npm ci, type-check + build client, ESLint non bloquant, build et tests .NET, SonarCloud non bloquant) → **image**
   (build Docker ; poussée sur GHCR avec les tags `latest`, `main`, `main-<sha>` et `sha-<court>` uniquement sur `main`) → **deployer**
   (SSH vers le VPS, `docker compose -f docker-compose.prod.yml pull app && up -d`, puis contrôle de `https://monendoapp.fr/health`).
 - Le VPS (`~/app`, hors dépôt) fournit `docker-compose.prod.yml` avec trois services sur un réseau interne :
@@ -115,7 +116,7 @@ Utiliser le skill `revue-securite` avant de commiter un changement touchant auth
   `fix(auth): corrige le path des cookies JWT`. Contre-exemples : `fix: petits correctifs`, `feat(cycle) ajout` (pas de `:`), message en anglais.
 
 ## Definition of Done
-- `npm run build` (client) et `dotnet build -c Release` (serveur) verts.
+- `npm run build` (client), `dotnet build -c Release` et `dotnet test` (serveur) verts ; toute règle métier nouvelle côté serveur a ses tests.
 - Test manuel à 375px **et** sur desktop des écrans touchés, clavier compris.
 - Revue sécurité (skill `revue-securite`) si auth, endpoint, upload ou données partagées sont touchés.
 - Types TS alignés sur les contrats C# modifiés ; migration relue si le modèle change.
