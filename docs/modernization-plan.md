@@ -15,8 +15,14 @@ Ce plan combine:
 - Desktop ensuite: enrichissement progressif (grilles, details, densite) sans degrader l'experience mobile.
 
 ## Convention de commit
-- Format obligatoire: `feat(perimetre cible): court message descriptif`
+- Format obligatoire: `type(perimetre): court message descriptif` (types: feat, fix, refactor, style, docs, test, chore, ci, build, perf)
 - Messages en francais.
+- Reference complete (et regles de travail des agents): `CLAUDE.md` a la racine du depot.
+
+## Decisions (2026-09)
+- PWA, cache service worker et mode hors ligne abandonnes : code retire. Seul le service worker de push OneSignal est conserve.
+- Generation de types TypeGen abandonnee : les types TypeScript sont maintenus a la main.
+- Firebase/FCM retire (code mort) ; notifications via OneSignal (dont envois Zapier).
 
 ## Reference de marche (patterns apps sante populaires)
 Patterns repris des apps de suivi sante/cycle et chronic care:
@@ -159,6 +165,11 @@ Regles:
 - [ ] Security headers globaux
 - [ ] Validation JWT stricte conditionnelle
 - [ ] Revue obsolete API de credentials Google
+
+### Lot E - Notifications
+- [ ] Notifications push generiques pour toutes les utilisatrices (rappels personnalises), envoyees cote serveur
+  - idealement sans service tiers : Web Push standard (VAPID) avec un service worker dedie au push
+  - aucune cle secrete cote client ; preferences de rappel par utilisatrice
 
 ## Ce qui est deja implemente dans cette iteration
 - UX medicaments/sessions non medicamenteuses amelioree (`MedicamentPage.vue`):
