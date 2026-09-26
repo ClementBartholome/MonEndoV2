@@ -87,6 +87,8 @@ modifiables, jamais `Entry(dto).State = Modified`, jamais de changement de `Carn
 ## Logs
 - `ILogger<T>` avec templates structurés (`"… {SymptomeId}"`), jamais de concaténation ni de `Console.WriteLine`.
 - Interdits dans les logs : email, nom d'utilisateur, token, code OAuth, contenu d'une donnée de santé. Les identifiants numériques suffisent.
+- Serilog (configuré dans `Program.cs`) : hors dev, `Information` pour l'application et `Warning` pour `Microsoft`/`System` ;
+  un log utile en production doit donc être au moins `Information`. Fichiers `Logs/MonEndoVue-AAAAMMJJ.log` purgés après 30 jours.
 
 ## Sécurité transverse
 - Rate limiting : politiques `api` (par défaut) et `auth` (20 req/min), constantes dans `Services/PolitiquesDebit.cs`.

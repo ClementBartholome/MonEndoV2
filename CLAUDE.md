@@ -22,6 +22,7 @@ transit, activité, bilan quotidien) et à préparer leurs rendez-vous médicaux
 | `monendovue.client/` | Vue 3.4 + TypeScript, Vite 5, Pinia, shadcn-vue (radix-vue), Tailwind 3, vee-validate + zod, Playwright |
 | `.github/workflows/ci.yml` | CI/CD : vérification → image Docker → déploiement VPS |
 | `Dockerfile` | Image unique : le client est buildé par `dotnet publish` (esproj) et servi depuis `wwwroot` |
+| `deploy/` | Référence versionnée de la config du VPS (compose de prod, logrotate) et procédure d'application |
 | `docs/` | Roadmap (`modernization-plan.md`) ; `docs/private/` local et non versionné |
 
 ## Commandes
@@ -120,12 +121,14 @@ Utiliser le skill `revue-securite` avant de commiter un changement touchant auth
   (build Docker ; poussée sur GHCR avec les tags `latest`, `main`, `main-<sha>` et `sha-<court>` uniquement sur `main`,
   et `vX.Y.Z` sur un push de tag de version ; simple build sur les PR et les branches `release/**`) → **deployer** (`main` seulement)
   (SSH vers le VPS, `docker compose -f docker-compose.prod.yml pull app && up -d`, puis contrôle de `https://monendoapp.fr/health`).
-- Le VPS (`~/app`, hors dépôt) fournit `docker-compose.prod.yml` avec trois services sur un réseau interne :
-  `db` (SQL Server, port non exposé, mot de passe via `DB_PASSWORD` du `.env` écrit par la CI), `app` (image GHCR
-  `:latest`, écoute en HTTP sur le port 80 interne) et `nginx` (seul service exposé, 80/443, TLS). Montés dans `app` :
+- Le VPS (`~/app`) utilise `docker-compose.prod.yml`, dont la référence versionnée est
+  [deploy/docker-compose.prod.yml](deploy/docker-compose.prod.yml) (procédure et logs : [deploy/README.md](deploy/README.md)).
+  Services : `db` (SQL Server, port non exposé, mot de passe via `DB_PASSWORD` du `.env` écrit par la CI), `app` (image GHCR
+  `:latest`, HTTP sur le port 80 interne), `nginx` (seul service exposé, 80/443, TLS) et `dozzle` (lecture des logs,
+  `127.0.0.1:8888`, tunnel SSH). Montés dans `app` :
   `config/appsettings.Production.json` → `/app/appsettings.Production.json` (**obligatoire**, `optional: false`),
   `keys/` → `/app/keys` (Data Protection), `logs/` → `/app/Logs`. Les secrets de production vivent uniquement sur le VPS
-  (`config/`, `.env`, variables du compose) : ne jamais les demander ni les recopier.
+  (`config/`, dont `config/app.env`, et `.env`, réécrit par la CI à chaque déploiement) : ne jamais les demander ni les recopier.
 - **Modifier la configuration de prod** (`~/app/config/appsettings.Production.json`, et non `~/app/appsettings.Production.json`) :
   - les options sont lues au démarrage : recréer le conteneur ensuite (`docker compose -f docker-compose.prod.yml up -d --force-recreate app`) ;
     un 502 pendant quelques secondes est normal ;
@@ -134,8 +137,10 @@ Utiliser le skill `revue-securite` avant de commiter un changement touchant auth
   - **générer les secrets directement sur le VPS** (openssl + script) : un collage dans une saisie masquée a déjà tronqué une clé ;
   - une configuration Web Push invalide est signalée au démarrage par l'avertissement `Web Push notifications disabled: <raison>`
     (`docker compose -f docker-compose.prod.yml logs app | grep -i "web push"`).
+- Une modification du compose se fait **à la main sur le VPS** (la CI ne le copie pas), puis dans `deploy/` via une PR.
+  VPS de 2 Go partagé avec d'autres projets : pas d'outil de logs lourd (Seq, Loki…), garder les plafonds mémoire.
 - Le healthcheck Docker du compose de prod appelle `curl`, absent de l'image aspnet : il est toujours en échec, se fier
-  au contrôle `/health` de la CI. Une modification du compose de prod se fait à la main sur le VPS.
+  au contrôle `/health` de la CI.
 - **Les migrations EF sont appliquées automatiquement au démarrage en production** : elles doivent être rétro-compatibles ;
   toute migration destructive (DROP, colonne supprimée) doit être signalée explicitement avant merge.
 - **Versions (SemVer, depuis la 1.0.0)** : les sujets sont regroupés sur une branche `release/X.Y.Z` (PR dont la base est
