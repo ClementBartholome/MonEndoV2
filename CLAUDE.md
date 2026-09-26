@@ -143,7 +143,8 @@ Objectif : que l'utilisateur n'ait jamais à répéter une consigne ou une infor
 ## Pièges connus de l'environnement (Windows, Git Bash)
 - Les serveurs lancés en arrière-plan (Vite, API) **survivent à la fin de la session** et verrouillent les fichiers
   (build « fichier utilisé par un autre processus », `git worktree remove` en échec) : les arrêter explicitement à la fin
-  d'un test (processus dont la ligne de commande contient le chemin du worktree).
+  d'un test, en filtrant **sur le nom du processus** (`dotnet.exe`, `node.exe`, `esbuild.exe`) en plus du chemin du worktree :
+  un filtre sur le seul chemin tue aussi les shells bash en cours, y compris celui qui exécute la commande.
 - Web Push : le package NuGet `WebPush` ne gère que l'ancien encodage `aesgcm`, refusé par Apple ; utiliser
   `Lib.Net.Http.WebPush` (`aes128gcm`, schéma `vapid`).
 - `python` lance le stub du Microsoft Store et bloque : utiliser **node** pour les scripts ponctuels (JSON, remplacements).
