@@ -4,7 +4,7 @@
 // service worker installé : il sert une version figée de l'application et garde en cache
 // des réponses API. Les navigateurs vérifient périodiquement /sw.js : ce fichier remplace
 // l'ancien worker, vide tous les caches, se désinscrit puis recharge les onglets ouverts.
-// Il ne touche pas au worker OneSignal (/OneSignalSDKWorker.js), enregistré séparément.
+// Il ne concerne que les enregistrements de /sw.js, pas le worker de notifications (/push-sw.js).
 //
 // À supprimer après le 2026-12-31.
 

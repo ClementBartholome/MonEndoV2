@@ -5,10 +5,11 @@ MonEndoV2 est une application destinée aux personnes souffrant d'endométriose,
 ## Fonctionnalités principales
 
 - Suivi quotidien personnalisé : Ajout et suivi des symptômes, douleurs, activité physiques, traitements et événements du cycle (spotting, nausée...).
+- Bilan quotidien : humeur, stress, fatigue, activité, hydratation, alimentation, douleur et transit (aspect des selles selon l'échelle de Bristol, crampes d'estomac, ballonnements).
 - Export PDF : Génération d’un bilan à partager facilement avec un professionnel de santé.
 - Statistiques et visualisations : Vue d’ensemble de l'historique des symptômes. 
 - Connexion Google Calendar : Synchronisation des prochains rendez-vous médicaux.
-- Notifications : Rappels quotidiens pour ne rien oublier dans le suivi quotidien.
+- Notifications : rappel du bilan quotidien à l'heure choisie, envoyé seulement si le bilan du jour n'est pas rempli. Activation par appareil dans Paramètres ; sur iPhone/iPad (iOS 16.4+), l'application doit être ajoutée à l'écran d'accueil.
 
 ![2025-05-27 19_21_26-Mon Endo](https://github.com/user-attachments/assets/60c809d8-6284-4538-81a9-ff8e9d4c59f0)
 ![2025-05-27 19_16_39-Mon Endo](https://github.com/user-attachments/assets/10247a19-9cff-4d9d-8450-98a9ac456f2b)
@@ -20,7 +21,17 @@ MonEndoV2 est une application destinée aux personnes souffrant d'endométriose,
 - Frontend : VueJS
 - Backend : ASP.NET Core
 - Base de données : SQL Server
-- Outils externes : OneSignal (notifications), Google Calendar
+- Notifications : Web Push standard (VAPID) envoyé par le serveur
+- Outils externes : Google Calendar
+- Qualité : tests xUnit du serveur, CI GitHub Actions (vérification, image Docker, déploiement sur VPS), analyse SonarCloud
+
+## Versions
+
+- Versions numérotées (SemVer) depuis la 1.0.0, historique dans `CHANGELOG.md` ; la version courante est affichée dans Paramètres.
+
+## Développement
+
+- Règles de travail, commandes, architecture et déploiement : `CLAUDE.md` (et `MonEndoVue.Server/CLAUDE.md`, `monendovue.client/CLAUDE.md`)
 
 ## Roadmap modernisation
 

@@ -20,9 +20,9 @@ Ce plan combine:
 - Reference complete (et regles de travail des agents): `CLAUDE.md` a la racine du depot.
 
 ## Decisions (2026-09)
-- PWA, cache service worker et mode hors ligne abandonnes : code retire. Seul le service worker de push OneSignal est conserve.
+- PWA, cache service worker et mode hors ligne abandonnes : code retire. Seul le service worker de push (push-sw.js) est conserve.
 - Generation de types TypeGen abandonnee : les types TypeScript sont maintenus a la main.
-- Firebase/FCM retire (code mort) ; notifications via OneSignal (dont envois Zapier).
+- Firebase/FCM, OneSignal, Zapier et SignalR retires ; notifications Web Push standard (VAPID) envoyees par le serveur.
 
 ## Reference de marche (patterns apps sante populaires)
 Patterns repris des apps de suivi sante/cycle et chronic care:
@@ -167,7 +167,7 @@ Regles:
 - [x] Revue obsolete API de credentials Google (supprimee avec Firebase, 2026-09)
 
 ### Lot E - Notifications
-- [ ] Notifications push generiques pour toutes les utilisatrices (rappels personnalises), envoyees cote serveur
+- [x] Notifications push generiques pour toutes les utilisatrices (rappels personnalises), envoyees cote serveur
   - idealement sans service tiers : Web Push standard (VAPID) avec un service worker dedie au push
   - aucune cle secrete cote client ; preferences de rappel par utilisatrice
 
@@ -199,10 +199,21 @@ Regles:
   - onglet dedie `Acné` distinct des autres symptomes
   - conservation du quick-add acné et des actions de periode en cours dans cet onglet
   - nouvelle galerie "Evolution photo" avec comparaison rapide de 2 photos
+- Iteration 2026-09 (nettoyage, securite, transit, notifications):
+  - depot nettoye (gitignore unique, fichiers parasites retires), PWA / mode hors ligne / TypeGen / Firebase retires
+  - pipeline CI/CD en 3 jobs (verifier, image, deployer) avec controle `/health` apres deploiement
+  - bilan quotidien : categorie transit facultative (selles et echelle de Bristol expliquee, crampes, ballonnements),
+    recapitulatif et export PDF ; migration additive, ancienne page `/transit` conservee
+  - controle d'acces des donnees du carnet renforce sur toutes les modifications, identifiants de connexion transmis dans
+    le corps des requetes, limitation de debit dediee aux endpoints d'authentification
+  - premier projet de tests serveur (xUnit) execute par la CI, couverture envoyee a SonarCloud (seuil 80 % sur le nouveau code)
+  - notifications Web Push standard envoyees par le serveur : abonnement par appareil depuis Parametres (guide
+    d'installation iOS), rappel du bilan a l'heure choisie seulement si le bilan du jour n'est pas rempli, notification de test
 
 ## Definition of Done (pour chaque lot)
 - UX: test manuel mobile + desktop + accessibilite clavier
-- Qualite: `npm run type-check` vert + tests E2E concernes
+- Qualite: `npm run build` et `dotnet test` verts (couverture Sonar >= 80 % sur le nouveau code) + tests E2E concernes
+- Documentation: README, CLAUDE.md, skills et cette roadmap mis a jour dans la meme PR que l'evolution
 - Securite: revue headers/CORS/rate limits + logs sans donnees sensibles
 - Produit: metrique avant/apres mesuree sur 2 semaines
 

@@ -18,49 +18,6 @@ const auth = useAuthStore();
 onMounted(() => {
   auth.checkAuth();
 });
-
-import * as signalR from '@microsoft/signalr';
-
-const connection = new signalR.HubConnectionBuilder()
-    .withUrl(`${import.meta.env.VITE_API_URL}notificationHub`)
-    .build();
-
-connection.on("ReceiveNotification", (message) => {
-  console.log("Notification reçue :", message);
-  if (message === "Notification à envoyer") {
-    sendNotification();
-  }
-});
-
-connection.start()
-    .then(() => console.log('Connected to SignalR hub'))
-    .catch(err => console.error('Error connecting to SignalR hub:', err));
-
-
-import axios from 'axios';
-
-const ONESIGNAL_APP_ID = 'd3434227-a679-4122-b83d-3d1a4e7c1b19';
-
-const sendNotification = async () => {
-  try {
-    await axios.post('https://api.onesignal.com/notifications', {
-      app_id: ONESIGNAL_APP_ID,
-      target_channel: 'push',
-      included_segments: ['Total Subscriptions'],
-      contents: {
-        en: "Don't forget to fill in your daily report!",
-        fr: "N'oublie pas de remplir ton bilan quotidien !"
-      }
-    }, {
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Basic ${import.meta.env.VITE_ONESIGNAL_API_KEY}`
-      }
-    });
-  } catch (error) {
-    console.error('Error sending notification:', error);
-  }
-};
 </script>
 
 <style>
