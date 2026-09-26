@@ -11,12 +11,16 @@ using MonEndoVue.Server.Services;
 namespace MonEndoVue.Server.Tests.Support;
 
 /// <summary>
-/// Base EF en mémoire isolée, contenant une utilisatrice et son carnet de santé.
+/// Base EF en mémoire isolée, contenant l'utilisatrice connectée et son carnet de santé,
+/// ainsi qu'une autre utilisatrice et son carnet (pour les tests de cloisonnement).
 /// </summary>
 public sealed class CarnetDeTest : IDisposable
 {
     public const string UserId = "utilisatrice-test";
     public const int CarnetSanteId = 1;
+    public const string AutreUserId = "autre-utilisatrice";
+    public const string AutreUserName = "autre@local";
+    public const int AutreCarnetSanteId = 2;
 
     public AppDbContext Context { get; }
     public CarnetSanteService CarnetSanteService { get; }
@@ -30,6 +34,8 @@ public sealed class CarnetDeTest : IDisposable
 
         Context.Users.Add(new ApplicationUser { Id = UserId, UserName = "test@local" });
         Context.CarnetSantes.Add(new CarnetSante { Id = CarnetSanteId, UserId = UserId });
+        Context.Users.Add(new ApplicationUser { Id = AutreUserId, UserName = AutreUserName });
+        Context.CarnetSantes.Add(new CarnetSante { Id = AutreCarnetSanteId, UserId = AutreUserId });
         Context.SaveChanges();
 
         CarnetSanteService = new CarnetSanteService(
@@ -46,6 +52,12 @@ public sealed class CarnetDeTest : IDisposable
             User = new ClaimsPrincipal(new ClaimsIdentity(
                 [new Claim(ClaimTypes.NameIdentifier, UserId)], "Test")),
         },
+    };
+
+    /// <summary>Contexte HTTP sans utilisatrice authentifiée.</summary>
+    public static ControllerContext ContexteAnonyme() => new()
+    {
+        HttpContext = new DefaultHttpContext(),
     };
 
     public void Dispose() => Context.Dispose();
