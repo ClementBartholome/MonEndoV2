@@ -31,15 +31,19 @@ Complète le [CLAUDE.md racine](../CLAUDE.md). S'applique à tout le code de `Mo
 - **Substitution** : les faux de test (`FauxEnvoiPush`, `HorlogeFixe`) respectent exactement le contrat de l'abstraction.
 - **Interfaces ciblées** : une interface expose ce dont un consommateur a besoin, pas plus (modèle : `IEnvoiPush`, une méthode).
 - **Inversion des dépendances**
-  - Tout accès extérieur au process passe par une interface injectée : push (`IEnvoiPush`), stockage de fichiers,
-    appels HTTP (`HttpClient` typé), heure (`TimeProvider`, jamais `DateTime.Now` dans le nouveau code).
+  - Une interface seulement quand elle sert un besoin concret (**KISS**) :
+    - dépendance externe à remplacer dans les tests (push : `IEnvoiPush`) ;
+    - plusieurs implémentations réelles (règles de rappel : `IRegleRappel`).
+    
+    Heure via `TimeProvider` (jamais `DateTime.Now` dans le nouveau code), appels HTTP via un `HttpClient` typé.
+    Un service métier pur (ex. `TokenService`) reste une classe concrète.
   - `AppDbContext` est l'abstraction d'accès aux données : il s'injecte dans les services, sans repository générique
     par-dessus (voir « Couches »).
   - Pas de `new` d'un service dans le code applicatif : tout passe par l'injection de dépendances (`Program.cs`).
 - **Dette connue** (lot C de la roadmap), à résorber quand on touche la zone :
   - les contrôleurs injectent `AppDbContext` et contiennent des requêtes, y compris `NotificationsController` ;
   - `CarnetSanteService` mélange lecture du carnet, page d'accueil, export PDF et cache ;
-  - `AzureBlobStorageService` et `TokenService` sont injectés sans interface ;
+  - `AzureBlobStorageService` (réseau) sans abstraction : en introduire une seulement pour tester l'upload sans Azure ;
   - `DateTime.Now` subsiste dans l'authentification.
 
 ## Style C#

@@ -161,7 +161,7 @@ Regles:
 - [ ] Tests E2E mobile des flux de saisie principaux
 - [ ] SOLID serveur : controleurs sans `AppDbContext` ni requetes (logique dans un service par domaine)
 - [ ] SOLID serveur : decouper `CarnetSanteService` (lecture carnet / page d'accueil / export PDF)
-- [ ] SOLID serveur : interfaces pour le stockage des photos et les jetons (`AzureBlobStorageService`, `TokenService`)
+- [ ] SOLID serveur : abstraction du stockage des photos (`AzureBlobStorageService`) pour tester l'upload sans Azure (pas d'interface pour `TokenService` : KISS)
 - [ ] SOLID serveur : `TimeProvider` a la place de `DateTime.Now` (authentification)
 - [ ] SOLID client : `authService` / `tokenService` via l'instance axios de `apiService`, methodes `apiService` typees
 - [ ] SOLID client : decoupage de `CyclePage`, `MedicamentPage`, `BilanQuotidienPage` (pattern model/actions)
