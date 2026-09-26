@@ -8,10 +8,10 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using MonEndoVue.Server.Data;
-using MonEndoVue.Server.Hubs;
 using MonEndoVue.Server.Jobs;
 using MonEndoVue.Server.Models;
 using MonEndoVue.Server.Services;
+using MonEndoVue.Server.Services.WebPush;
 using Quartz;
 using Serilog;
 using Serilog.Events;
@@ -50,7 +50,11 @@ namespace MonEndoVue.Server
             builder.Services.AddMemoryCache();
             builder.Services.AddScoped<CarnetSanteService>();
             builder.Services.AddScoped<TokenService>();
-            builder.Services.AddScoped<NotificationService>();
+            // Notifications Web Push (clés VAPID dans la section WebPush ; sans elles, envoi désactivé)
+            builder.Services.Configure<WebPushOptions>(builder.Configuration.GetSection(WebPushOptions.Section));
+            builder.Services.AddHttpClient<IEnvoiPush, WebPushService>();
+            builder.Services.AddSingleton(TimeProvider.System);
+            builder.Services.AddScoped<NotificationsPushService>();
 
             builder.Services.AddCors(options =>
             {
@@ -173,13 +177,13 @@ namespace MonEndoVue.Server
 
             builder.Services.AddQuartz(q =>
             {
-                // Job des notifications (21h)
-                var notificationJobKey = JobKey.Create("SendPushNotifications");
-                q.AddJob<NotificationJob>(opts => opts.WithIdentity(notificationJobKey));
+                // Rappel quotidien du bilan, à l'heure choisie par chaque utilisatrice
+                var rappelBilanJobKey = JobKey.Create("RappelBilan");
+                q.AddJob<RappelBilanJob>(opts => opts.WithIdentity(rappelBilanJobKey));
                 q.AddTrigger(opts => opts
-                    .ForJob(notificationJobKey)
-                    .WithIdentity("SendPushNotifications-trigger")
-                    .WithCronSchedule("0 00 21 * * ?"));
+                    .ForJob(rappelBilanJobKey)
+                    .WithIdentity("RappelBilan-trigger")
+                    .WithCronSchedule(RappelBilanJob.Cron));
             });
 
             builder.Services.AddQuartzHostedService(opts => { opts.WaitForJobsToComplete = true; });
@@ -212,7 +216,6 @@ namespace MonEndoVue.Server
                 });
             });
 
-            builder.Services.AddSignalR();
 
             builder.Services.AddHealthChecks();
 
@@ -243,8 +246,6 @@ namespace MonEndoVue.Server
             var identityApi = app.MapIdentityApi<ApplicationUser>();
             identityApi.RequireRateLimiting("auth");
 
-            var notificationHub = app.MapHub<NotificationHub>("/notificationHub");
-            notificationHub.RequireRateLimiting("api");
 
             app.UseCors("CorsPolicy");
 
