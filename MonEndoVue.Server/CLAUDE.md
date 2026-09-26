@@ -3,9 +3,10 @@
 Complète le [CLAUDE.md racine](../CLAUDE.md). S'applique à tout le code de `MonEndoVue.Server/`.
 
 ## Organisation
-- `Controllers/` : un contrôleur par entité du carnet (`DonneesDouleursController`, `SymptomesCycleController`…) + `AccountController` (auth).
-- `Services/` : logique métier (`CarnetSanteService`), auth (`TokenService`), stockage photos (`AzureBlobStorageService`),
-  notifications (`NotificationService`), extensions (`ControllerSecurityExtensions`, `UserExtensions`).
+- `Controllers/` : un contrôleur par entité du carnet (`DonneesDouleursController`, `SymptomesCycleController`…),
+  `AccountController` (auth) et `NotificationsController` (abonnements push, préférences de rappel).
+- `Services/` : logique métier (`CarnetSanteService`, validateurs comme `BilanTransitValidator`), auth (`TokenService`),
+  stockage photos (`AzureBlobStorageService`), extensions (`ControllerSecurityExtensions`, `UserExtensions`).
 - `Models/` : entités EF. `Dto/` : entrées (`*Dto`). `ViewModels/` : sorties (`*ViewModel`).
 - `Data/AppDbContext.cs` : DbSets + relations en Fluent API. `Migrations/` : migrations EF (SQL Server uniquement).
 - `Jobs/` (Quartz : `RappelBilanJob` toutes les 15 min) et `Services/WebPush/` (envoi Web Push derrière `IEnvoiPush`,
@@ -31,6 +32,9 @@ Complète le [CLAUDE.md racine](../CLAUDE.md). S'applique à tout le code de `Mo
 Toute action qui touche une donnée d'un carnet vérifie la propriété avec `ValidateCarnetAccess`
 (`Services/ControllerSecurityExtensions.cs`). Pour une modification ou une suppression, la vérification porte sur l'entité
 **chargée en base**, jamais sur le corps de la requête. Modèle : `PutSymptomeCycle` dans `Controllers/SymptomesCycleController.cs`.
+
+Pour une ressource propre à l'utilisatrice connectée (réglages, appareils…), préférer **déduire le carnet de la session**
+sans accepter d'identifiant en entrée : aucun IDOR possible. Modèle : `CarnetCourantAsync` dans `Controllers/NotificationsController.cs`.
 
 ```csharp
 [HttpPut("{id:int}")]
@@ -104,6 +108,10 @@ Projet `MonEndoVue.Server.Tests` (xUnit, **net8.0** comme la CI et le Dockerfile
   son carnet + une autre utilisatrice et son carnet `AutreCarnetSanteId` ; `ContexteAuthentifie()` / `ContexteAnonyme()`
   pour instancier un contrôleur). Modèles : `Controllers/BilanQuotidienControllerTransitTests.cs`,
   `Services/CarnetSanteServiceExportTests.cs`.
+- Authentification : `Support/IdentityDeTest.cs` (vraie pile Identity sur EF InMemory, `CreerController`, `CreerUtilisatrice`).
+- Notifications : `Support/PushDeTest.cs` (vraies clés P-256, `FauxEnvoiPush`, `HorlogeFixe` pour injecter l'heure via
+  `TimeProvider`). Tout code dépendant de l'heure reçoit un `TimeProvider` (jamais `DateTime.Now` direct) pour être testable ;
+  un client HTTP externe se teste avec un `HttpMessageHandler` factice (modèle : `Services/WebPushServiceTests.cs`).
 - **Cloisonnement** : tout contrôleur de données du carnet a son fichier `Controllers/<Controleur>CloisonnementTests.cs`
   (GET/PUT : `NotFound` si absent, `Forbid` sur le carnet de l'autre sans rien modifier, copie des champs sans changer de
   carnet ; clés étrangères d'un autre carnet refusées). Un nouvel endpoint ou champ modifiable s'y ajoute.

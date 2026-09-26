@@ -23,7 +23,9 @@ Relire l'échange et lister, sans filtrer au début :
 | Convention propre au serveur ou au client | `MonEndoVue.Server/CLAUDE.md` ou `monendovue.client/CLAUDE.md` |
 | Piège d'environnement (Windows, Git Bash, outils) | Section « Pièges connus » du `CLAUDE.md` racine |
 | Procédure qui se répète | Skill existant à compléter, sinon nouveau skill `.claude/skills/<nom>/SKILL.md` |
-| Roadmap, backlog, décision datée | `docs/modernization-plan.md` |
+| Nouvelle fonctionnalité ou technologie visible | `README.md` (fonctionnalités, technologies) |
+| Roadmap, backlog, décision datée, lot terminé | `docs/modernization-plan.md` (case cochée + section « déjà implémenté ») |
+| Nouvelle entité ou notion métier | Glossaire du `CLAUDE.md` racine |
 | Faille ou secret | `docs/private/` uniquement (jamais dans un fichier versionné) |
 
 Ne pas capitaliser : ce qui est déjà déductible du code ou de l'historique git, les détails ponctuels sans lendemain.
@@ -35,6 +37,11 @@ Ne pas capitaliser : ce qui est déjà déductible du code ou de l'historique gi
 - Garder le `CLAUDE.md` racine sous ~200 lignes : déplacer le détail dans un fichier de couche ou un skill.
 - Mémoire : frontmatter `name` / `description` / `metadata.type`, liens `[[autre-memoire]]`, pas de contenu versionnable.
 
-## 4. Livrer
-- Fichiers du dépôt : sur la branche de la tâche (commit séparé `docs(claude): …`) ou sur une branche dédiée, jamais sur `main`.
+## 4. Vérifier la cohérence d'ensemble (à chaque évolution importante)
+Avant de clore une PR significative, relire rapidement **tous** ces fichiers et chercher ce qui est devenu faux
+(`git grep` sur les noms supprimés : classes, packages, clés de config, routes) :
+`README.md`, `docs/modernization-plan.md`, `CLAUDE.md` (racine, serveur, client), les skills de `.claude/skills/`.
+
+## 5. Livrer
+- Fichiers du dépôt : sur la branche de la tâche (commit séparé `docs(…): …`) ou sur une branche dédiée, jamais sur `main`.
 - Terminer la réponse par une ligne « Capitalisé : … » listant ce qui a été ajouté ou corrigé et où.

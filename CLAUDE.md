@@ -57,6 +57,8 @@ dotnet ef migrations add NomEnPascalCase --project MonEndoVue.Server
 - Notifications **Web Push standard** envoyées par le serveur (clés VAPID, sans service tiers) : chaque appareil s'abonne
   depuis `/parametres` ; rappel du bilan à l'heure choisie, envoyé seulement si le bilan du jour n'est pas rempli
   (job Quartz toutes les 15 min). Sur iOS (16.4+), uniquement dans l'app ajoutée à l'écran d'accueil.
+  Entités : **`AbonnementPush`** (un par appareil, endpoint unique, rattaché au carnet) et **`PreferenceRappel`**
+  (une par carnet : rappel actif, heure locale, fuseau IANA, date du dernier rappel envoyé).
 
 ## Principes produit (non négociables)
 - **Mobile-first** : écrans pensés d'abord pour ≤ 425px, aucune information clé tronquée ; le desktop enrichit ensuite.
@@ -122,7 +124,9 @@ Utiliser le skill `revue-securite` avant de commiter un changement touchant auth
 - Test manuel à 375px **et** sur desktop des écrans touchés, clavier compris.
 - Revue sécurité (skill `revue-securite`) si auth, endpoint, upload ou données partagées sont touchés.
 - Types TS alignés sur les contrats C# modifiés ; migration relue si le modèle change.
-- Case correspondante cochée dans `docs/modernization-plan.md` quand un lot du backlog est terminé.
+- **Documentation à jour dans la même PR** que l'évolution : `README.md` (fonctionnalités, technologies),
+  `docs/modernization-plan.md` (case du backlog cochée, section « déjà implémenté »), `CLAUDE.md` racine et de couche
+  (glossaire, décisions, conventions, pièges), skills concernés. Faire le point avec le skill `capitaliser`.
 
 ## Skills du projet (`.claude/skills/`)
 - `fonctionnalite-front` — créer ou refactoriser une page/un composant Vue selon les patterns du projet.
