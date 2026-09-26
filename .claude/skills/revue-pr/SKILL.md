@@ -37,6 +37,14 @@ est toujours « qu'est-ce qui casse ou se perd en prod si on merge maintenant ? 
 
 **Qualité et sécurité**
 - Conventions de `CLAUDE.md` (couches, DTO, erreurs `{ message }`, logs, `any`, taille des composants, mobile-first).
+- **SOLID** sur le code ajouté ou modifié (sections « SOLID » des CLAUDE.md de couche). Signaler notamment :
+  - un contrôleur avec `AppDbContext` ou des requêtes ;
+  - un service fourre-tout ;
+  - une dépendance externe ou `DateTime.Now` non injectés ;
+  - un composant qui appelle l'API ou mélange logique et rendu ;
+  - des chaînes de `if` / `switch` par type au lieu de configuration.
+  
+  Ne pas exiger de refonte de l'existant non touché.
 - Cloisonnement par carnet sur tout endpoint touché (skill `revue-securite` si auth, endpoint ou upload).
 - Tests : présents pour les règles métier, projet de tests en **net8.0**, exécutés par `dotnet test`.
 

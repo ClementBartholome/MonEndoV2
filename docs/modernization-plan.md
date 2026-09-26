@@ -159,6 +159,12 @@ Regles:
 - [ ] Suppression progressive des `any` critiques
 - [ ] Normalisation handlers `onDelete` / `onEdit` (`string | number`)
 - [ ] Tests E2E mobile des flux de saisie principaux
+- [ ] SOLID serveur : controleurs sans `AppDbContext` ni requetes (logique dans un service par domaine)
+- [ ] SOLID serveur : decouper `CarnetSanteService` (lecture carnet / page d'accueil / export PDF)
+- [ ] SOLID serveur : interfaces pour le stockage des photos et les jetons (`AzureBlobStorageService`, `TokenService`)
+- [ ] SOLID serveur : `TimeProvider` a la place de `DateTime.Now` (authentification)
+- [ ] SOLID client : `authService` / `tokenService` via l'instance axios de `apiService`, methodes `apiService` typees
+- [ ] SOLID client : decoupage de `CyclePage`, `MedicamentPage`, `BilanQuotidienPage` (pattern model/actions)
 
 ### Lot D - Security baseline
 - [ ] Rate limiting endpoint-level
@@ -218,6 +224,7 @@ Regles:
 - Produit: metrique avant/apres mesuree sur 2 semaines
 
 ## Pratiques Vue/SOLID a appliquer (obligatoire)
+- Regles completes (serveur et client) : sections « SOLID » de `MonEndoVue.Server/CLAUDE.md` et `monendovue.client/CLAUDE.md`.
 - Limiter la taille des pages: extraire tout bloc UI metier depassant ~150-200 lignes vers un composant dedie.
 - Garder la logique d'orchestration dans la page et deleguer le rendu aux composants presentational.
 - Eviter la duplication de markup: reutiliser les composants partages (`GenericCardList`, `SectionKpiHeader`, etc.).

@@ -43,6 +43,28 @@ Nouveau composant shadcn : `npx shadcn-vue add <nom>` (alias configurés vers `@
    - `components/AcneTabSection.vue` : conteneur qui instancie le composable et relie callbacks ↔ emits.
    - `components/AcneTabContent.vue` : présentation pure, deux props (`model`, `actions`), aucun état ni appel API.
 
+## SOLID côté client
+- **Responsabilité unique** :
+  - la page orchestre ;
+  - le composable porte la logique et les appels API ;
+  - le composant de présentation ne fait que du rendu ;
+  - un service ne fait que de l'I/O.
+  
+  Un fichier qui mélange ces rôles se découpe.
+- **Ouvert/fermé** : les variations par type passent par de la configuration typée (`shared/config/materialSymbols.ts`,
+  `features/bilan-quotidien/config/transit.ts`, `extraFields` de `GenericCardList`), pas par des chaînes de `v-if` / `switch`.
+- **Substitution** : un composant partagé se comporte de la même façon quel que soit le parent. Pas de prop ajoutée
+  « pour un seul écran » qui change son contrat ; préférer un slot ou un nouveau composant.
+- **Interfaces ciblées** : props minimales et typées. Un composant de présentation reçoit un `model` et des `actions`
+  dédiés, jamais l'objet métier complet « au cas où ».
+- **Inversion des dépendances** :
+  - un composant ne dépend jamais d'axios ou de `fetch` : il passe par un composable, qui passe par `apiService` ;
+  - un composable reçoit ses collaborateurs (callbacks, identifiants) via ses `options`, pour rester testable.
+- **Dette connue** (lot C de la roadmap) :
+  - `authService` / `tokenService` appellent axios directement ;
+  - `apiService` renvoie des `Promise<any>` ;
+  - `CyclePage`, `MedicamentPage` et `BilanQuotidienPage` mélangent orchestration, logique et rendu.
+
 ## Typage
 - **Aucun nouveau `any`** : typer avec les interfaces de `features/*/types`, sinon `unknown` + rétrécissement.
   L'existant en contient beaucoup (`apiService`, `useAcneTracking`) : les réduire quand on y touche.
