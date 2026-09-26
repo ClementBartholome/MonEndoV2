@@ -4,16 +4,21 @@ Complète le [CLAUDE.md racine](../CLAUDE.md). S'applique à tout le code de `Mo
 
 ## Organisation
 - `Controllers/` : un contrôleur par entité du carnet (`DonneesDouleursController`, `SymptomesCycleController`…),
-  `AccountController` (auth) et `NotificationsController` (abonnements push, préférences de rappel).
+  `AccountController` (auth) et `NotificationsController` (abonnements push, réglage des rappels).
 - `Services/` : logique métier (`CarnetSanteService`, validateurs comme `BilanTransitValidator`), auth (`TokenService`),
   stockage photos (`AzureBlobStorageService`), extensions (`ControllerSecurityExtensions`, `UserExtensions`).
 - `Models/` : entités EF. `Dto/` : entrées (`*Dto`). `ViewModels/` : sorties (`*ViewModel`).
 - `Data/AppDbContext.cs` : DbSets + relations en Fluent API. `Migrations/` : migrations EF (SQL Server uniquement).
 - `Jobs/` (Quartz : `RappelBilanJob` toutes les 15 min) et `Services/WebPush/` (envoi Web Push derrière `IEnvoiPush`,
-  rappels dans `NotificationsPushService`).
+  logique des endpoints dans `NotificationsService`, boucle d'envoi des rappels dans `NotificationsPushService`).
+- **Ajouter un type de rappel** : une valeur de `TypeRappel`, une classe `IRegleRappel` dans `Services/WebPush/Rappels/`
+  (calendrier par défaut, message avec l'URL à ouvrir, « suivi déjà fait ? »), son `AddScoped<IRegleRappel, …>` dans
+  `Program.cs` et ses tests ; côté client, une entrée dans `features/parametres/config/rappels.ts`. Rien d'autre à toucher.
 
 ## Couches (cible pour tout nouveau code)
-- **Contrôleur mince** : validation d'entrée, appel du service, mapping vers la réponse HTTP.
+- **Contrôleur mince** : validation d'entrée, appel du service, mapping vers la réponse HTTP. Le service renvoie un
+  `ResultatOperation` (`Services/ResultatOperation.cs`, statut métier sans dépendance HTTP) que le contrôleur traduit avec
+  `VersReponse` (`Controllers/ResultatOperationExtensions.cs`). Modèle : `NotificationsController` / `NotificationsService`.
 - **Service** : logique métier et requêtes EF, toujours scopées par carnet. Enregistré en `AddScoped` dans `Program.cs`.
 - Pas de repository générique au-dessus d'EF : n'extraire une classe d'accès aux données que si des requêtes sont partagées entre services.
 - **Entrée en DTO, sortie en ViewModel** : ne pas binder ni retourner d'entité EF dans le nouveau code (évite le sur-postage
@@ -34,7 +39,7 @@ Toute action qui touche une donnée d'un carnet vérifie la propriété avec `Va
 **chargée en base**, jamais sur le corps de la requête. Modèle : `PutSymptomeCycle` dans `Controllers/SymptomesCycleController.cs`.
 
 Pour une ressource propre à l'utilisatrice connectée (réglages, appareils…), préférer **déduire le carnet de la session**
-sans accepter d'identifiant en entrée : aucun IDOR possible. Modèle : `CarnetCourantAsync` dans `Controllers/NotificationsController.cs`.
+sans accepter d'identifiant en entrée : aucun IDOR possible. Modèle : `CarnetDeAsync` dans `Services/WebPush/NotificationsService.cs`.
 
 ```csharp
 [HttpPut("{id:int}")]
@@ -97,7 +102,8 @@ Chargée depuis `appsettings.{Environment}.json` (**obligatoire**, non versionn�
 Clés attendues (noms seulement) : `ConnectionStrings:DefaultConnection`, `AzureBlobStorage:ConnectionString`,
 `AzureBlobStorage:ContainerName` (ou variables `AZURE_STORAGE_CONNECTION_STRING`/`AZURE_CONTAINER_NAME`),
 `Authentication:Schemes:Bearer:{Secret,ValidIssuer,ValidAudiences}`, `Jwt:Key`, `RootUser:{UserName,Email,Password}`,
-`WebPush:{Subject,PublicKey,PrivateKey}` (clés VAPID ; absentes = notifications désactivées sans bloquer le démarrage ;
+`WebPush:{Subject,PublicKey,PrivateKey}` (clés VAPID ; absentes ou invalides — sujet sans `mailto:`/`https:`, clés ≠ 87/43 caractères — = notifications désactivées
+ avec un avertissement au démarrage, sans bloquer ni faire échouer les routes ;
  en dev via `dotnet user-secrets`), `GoogleApi:{ClientId,ClientSecret}`. Ne jamais lire ni afficher les valeurs.
 
 ## Tests

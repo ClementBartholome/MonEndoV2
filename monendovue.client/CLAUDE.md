@@ -77,8 +77,12 @@ Nouveau composant shadcn : `npx shadcn-vue add <nom>` (alias configurés vers `@
   en même temps que `public/sw.js`.
 
 ## Notifications Web Push
-- Tout passe par `features/parametres/composables/usePushNotifications.ts` (états, activation, préférences) et
+- Tout passe par `features/parametres/composables/usePushNotifications.ts` (états, activation, réglage des rappels) et
   `components/NotificationSettings.vue` ; le worker `public/push-sw.js` ne fait qu'afficher les notifications (aucun cache).
+- Rappels : une carte `ReglageRappelCard.vue` par type renvoyé par `GET Notifications/rappels` ; libellés dans
+  `config/rappels.ts` (un type sans entrée n'est pas affiché). Jours : 0 = dimanche, comme `DayOfWeek` côté serveur.
+- Une notification ouvre `data.url` : une page à onglets doit accepter un lien profond (`/cycle?onglet=acne|symptomes|cycles`,
+  lu dans `CyclePage.vue` au montage).
 - La clé publique VAPID vient de l'API (`GET Notifications/cle-publique`), jamais d'une variable `VITE_*`.
 - **iOS** : push disponible seulement dans l'app ouverte depuis l'écran d'accueil (iOS 16.4+), sinon afficher le guide
   d'installation. `Notification.requestPermission()` doit être le **premier `await`** d'un gestionnaire de clic (geste utilisateur),

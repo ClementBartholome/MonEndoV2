@@ -55,10 +55,12 @@ dotnet ef migrations add NomEnPascalCase --project MonEndoVue.Server
   avec des objectifs bien-être réglables dans `/parametres`.
 - Accueil `/` (carnet : dernières entrées), agenda `/agenda` (Google Calendar), export PDF `/export`.
 - Notifications **Web Push standard** envoyées par le serveur (clés VAPID, sans service tiers) : chaque appareil s'abonne
-  depuis `/parametres` ; rappel du bilan à l'heure choisie, envoyé seulement si le bilan du jour n'est pas rempli
-  (job Quartz toutes les 15 min). Sur iOS (16.4+), uniquement dans l'app ajoutée à l'écran d'accueil.
-  Entités : **`AbonnementPush`** (un par appareil, endpoint unique, rattaché au carnet) et **`PreferenceRappel`**
-  (une par carnet : rappel actif, heure locale, fuseau IANA, date du dernier rappel envoyé).
+  depuis `/parametres` ; rappels réglables (job Quartz toutes les 15 min), chacun omis si le suivi est déjà fait :
+  bilan quotidien (bilan du jour pas encore rempli, ouvre `/bilan-quotidien`) et photo de suivi de l'acné hebdomadaire
+  (aucune photo d'acné depuis 7 jours, ouvre `/cycle?onglet=acne`). Sur iOS (16.4+), uniquement dans l'app ajoutée à l'écran d'accueil.
+  Entités : **`AbonnementPush`** (un par appareil, endpoint unique, rattaché au carnet) et **`Rappel`** (un par carnet et
+  par type : actif, heure locale, jour de la semaine si hebdomadaire, fuseau IANA, date du dernier envoi). L'ancienne table
+  `PreferencesRappel` n'est plus mappée (conservée pour un rollback, à supprimer).
 
 ## Principes produit (non négociables)
 - **Mobile-first** : écrans pensés d'abord pour ≤ 425px, aucune information clé tronquée ; le desktop enrichit ensuite.
@@ -101,6 +103,14 @@ Utiliser le skill `revue-securite` avant de commiter un changement touchant auth
   `config/appsettings.Production.json` → `/app/appsettings.Production.json` (**obligatoire**, `optional: false`),
   `keys/` → `/app/keys` (Data Protection), `logs/` → `/app/Logs`. Les secrets de production vivent uniquement sur le VPS
   (`config/`, `.env`, variables du compose) : ne jamais les demander ni les recopier.
+- **Modifier la configuration de prod** (`~/app/config/appsettings.Production.json`, et non `~/app/appsettings.Production.json`) :
+  - les options sont lues au démarrage : recréer le conteneur ensuite (`docker compose -f docker-compose.prod.yml up -d --force-recreate app`) ;
+    un 502 pendant quelques secondes est normal ;
+  - ne pas faire éditer le JSON à la main (nano) : fournir un script Python qui modifie le fichier et n'affiche que des
+    longueurs, écrit dans un fichier (`/tmp/x.py`) puis exécuté — jamais `input()` dans `python3 - <<EOF` (stdin = le script, EOFError) ;
+  - **générer les secrets directement sur le VPS** (openssl + script) : un collage dans une saisie masquée a déjà tronqué une clé ;
+  - une configuration Web Push invalide est signalée au démarrage par l'avertissement `Web Push notifications disabled: <raison>`
+    (`docker compose -f docker-compose.prod.yml logs app | grep -i "web push"`).
 - Le healthcheck Docker du compose de prod appelle `curl`, absent de l'image aspnet : il est toujours en échec, se fier
   au contrôle `/health` de la CI. Une modification du compose de prod se fait à la main sur le VPS.
 - **Les migrations EF sont appliquées automatiquement au démarrage en production** : elles doivent être rétro-compatibles ;

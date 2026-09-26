@@ -14,10 +14,11 @@ Lire d'abord `MonEndoVue.Server/CLAUDE.md` et la section sécurité du CLAUDE.md
    - GET/PUT/DELETE par id : **charger l'entité**, `NotFound()` si absente, puis `ValidateCarnetAccess(entity.CarnetSanteId)`.
    - POST : `ValidateCarnetAccess(dto.CarnetSanteId)` + vérifier que chaque clé étrangère (ex. `MedicamentId`) appartient au même carnet.
    - Ressource propre à l'utilisatrice connectée (réglages, appareils) : **aucun identifiant de carnet en entrée**, carnet déduit
-     de la session (modèle : `CarnetCourantAsync` dans `NotificationsController`).
+     de la session (modèle : `CarnetDeAsync` dans `Services/WebPush/NotificationsService.cs`).
 3. **Contrat** : DTO d'entrée (`Dto/XxxDto.cs`) avec uniquement les champs modifiables ; ViewModel de sortie
    (`ViewModels/XxxViewModel.cs`). Jamais `Id`/`CarnetSanteId`/`PhotoUrl` modifiables via le body d'un PUT.
-4. **Logique** dans un service (`Services/XxxService.cs`, `AddScoped` dans `Program.cs`) si elle dépasse le simple CRUD.
+4. **Logique** dans un service (`Services/XxxService.cs`, `AddScoped` dans `Program.cs`) si elle dépasse le simple CRUD ;
+   il renvoie un `ResultatOperation` que le contrôleur traduit par `VersReponse` (modèle : `NotificationsService`).
 5. **Erreurs** : `BadRequest(new { message = "…" })` en français, `NotFound()`, `NoContent()`, `CreatedAtAction` ; jamais `ex.Message`.
 6. **Logs** : `ILogger<T>` structuré, identifiants numériques seulement (pas d'email, de token ni de contenu de santé).
 7. **Entrées sensibles** : jamais de mot de passe/token en query string ; endpoints d'auth avec `[EnableRateLimiting("auth")]`.
