@@ -1,16 +1,13 @@
 import { defineConfig, devices } from '@playwright/test';
 
 /**
- * Read environment variables from file.
- * https://github.com/motdotla/dotenv
- */
-// import dotenv from 'dotenv';
-// import path from 'path';
-// dotenv.config({ path: path.resolve(__dirname, '.env') });
-
-/**
+ * Tests E2E : toujours contre un environnement local, jamais contre la production.
+ * Variables d'environnement : E2E_EMAIL, E2E_PASSWORD (compte de test local),
+ * E2E_BASE_URL (optionnelle, par défaut le serveur Vite local).
  * See https://playwright.dev/docs/test-configuration.
  */
+const baseURL = process.env.E2E_BASE_URL ?? 'https://localhost:5173';
+
 export default defineConfig({
   testDir: './tests',
   /* Run tests in files in parallel */
@@ -26,7 +23,7 @@ export default defineConfig({
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
   use: {
     /* Base URL to use in actions like `await page.goto('/')`. */
-    // baseURL: 'http://127.0.0.1:3000',
+    baseURL,
 
     /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
     trace: 'on-first-retry',
@@ -42,6 +39,7 @@ export default defineConfig({
         ...devices['Desktop Chrome'],
         storageState: 'playwright/.auth/user.json',
       },
+      dependencies: ['setup'],
     },
     {
       name: 'firefox',
@@ -49,6 +47,7 @@ export default defineConfig({
         ...devices['Desktop Firefox'],
         storageState: 'playwright/.auth/user.json',
       },
+      dependencies: ['setup'],
     },
     {
       name: 'webkit',
@@ -56,6 +55,7 @@ export default defineConfig({
         ...devices['Desktop Safari'],
         storageState: 'playwright/.auth/user.json',
       },
+      dependencies: ['setup'],
     },
     /* Test against mobile viewports. */
     // {
@@ -81,7 +81,7 @@ export default defineConfig({
   /* Run your local dev server before starting the tests */
   webServer: {
     command: 'npm run dev',
-    url: 'https://localhost:5173',
+    url: baseURL,
     reuseExistingServer: !process.env.CI,
     ignoreHTTPSErrors: true, 
   },
