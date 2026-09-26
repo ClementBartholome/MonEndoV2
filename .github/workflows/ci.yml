@@ -109,6 +109,9 @@ jobs:
       - name: Build .NET project
         run: dotnet build --configuration Release --no-restore
 
+      - name: Run .NET tests
+        run: dotnet test --configuration Release --no-build
+
       - name: SonarQube - End Analysis
         if: env.SONAR_TOKEN != '' && steps.sonar-begin.outcome == 'success'
         continue-on-error: true
