@@ -107,7 +107,8 @@ Utiliser le skill `revue-securite` avant de commiter un changement touchant auth
 
 ## Déploiement (tout push sur `main` = production)
 - `ci.yml` : **verifier** (npm ci, type-check + build client, ESLint non bloquant, build et tests .NET, SonarCloud non bloquant) → **image**
-  (build Docker ; poussée sur GHCR avec les tags `latest`, `main`, `main-<sha>` et `sha-<court>` uniquement sur `main`) → **deployer**
+  (build Docker ; poussée sur GHCR avec les tags `latest`, `main`, `main-<sha>` et `sha-<court>` uniquement sur `main`,
+  et `vX.Y.Z` sur un push de tag de version ; simple build sur les PR et les branches `release/**`) → **deployer** (`main` seulement)
   (SSH vers le VPS, `docker compose -f docker-compose.prod.yml pull app && up -d`, puis contrôle de `https://monendoapp.fr/health`).
 - Le VPS (`~/app`, hors dépôt) fournit `docker-compose.prod.yml` avec trois services sur un réseau interne :
   `db` (SQL Server, port non exposé, mot de passe via `DB_PASSWORD` du `.env` écrit par la CI), `app` (image GHCR
@@ -119,7 +120,10 @@ Utiliser le skill `revue-securite` avant de commiter un changement touchant auth
   au contrôle `/health` de la CI. Une modification du compose de prod se fait à la main sur le VPS.
 - **Les migrations EF sont appliquées automatiquement au démarrage en production** : elles doivent être rétro-compatibles ;
   toute migration destructive (DROP, colonne supprimée) doit être signalée explicitement avant merge.
-- Rollback : repointer l'image du service `app` sur un tag précédent (`sha-…` ou `main-<sha>`), puis `docker compose up -d`.
+- **Versions (SemVer, depuis la 1.0.0)** : les sujets sont regroupés sur une branche `release/X.Y.Z` (PR dont la base est
+  cette branche), puis livrés par une PR vers `main`, suivie du tag `vX.Y.Z` et d'une GitHub Release. Numéro de version dans
+  `monendovue.client/package.json` **et** `MonEndoVue.Server.csproj`, historique dans `CHANGELOG.md`. Procédure : skill `release`.
+- Rollback : repointer l'image du service `app` sur une version précédente (`vX.Y.Z`, ou `sha-…` / `main-<sha>` avant la 1.0.0), puis `docker compose up -d`.
   Les images antérieures à 2026-09 chargent encore `serviceAccountKey.json` au démarrage : garder ce montage tant qu'un tel retour est envisageable.
 - Ne jamais pousser sur `main` ni ouvrir/merger une PR sans demande explicite. Travailler sur une branche.
 
@@ -147,6 +151,7 @@ Utiliser le skill `revue-securite` avant de commiter un changement touchant auth
 - `endpoint-api` — ajouter ou modifier un endpoint ASP.NET Core de façon sûre (cloisonnement, DTO, migration, type TS).
 - `revue-securite` — revue ciblée MonEndo d'un diff ou d'une zone de code.
 - `commit` — préparer un commit conforme (vérifications, découpage, message).
+- `release` — préparer, livrer ou annuler une version numérotée (branche de release, CHANGELOG, tag, rollback).
 - `revue-pr` — évaluer une PR existante avant merge (conflits, fichiers parasites, migrations, cohérence front/back, impact déploiement).
 - `capitaliser` — en fin de tâche, reporter ce qui a été appris dans CLAUDE.md, les skills ou la mémoire.
 
