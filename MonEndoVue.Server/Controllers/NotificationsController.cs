@@ -28,13 +28,13 @@ public class NotificationsController(NotificationsService service) : ControllerB
     public async Task<IActionResult> Desabonner(DesabonnementPushDto dto, CancellationToken cancellationToken) =>
         this.VersReponse(await service.DesabonnerAsync(User.GetCurrentUserId(), dto.Endpoint, cancellationToken), NoContent);
 
-    [HttpGet("preferences")]
-    public async Task<IActionResult> GetPreferences(CancellationToken cancellationToken) =>
-        this.VersReponse(await service.GetPreferencesAsync(User.GetCurrentUserId(), cancellationToken), preferences => Ok(preferences));
+    [HttpGet("rappels")]
+    public async Task<IActionResult> GetRappels(CancellationToken cancellationToken) =>
+        this.VersReponse(await service.GetRappelsAsync(User.GetCurrentUserId(), cancellationToken), rappels => Ok(rappels));
 
-    [HttpPut("preferences")]
-    public async Task<IActionResult> PutPreferences(PreferenceRappelDto dto, CancellationToken cancellationToken) =>
-        this.VersReponse(await service.PutPreferencesAsync(User.GetCurrentUserId(), dto, cancellationToken), NoContent);
+    [HttpPut("rappels/{type}")]
+    public async Task<IActionResult> PutRappel(string type, RappelDto dto, CancellationToken cancellationToken) =>
+        this.VersReponse(await service.PutRappelAsync(User.GetCurrentUserId(), type, dto, cancellationToken), NoContent);
 
     [HttpPost("test")]
     [EnableRateLimiting("auth")]

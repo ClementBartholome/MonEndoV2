@@ -12,6 +12,7 @@ using MonEndoVue.Server.Jobs;
 using MonEndoVue.Server.Models;
 using MonEndoVue.Server.Services;
 using MonEndoVue.Server.Services.WebPush;
+using MonEndoVue.Server.Services.WebPush.Rappels;
 using Quartz;
 using Serilog;
 using Serilog.Events;
@@ -56,6 +57,9 @@ namespace MonEndoVue.Server
             builder.Services.AddSingleton(TimeProvider.System);
             builder.Services.AddScoped<NotificationsPushService>();
             builder.Services.AddScoped<NotificationsService>();
+            // Un rappel = une règle (ajouter un type : nouvelle implémentation de IRegleRappel)
+            builder.Services.AddScoped<IRegleRappel, RappelBilanQuotidien>();
+            builder.Services.AddScoped<IRegleRappel, RappelSuiviAcne>();
 
             builder.Services.AddCors(options =>
             {

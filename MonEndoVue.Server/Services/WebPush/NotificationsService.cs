@@ -4,6 +4,7 @@ using Microsoft.Extensions.Options;
 using MonEndoVue.Server.Data;
 using MonEndoVue.Server.Dto;
 using MonEndoVue.Server.Models;
+using MonEndoVue.Server.Services.WebPush.Rappels;
 
 namespace MonEndoVue.Server.Services.WebPush;
 
@@ -14,9 +15,11 @@ namespace MonEndoVue.Server.Services.WebPush;
 public class NotificationsService(
     AppDbContext context,
     NotificationsPushService notifications,
+    IEnumerable<IRegleRappel> regles,
     IOptions<WebPushOptions> webPushOptions,
     TimeProvider timeProvider)
 {
+    private const string FuseauParDefaut = "Europe/Paris";
     public const string MessageNonConfigure = "Les notifications ne sont pas disponibles pour le moment.";
 
     public ResultatOperation<string> ClePublique()
@@ -69,52 +72,73 @@ public class NotificationsService(
         return ResultatOperation.Succes();
     }
 
-    public async Task<ResultatOperation<PreferenceRappelDto>> GetPreferencesAsync(string userId, CancellationToken cancellationToken)
+    /// <summary>Tous les rappels proposés, avec les valeurs par défaut de leur règle pour ceux jamais réglés.</summary>
+    public async Task<ResultatOperation<List<RappelDto>>> GetRappelsAsync(string userId, CancellationToken cancellationToken)
     {
         var carnetSanteId = await CarnetDeAsync(userId, cancellationToken);
-        if (carnetSanteId is null) return ResultatOperation<PreferenceRappelDto>.Echec(StatutOperation.NonAuthentifie);
+        if (carnetSanteId is null) return ResultatOperation<List<RappelDto>>.Echec(StatutOperation.NonAuthentifie);
 
-        var preference = await context.PreferencesRappel
-            .FirstOrDefaultAsync(p => p.CarnetSanteId == carnetSanteId, cancellationToken)
-            ?? new PreferenceRappel();
+        var existants = await context.Rappels
+            .Where(r => r.CarnetSanteId == carnetSanteId)
+            .ToDictionaryAsync(r => r.Type, cancellationToken);
 
-        return ResultatOperation<PreferenceRappelDto>.Succes(new PreferenceRappelDto
-        {
-            RappelActif = preference.RappelActif,
-            HeureRappel = preference.HeureRappel.ToString("HH:mm", CultureInfo.InvariantCulture),
-            FuseauHoraire = preference.FuseauHoraire,
-        });
+        var rappels = regles.Select(regle => existants.TryGetValue(regle.Type, out var rappel)
+                ? VersDto(regle, rappel.Actif, rappel.Heure, rappel.JourSemaine, rappel.FuseauHoraire)
+                : VersDto(regle, false, regle.HeureParDefaut, regle.JourParDefaut, FuseauParDefaut))
+            .ToList();
+        return ResultatOperation<List<RappelDto>>.Succes(rappels);
     }
 
-    public async Task<ResultatOperation> PutPreferencesAsync(string userId, PreferenceRappelDto dto, CancellationToken cancellationToken)
+    public async Task<ResultatOperation> PutRappelAsync(string userId, string type, RappelDto dto, CancellationToken cancellationToken)
     {
         var carnetSanteId = await CarnetDeAsync(userId, cancellationToken);
         if (carnetSanteId is null) return ResultatOperation.Echec(StatutOperation.NonAuthentifie);
 
-        if (!TimeOnly.TryParseExact(dto.HeureRappel, "HH:mm", CultureInfo.InvariantCulture, DateTimeStyles.None, out var heure))
+        var regle = Enum.TryParse<TypeRappel>(type, ignoreCase: true, out var typeRappel)
+            ? regles.FirstOrDefault(r => r.Type == typeRappel)
+            : null;
+        if (regle is null) return ResultatOperation.Echec(StatutOperation.Introuvable);
+
+        if (!TimeOnly.TryParseExact(dto.Heure, "HH:mm", CultureInfo.InvariantCulture, DateTimeStyles.None, out var heure))
         {
             return ResultatOperation.Echec(StatutOperation.Invalide, "L'heure du rappel doit être au format HH:mm.");
         }
 
-        if (!NotificationsPushService.EstFuseauValide(dto.FuseauHoraire))
+        if (!FuseauxHoraires.EstValide(dto.FuseauHoraire))
         {
             return ResultatOperation.Echec(StatutOperation.Invalide, "Fuseau horaire inconnu.");
         }
 
-        var preference = await context.PreferencesRappel
-            .FirstOrDefaultAsync(p => p.CarnetSanteId == carnetSanteId, cancellationToken);
-        if (preference is null)
+        if (regle.EstHebdomadaire && dto.JourSemaine is not (>= 0 and <= 6))
         {
-            preference = new PreferenceRappel { CarnetSanteId = carnetSanteId.Value };
-            context.PreferencesRappel.Add(preference);
+            return ResultatOperation.Echec(StatutOperation.Invalide, "Choisis le jour du rappel.");
         }
 
-        preference.RappelActif = dto.RappelActif;
-        preference.HeureRappel = heure;
-        preference.FuseauHoraire = dto.FuseauHoraire;
+        var rappel = await context.Rappels.FirstOrDefaultAsync(
+            r => r.CarnetSanteId == carnetSanteId && r.Type == regle.Type, cancellationToken);
+        if (rappel is null)
+        {
+            rappel = new Rappel { CarnetSanteId = carnetSanteId.Value, Type = regle.Type };
+            context.Rappels.Add(rappel);
+        }
+
+        rappel.Actif = dto.Actif;
+        rappel.Heure = heure;
+        rappel.JourSemaine = regle.EstHebdomadaire ? (DayOfWeek)dto.JourSemaine!.Value : null;
+        rappel.FuseauHoraire = dto.FuseauHoraire;
         await context.SaveChangesAsync(cancellationToken);
         return ResultatOperation.Succes();
     }
+
+    private static RappelDto VersDto(IRegleRappel regle, bool actif, TimeOnly heure, DayOfWeek? jour, string fuseau) => new()
+    {
+        Type = regle.Type.ToString(),
+        EstHebdomadaire = regle.EstHebdomadaire,
+        Actif = actif,
+        Heure = heure.ToString("HH:mm", CultureInfo.InvariantCulture),
+        JourSemaine = jour is null ? null : (int)jour.Value,
+        FuseauHoraire = fuseau,
+    };
 
     public async Task<ResultatOperation<int>> EnvoyerTestAsync(string userId, CancellationToken cancellationToken)
     {

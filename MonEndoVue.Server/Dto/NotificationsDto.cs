@@ -21,13 +21,21 @@ public class DesabonnementPushDto
     public string Endpoint { get; set; } = string.Empty;
 }
 
-/// <summary>Réglage du rappel quotidien ; l'heure est au format HH:mm dans le fuseau IANA indiqué.</summary>
-public class PreferenceRappelDto
+/// <summary>
+/// Réglage d'un rappel. <see cref="Type"/> (BilanQuotidien, SuiviAcne) et <see cref="EstHebdomadaire"/> sont renseignés
+/// en lecture ; l'heure est au format HH:mm dans le fuseau IANA indiqué ; le jour (0 = dimanche … 6 = samedi) ne concerne
+/// que les rappels hebdomadaires.
+/// </summary>
+public class RappelDto
 {
-    public bool RappelActif { get; set; }
+    public string Type { get; set; } = string.Empty;
+    public bool EstHebdomadaire { get; set; }
+    public bool Actif { get; set; }
 
     [Required]
-    public string HeureRappel { get; set; } = "21:00";
+    public string Heure { get; set; } = "21:00";
+
+    public int? JourSemaine { get; set; }
 
     [Required]
     public string FuseauHoraire { get; set; } = "Europe/Paris";
