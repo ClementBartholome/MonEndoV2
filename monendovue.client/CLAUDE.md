@@ -91,6 +91,11 @@ Nouveau composant shadcn : `npx shadcn-vue add <nom>` (alias configurés vers `@
   serveur le stocke sans fuseau) ; envoyer `format(jour, "yyyy-MM-dd'T'12:00:00")` (modèle : `useSaisieBilan`).
 - **Jour calendaire reçu de l'API** : le comparer par sa clé `yyyy-MM-dd` en heure locale (`cleJour` de
   `features/bilan-quotidien/utils/historique.ts`), jamais par timestamp.
+- Couleurs de données : une seule teinte par indicateur, sans code « bon / mauvais », et **foncé = journée plus lourde**
+  pour tous les indicateurs (douleur forte, émotions difficiles). Séries d'un même graphique de teintes et de clartés
+  bien distinctes (fatigue verte, stress orange, émotions bleu foncé).
+- Vocabulaire : parler d'**émotions agréables ou difficiles**, pas d'« humeur agréable / difficile » (« humeur difficile »
+  signifie irritable). « Humeur » ne désigne que l'ancienne saisie (Positive, Neutre, Négative) des anciens bilans.
 - Courbes à plusieurs échelles ou avec des bandes de fond (règles) : `GraphiqueLignes.vue` (SVG simple, jours non
   renseignés non tracés) plutôt que `LineChart` (unovis), qui n'a qu'un axe et relie les trous.
 - Élément collé en bas d'écran (`sticky`/`fixed`) : sous 1024px la navigation est fixée en bas (`.navbar-side`, ~4.25rem),
