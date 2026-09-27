@@ -1,6 +1,6 @@
 ---
 name: fonctionnalite-front
-description: Créer ou refactoriser une page, un composant ou un composable Vue de MonEndo selon les patterns du projet (page CRUD mensuelle, pattern model/actions, mobile-first ≤ 425px, zod, composants partagés). À utiliser pour toute nouvelle fonctionnalité front, tout ajout d'écran ou de formulaire, ou pour découper une page trop grosse (CyclePage, MedicamentPage, BilanQuotidienPage).
+description: Créer ou refactoriser une page, un composant ou un composable Vue de MonEndo selon les patterns du projet (page CRUD mensuelle, pattern model/actions, mobile-first ≤ 425px, zod, composants partagés). À utiliser pour toute nouvelle fonctionnalité front, tout ajout d'écran ou de formulaire, ou pour découper une page trop grosse (CyclePage, MedicamentPage ; modèle de découpage : BilanQuotidienPage).
 ---
 
 # Fonctionnalité front MonEndo

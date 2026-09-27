@@ -6,7 +6,7 @@ import { tokenService } from '@/features/auth/services/tokenService';
 import router from "@/router";
 import type { DonneesDouleurModification } from '@/features/douleurs/types/donnees-douleur';
 import type { AbonnementPush, Rappel, ReglageRappel, TypeRappel } from '@/features/parametres/types/notifications';
-import type { BilanQuotidien, EmotionBilan } from '@/features/bilan-quotidien/types/bilan-quotidien';
+import type { BilanQuotidien, BilanQuotidienSaisie, EmotionBilan } from '@/features/bilan-quotidien/types/bilan-quotidien';
 import { enTableau } from '@/shared/utils/json';
 
 const API_URL = import.meta.env.VITE_DOCKER === 'true'
@@ -146,8 +146,12 @@ class ApiService {
         return this.request('POST', 'DonneesActivitePhysique', donneesActivitePhysique);
     }
 
-    async postBilanQuotidien(bilanQuotidien: any): Promise<any> {
+    async postBilanQuotidien(bilanQuotidien: BilanQuotidienSaisie): Promise<{ id: number }> {
         return this.request('POST', 'BilanQuotidien', bilanQuotidien);
+    }
+
+    async putBilanQuotidien(bilanQuotidien: BilanQuotidienSaisie): Promise<void> {
+        return this.request('PUT', `BilanQuotidien/${bilanQuotidien.id}`, bilanQuotidien);
     }
 
     async postMedicament(donneesMedicament: any): Promise<any> {

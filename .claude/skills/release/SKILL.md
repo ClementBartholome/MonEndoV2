@@ -49,4 +49,9 @@ Points d'attention connus :
   `UPDATE BilansQuotidiens SET Mood = 'Neutre' WHERE Mood IS NULL` (sans effet sur la 1.0.0 et suivantes, où les émotions
   priment sur `Mood`). Les réglages de rappel modifiés depuis la 1.0.0 ne sont pas vus par l'ancienne image
   (elle relit `PreferencesRappel`).
+- **Retour à une image antérieure à la 1.1.0** : `StressPro`, `StressPerso`, `Fatigue`, `Pas` et `Hydratation` sont
+  nullables depuis la 1.1.0 (migration `RendFacultativesMesuresBilan`), l'ancienne image plante sur une valeur nulle.
+  Avant de repointer l'image, exécuter sur la base de prod
+  `UPDATE BilansQuotidiens SET StressPro = ISNULL(StressPro, 0), StressPerso = ISNULL(StressPerso, 0), Fatigue = ISNULL(Fatigue, 0), Pas = ISNULL(Pas, 0), Hydratation = ISNULL(Hydratation, 0)`
+  (les anciennes versions comptaient de toute façon une valeur absente pour 0 ; la distinction « non renseigné » est perdue).
 - Toute version qui rend un champ nullable ou supprime une table ajoute ici sa propre consigne de retour arrière.

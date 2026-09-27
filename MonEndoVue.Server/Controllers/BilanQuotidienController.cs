@@ -11,7 +11,8 @@ namespace MonEndoVue.Server.Controllers
     [Route("[controller]")]
     [ApiController]
     [Authorize]
-    public class BilanQuotidienController(AppDbContext context, CarnetSanteService carnetSanteService) : ControllerBase
+    public class BilanQuotidienController(
+        AppDbContext context, CarnetSanteService carnetSanteService, TimeProvider horloge) : ControllerBase
     {
         // GET: BilanQuotidien/5
         [HttpGet("{id}")]
@@ -68,11 +69,8 @@ namespace MonEndoVue.Server.Controllers
         [HttpPut("{id}")]
         public async Task<IActionResult> PutBilanQuotidien(int id, BilanQuotidien bilanQuotidien)
         {
-            var (humeurValide, erreurHumeur) = BilanHumeurValidator.Valider(bilanQuotidien);
-            if (!humeurValide) return BadRequest(new { message = erreurHumeur });
-
-            var (transitValide, erreurTransit) = BilanTransitValidator.Valider(bilanQuotidien);
-            if (!transitValide) return BadRequest(new { message = erreurTransit });
+            var erreur = Valider(bilanQuotidien);
+            if (erreur != null) return erreur;
 
             if (id != bilanQuotidien.Id)
             {
@@ -87,6 +85,11 @@ namespace MonEndoVue.Server.Controllers
 
             var securityCheck = await this.ValidateCarnetAccess(carnetSanteService, existing.CarnetSanteId);
             if (securityCheck != null) return securityCheck;
+
+            if (await ExisteUnAutreBilanLeMemeJour(existing.CarnetSanteId, bilanQuotidien.Date, id))
+            {
+                return Conflict(new { message = BilanDejaSaisi });
+            }
 
             existing.Date = bilanQuotidien.Date;
             existing.Mood = bilanQuotidien.Mood;
@@ -120,21 +123,41 @@ namespace MonEndoVue.Server.Controllers
         [HttpPost]
         public async Task<ActionResult<BilanQuotidien>> PostBilanQuotidien(BilanQuotidien bilanQuotidien)
         {
-            var (humeurValide, erreurHumeur) = BilanHumeurValidator.Valider(bilanQuotidien);
-            if (!humeurValide) return BadRequest(new { message = erreurHumeur });
-
-            var (transitValide, erreurTransit) = BilanTransitValidator.Valider(bilanQuotidien);
-            if (!transitValide) return BadRequest(new { message = erreurTransit });
+            var erreur = Valider(bilanQuotidien);
+            if (erreur != null) return erreur;
 
             var securityCheck = await this.ValidateCarnetAccess(carnetSanteService, bilanQuotidien.CarnetSanteId);
             if (securityCheck != null) return securityCheck;
-            
+
+            if (await ExisteUnAutreBilanLeMemeJour(bilanQuotidien.CarnetSanteId, bilanQuotidien.Date, idExclu: null))
+            {
+                return Conflict(new { message = BilanDejaSaisi });
+            }
+
+            bilanQuotidien.Id = 0;
             bilanQuotidien.Emotions = NouvellesEmotions(bilanQuotidien);
             context.BilansQuotidiens.Add(bilanQuotidien);
             await context.SaveChangesAsync();
+            carnetSanteService.InvalidateCache(bilanQuotidien.CarnetSanteId);
 
             return CreatedAtAction("GetBilanQuotidien", new { id = bilanQuotidien.Id }, bilanQuotidien);
         }
+
+        private const string BilanDejaSaisi = "Un bilan existe déjà pour ce jour : modifie-le plutôt que d'en créer un second.";
+
+        private BadRequestObjectResult? Valider(BilanQuotidien bilan)
+        {
+            var erreur = BilanHumeurValidator.Valider(bilan).Erreur
+                ?? BilanTransitValidator.Valider(bilan).Erreur
+                ?? BilanMesuresValidator.Valider(bilan).Erreur
+                ?? BilanDateValidator.Valider(bilan.Date, horloge.GetUtcNow()).Erreur;
+            return erreur == null ? null : BadRequest(new { message = erreur });
+        }
+
+        // Un seul bilan par jour et par carnet (idExclu : le bilan en cours de modification).
+        private Task<bool> ExisteUnAutreBilanLeMemeJour(int carnetSanteId, DateTime date, int? idExclu) =>
+            context.BilansQuotidiens.AnyAsync(b =>
+                b.CarnetSanteId == carnetSanteId && b.Date.Date == date.Date && b.Id != idExclu);
 
         // Seul le choix des émotions vient du client : leurs identifiants éventuels sont ignorés.
         private static List<EmotionBilan> NouvellesEmotions(BilanQuotidien bilan) =>

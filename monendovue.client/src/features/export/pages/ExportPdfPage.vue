@@ -303,7 +303,8 @@ const getBilanValueForDay = (field, day) => {
     const date = new Date(b.date);
     return date.getDate() === day;
   });
-  return bilan ? bilan[field] ?? 0 : 0;
+  // Case vide si pas de bilan ou mesure non renseignée ; un 0 saisi reste affiché.
+  return bilan?.[field] ?? '';
 };
 
 // Humeur du bilan : emojis des émotions du jour, ou symbole de l'ancienne humeur (+, =, -).
@@ -338,7 +339,8 @@ const getTransitCodeForDay = (champ: 'selles' | 'crampes' | 'ballonnements', day
 };
 
 const getPasIcon = (value) => {
-  if (value === undefined || value === null || value === 0) return '💤';
+  if (value === '') return '';
+  if (value === 0) return '💤';
   if (value < 5000) return '🚶';
   if (value < 10000) return '🚶‍♂️';
   return '🏃';
@@ -397,16 +399,16 @@ const exportToPDF = () => {
   }]);
 
   // Stress moyen
-  rows.push(['Stress moy.', ...Array.from({length: daysInMonth}, (_, i) => getBilanValueForDay('stressMoyenne', i + 1) || '')]);
+  rows.push(['Stress moy.', ...Array.from({length: daysInMonth}, (_, i) => getBilanValueForDay('stressMoyenne', i + 1))]);
 
   // Fatigue
-  rows.push(['Fatigue', ...Array.from({length: daysInMonth}, (_, i) => getBilanValueForDay('fatigue', i + 1) || '')]);
+  rows.push(['Fatigue', ...Array.from({length: daysInMonth}, (_, i) => getBilanValueForDay('fatigue', i + 1))]);
 
   // Pas (format large numbers as "11k" to avoid overflow)
   const pasRow = ['Pas'];
   for (let day = 1; day <= daysInMonth; day++) {
     const value = getBilanValueForDay('pas', day);
-    if (!value) {
+    if (value === '') {
       pasRow.push('');
     } else if (value >= 10000) {
       pasRow.push(`${(value / 1000).toFixed(0)}k`);
@@ -417,10 +419,10 @@ const exportToPDF = () => {
   rows.push(pasRow);
 
   // Douleur moyenne
-  rows.push(['Douleur moy.', ...Array.from({length: daysInMonth}, (_, i) => getBilanValueForDay('douleurMoyenne', i + 1) || '')]);
+  rows.push(['Douleur moy.', ...Array.from({length: daysInMonth}, (_, i) => getBilanValueForDay('douleurMoyenne', i + 1))]);
 
   // Hydratation
-  rows.push(['Hydratation', ...Array.from({length: daysInMonth}, (_, i) => getBilanValueForDay('hydratation', i + 1) || '')]);
+  rows.push(['Hydratation', ...Array.from({length: daysInMonth}, (_, i) => getBilanValueForDay('hydratation', i + 1))]);
 
   // Transit (voir getTransitCodeForDay pour la légende des codes)
   rows.push(['Selles (Bristol)', ...Array.from({length: daysInMonth}, (_, i) => getTransitCodeForDay('selles', i + 1))]);
