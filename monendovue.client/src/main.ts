@@ -1,3 +1,4 @@
+import './assets/polices.css'
 import './assets/index.css'
 
 import { createApp } from 'vue'

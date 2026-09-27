@@ -53,4 +53,12 @@ public class EntetesSecuriteTests
         var scripts = EntetesSecurite.ContentSecurityPolicy.Split("; ").Single(d => d.StartsWith("script-src"));
         Assert.DoesNotContain("'unsafe-inline'", scripts);
     }
+
+    [Fact]
+    public void ContentSecurityPolicy_NAutorisePasGoogleFonts()
+    {
+        // Polices servies par l'application : l'adresse IP de l'utilisatrice ne part pas chez Google.
+        Assert.DoesNotContain("fonts.googleapis.com", EntetesSecurite.ContentSecurityPolicy);
+        Assert.DoesNotContain("fonts.gstatic.com", EntetesSecurite.ContentSecurityPolicy);
+    }
 }
