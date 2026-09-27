@@ -1,6 +1,6 @@
 {
   "name": "monendovue.client",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "private": true,
   "type": "module",
   "scripts": {
@@ -29,7 +29,6 @@
     "datatables.net-vue3": "^3.0.1",
     "date-fns": "^3.6.0",
     "flowbite": "^2.3.0",
-    "heic2any": "^0.0.4",
     "jquery": "^3.7.1",
     "jspdf": "^2.5.1",
     "jspdf-autotable": "^3.8.2",

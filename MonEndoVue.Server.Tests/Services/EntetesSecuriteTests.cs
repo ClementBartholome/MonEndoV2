@@ -24,12 +24,13 @@ public class EntetesSecuriteTests
     }
 
     [Fact]
-    public void Appliquer_PoseLaPolitiqueDeContenuEnModeSignalementSeulement()
+    public void Appliquer_PoseLaPolitiqueDeContenuEnModeBloquant()
     {
         IHeaderDictionary entetes = Entetes();
 
-        Assert.Equal(EntetesSecurite.ContentSecurityPolicy, entetes.ContentSecurityPolicyReportOnly);
-        Assert.Equal(string.Empty, entetes.ContentSecurityPolicy.ToString());
+        Assert.Equal(EntetesSecurite.ContentSecurityPolicy, entetes.ContentSecurityPolicy);
+        // Une seule politique : la même en « Report-Only » ferait doublon dans la console.
+        Assert.Equal(string.Empty, entetes.ContentSecurityPolicyReportOnly.ToString());
     }
 
     [Theory]
