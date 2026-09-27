@@ -9,6 +9,7 @@ versions en [SemVer](https://semver.org/lang/fr/) (voir la section Déploiement 
 - Sur ordinateur, la barre de navigation ne recouvre plus le bord gauche des pages (boutons et calendrier devenus
   inaccessibles sur les écrans de moins de 1800 pixels de large).
 - Activité : une séance peut de nouveau être modifiée depuis le tableau affiché sur ordinateur.
+- Tableaux (activité, douleurs, cycle, traitements, transit) : le texte saisi s'affiche toujours tel quel, sans mise en forme.
 
 ### Sécurité
 - Connexion : un compte est verrouillé pendant 15 minutes après cinq mots de passe erronés de suite.
