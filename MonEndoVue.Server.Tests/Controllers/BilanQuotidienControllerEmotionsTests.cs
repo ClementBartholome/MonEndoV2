@@ -13,7 +13,7 @@ public sealed class BilanQuotidienControllerEmotionsTests : IDisposable
 
     public BilanQuotidienControllerEmotionsTests()
     {
-        _controller = new BilanQuotidienController(_carnet.Context, _carnet.CarnetSanteService)
+        _controller = new BilanQuotidienController(_carnet.Context, _carnet.CarnetSanteService, TimeProvider.System)
         {
             ControllerContext = CarnetDeTest.ContexteAuthentifie(),
         };

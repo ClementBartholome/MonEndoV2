@@ -6,7 +6,8 @@ import { tokenService } from '@/features/auth/services/tokenService';
 import router from "@/router";
 import type { DonneesDouleurModification } from '@/features/douleurs/types/donnees-douleur';
 import type { AbonnementPush, Rappel, ReglageRappel, TypeRappel } from '@/features/parametres/types/notifications';
-import type { BilanQuotidien, EmotionBilan } from '@/features/bilan-quotidien/types/bilan-quotidien';
+import type { BilanQuotidien, BilanQuotidienSaisie, EmotionBilan } from '@/features/bilan-quotidien/types/bilan-quotidien';
+import type { HistoriqueBilans } from '@/features/bilan-quotidien/types/historique';
 import { enTableau } from '@/shared/utils/json';
 
 const API_URL = import.meta.env.VITE_DOCKER === 'true'
@@ -118,11 +119,16 @@ class ApiService {
         return this.request('GET', `DonneesTransit/${carnetSanteId}/${month}/${year}`);
     }
 
-    async getBilanQuotidienByWeek(carnetSanteId: number, week: string, year: string): Promise<BilanQuotidien[]> {
+    /** Bilans et jours de règles du `du` au `au` inclus (yyyy-MM-dd), carnet déduit de la session. */
+    async getHistoriqueBilans(du: string, au: string): Promise<HistoriqueBilans> {
         type Liste<T> = T[] | { $values: T[] };
-        const response = await this.request<Liste<Omit<BilanQuotidien, 'emotions'> & { emotions?: Liste<EmotionBilan> }>>(
-            'GET', `BilanQuotidien/by-week/${carnetSanteId}/${week}/${year}`);
-        return enTableau(response).map((bilan) => ({ ...bilan, emotions: enTableau(bilan.emotions) }));
+        type BilanRecu = Omit<BilanQuotidien, 'emotions'> & { emotions?: Liste<EmotionBilan> };
+        const response = await this.request<{ bilans: Liste<BilanRecu>; joursRegles: Liste<string> }>(
+            'GET', `BilanQuotidien/periode?du=${encodeURIComponent(du)}&au=${encodeURIComponent(au)}`);
+        return {
+            bilans: enTableau(response.bilans).map((bilan) => ({ ...bilan, emotions: enTableau(bilan.emotions) })),
+            joursRegles: enTableau(response.joursRegles),
+        };
     }
 
     async getAllMedicaments(carnetSanteId: number, ): Promise<any> {
@@ -146,8 +152,12 @@ class ApiService {
         return this.request('POST', 'DonneesActivitePhysique', donneesActivitePhysique);
     }
 
-    async postBilanQuotidien(bilanQuotidien: any): Promise<any> {
+    async postBilanQuotidien(bilanQuotidien: BilanQuotidienSaisie): Promise<{ id: number }> {
         return this.request('POST', 'BilanQuotidien', bilanQuotidien);
+    }
+
+    async putBilanQuotidien(bilanQuotidien: BilanQuotidienSaisie): Promise<void> {
+        return this.request('PUT', `BilanQuotidien/${bilanQuotidien.id}`, bilanQuotidien);
     }
 
     async postMedicament(donneesMedicament: any): Promise<any> {

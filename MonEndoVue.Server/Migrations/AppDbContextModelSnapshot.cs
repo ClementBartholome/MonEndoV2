@@ -294,7 +294,7 @@ namespace MonEndoVue.Server.Migrations
                     b.Property<int>("DouleurMoyenne")
                         .HasColumnType("int");
 
-                    b.Property<int>("Fatigue")
+                    b.Property<int?>("Fatigue")
                         .HasColumnType("int");
 
                     b.Property<bool>("Gluten")
@@ -303,7 +303,7 @@ namespace MonEndoVue.Server.Migrations
                     b.Property<bool>("Grignotage")
                         .HasColumnType("bit");
 
-                    b.Property<double>("Hydratation")
+                    b.Property<double?>("Hydratation")
                         .HasColumnType("float");
 
                     b.Property<string>("IntensiteBallonnements")
@@ -318,16 +318,16 @@ namespace MonEndoVue.Server.Migrations
                     b.Property<string>("Mood")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int>("Pas")
+                    b.Property<int?>("Pas")
                         .HasColumnType("int");
 
                     b.Property<bool?>("Selles")
                         .HasColumnType("bit");
 
-                    b.Property<int>("StressPerso")
+                    b.Property<int?>("StressPerso")
                         .HasColumnType("int");
 
-                    b.Property<int>("StressPro")
+                    b.Property<int?>("StressPro")
                         .HasColumnType("int");
 
                     b.Property<int?>("TypeBristol")

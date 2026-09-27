@@ -26,8 +26,8 @@ Nouveau composant shadcn : `npx shadcn-vue add <nom>` (alias configurés vers `@
 - `<script setup lang="ts">` uniquement (pas d'Options API), bloc `script` avant `template` dans les nouveaux fichiers.
 - Props typées : `defineProps<{ … }>()` (+ `withDefaults` si besoin) ; emits : `defineEmits<{ 'edit-entry': [id: number] }>()`, événements en kebab-case.
 - `import type` obligatoire pour les imports de types (`verbatimModuleSyntax`).
-- Taille : au-delà d'environ 150-200 lignes pour un bloc UI métier, extraire un composant dédié. `CyclePage.vue`,
-  `MedicamentPage.vue` et `BilanQuotidienPage.vue` sont trop gros : les découper quand on y travaille (skill `fonctionnalite-front`).
+- Taille : au-delà d'environ 150-200 lignes pour un bloc UI métier, extraire un composant dédié. `CyclePage.vue`
+  et `MedicamentPage.vue` sont trop gros : les découper quand on y travaille (skill `fonctionnalite-front`).
 - Réutiliser l'existant avant de créer : `GenericCardList` (cartes mobiles, callbacks `onEdit`/`onDelete`/`onPhotoClick`),
   `SectionKpiHeader`, `EmptyStateAction`, `Datatable`, `SelectMonth`, composants `ui/`.
 
@@ -63,7 +63,7 @@ Nouveau composant shadcn : `npx shadcn-vue add <nom>` (alias configurés vers `@
 - **Dette connue** (lot C de la roadmap) :
   - `authService` / `tokenService` appellent axios directement ;
   - `apiService` renvoie des `Promise<any>` ;
-  - `CyclePage`, `MedicamentPage` et `BilanQuotidienPage` mélangent orchestration, logique et rendu.
+  - `CyclePage` et `MedicamentPage` mélangent orchestration, logique et rendu.
 
 ## Typage
 - **Aucun nouveau `any`** : typer avec les interfaces de `features/*/types`, sinon `unknown` + rétrécissement.
@@ -87,6 +87,23 @@ Nouveau composant shadcn : `npx shadcn-vue add <nom>` (alias configurés vers `@
 - Icônes Material Symbols (`<i class="material-symbols-outlined">nom</i>`) ; les correspondances type → icône vont dans
   `shared/config/materialSymbols.ts`.
 - Textes 100 % en français, dates via `useDateTimeFormat` (`fr-FR`).
+- **Jour calendaire envoyé à l'API** : jamais un `Date` à minuit (sérialisé en UTC, il glisse au jour précédent et le
+  serveur le stocke sans fuseau) ; envoyer `format(jour, "yyyy-MM-dd'T'12:00:00")` (modèle : `useSaisieBilan`).
+- **Jour calendaire reçu de l'API** : le comparer par sa clé `yyyy-MM-dd` en heure locale (`cleJour` de
+  `features/bilan-quotidien/utils/historique.ts`), jamais par timestamp.
+- Couleurs de données : une seule teinte par indicateur, sans code « bon / mauvais », et **foncé = journée plus lourde**
+  pour tous les indicateurs (douleur forte, émotions difficiles). Séries d'un même graphique de teintes et de clartés
+  bien distinctes (fatigue verte, stress orange, émotions bleu foncé).
+- Vocabulaire : parler d'**émotions agréables ou difficiles**, pas d'« humeur agréable / difficile » (« humeur difficile »
+  signifie irritable). « Humeur » ne désigne que l'ancienne saisie (Positive, Neutre, Négative) des anciens bilans.
+- Courbes à plusieurs échelles ou avec des bandes de fond (règles) : `GraphiqueLignes.vue` (SVG simple, jours non
+  renseignés non tracés) plutôt que `LineChart` (unovis), qui n'a qu'un axe et relie les trous.
+- Élément collé en bas d'écran (`sticky`/`fixed`) : sous 1024px la navigation est fixée en bas (`.navbar-side`, ~4.25rem),
+  le décaler d'autant (modèle : barre d'enregistrement de `SaisieBilan.vue`).
+- La taille de police racine grandit en desktop (20px à 1280px) : les largeurs en `rem` (`max-w-3xl`…) y sont plus
+  larges que prévu, vérifier en situation.
+- Pastilles, préréglages et chips : grilles à colonnes égales (`grid-cols-n`) plutôt que `flex-wrap`, pour des rangées
+  alignées à 375px ; libellés courts, `whitespace-nowrap` si besoin.
 - Accessibilité : labels associés aux champs, navigation clavier, cibles tactiles d'au moins 44px, contraste suffisant.
 - Jamais de `v-html` ; pour `Datatable`, ne pas rendre de texte saisi comme HTML.
 

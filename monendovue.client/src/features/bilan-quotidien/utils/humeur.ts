@@ -37,9 +37,9 @@ export interface EmotionSemaine {
 const SEUIL_MAJORITE = 0.6;
 
 const PRESENTATION_TENDANCE: Record<TendanceSemaine, { emoji: string; libelle: string }> = {
-  agreable: { emoji: '😊', libelle: 'Semaine plutôt agréable' },
-  difficile: { emoji: '😔', libelle: 'Semaine plus difficile' },
-  mitigee: { emoji: '😕', libelle: 'Semaine en demi-teinte' },
+  agreable: { emoji: '😊', libelle: 'Plutôt agréable' },
+  difficile: { emoji: '😔', libelle: 'Plus difficile' },
+  mitigee: { emoji: '😕', libelle: 'En demi-teinte' },
 };
 
 /**

@@ -52,8 +52,13 @@ dotnet ef migrations add NomEnPascalCase --project MonEndoVue.Server
 - **`DonneesTransit`** — `/transit` (ancien suivi par événements ; le suivi quotidien passe désormais par le bilan) ; **`DonneesActivitePhysique`** — `/activite`.
 - **`BilanQuotidien`** (émotions, stress, fatigue, pas, douleur moyenne, hydratation, alimentation, notes, et une catégorie
   **transit** facultative : selles avec type de Bristol 1-7, crampes d'estomac et ballonnements avec intensité) — `/bilan-quotidien`,
-  avec des objectifs bien-être réglables dans `/parametres`. Émotions : 1 à 3 **`EmotionBilan`** par bilan (table
+  avec des repères personnels réglables dans `/parametres` (stockés en `localStorage`). L'onglet « Analyse & Tendances »
+  ne donne ni score ni note : moyennes, évolution vs période précédente, repères atteints, observations factuelles
+  douleur / règles (`utils/tendances.ts`). Historique par semaine ou par mois (`GET BilanQuotidien/periode`,
+  bilans + jours de règles, carnet déduit de la session) : une seule période pilote calendrier, détail, courbes et analyse. Émotions : 1 à 3 **`EmotionBilan`** par bilan (table
   `EmotionsBilan`, type possédé chargé avec le bilan ; enum `Emotion`, libellés et tonalité dans `config/emotions.ts`).
+  Saisie en un écran (`components/saisie/`) : douleur et émotions obligatoires, stress, fatigue, pas et hydratation
+  **nullables** (null = non renseigné, jamais compté pour 0) ; **un seul bilan par jour** et aucun jour futur (409 / 400).
   Les bilans antérieurs gardent leur ancienne humeur `Mood` (`Heureuse`/`Neutre`/`Triste`) : tout calcul d'humeur passe
   par `features/bilan-quotidien/utils/humeur.ts`, qui prend en compte les deux.
 - Accueil `/` (carnet : dernières entrées), agenda `/agenda` (Google Calendar), export PDF `/export`.
@@ -167,6 +172,7 @@ Utiliser le skill `revue-securite` avant de commiter un changement touchant auth
 - `release` — préparer, livrer ou annuler une version numérotée (branche de release, CHANGELOG, tag, rollback).
 - `revue-pr` — évaluer une PR existante avant merge (conflits, fichiers parasites, migrations, cohérence front/back, impact déploiement).
 - `capitaliser` — en fin de tâche, reporter ce qui a été appris dans CLAUDE.md, les skills ou la mémoire.
+- `endometriose` — connaissance métier (maladie, parcours de soins, attentes des utilisatrices, apps existantes, ton) à consulter avant toute décision produit.
 
 ## Amélioration continue
 Objectif : que l'utilisateur n'ait jamais à répéter une consigne ou une information.
@@ -185,14 +191,20 @@ Objectif : que l'utilisateur n'ait jamais à répéter une consigne ou une infor
   `Lib.Net.Http.WebPush` (`aes128gcm`, schéma `vapid`).
 - `python` lance le stub du Microsoft Store et bloque : utiliser **node** pour les scripts ponctuels (JSON, remplacements).
 - Git Bash convertit les arguments `/xxx` en chemins : `dotnet publish … -p:UseAppHost=false` (et non `/p:`).
-- Ne jamais mettre de backticks Markdown dans une chaîne bash entre guillemets doubles (substitution de commande silencieuse) :
-  écrire ou modifier le Markdown avec les outils d'édition de fichiers.
+- Ne jamais mettre de backticks dans une chaîne bash entre guillemets doubles (substitution de commande silencieuse) :
+  Markdown, mais aussi template literals JS/TS dans un `node -e "…"` (le code est tronqué sans erreur). Écrire ces
+  contenus avec les outils d'édition de fichiers.
+- `dotnet build` lance `npm install` dans `monendovue.client/` (projet esproj) : il peut créer `node_modules` dans un
+  worktree et modifier `package-lock.json` (ex. version resynchronisée). Relire ce fichier avant de commiter.
 - Beaucoup de fichiers sont en CRLF : un script de remplacement doit normaliser (`\r\n` → `\n`) puis restaurer les fins de ligne.
 - Chemins trop longs lors d'un checkout d'anciens commits (dossier `packages/` historique) : `git -c core.longpaths=true …`.
 - **Plusieurs sessions Claude peuvent travailler en parallèle dans le même dossier** : ne jamais changer de branche,
   rebaser ou réécrire l'historique dans la copie principale sans vérifier `git status` / `git worktree list` ; travailler
   dans un worktree dédié (`git worktree add ../MonEndoVue-<sujet> -b <branche> origin/main`) puis le supprimer après merge.
 - Pas de Docker sur le poste : le build d'image n'est validé que par la CI d'une PR (job `image`, sans push).
+- `dotnet build` du serveur lance un `npm install` du client (esproj) : ne jamais le faire tourner en même temps qu'un
+  `npm ci` dans le même worktree (`node_modules` corrompu) ; un seul build à la fois par worktree.
+- `sqlcmd` : ajouter `-I` (QUOTED_IDENTIFIER) pour écrire dans une table qui a un index filtré (ex. `AspNetUsers`).
 - `gh` est authentifié (jeton dans le trousseau Windows, scopes `repo` et `workflow`) : l'utiliser pour lire PR, checks et runs.
   Si `gh auth status` signale un jeton invalide, demander à l'utilisateur de lancer lui-même
   `gh auth login -h github.com -p https -w` (connexion par navigateur) ; ne jamais demander ni manipuler de jeton.

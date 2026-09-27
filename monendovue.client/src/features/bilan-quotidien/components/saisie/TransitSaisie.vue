@@ -3,7 +3,7 @@ import { Button } from '@/shared/components/ui/button';
 import { echelleBristol, intensitesTransit } from '@/features/bilan-quotidien/config/transit';
 import type { IntensiteTransit, TransitBilan } from '@/features/bilan-quotidien/types/bilan-quotidien';
 
-// Étape « Transit » du bilan quotidien : toutes les questions sont facultatives.
+// Catégorie « Transit » du bilan quotidien : toutes les questions sont facultatives.
 // Recliquer sur la réponse sélectionnée la retire (retour à « non renseigné »).
 const transit = defineModel<TransitBilan>({ required: true });
 
@@ -40,23 +40,20 @@ const choisirIntensite = (champ: ChampIntensite, intensite: IntensiteTransit) =>
 </script>
 
 <template>
-  <div class="flex flex-col gap-6">
-    <h2 class="text-2xl font-bold flex items-center justify-center">
-      <i class="material-symbols-outlined mr-2 text-[3.2rem] leading-none">gastroenterology</i>Transit
-    </h2>
-    <p class="text-sm text-paragraph text-center -mt-4">
-      Toutes les questions sont facultatives.
+  <div class="flex flex-col gap-4">
+    <p class="font-semibold text-headline flex items-center gap-2">
+      <i class="material-symbols-outlined text-button" aria-hidden="true">gastroenterology</i>Transit
     </p>
 
     <!-- Selles -->
-    <section class="flex flex-col gap-3">
-      <h3 class="text-lg font-semibold text-headline">Des selles aujourd'hui ?</h3>
-      <div class="grid grid-cols-2 gap-3">
+    <section class="flex flex-col gap-2">
+      <h3 class="text-sm font-medium text-headline">Des selles ?</h3>
+      <div class="grid grid-cols-2 gap-2">
         <Button
             v-for="reponse in reponses"
             :key="`selles-${reponse.libelle}`"
             type="button"
-            class="h-12"
+            class="h-11"
             :variant="transit.selles === reponse.valeur ? 'selected' : 'outline'"
             :aria-pressed="transit.selles === reponse.valeur"
             @click="repondreSelles(reponse.valeur)"
@@ -65,60 +62,63 @@ const choisirIntensite = (champ: ChampIntensite, intensite: IntensiteTransit) =>
         </Button>
       </div>
 
-      <div v-if="transit.selles" class="flex flex-col gap-2">
+      <div v-if="transit.selles" class="flex flex-col gap-1.5">
         <p class="text-sm font-medium text-headline">Quel aspect ? <span class="font-normal text-paragraph">(échelle de Bristol)</span></p>
+        <!-- Lignes compactes : la description n'apparaît que pour le type choisi. -->
         <button
             v-for="bristol in echelleBristol"
             :key="bristol.type"
             type="button"
             :aria-pressed="transit.typeBristol === bristol.type"
             :class="[
-              'flex items-start gap-3 p-3 rounded-xl border-2 text-left transition-all duration-200',
+              'flex items-start gap-2.5 min-h-[44px] px-2.5 py-2 rounded-xl border text-left transition-colors',
               transit.typeBristol === bristol.type
-                ? 'border-button bg-button/15 shadow-sm'
+                ? 'border-button bg-button/15'
                 : 'border-gray-200 bg-white hover:border-button/50'
             ]"
             @click="choisirBristol(bristol.type)"
         >
           <span
               :class="[
-                'shrink-0 w-9 h-9 rounded-full flex items-center justify-center font-bold',
+                'shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-sm font-bold',
                 transit.typeBristol === bristol.type ? 'bg-button text-white' : 'bg-gray-100 text-headline'
               ]"
           >
             {{ bristol.type }}
           </span>
-          <span class="flex flex-col gap-0.5">
-            <span class="font-semibold text-headline">{{ bristol.titre }}</span>
-            <span class="text-sm text-paragraph">{{ bristol.description }}</span>
-            <span class="text-xs text-paragraph/70 italic">{{ bristol.tendance }}</span>
+          <span class="flex flex-col min-w-0 flex-1 pt-0.5">
+            <span class="flex flex-col">
+              <span class="text-sm font-semibold text-headline">{{ bristol.titre }}</span>
+              <span class="text-xs text-paragraph/80 italic">{{ bristol.tendance }}</span>
+            </span>
+            <span v-if="transit.typeBristol === bristol.type" class="text-xs text-paragraph mt-0.5">{{ bristol.description }}</span>
           </span>
         </button>
         <button
             type="button"
             :aria-pressed="transit.typeBristol === null"
             :class="[
-              'p-3 rounded-xl border-2 text-sm transition-all duration-200',
+              'min-h-[44px] px-3 rounded-xl border text-sm transition-colors',
               transit.typeBristol === null ? 'border-button bg-button/15' : 'border-gray-200 bg-white hover:border-button/50'
             ]"
             @click="choisirBristol(null)"
         >
-          Je préfère ne pas renseigner l'aspect
+          Je préfère ne pas préciser l'aspect
         </button>
       </div>
     </section>
 
     <!-- Crampes et ballonnements -->
-    <section v-for="symptome in symptomes" :key="symptome.cle" class="flex flex-col gap-3">
-      <h3 class="text-lg font-semibold text-headline flex items-center gap-2">
-        <i class="material-symbols-outlined text-button">{{ symptome.icone }}</i>{{ symptome.question }}
+    <section v-for="symptome in symptomes" :key="symptome.cle" class="flex flex-col gap-2">
+      <h3 class="text-sm font-medium text-headline flex items-center gap-2">
+        <i class="material-symbols-outlined text-button text-xl" aria-hidden="true">{{ symptome.icone }}</i>{{ symptome.question }}
       </h3>
-      <div class="grid grid-cols-2 gap-3">
+      <div class="grid grid-cols-2 gap-2">
         <Button
             v-for="reponse in reponses"
             :key="`${symptome.cle}-${reponse.libelle}`"
             type="button"
-            class="h-12"
+            class="h-11"
             :variant="transit[symptome.cle] === reponse.valeur ? 'selected' : 'outline'"
             :aria-pressed="transit[symptome.cle] === reponse.valeur"
             @click="repondreSymptome(symptome.cle, symptome.intensite, reponse.valeur)"
@@ -142,7 +142,7 @@ const choisirIntensite = (champ: ChampIntensite, intensite: IntensiteTransit) =>
           </Button>
         </div>
         <p v-if="!transit[symptome.intensite]" class="text-xs text-paragraph italic">
-          Choisis une intensité pour continuer.
+          Choisis une intensité pour pouvoir enregistrer.
         </p>
       </div>
     </section>

@@ -3,6 +3,34 @@
 Toutes les évolutions notables de MonEndo. Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/),
 versions en [SemVer](https://semver.org/lang/fr/) (voir la section Déploiement de `CLAUDE.md`).
 
+## [1.1.0] - 2026-09-27
+
+### Ajouté
+- Bilan quotidien : un bilan déjà enregistré, y compris un bilan passé, peut être modifié ou complété (bouton
+  « Modifier » sur le détail du jour). Quitter une saisie non enregistrée demande une confirmation.
+- Bilan quotidien : bouton « Comme hier » qui reprend le transit, l'alimentation, les pas et l'hydratation de la veille.
+- Bilan quotidien : historique par semaine ou par mois. Un calendrier montre chaque jour en couleur selon la douleur
+  ou les émotions, avec les jours de règles et les jours sans bilan ; les courbes séparent la douleur (0 à 10) de la
+  fatigue, du stress et des émotions (0 à 5) et affichent les règles en fond.
+
+### Modifié
+- Bilan quotidien rempli sur un seul écran : seules la douleur et les émotions sont nécessaires (deux touchers suffisent).
+  Fatigue et stress se choisissent en pastilles ; transit, alimentation, pas et hydratation (avec des choix rapides)
+  sont regroupés dans un bloc « Corps » facultatif, les notes dans un bloc à part.
+- Une mesure non renseignée reste vide au lieu de valoir 0 : les moyennes, objectifs, graphiques et l'export PDF ne
+  comptent que les valeurs réellement saisies.
+- Un seul bilan par jour, et pas de bilan pour un jour à venir.
+- Bilan quotidien : une seule navigation dans le temps pilote toute la page, onglet « Analyse & Tendances » compris
+  (fin des sélecteurs de semaine séparés).
+- Bilan quotidien, « Analyse & Tendances » : le score de bien-être sur 100 et ses couleurs rouge / orange / vert sont
+  remplacés par des tendances neutres. Chaque indicateur affiche sa moyenne et son évolution par rapport à la semaine
+  ou au mois précédent, les repères personnels indiquent le nombre de jours où ils sont atteints, et des observations
+  factuelles rapprochent les jours de douleur des jours de règles.
+- Paramètres : les objectifs bien-être deviennent des « repères personnels ».
+
+### Corrigé
+- Un bilan rempli pour un jour passé pouvait s'afficher la veille du jour choisi.
+
 ## [1.0.1] - 2026-09-26
 
 ### Corrigé

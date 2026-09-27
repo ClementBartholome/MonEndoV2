@@ -155,6 +155,12 @@ Regles:
 - [ ] Comparaison glissante 4 semaines
 - [x] Suivi photo acné en fenetre glissante multi-mois (comparaison visuelle au-dela du mois courant)
 - [x] Humeur du bilan en emotions multiples (1 a 3 parmi 10) et emotion de la semaine (issue #2) ; anciens bilans conserves
+- [x] Bilan quotidien en un ecran (douleur et emotions obligatoires, le reste facultatif et null si non renseigne,
+  « Comme hier ») et modification d'un bilan passe, un seul bilan par jour (issues #11, #14)
+- [x] Historique des bilans par semaine ou par mois : calendrier (douleur ou emotions, jours de regles), courbes sur deux
+  echelles avec les regles en fond, une seule periode pour toute la page (issue #12)
+- [x] Tendances neutres a la place du score de bien-etre : moyenne et evolution par indicateur vs periode precedente,
+  reperes personnels, observations factuelles douleur / regles (issue #13)
 
 ### Lot C - Engineering quality
 - [ ] Suppression progressive des `any` critiques
@@ -165,7 +171,7 @@ Regles:
 - [ ] SOLID serveur : abstraction du stockage des photos (`AzureBlobStorageService`) pour tester l'upload sans Azure (pas d'interface pour `TokenService` : KISS)
 - [ ] SOLID serveur : `TimeProvider` a la place de `DateTime.Now` (authentification)
 - [ ] SOLID client : `authService` / `tokenService` via l'instance axios de `apiService`, methodes `apiService` typees
-- [ ] SOLID client : decoupage de `CyclePage`, `MedicamentPage`, `BilanQuotidienPage` (pattern model/actions)
+- [ ] SOLID client : decoupage de `CyclePage`, `MedicamentPage` (pattern model/actions) ; `BilanQuotidienPage` fait (1.1.0)
 
 ### Lot D - Security baseline
 - [x] Rate limiting endpoint-level (politique `auth` reellement appliquee aux endpoints d'authentification, 2026-09)

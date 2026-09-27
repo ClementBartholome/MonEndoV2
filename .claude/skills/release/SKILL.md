@@ -25,6 +25,14 @@ Rappel : **merger sur `main` = déployer en production** (migrations EF appliqu�
 
 ## Valider
 - Test local de bout en bout de la branche complète (procédure du `CLAUDE.md` racine), migrations comprises.
+- Migrations de la version testées sur une **base jetable** (jamais la base de dev) :
+  1. `dotnet ef database update <dernière migration de main>` avec `--connection "…Database=MonEndo_RecetteXYZ…"` ;
+  2. insérer au `sqlcmd -I` des lignes représentatives des données existantes ;
+  3. `dotnet ef database update`, puis vérifier les données, les nouvelles règles, `dotnet ef migrations has-pending-model-changes`
+     et la requête de retour arrière de la section « Annuler » ;
+  4. supprimer la base (`DROP DATABASE`).
+- Revue sécurité et revue de justesse du diff `origin/main...release/X.Y.Z` : sur un gros diff, les confier à deux subagents
+  en parallèle (lecture seule), puis recouper chaque constat dans le code avant de le retenir.
 - Skill `revue-pr` sur la PR `release/X.Y.Z` → `main` : liste des migrations (additives ?), impact du déploiement,
   actions manuelles sur le VPS (configuration, secrets) à faire **avant** le merge.
 
@@ -49,4 +57,9 @@ Points d'attention connus :
   `UPDATE BilansQuotidiens SET Mood = 'Neutre' WHERE Mood IS NULL` (sans effet sur la 1.0.0 et suivantes, où les émotions
   priment sur `Mood`). Les réglages de rappel modifiés depuis la 1.0.0 ne sont pas vus par l'ancienne image
   (elle relit `PreferencesRappel`).
+- **Retour à une image antérieure à la 1.1.0** : `StressPro`, `StressPerso`, `Fatigue`, `Pas` et `Hydratation` sont
+  nullables depuis la 1.1.0 (migration `RendFacultativesMesuresBilan`), l'ancienne image plante sur une valeur nulle.
+  Avant de repointer l'image, exécuter sur la base de prod
+  `UPDATE BilansQuotidiens SET StressPro = ISNULL(StressPro, 0), StressPerso = ISNULL(StressPerso, 0), Fatigue = ISNULL(Fatigue, 0), Pas = ISNULL(Pas, 0), Hydratation = ISNULL(Hydratation, 0)`
+  (les anciennes versions comptaient de toute façon une valeur absente pour 0 ; la distinction « non renseigné » est perdue).
 - Toute version qui rend un champ nullable ou supprime une table ajoute ici sa propre consigne de retour arrière.

@@ -1,920 +1,168 @@
-﻿<template>
+<script setup lang="ts">
+import { computed, onMounted, ref } from 'vue';
+import { format, isAfter, isToday, startOfDay, subDays } from 'date-fns';
+import { fr } from 'date-fns/locale';
+import BackButton from '@/shared/components/BackButton.vue';
+import { Button } from '@/shared/components/ui/button';
+import { Card, CardContent } from '@/shared/components/ui/card';
+import { Skeleton } from '@/shared/components/ui/skeleton';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui/tabs';
+import { useToast } from '@/shared/components/ui/toast';
+import { useAuthStore } from '@/features/auth/store/auth';
+import SaisieBilan from '@/features/bilan-quotidien/components/saisie/SaisieBilan.vue';
+import BilanDuJourCard from '@/features/bilan-quotidien/components/BilanDuJourCard.vue';
+import AnalyseTendances from '@/features/bilan-quotidien/components/AnalyseTendances.vue';
+import EmotionSemaineCard from '@/features/bilan-quotidien/components/EmotionSemaineCard.vue';
+import CalendrierBilans from '@/features/bilan-quotidien/components/historique/CalendrierBilans.vue';
+import CourbesBilans from '@/features/bilan-quotidien/components/historique/CourbesBilans.vue';
+import SelecteurPeriode from '@/features/bilan-quotidien/components/historique/SelecteurPeriode.vue';
+import { useHistoriqueBilans } from '@/features/bilan-quotidien/composables/useHistoriqueBilans';
+import { calculerTendances } from '@/features/bilan-quotidien/utils/tendances';
+import { getWellbeingGoals } from '@/shared/services/wellbeingGoalsStorage';
+import type { BilanQuotidien } from '@/features/bilan-quotidien/types/bilan-quotidien';
+
+const carnetSanteId = useAuthStore().user!.carnetSanteId;
+const { toast } = useToast();
+const { model, actions, bilanDu, chargerJours, enregistrerLocalement } = useHistoriqueBilans();
+
+const isLoading = ref(true);
+
+/** Saisie ouverte : création pour un jour, ou modification d'un bilan existant. */
+interface SaisieOuverte {
+  date: Date;
+  bilan?: BilanQuotidien;
+}
+const saisie = ref<SaisieOuverte | null>(null);
+// Chaque ouverture recrée le formulaire (clé) pour repartir de l'état du bilan choisi.
+const cleSaisie = ref(0);
+
+const ouvrirSaisie = async (date: Date) => {
+  const jour = startOfDay(date);
+  try {
+    // La veille peut tomber hors de la période affichée : la charger pour « Comme hier ».
+    await chargerJours(subDays(jour, 1), jour);
+  } catch {
+    toast({ title: 'Erreur', description: 'Impossible de charger ce bilan. Réessaie dans un instant.', variant: 'destructive' });
+    return;
+  }
+  saisie.value = { date: jour, bilan: bilanDu(jour) };
+  cleSaisie.value++;
+  window.scrollTo({ top: 0 });
+};
+
+const bilanVeille = computed(() => (saisie.value ? bilanDu(subDays(saisie.value.date, 1)) : undefined));
+
+const apresEnregistrement = (bilan: BilanQuotidien) => {
+  enregistrerLocalement(bilan);
+  if (saisie.value) actions.selectionnerJour(saisie.value.date);
+  saisie.value = null;
+};
+
+onMounted(async () => {
+  const aujourdhui = startOfDay(new Date());
+  await actions.recharger();
+  // Pas encore de bilan aujourd'hui : on ouvre directement la saisie (rappel du soir).
+  if (!model.value.erreur && !bilanDu(aujourdhui)) await ouvrirSaisie(aujourdhui);
+  isLoading.value = false;
+});
+
+// --- Consultation ---
+const jourSelectionne = computed(() => model.value.jourSelectionne);
+const bilanSelectionne = computed(() => bilanDu(jourSelectionne.value) ?? null);
+
+const titreJour = computed(() =>
+  isToday(jourSelectionne.value) ? "Aujourd'hui" : format(jourSelectionne.value, 'EEEE d MMMM', { locale: fr }));
+
+const jourAVenir = computed(() => isAfter(jourSelectionne.value, startOfDay(new Date())));
+
+// --- Analyse ---
+const reperes = getWellbeingGoals();
+const tendances = computed(() => calculerTendances(model.value.jours, model.value.bilansPrecedents, reperes));
+</script>
+
+<template>
   <div class="flex-column-container !gap-1">
     <div class="flex items-center justify-between w-full">
       <BackButton class="!w-1/4"/>
-      <p v-if="justSubmitted" class="text-lg text-center flex items-center gap-2 justify-center ml-4 w-full">
-        Bilan quotidien enregistré <i class="material-symbols-outlined check-icon mr-2">check_circle</i>
-      </p>
     </div>
 
     <div v-if="isLoading" class="flex flex-col space-y-3 p-6 pt-0">
       <Skeleton class="h-[300px] w-full mt-4 rounded-xl"/>
     </div>
 
-    <section v-else v-if="!isSubmitted"
-             class="container !mt-0 mx-auto py-8 w-full bg-clearer rounded-3xl shadow-xl ml-auto flex flex-col h-auto">
+    <SaisieBilan
+        v-else-if="saisie"
+        :key="cleSaisie"
+        :carnet-sante-id="carnetSanteId"
+        :date="saisie.date"
+        :bilan="saisie.bilan"
+        :bilan-veille="bilanVeille"
+        annulable
+        @enregistre="apresEnregistrement"
+        @annule="saisie = null"
+    />
 
-      <div class="mb-6">
-        <div class="flex justify-between mb-2">
-          <span class="text-sm font-medium">Étape {{ currentStep }}/{{ TOTAL_STEPS }}</span>
-          <span class="text-sm text-gray-500">{{ Math.round((currentStep / TOTAL_STEPS) * 100) }}%</span>
-        </div>
-        <Progress :model-value="(currentStep / TOTAL_STEPS) * 100" class="h-3 mb-4"/>
+    <div v-else class="w-full">
+      <SelecteurPeriode
+          class="mt-2"
+          :periode="model.periode"
+          @changer-mode="actions.changerMode"
+          @precedente="actions.precedente"
+          @suivante="actions.suivante"
+          @aujourdhui="actions.revenirAujourdhui"
+      />
 
-        <div class="flex justify-between gap-2 bilan-stepper">
-          <button
-              v-for="step in TOTAL_STEPS"
-              :key="step"
-              @click="goToStep(step)"
-              :disabled="!canAccessStep(step)"
-              :class="[
-                'w-10 h-10 rounded-full flex items-center justify-center text-sm font-medium transition-all duration-200',
-                step < currentStep ? 'bg-green-500 text-white hover:bg-green-600 cursor-pointer' : '',
-                step === currentStep ? 'bg-button text-white ring-button/30 scale-110' : '',
-                step > currentStep ? 'bg-gray-200 text-gray-400 cursor-not-allowed' : '',
-                canAccessStep(step) && step !== currentStep ? 'hover:scale-105' : ''
-              ]"
-              class="bilan-step-dot"
-              :title="getStepTitle(step)"
-          >
-            <i v-if="step < currentStep" class="material-symbols-outlined text-base">check</i>
-            <span v-else>{{ step }}</span>
-          </button>
-        </div>
+      <div v-if="model.erreur" class="flex flex-col items-center gap-3 text-center py-6" role="alert">
+        <p class="text-paragraph">Les bilans de cette période n'ont pas pu être chargés.</p>
+        <Button type="button" variant="outline" class="h-11" @click="actions.recharger">Réessayer</Button>
       </div>
 
-      <!-- Étape 1: Émotions -->
-      <EmotionsStep v-if="currentStep === 1" v-model="formData.emotions"/>
-
-      <!-- Étape 2: Stress -->
-      <div v-if="currentStep === 2">
-        <h2 class="text-2xl font-bold mb-14 flex items-center justify-center">
-          <i class="material-symbols-outlined mr-2">psychology</i>Niveau de stress
-        </h2>
-        <div class="mb-10">
-          <div class="flex justify-between items-center mb-2">
-            <h3 class="text-xl font-semibold flex items-center">
-              <i class="material-symbols-outlined mr-2">work</i> Vie pro
-            </h3>
-            <span class="text-2xl font-bold text-button">{{ formData.stressPro[0] }}/5</span>
-          </div>
-          <Slider v-model="formData.stressPro" :min="0" :max="5" :step="1"/>
-          <div class="flex justify-between text-sm text-gray-500 mt-1">
-            <span>Aucun stress</span>
-            <span>Stress maximum</span>
-          </div>
-        </div>
-        <div class="mb-10">
-          <div class="flex justify-between items-center mb-2">
-            <h3 class="text-xl font-semibold flex items-center">
-              <i class="material-symbols-outlined mr-2">home</i> Vie perso
-            </h3>
-            <span class="text-2xl font-bold text-button">{{ formData.stressPerso[0] }}/5</span>
-          </div>
-          <Slider v-model="formData.stressPerso" :min="0" :max="5" :step="1"/>
-          <div class="flex justify-between text-sm text-gray-500 mt-1">
-            <span>Aucun stress</span>
-            <span>Stress maximum</span>
-          </div>
-        </div>
-      </div>
-
-      <!-- Étape 3: Fatigue -->
-      <div v-if="currentStep === 3">
-        <h2 class="text-2xl font-bold mb-8 flex items-center justify-center">
-          <i class="material-symbols-outlined mr-2">bedtime</i>Niveau de fatigue
-        </h2>
-        <div class="mb-10">
-          <div class="flex justify-between items-center mb-2">
-            <span class="text-lg font-medium">Niveau actuel</span>
-            <span class="text-2xl font-bold text-button">{{ formData.fatigue[0] }}/5</span>
-          </div>
-          <Slider v-model="formData.fatigue" :min="0" :max="5" :step="1"/>
-          <div class="flex justify-between text-sm text-gray-500 mt-1">
-            <span>En pleine forme</span>
-            <span>Épuisée</span>
-          </div>
-        </div>
-      </div>
-
-      <!-- Étape 4: Pas -->
-      <div v-if="currentStep === 4" class="flex flex-col items-center">
-        <h2 class="text-2xl font-bold mb-6 flex items-center">
-          <i class="material-symbols-outlined mr-2">directions_walk</i>Nombre de pas
-        </h2>
-        <FormField name="pas">
-          <round-slider
-              v-model="formData.pas"
-              start-angle="315"
-              end-angle="+270"
-              line-cap="round"
-              radius="120"
-              @input="value => formData.pas = value"
-              :tooltip-format="value => `${value.value} pas`"
-          />
-        </FormField>
-      </div>
-
-      <!-- Étape 5: Hydratation -->
-      <div v-if="currentStep === 5" class="flex flex-col items-center">
-        <h2 class="text-2xl font-bold mb-6 flex items-center">
-          <i class="material-symbols-outlined mr-2">local_drink</i>Hydratation
-        </h2>
-        <FormField name="hydratation">
-          <round-slider
-              v-model="formData.hydratation"
-              start-angle="315"
-              end-angle="+270"
-              line-cap="round"
-              radius="120"
-              max="2.5"
-              step="0.1"
-              @input="value => formData.hydratation = value"
-              :tooltip-format="value => `${value.value} L`"
-          />
-        </FormField>
-      </div>
-
-      <!-- Étape 6: Alimentation -->
-      <div v-if="currentStep === 6" class="flex flex-col">
-        <h2 class="text-2xl font-bold mb-8 flex items-center justify-center">
-          <i class="material-symbols-outlined mr-2">restaurant</i>Alimentation
-        </h2>
-
-        <FormField name="alimentation">
-          <FormItem class="mb-6">
-            <FormLabel class="text-lg font-semibold mb-4 block">
-              Consommations du jour
-            </FormLabel>
-            <div class="space-y-2">
-              <label
-                  v-for="item in dietOptions"
-                  :key="item.key"
-                  :class="[
-                    'flex items-center p-3 rounded-xl cursor-pointer transition-all duration-200 border-2',
-                    formData[item.key] 
-                      ? 'border-button bg-button/15 shadow-sm' 
-                      : 'border-gray-200 bg-white hover:border-button/50 hover:bg-button/5'
-                  ]"
-              >
-                <input
-                    type="checkbox"
-                    v-model="formData[item.key]"
-                    class="peer sr-only"
-                >
-                <span :class="[
-                  'w-5 h-5 rounded border-2 transition-all duration-200 flex items-center justify-center mr-3',
-                  formData[item.key] 
-                    ? 'bg-button border-button' 
-                    : 'bg-white border-gray-300 peer-hover:border-button/50'
-                ]">
-                  <i v-if="formData[item.key]" class="material-symbols-outlined text-white text-sm">check</i>
-                </span>
-
-                <span :class="[
-                  'w-10 h-10 rounded-full flex items-center justify-center mr-3 transition-all',
-                  formData[item.key] ? 'bg-button/20' : 'bg-gray-100'
-                ]">
-                  <i :class="[
-                    'material-symbols-outlined text-xl',
-                    formData[item.key] ? 'text-button' : 'text-paragraph'
-                  ]">
-                    {{ item.icon }}
-                  </i>
-                </span>
-
-                <span :class="[
-                  'font-medium transition-colors',
-                  formData[item.key] ? 'text-headline' : 'text-paragraph'
-                ]">
-                  {{ item.label }}
-                </span>
-              </label>
-            </div>
-          </FormItem>
-        </FormField>
-
-        <FormField name="commentaire">
-          <FormItem>
-            <FormLabel class="flex items-center gap-2 mb-3">
-              <i class="material-symbols-outlined text-button">edit_note</i>
-              <span class="text-lg font-semibold text-headline">Notes personnelles</span>
-              <span class="text-sm text-paragraph italic font-normal">(optionnel)</span>
-            </FormLabel>
-
-            <div class="relative">
-              <textarea
-                  v-model="formData.commentaire"
-                  placeholder="Ajoute des détails sur ton alimentation, ton ressenti, des événements particuliers..."
-                  class="w-full p-4 rounded-xl border-2 border-gray-200 focus:border-button transition-all duration-200 resize-y min-h-[160px] bg-form-input text-paragraph placeholder:text-form-placeholder/60"
-                  :class="{ 'border-button bg-button/5': formData.commentaire }"
-                  :maxlength="COMMENTAIRE_MAX"
-              ></textarea>
-
-              <div class="absolute bottom-2 right-3 text-xs text-paragraph/60">
-                {{ formData.commentaire.length }}/{{ COMMENTAIRE_MAX }}
-              </div>
-            </div>
-          </FormItem>
-        </FormField>
-      </div>
-
-      <!-- Étape 7: Douleur -->
-      <div v-if="currentStep === 7">
-        <h2 class="text-2xl font-bold mb-8 flex items-center justify-center">
-          <i class="material-symbols-outlined mr-2">sick</i>Douleur
-        </h2>
-        <div class="mb-10">
-          <div class="flex justify-between items-center mb-2">
-            <span class="text-lg font-medium">Niveau de douleur</span>
-            <span class="text-2xl font-bold text-button">{{ formData.douleurMoyenne[0] }}/10</span>
-          </div>
-          <Slider v-model="formData.douleurMoyenne" :min="0" :max="10" :step="1"/>
-          <div class="flex justify-between text-sm text-gray-500 mt-1">
-            <span>Aucune douleur</span>
-            <span>Douleur maximale</span>
-          </div>
-        </div>
-      </div>
-
-      <!-- Étape 8: Transit -->
-      <TransitStep v-if="currentStep === 8" v-model="transitData"/>
-
-      <!-- Boutons de navigation -->
-      <div class="mt-auto flex justify-between pt-6">
-        <Button
-            @click="prevStep"
-            v-if="currentStep > 1"
-            variant="outline"
-            class="flex items-center gap-2"
-        >
-          <i class="material-symbols-outlined">arrow_back</i>
-          Précédent
-        </Button>
-        <div v-else></div>
-
-        <Button
-            @click="nextStep"
-            v-if="currentStep < TOTAL_STEPS"
-            :disabled="!isStepValid"
-            variant="custom"
-            class="flex items-center gap-2"
-        >
-          Suivant
-          <i class="material-symbols-outlined">arrow_forward</i>
-        </Button>
-        <Button
-            @click="submitForm"
-            v-if="currentStep === TOTAL_STEPS"
-            variant="custom"
-            :disabled="!isStepValid"
-            class="flex items-center gap-2"
-        >
-          <i class="material-symbols-outlined">check_circle</i>
-          Soumettre
-        </Button>
-      </div>
-    </section>
-
-    <!-- Section après soumission avec onglets -->
-    <div v-if="isSubmitted" class="w-full">
-      <Tabs default-value="recap" class="w-full">
+      <Tabs v-else default-value="historique" class="w-full mt-4" :class="{ 'opacity-60': model.chargement }"
+            :aria-busy="model.chargement">
         <TabsList class="bilan-tabs-list">
-          <TabsTrigger value="recap" class="bilan-tab-trigger">Récapitulatif & Historique</TabsTrigger>
-          <TabsTrigger value="dashboard" class="bilan-tab-trigger">Analyse & Tendances</TabsTrigger>
+          <TabsTrigger value="historique" class="bilan-tab-trigger">Historique</TabsTrigger>
+          <TabsTrigger value="analyse" class="bilan-tab-trigger">Analyse & Tendances</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="recap">
-          <div class="confirmation-message w-full">
+        <TabsContent value="historique">
+          <Card class="container mt-4 mx-auto w-full bg-clearer rounded-3xl shadow-xl flex flex-col">
+            <CardContent class="p-3 md:p-6">
+              <CalendrierBilans
+                  :jours="model.jours"
+                  :mode="model.periode.mode"
+                  :jour-selectionne="jourSelectionne"
+                  @selectionner="actions.selectionnerJour"
+              />
+            </CardContent>
+          </Card>
 
-            <Card class="container mt-4 mx-auto w-full bg-clearer rounded-3xl shadow-xl ml-auto flex flex-col">
-              <CardContent>
-                <BilanWeekSelector
-                    :bilans="bilans"
-                    :selectedDate="selectedDate"
-                    @update:selectedDate="handleDateSelection"
-                />
-              </CardContent>
-            </Card>
+          <BilanDuJourCard
+              :titre="titreJour"
+              :bilan="bilanSelectionne"
+              :a-venir="jourAVenir"
+              @modifier="ouvrirSaisie(jourSelectionne)"
+              @remplir="ouvrirSaisie(jourSelectionne)"
+          />
 
-            <!-- Section Bilan du jour sélectionné -->
-            <Card class="container mt-4 mx-auto w-full bg-clearer rounded-3xl shadow-xl ml-auto flex flex-col">
-              <CardHeader>
-                <CardTitle class="flex items-center">
-                  {{ selectedDateTitle }}
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div v-if="selectedBilan">
-                  <div class="grid grid-cols-2 md:grid-cols-3 gap-2 mb-4">
-                    <HumeurResume :bilan="selectedBilan" class="col-span-2 md:col-span-3"/>
-                    <div class="bg-white rounded-xl border border-gray-100 p-3">
-                      <p class="text-xs text-muted-foreground flex items-center gap-1">
-                        <i class="material-symbols-outlined text-base">psychology</i>
-                        Stress moyen
-                      </p>
-                      <p class="text-base font-semibold text-headline mt-1">{{ selectedBilanStress }}</p>
-                    </div>
-                    <div class="bg-white rounded-xl border border-gray-100 p-3">
-                      <p class="text-xs text-muted-foreground flex items-center gap-1">
-                        <i class="material-symbols-outlined text-base">bedtime</i>
-                        Fatigue
-                      </p>
-                      <p class="text-base font-semibold text-headline mt-1">{{ selectedBilan.fatigue }}/5</p>
-                    </div>
-                    <div class="bg-white rounded-xl border border-gray-100 p-3">
-                      <p class="text-xs text-muted-foreground flex items-center gap-1">
-                        <i class="material-symbols-outlined text-base">sick</i>
-                        Douleur
-                      </p>
-                      <p class="text-base font-semibold text-headline mt-1">{{ selectedBilan.douleurMoyenne }}/10</p>
-                    </div>
-                    <div class="bg-white rounded-xl border border-gray-100 p-3">
-                      <p class="text-xs text-muted-foreground flex items-center gap-1">
-                        <i class="material-symbols-outlined text-base">footprint</i>
-                        Pas
-                      </p>
-                      <p class="text-base font-semibold text-headline mt-1">{{ selectedBilan.pas }}</p>
-                    </div>
-                    <div class="bg-white rounded-xl border border-gray-100 p-3">
-                      <p class="text-xs text-muted-foreground flex items-center gap-1">
-                        <i class="material-symbols-outlined text-base">water_drop</i>
-                        Hydratation
-                      </p>
-                      <p class="text-base font-semibold text-headline mt-1">{{ selectedBilan.hydratation }} L</p>
-                    </div>
-                  </div>
+          <EmotionSemaineCard :bilans="model.bilans" :mode="model.periode.mode"/>
 
-                  <div class="bg-white rounded-xl border border-gray-100 p-3 mb-3">
-                    <p class="text-xs text-muted-foreground flex items-center gap-1 mb-2">
-                      <i class="material-symbols-outlined text-base">restaurant</i>
-                      Alimentation
-                    </p>
-                    <div class="flex flex-wrap gap-2">
-                      <span v-if="selectedBilan.gluten"
-                            class="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-orange-100 text-orange-700 text-xs"
-                            title="Consommation de gluten">
-                        <i class="material-symbols-outlined text-sm">bakery_dining</i>
-                        Gluten
-                      </span>
-                      <span v-if="selectedBilan.lactose"
-                            class="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-blue-100 text-blue-700 text-xs"
-                            title="Consommation de lactose">
-                        <i class="material-symbols-outlined text-sm">icecream</i>
-                        Lactose
-                      </span>
-                      <span v-if="selectedBilan.grignotage"
-                            class="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-purple-100 text-purple-700 text-xs"
-                            title="Grignotage dans la journée">
-                        <i class="material-symbols-outlined text-sm">cookie</i>
-                        Grignotage
-                      </span>
-                      <span v-if="!selectedBilan.gluten && !selectedBilan.lactose && !selectedBilan.grignotage"
-                            class="text-gray-500 italic text-sm">
-                        Aucune consommation signalée
-                      </span>
-                    </div>
-                  </div>
-
-                  <TransitRecap :bilan="selectedBilan"/>
-
-                  <div v-if="selectedBilan.commentaire" class="bg-white rounded-xl border border-gray-100 p-3">
-                    <p class="text-xs text-muted-foreground flex items-center gap-1 mb-1">
-                      <i class="material-symbols-outlined text-base">comment</i>
-                      Commentaire
-                    </p>
-                    <p class="text-sm text-paragraph">{{ selectedBilan.commentaire }}</p>
-                  </div>
-                </div>
-                <div v-else class="text-center py-8">
-                  <div class="flex flex-col items-center gap-4">
-                    <i class="material-symbols-outlined text-6xl text-gray-300">event_busy</i>
-                    <div>
-                      <p class="text-xl font-semibold text-headline mb-2">
-                        Aucun bilan pour cette date
-                      </p>
-                    </div>
-
-                    <Button
-                        @click="fillBilanForDate(selectedDate)"
-                        variant="custom"
-                        size="lg"
-                        class="flex items-center gap-2"
-                    >
-                      <i class="material-symbols-outlined">add_circle</i>
-                      Remplir le bilan pour ce jour
-                    </Button>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <EmotionSemaineCard :bilans="filteredBilans"/>
-
-            <!-- Section Historique avec graphique -->
-            <Card class="container !mx-0 mt-4 w-full bg-clearer rounded-3xl shadow-xl ml-auto flex flex-col">
-              <CardHeader>
-                <CardTitle class="flex items-center">
-                  <i class="material-symbols-outlined mr-2">show_chart</i> Évolution hebdomadaire
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <SelectWeek v-model="selectedWeekYear" @update:years="handleUpdateYears" class="text-left"/>
-                <LineChart
-                    :data="chartData"
-                    :categories="['stress', 'fatigue', 'humeur', 'douleur']"
-                    index="date"
-                    :colors="['#ff6b6b', '#4ecdc4', '#ffa726', '#8e44ad']"
-                    :yFormatter="(value) => `${value}`"
-                    :yDomain="[0, 10]"
-                />
-              </CardContent>
-            </Card>
-          </div>
+          <CourbesBilans
+              :jours="model.jours"
+              :mode="model.periode.mode"
+              :jour-selectionne="jourSelectionne"
+              @selectionner="actions.selectionnerJour"
+          />
         </TabsContent>
 
-        <TabsContent value="dashboard">
-          <DashboardBilanQuotidien :bilans="bilans"/>
+        <TabsContent value="analyse">
+          <AnalyseTendances :tendances="tendances" :mode="model.periode.mode"/>
         </TabsContent>
       </Tabs>
     </div>
   </div>
 </template>
 
-
-<script setup lang="ts">
-import {ref, computed, watch, onMounted} from 'vue';
-import {Button} from '@/shared/components/ui/button';
-import {Progress} from '@/shared/components/ui/progress';
-import {Slider} from '@/shared/components/ui/slider';
-import BackButton from "@/shared/components/BackButton.vue";
-import {Card, CardContent, CardHeader, CardTitle} from "@/shared/components/ui/card";
-import {format, startOfWeek, isToday} from 'date-fns';
-import {fr} from 'date-fns/locale';
-import {LineChart} from "@/shared/components/ui/chart-line";
-import SelectWeek from "@/shared/components/SelectWeek.vue";
-import {FormField, FormItem, FormLabel} from "@/shared/components/ui/form";
-import RoundSlider from "@/shared/components/CircularSlider.vue";
-import {Input} from "@/shared/components/ui/input";
-import apiService from "@/shared/services/apiService";
-import {useAuthStore} from "@/features/auth/store/auth";
-import {Skeleton} from "@/shared/components/ui/skeleton";
-import type {BilanQuotidien} from "@/features/bilan-quotidien/types/bilan-quotidien";
-import DashboardBilanQuotidien from "@/features/bilan-quotidien/components/DashboardBilanQuotidien.vue";
-import {Tabs, TabsContent, TabsList, TabsTrigger} from "@/shared/components/ui/tabs";
-import BilanWeekSelector from "@/features/bilan-quotidien/components/BilanWeekSelector.vue";
-import {toast} from "@/shared/components/ui/toast";
-import TransitStep from "@/features/bilan-quotidien/components/TransitStep.vue";
-import TransitRecap from "@/features/bilan-quotidien/components/TransitRecap.vue";
-import {estTransitComplet, transitVide} from "@/features/bilan-quotidien/config/transit";
-import EmotionsStep from "@/features/bilan-quotidien/components/EmotionsStep.vue";
-import HumeurResume from "@/features/bilan-quotidien/components/HumeurResume.vue";
-import EmotionSemaineCard from "@/features/bilan-quotidien/components/EmotionSemaineCard.vue";
-import {COMMENTAIRE_MAX} from "@/features/bilan-quotidien/config/emotions";
-import {scoreHumeur} from "@/features/bilan-quotidien/utils/humeur";
-import type {CodeEmotion} from "@/features/bilan-quotidien/types/bilan-quotidien";
-
-const TOTAL_STEPS = 8;
-
-const currentStep = ref(1);
-const isSubmitted = ref(false);
-const justSubmitted = ref(false);
-const carnetSanteId = useAuthStore().user!.carnetSanteId;
-const isLoading = ref(true);
-
-const selectedDate = ref(new Date());
-const selectedWeekYear = ref(format(new Date(), 'yyyy-\'W\'II'));
-const startYear = ref(new Date().getFullYear());
-const endYear = ref(new Date().getFullYear());
-
-const bilans = ref<BilanQuotidien[]>([]);
-
-// Les bilans arrivent dans l'ordre de chargement (API non triée, saisies ajoutées en fin) : toujours les garder par date croissante.
-const trierParDate = (liste: BilanQuotidien[]): BilanQuotidien[] =>
-    [...liste].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-
-const completedSteps = ref<Set<number>>(new Set());
-const editingBilanId = ref<number | null>(null);
-
-
-onMounted(() => {
-  fetchBilans();
-});
-
-watch(selectedWeekYear, () => {
-  const alreadyFetched = bilans.value.some(bilan => {
-    const bilanDate = new Date(bilan.date);
-    return (
-        bilanDate.getFullYear() === endYear.value &&
-        format(bilanDate, "II") === selectedWeekYear.value.split("-W")[1]
-    );
-  });
-  if (!alreadyFetched) {
-    fetchBilans();
-  }
-});
-
-const handleUpdateYears = ({startYear: start, endYear: end}) => {
-  startYear.value = start;
-  endYear.value = end;
-};
-
-const formData = ref({
-  date: new Date(),
-  carnetSanteId: carnetSanteId,
-  emotions: [] as CodeEmotion[],
-  stressPro: [5],
-  stressPerso: [5],
-  fatigue: [5],
-  pas: 0,
-  hydratation: 0,
-  douleurMoyenne: [5],
-  gluten: false,
-  lactose: false,
-  grignotage: false,
-  commentaire: ''
-});
-
-const transitData = ref(transitVide());
-
-const todayBilan = ref({
-  stressPro: 0,
-  stressPerso: 0,
-  fatigue: 0,
-  pas: 0,
-  hydratation: 0,
-  douleurMoyenne: 0,
-});
-
-const dietOptions = [
-  {key: 'gluten', label: 'Consommation de gluten', icon: 'bakery_dining'},
-  {key: 'lactose', label: 'Consommation de lactose', icon: 'icecream'},
-  {key: 'grignotage', label: 'Grignotage dans la journée', icon: 'cookie'}
-];
-
-const stepTitles = {
-  1: 'Émotions',
-  2: 'Stress',
-  3: 'Fatigue',
-  4: 'Activité',
-  5: 'Hydratation',
-  6: 'Alimentation',
-  7: 'Douleur',
-  8: 'Transit'
-};
-
-const selectedBilan = computed(() => {
-  if (!bilans.value || bilans.value.length === 0) return null;
-
-  const selectedDateString = format(selectedDate.value, 'yyyy-MM-dd');
-  return bilans.value.find(bilan =>
-      format(new Date(bilan.date), 'yyyy-MM-dd') === selectedDateString
-  ) || null;
-});
-
-const selectedDateTitle = computed(() => {
-  if (isToday(selectedDate.value)) {
-    return "Bilan d'aujourd'hui";
-  } else {
-    return `Bilan du ${format(selectedDate.value, 'dd MMMM yyyy', {locale: fr})}`;
-  }
-});
-
-const selectedBilanStress = computed(() => {
-  if (!selectedBilan.value) return '-';
-  return (((selectedBilan.value.stressPro + selectedBilan.value.stressPerso) / 2).toFixed(1)) + '/5';
-});
-
-const handleDateSelection = (date: Date) => {
-  selectedDate.value = date;
-};
-
-const filteredBilans = computed<BilanQuotidien[]>(() => {
-  if (!selectedWeekYear.value) return [];
-  const [year, week] = selectedWeekYear.value.split('-W');
-  const startDate = startOfWeek(new Date(Number(endYear.value), 0, 1), {weekStartsOn: 1});
-  const adjustedStartDate = new Date(startDate.setDate(startDate.getDate() + (Number(week) - 1) * 7));
-  const endDate = new Date(adjustedStartDate);
-  endDate.setDate(adjustedStartDate.getDate() + 6);
-  endDate.setHours(23, 59, 59, 999);
-
-  return bilans.value.filter((bilan: BilanQuotidien) => {
-    const bilanDate = new Date(bilan.date);
-    return bilanDate >= adjustedStartDate && bilanDate <= endDate &&
-        bilanDate.getFullYear() >= startYear.value && bilanDate.getFullYear() <= endYear.value;
-  });
-});
-
-const chartData = computed(() => {
-  return filteredBilans.value.map(bilan => ({
-    date: format(new Date(bilan.date), 'dd/MM/yyyy'),
-    stress: (bilan.stressPro + bilan.stressPerso) / 2,
-    fatigue: bilan.fatigue,
-    // Même échelle que le stress et la fatigue (0 à 5) ; les anciens bilans comptent par leur humeur.
-    humeur: Math.round((scoreHumeur(bilan) ?? 0.5) * 50) / 10,
-    douleur: bilan.douleurMoyenne
-  }));
-});
-
-// Fonctions de navigation
-const goToStep = (step: number) => {
-  if (canAccessStep(step)) {
-    currentStep.value = step;
-  }
-};
-
-const canAccessStep = (step: number) => {
-  // On peut accéder à l'étape actuelle, aux étapes précédentes et à l'étape suivante si l'actuelle est valide
-  return step <= currentStep.value || (step === currentStep.value + 1 && isStepValid.value);
-};
-
-const getStepTitle = (step: number) => {
-  return stepTitles[step] || `Étape ${step}`;
-};
-
-const markStepCompleted = (step: number) => {
-  completedSteps.value.add(step);
-};
-
-const nextStep = () => {
-  if (currentStep.value < TOTAL_STEPS && isStepValid.value) {
-    markStepCompleted(currentStep.value);
-    currentStep.value++;
-  }
-};
-
-const prevStep = () => {
-  if (currentStep.value > 1) {
-    currentStep.value--;
-  }
-};
-
-watch(() => formData.value.emotions, (emotions) => {
-  if (emotions.length > 0) markStepCompleted(1);
-});
-
-watch(() => [formData.value.stressPro, formData.value.stressPerso], () => {
-  if (formData.value.stressPro[0] !== undefined && formData.value.stressPerso[0] !== undefined) {
-    markStepCompleted(2);
-  }
-}, {deep: true});
-
-watch(() => formData.value.fatigue, () => {
-  if (formData.value.fatigue[0] !== undefined) markStepCompleted(3);
-}, {deep: true});
-
-watch(() => formData.value.pas, (newVal) => {
-  if (newVal > 0) markStepCompleted(4);
-});
-
-watch(() => formData.value.hydratation, (newVal) => {
-  if (newVal > 0) markStepCompleted(5);
-});
-
-watch(() => formData.value.douleurMoyenne, () => {
-  if (formData.value.douleurMoyenne[0] !== undefined) markStepCompleted(7);
-}, {deep: true});
-
-const submitForm = async () => {
-  try {
-    const newBilan: BilanQuotidien = {
-      id: editingBilanId.value || 0,
-      ...formData.value,
-      mood: null,
-      emotions: formData.value.emotions.map((emotion) => ({emotion})),
-      stressPro: formData.value.stressPro[0],
-      stressPerso: formData.value.stressPerso[0],
-      fatigue: formData.value.fatigue[0],
-      douleurMoyenne: formData.value.douleurMoyenne[0],
-      ...transitData.value,
-    };
-
-    const response = await apiService.postBilanQuotidien(newBilan);
-    bilans.value = trierParDate([...bilans.value, {...newBilan, id: response.id}]);
-    toast({
-      title: 'Bilan enregistré',
-      description: 'Le bilan a été créé avec succès.',
-      variant: 'custom'
-    });
-
-    selectedDate.value = formData.value.date;
-    isSubmitted.value = true;
-    justSubmitted.value = true;
-    editingBilanId.value = null;
-
-    setTimeout(() => {
-      justSubmitted.value = false;
-    }, 3000);
-  } catch (error) {
-    console.error('Error submitting form:', error);
-    toast({
-      title: 'Erreur',
-      description: 'Impossible d\'enregistrer le bilan',
-      variant: 'custom'
-    });
-  }
-};
-
-const resetForm = () => {
-  formData.value = {
-    date: formData.value.date,
-    carnetSanteId: carnetSanteId,
-    emotions: [],
-    stressPro: [5],
-    stressPerso: [5],
-    fatigue: [5],
-    pas: 0,
-    hydratation: 0,
-    douleurMoyenne: [5],
-    gluten: false,
-    lactose: false,
-    grignotage: false,
-    commentaire: ''
-  };
-  transitData.value = transitVide();
-};
-
-const isStepValid = computed(() => {
-  switch (currentStep.value) {
-    case 1:
-      return formData.value.emotions.length > 0;
-    case 2:
-      return formData.value.stressPro[0] !== undefined && formData.value.stressPerso[0] !== undefined;
-    case 3:
-      return formData.value.fatigue[0] !== undefined;
-    case 4:
-      return formData.value.pas > 0;
-    case 5:
-      return formData.value.hydratation > 0;
-    case 6:
-      return true; // Toujours valide (commentaire optionnel)
-    case 7:
-      return formData.value.douleurMoyenne[0] !== undefined;
-    case 8:
-      return estTransitComplet(transitData.value);
-    default:
-      return false;
-  }
-});
-
-const fetchBilans = async () => {
-  isLoading.value = true;
-  try {
-    const [year, week] = selectedWeekYear.value.split('-W');
-    const response = await apiService.getBilanQuotidienByWeek(carnetSanteId, week, endYear.value.toString());
-    bilans.value = trierParDate([...bilans.value, ...(response || [])]);
-    const today = format(new Date(), 'yyyy-MM-dd');
-    const bilan = response.find((bilan: any) => format(new Date(bilan.date), 'yyyy-MM-dd') === today);
-    if (bilan) {
-      todayBilan.value = bilan;
-      isSubmitted.value = true;
-      selectedDate.value = new Date();
-    }
-  } catch (error) {
-    console.error('Error fetching bilans:', error);
-  } finally {
-    isLoading.value = false;
-  }
-};
-
-const fillBilanForDate = (date: Date) => {
-  resetForm();
-  formData.value.date = new Date(date);
-  editingBilanId.value = null;
-  currentStep.value = 1;
-  completedSteps.value.clear();
-  isSubmitted.value = false;
-
-  toast({
-    title: 'Nouveau bilan',
-    description: `Remplissez le bilan pour le ${format(date, 'd MMMM yyyy', {locale: fr})}`,
-    variant: 'custom'
-  });
-};
-
-</script>
-
 <style scoped>
-/* Taille par défaut des icônes Material */
-.material-symbols-outlined {
-  font-size: 1.5rem;
-}
-
-/* Grandes icônes pour les titres d'étapes */
-h2 .material-symbols-outlined {
-  font-size: 3.2rem;
-}
-
-/* Icônes dans les listes du récapitulatif */
-li .material-symbols-outlined {
-  font-size: 2.5rem;
-}
-
-/* Petites icônes dans les boutons de navigation */
-.mt-auto button .material-symbols-outlined,
-Button .material-symbols-outlined {
-  font-size: 1.25rem;
-}
-
-/* Icônes dans les pastilles de navigation */
-.w-10.h-10 .material-symbols-outlined {
-  font-size: 1rem;
-}
-
-/* Icônes moyennes pour les labels de formulaire */
-.text-button.material-symbols-outlined {
-  font-size: 1.5rem;
-}
-
-/* Icônes dans les mood buttons */
-.text-6xl.material-symbols-outlined {
-  font-size: 3.5rem !important;
-}
-
-/* Icônes dans les checkboxes */
-.text-sm.material-symbols-outlined {
-  font-size: 0.875rem !important;
-}
-
-/* Icônes dans les cercles des options d'alimentation */
-.text-xl.material-symbols-outlined {
-  font-size: 1.25rem !important;
-}
-
-.confirmation-message {
-  text-align: center;
-  font-size: 1.5rem;
-}
-
-.check-icon {
-  font-size: 48px;
-  color: var(--button);
-}
-
-.summary-list {
-  list-style: none;
-  padding: 0;
-}
-
-.summary-list li {
-  display: flex;
-  align-items: center;
-  margin-bottom: 8px;
-}
-
-textarea {
-  font-family: var(--font-text);
-  line-height: 1.6;
-}
-
-textarea::placeholder {
-  color: var(--form-placeholder);
-  opacity: 0.6;
-}
-
-textarea:focus {
-  outline: none;
-}
-
-textarea::-webkit-scrollbar {
-  width: 8px;
-}
-
-textarea::-webkit-scrollbar-track {
-  background: var(--background);
-  border-radius: 10px;
-}
-
-textarea:focus {
-  border-color: var(--button);
-  --tw-ring-color: rgba(255, 122, 153, 0.5);
-  --tw-ring-offset-color: var(--background);
-}
-
-textarea::-webkit-scrollbar-thumb {
-  background: var(--button);
-  border-radius: 10px;
-}
-
-textarea::-webkit-scrollbar-thumb:hover {
-  background: #ff7a99;
-}
-
-/* Animation pour les boutons */
-button:disabled {
-  cursor: not-allowed;
-  opacity: 0.5;
-}
-
-label:active {
-  transform: scale(0.98);
-}
-
-/* Transitions */
-.material-symbols-outlined {
-  transition: all 0.2s ease;
-}
-
 .bilan-tabs-list {
   width: 100%;
   display: grid;
@@ -929,18 +177,6 @@ label:active {
 }
 
 @media (max-width: 425px) {
-  .bilan-stepper {
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 0.25rem;
-  }
-
-  .bilan-step-dot {
-    width: 2rem !important;
-    height: 2rem !important;
-    font-size: 0.75rem;
-  }
-
   .bilan-tab-trigger {
     font-size: 0.8rem;
     padding-left: 0.5rem;
