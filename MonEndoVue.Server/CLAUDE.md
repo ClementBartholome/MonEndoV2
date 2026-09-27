@@ -9,7 +9,7 @@ Complète le [CLAUDE.md racine](../CLAUDE.md). S'applique à tout le code de `Mo
   stockage photos (`AzureBlobStorageService`), extensions (`ControllerSecurityExtensions`, `UserExtensions`).
 - `Models/` : entités EF. `Dto/` : entrées (`*Dto`). `ViewModels/` : sorties (`*ViewModel`).
 - `Data/AppDbContext.cs` : DbSets + relations en Fluent API. `Migrations/` : migrations EF (SQL Server uniquement).
-- `Jobs/` (Quartz : `RappelBilanJob` toutes les 15 min) et `Services/WebPush/` (envoi Web Push derrière `IEnvoiPush`,
+- `Jobs/` (Quartz : `RappelBilanJob` toutes les 15 min, `SuppressionComptesInactifsJob` chaque nuit à 3 h 30) et `Services/WebPush/` (envoi Web Push derrière `IEnvoiPush`,
   logique des endpoints dans `NotificationsService`, boucle d'envoi des rappels dans `NotificationsPushService`).
 - **Ajouter un type de rappel** : une valeur de `TypeRappel`, une classe `IRegleRappel` dans `Services/WebPush/Rappels/`
   (calendrier par défaut, message avec l'URL à ouvrir, « suivi déjà fait ? »), son `AddScoped<IRegleRappel, …>` dans
@@ -93,6 +93,9 @@ modifiables, jamais `Entry(dto).State = Modified`, jamais de changement de `Carn
   `SuppressionCompteController` (même préfixe `DonneesPersonnelles/`, `[SansConsentement]`) : suppression du compte par
   `SuppressionCompteService` (mot de passe exigé ; photos supprimées d'abord, abandon sans rien toucher si le
   stockage est indisponible ; puis toutes les entités du carnet et le compte en un seul `SaveChanges`).
+- **Comptes inactifs** : `ApplicationUser.DerniereActiviteLe` est mise à jour à chaque ouverture ou prolongation de session
+  (`OuvrirSessionAsync`) ; `ComptesInactifsService` supprime chaque nuit les comptes sans activité depuis 2 ans (durée
+  annoncée par la politique de confidentialité : la changer dans les deux). Une date nulle n'est jamais supprimée.
 - **Toute nouvelle entité ou donnée enregistrée s'ajoute à l'export** (`LireDonneesAsync`) **et à la suppression**
   (`MarquerDonneesDuCarnetAsync`), avec leurs tests (`SuppressionCompteServiceTests.CreerCompteRempli`), dans la même PR.
 
@@ -180,4 +183,10 @@ Projet `MonEndoVue.Server.Tests` (xUnit, **net8.0** comme la CI et le Dockerfile
   jamais levée) compte comme ligne non couverte : l'écrire en une expression (`?? throw`) ou le supprimer plutôt
   que de chercher à le tester. Lignes non couvertes d'une PR : `https://sonarcloud.io/api/sources/lines?key=ClementBartholome_MonEndoV2:<chemin>&pullRequest=<n>`
   (`isNew` et `lineHits: 0`).
+- **GitGuardian** analyse chaque commit d'une PR : un littéral affecté à un champ de mot de passe (`Password = "Xyz1!…"`)
+  est signalé comme secret, et le reste tant que le commit est dans l'historique (faux positif à classer par l'utilisateur
+  dans le tableau de bord GitGuardian). Dériver les mots de passe de test de `IdentityDeTest.MotDePasseValide`
+  (`MotDePasseValide + "-erreur"` pour un mauvais mot de passe).
+- **Sonar, note de sécurité** (bloquante) : pas de `Path.GetTempFileName()` (S5445 : `GetTempPath()` + `GetRandomFileName()`
+  en `FileMode.CreateNew`) ; un cookie effacé reprend `HttpOnly`, `Secure` et `SameSite` (S2092, S3330).
 - Prochaine étape : tests d'intégration avec `WebApplicationFactory` (routage, `[Authorize]`, code HTTP réel des refus).
