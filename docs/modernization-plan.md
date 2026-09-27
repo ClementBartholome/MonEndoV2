@@ -175,7 +175,7 @@ Regles:
 
 ### Lot D - Security baseline
 - [x] Rate limiting endpoint-level (politique `auth` reellement appliquee aux endpoints d'authentification, 2026-09)
-- [x] Security headers globaux ; Content-Security-Policy en mode Report-Only (1.2.0, issue #30), blocage a activer
+- [x] Security headers globaux ; Content-Security-Policy en Report-Only (1.2.0, issue #30) puis bloquante (1.2.1)
   apres verification en production
 - [x] Validation JWT stricte conditionnelle
 - [x] Revue obsolete API de credentials Google (supprimee avec Firebase, 2026-09)

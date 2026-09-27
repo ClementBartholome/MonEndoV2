@@ -4,9 +4,8 @@ namespace MonEndoVue.Server.Services;
 public static class EntetesSecurite
 {
     /// <summary>
-    /// Politique de contenu, en mode « Report-Only » : le navigateur signale les violations dans la console sans rien
-    /// bloquer. À passer en <c>Content-Security-Policy</c> (blocage) une fois la politique vérifiée en production.
-    /// Sources tierces : polices Google, traduction DataTables, photos sur Azure Blob Storage.
+    /// Politique de contenu appliquée (bloquante) depuis la 1.2.1, après une période en « Report-Only » sans violation
+    /// relevée en production. Sources tierces : polices Google, traduction DataTables, photos sur Azure Blob Storage.
     /// </summary>
     public static readonly string ContentSecurityPolicy = string.Join("; ",
         "default-src 'self'",
@@ -31,6 +30,6 @@ public static class EntetesSecurite
         entetes.XContentTypeOptions = "nosniff";
         entetes["Referrer-Policy"] = "strict-origin-when-cross-origin";
         entetes["Permissions-Policy"] = "camera=(self), microphone=(), geolocation=()";
-        entetes.ContentSecurityPolicyReportOnly = ContentSecurityPolicy;
+        entetes.ContentSecurityPolicy = ContentSecurityPolicy;
     }
 }
