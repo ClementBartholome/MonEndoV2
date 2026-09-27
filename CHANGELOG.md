@@ -3,6 +3,24 @@
 Toutes les évolutions notables de MonEndo. Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/),
 versions en [SemVer](https://semver.org/lang/fr/) (voir la section Déploiement de `CLAUDE.md`).
 
+## [1.1.0] - non publiée
+
+### Ajouté
+- Bilan quotidien : un bilan déjà enregistré, y compris un bilan passé, peut être modifié ou complété (bouton
+  « Modifier » sur le détail du jour). Quitter une saisie non enregistrée demande une confirmation.
+- Bilan quotidien : bouton « Comme hier » qui reprend le transit, l'alimentation, les pas et l'hydratation de la veille.
+
+### Modifié
+- Bilan quotidien rempli sur un seul écran : seules la douleur et les émotions sont nécessaires (deux touchers suffisent).
+  Fatigue et stress se choisissent en pastilles ; transit, alimentation, pas et hydratation (avec des choix rapides)
+  sont regroupés dans un bloc « Corps » facultatif, les notes dans un bloc à part.
+- Une mesure non renseignée reste vide au lieu de valoir 0 : les moyennes, objectifs, graphiques et l'export PDF ne
+  comptent que les valeurs réellement saisies.
+- Un seul bilan par jour, et pas de bilan pour un jour à venir.
+
+### Corrigé
+- Un bilan rempli pour un jour passé pouvait s'afficher la veille du jour choisi.
+
 ## [1.0.1] - 2026-09-26
 
 ### Corrigé
