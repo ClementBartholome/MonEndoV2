@@ -105,13 +105,13 @@ sudo curl -fsSL https://raw.githubusercontent.com/ClementBartholome/MonEndoV2/ma
 sudo chmod 755 /etc/letsencrypt/renewal-hooks/deploy/monendo-nginx.sh
 sudo certbot certonly --webroot -w /home/debian/app/certbot-www --cert-name monendoapp.fr -d monendoapp.fr -d www.monendoapp.fr --dry-run
 sudo certbot certonly --webroot -w /home/debian/app/certbot-www --cert-name monendoapp.fr -d monendoapp.fr -d www.monendoapp.fr --force-renewal --non-interactive
-sudo RENEWED_LINEAGE=/etc/letsencrypt/live/monendoapp.fr /etc/letsencrypt/renewal-hooks/deploy/monendo-nginx.sh
 sudo certbot renew --dry-run
 ```
 
 Le premier `certonly` vérifie le défi sans rien changer ; le second renouvelle réellement et enregistre le mode webroot
-dans `/etc/letsencrypt/renewal/monendoapp.fr.conf` ; le hook est lancé à la main cette fois (les hooks du dossier ne
-s'exécutent qu'avec `certbot renew`). Contrôle : `certbot renew --dry-run` réussit, et la date d'expiration servie
+dans `/etc/letsencrypt/renewal/monendoapp.fr.conf` ; certbot lance lui-même le hook du dossier après ce renouvellement
+(sortie « Hook 'deploy-hook' ran »). Pour le relancer à la main :
+`sudo RENEWED_LINEAGE=/etc/letsencrypt/live/monendoapp.fr /etc/letsencrypt/renewal-hooks/deploy/monendo-nginx.sh`. Contrôle : `certbot renew --dry-run` réussit, et la date d'expiration servie
 (`echo | openssl s_client -connect monendoapp.fr:443 2>/dev/null | openssl x509 -noout -enddate`) est repoussée.
 
 ## Logs
