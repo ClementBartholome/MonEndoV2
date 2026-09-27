@@ -46,7 +46,8 @@ public class ExportDonneesService(
         }
 
         var maintenant = horloge.GetUtcNow();
-        var fichier = new FileStream(Path.GetTempFileName(), FileMode.Create, FileAccess.ReadWrite, FileShare.None,
+        // Nom aléatoire créé exclusivement (CreateNew) : pas de fichier temporaire prévisible ni réutilisé (Sonar S5445).
+        var fichier = new FileStream(Path.Combine(Path.GetTempPath(), Path.GetRandomFileName()), FileMode.CreateNew, FileAccess.ReadWrite, FileShare.None,
             4096, FileOptions.DeleteOnClose | FileOptions.Asynchronous);
         try
         {
