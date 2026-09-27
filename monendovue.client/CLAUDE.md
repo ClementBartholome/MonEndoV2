@@ -84,7 +84,9 @@ Nouveau composant shadcn : `npx shadcn-vue add <nom>` (alias configurés vers `@
   dans le `<style scoped>` ou la classe `.hide-xsm`. Tester à 375px.
 - Tokens de marque (`src/assets/index.css`) : `var(--button)`, `var(--headline)`, classes `.bg-clearer`, `.text-headline`,
   `.text-paragraph`, `Button variant="custom"` / `"selected"`. Pas de couleurs en dur.
-- Icônes Material Symbols (`<i class="material-symbols-outlined">nom</i>`) ; les correspondances type → icône vont dans
+- Polices servies par l'app (`src/assets/polices.css`, paquets `@fontsource`), **jamais Google Fonts** (IP envoyée à Google, RGPD) :
+  Poppins 400/400 italique/500/600/700 en latin ; une graisse ou un axe d'icône en plus s'ajoute dans ce fichier.
+- Icônes Material Symbols (`<i class="material-symbols-outlined">nom</i>`, axe FILL seul, graisse 400) ; les correspondances type → icône vont dans
   `shared/config/materialSymbols.ts`.
 - Textes 100 % en français, dates via `useDateTimeFormat` (`fr-FR`).
 - **Jour calendaire envoyé à l'API** : jamais un `Date` à minuit (sérialisé en UTC, il glisse au jour précédent et le

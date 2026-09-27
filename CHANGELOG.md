@@ -5,6 +5,10 @@ versions en [SemVer](https://semver.org/lang/fr/) (voir la section Déploiement 
 
 ## [1.3.0] - non publiée
 
+### Sécurité
+- Les polices et les icônes sont servies par MonEndo lui-même : plus aucune page ne contacte Google Fonts, qui
+  recevait jusqu'ici l'adresse IP à chaque visite.
+
 ## [1.2.1] - 2026-09-27
 
 ### Sécurité
