@@ -7,15 +7,18 @@ using Microsoft.EntityFrameworkCore;
 using MonEndoVue.Server.Dto;
 using MonEndoVue.Server.Models;
 using MonEndoVue.Server.Services;
+using MonEndoVue.Server.Services.Consentement;
 
 namespace MonEndoVue.Server.Controllers
 {
     [Route("[controller]")]
     [ApiController]
+    [SansConsentement]
     public class AccountController(
         UserManager<ApplicationUser> userManager,
         SignInManager<ApplicationUser> signInManager,
         CarnetSanteService carnetSanteService, TokenService tokenService,
+        TimeProvider horloge,
         ILogger<AccountController> logger
         )
         : ControllerBase
@@ -23,9 +26,16 @@ namespace MonEndoVue.Server.Controllers
         
         [HttpPost("register")]
         [EnableRateLimiting("auth")]
-        public async Task<IActionResult> Register([FromBody] IdentifiantsDto identifiants)
+        public async Task<IActionResult> Register([FromBody] InscriptionDto identifiants)
         {
+            // Consentement explicite obligatoire (RGPD, art. 9.2.a) : même format d'erreur que les erreurs d'Identity.
+            if (!identifiants.ConsentementDonneesSante)
+            {
+                return BadRequest(new[] { "Ton accord pour l'utilisation de tes données de santé est nécessaire pour créer un compte." });
+            }
+
             var user = new ApplicationUser { UserName = identifiants.Email, Email = identifiants.Email, EmailConfirmed = true };
+            PolitiqueConfidentialite.Enregistrer(user, horloge.GetUtcNow());
             var result = await userManager.CreateAsync(user, identifiants.Password);
 
             if (!result.Succeeded)
@@ -38,7 +48,7 @@ namespace MonEndoVue.Server.Controllers
             var (accessToken, refreshToken, tokenExpiry) = await OuvrirSessionAsync(user);
 
             var carnetSante = await carnetSanteService.GetCarnetSanteByUserId(user.Id);
-            return Ok(new { AccessToken = accessToken, RefreshToken = refreshToken, TokenExpiry = tokenExpiry, user.UserName, CarnetSanteId = carnetSante.Id });
+            return Ok(new { AccessToken = accessToken, RefreshToken = refreshToken, TokenExpiry = tokenExpiry, user.UserName, CarnetSanteId = carnetSante.Id, ConsentementAJour = PolitiqueConfidentialite.EstAJour(user) });
         }
 
         [HttpPost("login")]
@@ -60,7 +70,7 @@ namespace MonEndoVue.Server.Controllers
                 var (accessToken, refreshToken, tokenExpiry) = await OuvrirSessionAsync(user);
 
                 var carnetSante = await carnetSanteService.GetCarnetSanteByUserId(user.Id);
-                return Ok(new { AccessToken = accessToken, RefreshToken = refreshToken, TokenExpiry = tokenExpiry, user.UserName, CarnetSanteId = carnetSante.Id });
+                return Ok(new { AccessToken = accessToken, RefreshToken = refreshToken, TokenExpiry = tokenExpiry, user.UserName, CarnetSanteId = carnetSante.Id, ConsentementAJour = PolitiqueConfidentialite.EstAJour(user) });
             }
             catch (Exception ex)
             {
@@ -145,6 +155,24 @@ namespace MonEndoVue.Server.Controllers
             return Ok();
         }
         
+        /// <summary>
+        /// Enregistre le consentement aux données de santé pour la politique en vigueur (comptes créés avant son recueil,
+        /// ou nouvelle version de la politique), puis émet un jeton d'accès qui le porte.
+        /// </summary>
+        [Authorize]
+        [HttpPost("consentement")]
+        public async Task<IActionResult> DonnerConsentement()
+        {
+            var user = await userManager.FindByIdAsync(User.GetCurrentUserId());
+            if (user == null) return Unauthorized();
+
+            PolitiqueConfidentialite.Enregistrer(user, horloge.GetUtcNow());
+            var (_, _, tokenExpiry) = await OuvrirSessionAsync(user);
+
+            logger.LogInformation("Consentement aux données de santé enregistré pour {UserId}", user.Id);
+            return Ok(new { TokenExpiry = tokenExpiry, ConsentementAJour = true });
+        }
+
         [Authorize]
         [HttpPost("change-password")]
         [EnableRateLimiting("auth")]

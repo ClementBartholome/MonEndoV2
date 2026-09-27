@@ -6,6 +6,8 @@ versions en [SemVer](https://semver.org/lang/fr/) (voir la section Déploiement 
 ## [1.3.0] - non publiée
 
 ### Ajouté
+- Consentement aux données de santé : une case (jamais cochée d'avance) à l'inscription ; les comptes existants
+  donnent leur accord à leur prochaine visite, avant de retrouver leur suivi.
 - Politique de confidentialité et mentions légales, lisibles sans compte depuis la connexion, l'inscription et les
   Paramètres : quelles données, pourquoi, qui y accède, combien de temps, et comment exercer ses droits.
 

@@ -16,10 +16,11 @@ public sealed class AccountControllerIdentifiantsTests : IDisposable
     {
         var controller = _identity.CreerController();
 
-        var resultat = await controller.Register(new IdentifiantsDto
+        var resultat = await controller.Register(new InscriptionDto
         {
             Email = "nouvelle@local",
             Password = IdentityDeTest.MotDePasseValide,
+            ConsentementDonneesSante = true,
         });
 
         Assert.IsType<OkObjectResult>(resultat);
@@ -33,7 +34,7 @@ public sealed class AccountControllerIdentifiantsTests : IDisposable
     {
         var controller = _identity.CreerController();
 
-        var resultat = await controller.Register(new IdentifiantsDto { Email = "faible@local", Password = "abc" });
+        var resultat = await controller.Register(new InscriptionDto { Email = "faible@local", Password = "abc", ConsentementDonneesSante = true });
 
         Assert.IsType<BadRequestObjectResult>(resultat);
         Assert.Null(await _identity.UserManager.FindByEmailAsync("faible@local"));

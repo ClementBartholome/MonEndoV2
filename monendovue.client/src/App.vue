@@ -1,5 +1,5 @@
 <template>
-  <Layout v-if="auth.user"/>
+  <Layout v-if="auth.user && !route.meta.sansNavigation"/>
   <transition name="fade" mode="out-in">
     <RouterView/>
   </transition>
@@ -7,13 +7,14 @@
 </template>
 
 <script setup lang="ts">
-import {RouterView} from 'vue-router';
+import {RouterView, useRoute} from 'vue-router';
 import Toaster from '@/shared/components/ui/toast/Toaster.vue'
 import Layout from "@/shared/components/Layout.vue";
 import {useAuthStore} from '@/features/auth/store/auth';
 import {onMounted} from 'vue';
 
 const auth = useAuthStore();
+const route = useRoute();
 
 onMounted(() => {
   auth.checkAuth();

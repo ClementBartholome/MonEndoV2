@@ -4,6 +4,7 @@ import { MAINTENANT, UTILISATRICE, CARNET_ID } from './mocks/session';
 import { ActivitePage } from './pages/activite.page';
 import { BilanQuotidienPage } from './pages/bilan-quotidien.page';
 import { DocumentsLegauxPage } from './pages/documents-legaux.page';
+import { ConsentementPage } from './pages/consentement.page';
 
 interface Options {
   /** Session ouverte au chargement de la page (faux utilisateur dans localStorage, comme après une connexion). */
@@ -16,6 +17,7 @@ interface Fixtures {
   activitePage: ActivitePage;
   bilanQuotidienPage: BilanQuotidienPage;
   documentsLegauxPage: DocumentsLegauxPage;
+  consentementPage: ConsentementPage;
 }
 
 /**
@@ -55,6 +57,10 @@ export const test = base.extend<Options & Fixtures>({
 
   documentsLegauxPage: async ({ page }, use) => {
     await use(new DocumentsLegauxPage(page));
+  },
+
+  consentementPage: async ({ page }, use) => {
+    await use(new ConsentementPage(page));
   },
 });
 
