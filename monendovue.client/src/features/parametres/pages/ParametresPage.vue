@@ -12,7 +12,7 @@
         Des repères que tu choisis : « Analyse & Tendances » du bilan quotidien indique combien de jours tu les atteins,
         sans note ni jugement.
       </p>
-      <hr class="mb-4 border-gray-300">
+      <hr class="mb-4 border-trait">
 
       <form class="grid grid-cols-1 md:grid-cols-2 gap-4" @submit.prevent="saveGoals">
         <div>
@@ -55,7 +55,7 @@
         <i class="material-symbols-outlined">person</i>
         <h3 class="text-headline text-2xl">Compte utilisateur</h3>
       </div>
-      <hr class="mb-4 border-gray-300">      
+      <hr class="mb-4 border-trait">      
       <ChangePassword/>
     </section>
     <section
@@ -64,7 +64,7 @@
         <i class="material-symbols-outlined">folder_shared</i>
         <h3 class="text-headline text-2xl">Mes données</h3>
       </div>
-      <hr class="mb-4 border-gray-300">
+      <hr class="mb-4 border-trait">
       <MesDonnees/>
     </section>
     <p class="mt-6 text-center text-sm text-muted-foreground">MonEndo v{{ version }}</p>

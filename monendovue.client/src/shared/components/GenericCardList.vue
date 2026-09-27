@@ -22,8 +22,8 @@ const props = defineProps<{
 }>()
 
 const defaultIconFallback: CardIconConfig = {
-  color: 'text-gray-500',
-  bg: 'bg-gray-100',
+  color: 'text-teinte-neutre',
+  bg: 'bg-teinte-neutre-fond',
   icon: 'help'
 }
 
@@ -32,11 +32,10 @@ const getIcon = (value: string): CardIconConfig => {
   return props.defaultIcon ?? defaultIconFallback
 }
 
+// Échelle d'intensité à une seule teinte (plus foncé = plus fort), sans code « bon / mauvais ».
 const intensityColor = (v: number | string) => {
-  const n = Number(v)
-  if (n <= 3) return 'bg-green-400'
-  if (n <= 6) return 'bg-yellow-400'
-  return 'bg-red-400'
+  const n = Math.min(10, Math.max(0, Math.round(Number(v)) || 0))
+  return `var(--intensite-${n})`
 }
 </script>
 
@@ -45,7 +44,7 @@ const intensityColor = (v: number | string) => {
     <div
       v-for="entry in entries"
       :key="entry.id"
-      class="bg-white rounded-2xl p-4 shadow-sm border border-gray-100"
+      class="bg-surface rounded-2xl p-4 shadow-elevation border border-trait"
     >
       <!-- Header: titre + date + actions -->
       <div class="flex items-start justify-between gap-2 mb-3">
@@ -67,14 +66,14 @@ const intensityColor = (v: number | string) => {
           <button
             v-if="onEdit"
             @click="onEdit(entry.id)"
-            class="text-gray-400 hover:text-[var(--button)] transition-colors p-1 rounded-full hover:bg-[var(--background-clearer)]"
+            class="text-texte-3 hover:text-lien transition-colors p-1 rounded-full hover:bg-surface-2"
             aria-label="Modifier"
           >
             <span class="material-symbols-outlined text-base">edit</span>
           </button>
           <button
             @click="onDelete(entry.id)"
-            class="text-gray-400 hover:text-red-500 transition-colors p-1 rounded-full hover:bg-red-50"
+            class="text-texte-3 hover:text-danger transition-colors p-1 rounded-full hover:bg-surface-2"
             aria-label="Supprimer"
           >
             <span class="material-symbols-outlined text-base">delete</span>
@@ -85,11 +84,10 @@ const intensityColor = (v: number | string) => {
       <!-- Barre d'intensité -->
       <div v-if="intensityField && entry[intensityField]" class="flex items-center gap-2 mb-2">
         <span class="text-xs text-muted-foreground w-16 shrink-0">Intensité</span>
-        <div class="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+        <div class="flex-1 h-1.5 bg-surface-2 rounded-full overflow-hidden">
           <div
             class="h-full rounded-full transition-all"
-            :class="intensityColor(entry[intensityField])"
-            :style="{ width: `${(Number(entry[intensityField]) / 10) * 100}%` }"
+            :style="{ width: `${(Number(entry[intensityField]) / 10) * 100}%`, background: intensityColor(entry[intensityField]) }"
           ></div>
         </div>
         <span class="text-xs font-semibold text-headline w-6 text-right">{{ entry[intensityField] }}</span>

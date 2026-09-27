@@ -194,7 +194,7 @@ const annuler = () => confirmation.demanderSiNecessaire(() => emit('annule'));
 <style scoped>
 .barre-enregistrement {
   bottom: 0;
-  background: var(--background);
+  background: var(--couleur-fond);
   box-shadow: 0 -4px 8px -6px rgba(0, 0, 0, 0.15);
 }
 

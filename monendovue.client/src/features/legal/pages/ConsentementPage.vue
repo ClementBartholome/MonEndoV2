@@ -19,7 +19,7 @@
         </Button>
       </form>
 
-      <div class="flex flex-col gap-3 border-t border-gray-300 pt-5">
+      <div class="flex flex-col gap-3 border-t border-trait pt-5">
         <p class="text-sm text-muted-foreground">
           Tu ne souhaites pas donner ton accord ? Tu peux te déconnecter, ou supprimer ton compte et toutes tes données.
         </p>

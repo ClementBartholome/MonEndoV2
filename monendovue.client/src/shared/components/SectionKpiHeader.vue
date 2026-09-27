@@ -15,7 +15,7 @@ defineProps<{
     <div
       v-for="item in items"
       :key="item.label"
-      class="bg-white border border-gray-100 rounded-xl p-3 text-center shadow-sm"
+      class="bg-surface border border-trait rounded-xl p-3 text-center shadow-elevation"
     >
       <p class="text-xs text-muted-foreground">{{ item.label }}</p>
       <p class="text-xl font-bold text-headline">{{ item.value }}</p>
