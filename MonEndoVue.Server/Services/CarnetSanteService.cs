@@ -21,7 +21,7 @@ public class CarnetSanteService(AppDbContext context, ILogger<CarnetSanteService
 
         if (carnetSante == null)
         {
-            throw new Exception("Carnet de santé introuvable");
+            throw new KeyNotFoundException("Carnet de santé introuvable");
         }
 
         return carnetSante.Id;
@@ -34,7 +34,7 @@ public class CarnetSanteService(AppDbContext context, ILogger<CarnetSanteService
 
         if (carnetSante == null)
         {
-            throw new Exception("Carnet de santé introuvable");
+            throw new KeyNotFoundException("Carnet de santé introuvable");
         }
 
         return carnetSante;
@@ -52,7 +52,7 @@ public class CarnetSanteService(AppDbContext context, ILogger<CarnetSanteService
 
         if (carnetSante == null)
         {
-            throw new Exception("Carnet de santé introuvable");
+            throw new KeyNotFoundException("Carnet de santé introuvable");
         }
 
         return new CarnetViewModel
@@ -87,7 +87,7 @@ public class CarnetSanteService(AppDbContext context, ILogger<CarnetSanteService
 
         if (carnetSante == null)
         {
-            throw new Exception("Carnet de santé introuvable");
+            throw new KeyNotFoundException("Carnet de santé introuvable");
         }
 
         var donneesMedicamentViewModel = carnetSante.DonneesMedicaments.Select(dm => new DonneesMedicamentViewModel
@@ -170,7 +170,7 @@ public class CarnetSanteService(AppDbContext context, ILogger<CarnetSanteService
             .FirstOrDefaultAsync();
 
         if (carnetSante == null)
-            throw new Exception("Carnet de santé introuvable");
+            throw new KeyNotFoundException("Carnet de santé introuvable");
 
         return carnetSante;
     }
@@ -227,7 +227,7 @@ public class CarnetSanteService(AppDbContext context, ILogger<CarnetSanteService
             .FirstOrDefaultAsync();
 
         if (carnetSante == null)
-            throw new Exception("Carnet de santé introuvable");
+            throw new KeyNotFoundException("Carnet de santé introuvable");
 
         return carnetSante;
     }
@@ -251,7 +251,7 @@ public class CarnetSanteService(AppDbContext context, ILogger<CarnetSanteService
             .FirstOrDefaultAsync(c => c.Id == carnetSanteId && c.UserId == userId);
 
         if (carnetSante == null)
-            throw new Exception("Carnet de santé introuvable");
+            throw new KeyNotFoundException("Carnet de santé introuvable");
 
         return new CarnetPdfExportViewModel
         {

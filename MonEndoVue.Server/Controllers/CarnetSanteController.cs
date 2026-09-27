@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Security.Claims;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -23,7 +22,7 @@ namespace MonEndoVue.Server.Controllers
         [HttpGet("user/id/{userId}")]
         public async Task<ActionResult<CarnetSante>> GetCarnetSanteByUserId(string userId)
         {
-            var currentUserId = (ClaimsPrincipal.Current ?? User).GetCurrentUserId();
+            var currentUserId = User.GetCurrentUserId();
             if (string.IsNullOrEmpty(currentUserId))
                 return Unauthorized();
 
@@ -36,16 +35,16 @@ namespace MonEndoVue.Server.Controllers
                 var carnet = await carnetSanteService.GetCarnetSanteByUserId(userId);
                 return Ok(carnet);
             }
-            catch (Exception ex)
+            catch (KeyNotFoundException)
             {
-                return NotFound(ex.Message);
+                return NotFound();
             }
         }
 
         [HttpGet("user/name/{username}")]
         public async Task<ActionResult<CarnetViewModel>> GetCarnetSanteByUsername(string username)
         {
-            var currentUserId = (ClaimsPrincipal.Current ?? User).GetCurrentUserId();
+            var currentUserId = User.GetCurrentUserId();
             if (string.IsNullOrEmpty(currentUserId))
                 return Unauthorized();
 
@@ -59,16 +58,16 @@ namespace MonEndoVue.Server.Controllers
                 var carnet = await carnetSanteService.GetCarnetSanteByUsername(username);
                 return Ok(carnet);
             }
-            catch (Exception ex)
+            catch (KeyNotFoundException)
             {
-                return NotFound(ex.Message);
+                return NotFound();
             }
         }
 
         [HttpGet("{carnetSanteId}")]
         public async Task<ActionResult<CarnetViewModel>> GetCarnetSanteById(int carnetSanteId)
         {
-            var userId = (ClaimsPrincipal.Current ?? User).GetCurrentUserId();
+            var userId = User.GetCurrentUserId();
             if (string.IsNullOrEmpty(userId))
                 return Unauthorized();
 
@@ -81,16 +80,16 @@ namespace MonEndoVue.Server.Controllers
             {
                 return Forbid();
             }
-            catch (Exception ex)
+            catch (KeyNotFoundException)
             {
-                return NotFound(ex.Message);
+                return NotFound();
             }
         }
 
         [HttpGet("{carnetSanteId}/{month}/{year}")]
         public async Task<ActionResult<CarnetPdfExportViewModel>> GetDonneesCarnetSanteByMonth(int carnetSanteId, int month, int year)
         {
-            var userId = (ClaimsPrincipal.Current ?? User).GetCurrentUserId();
+            var userId = User.GetCurrentUserId();
             if (string.IsNullOrEmpty(userId))
                 return Unauthorized();
 
@@ -103,16 +102,16 @@ namespace MonEndoVue.Server.Controllers
             {
                 return Forbid();
             }
-            catch (Exception ex)
+            catch (KeyNotFoundException)
             {
-                return NotFound(ex.Message);
+                return NotFound();
             }
         }
 
         [HttpGet("current/{month}/{year}")]
         public async Task<ActionResult<CarnetPdfExportViewModel>> GetCurrentUserDonneesCarnetSanteByMonth(int month, int year)
         {
-            var userId = (ClaimsPrincipal.Current ?? User).GetCurrentUserId();
+            var userId = User.GetCurrentUserId();
             if (string.IsNullOrEmpty(userId))
                 return Unauthorized();
 
@@ -123,16 +122,16 @@ namespace MonEndoVue.Server.Controllers
                 var exportData = await carnetSanteService.GetDonneesCarnetSanteByMonthForPdf(carnet.Id, month, year, userId);
                 return Ok(exportData);
             }
-            catch (Exception ex)
+            catch (KeyNotFoundException)
             {
-                return NotFound(ex.Message);
+                return NotFound();
             }
         }
 
         [HttpGet("last-entries/{carnetSanteId}")]
         public async Task<ActionResult<CarnetHomepageViewModel>> GetLastEntries(int carnetSanteId)
         {
-            var userId = (ClaimsPrincipal.Current ?? User).GetCurrentUserId();
+            var userId = User.GetCurrentUserId();
             if (string.IsNullOrEmpty(userId))
                 return Unauthorized();
 
@@ -145,16 +144,16 @@ namespace MonEndoVue.Server.Controllers
             {
                 return Forbid();
             }
-            catch (Exception ex)
+            catch (KeyNotFoundException)
             {
-                return NotFound(ex.Message);
+                return NotFound();
             }
         }
 
         [HttpGet("current/last-entries")]
         public async Task<ActionResult<CarnetHomepageViewModel>> GetCurrentUserLastEntries()
         {
-            var userId = (ClaimsPrincipal.Current ?? User).GetCurrentUserId();
+            var userId = User.GetCurrentUserId();
             if (string.IsNullOrEmpty(userId))
                 return Unauthorized();
 
@@ -163,16 +162,16 @@ namespace MonEndoVue.Server.Controllers
                 var carnet = await carnetSanteService.GetLastEntriesByUserId(userId);
                 return Ok(carnet);
             }
-            catch (Exception ex)
+            catch (KeyNotFoundException)
             {
-                return NotFound(ex.Message);
+                return NotFound();
             }
         }
 
         [HttpPost("create")]
         public async Task<ActionResult> CreateCarnetForCurrentUser()
         {
-            var userId = (ClaimsPrincipal.Current ?? User).GetCurrentUserId();
+            var userId = User.GetCurrentUserId();
             if (string.IsNullOrEmpty(userId))
                 return Unauthorized();
 
@@ -181,7 +180,7 @@ namespace MonEndoVue.Server.Controllers
                 await carnetSanteService.CreateCarnetSante(userId);
                 return Ok("Carnet de santé créé avec succès");
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 return StatusCode(500, "Erreur lors de la création du carnet");
             }
