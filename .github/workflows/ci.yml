@@ -4,7 +4,7 @@ name: CI/CD VPS Docker
 #   1. verifier  (PR, main, release/**, tags v*) : dépendances, type-check + build du client, lint, build .NET, SonarCloud
 #   2. image     (idem) : build de l'image Docker ; poussée sur GHCR uniquement pour main et les tags de version v*
 #   3. deployer  (main)  : déploiement sur le VPS puis vérification de /health
-#   e2e (PR vers main seulement, en parallèle) : parcours de l'interface avec une API simulée (Playwright, Chromium)
+#   e2e (PR vers main ou étiquette e2e, en parallèle) : parcours de l'interface avec une API simulée (Playwright, Chromium)
 # Tout push sur main déploie en production. Un tag vX.Y.Z publie l'image :vX.Y.Z (rollback) sans déployer.
 
 on:
@@ -15,6 +15,8 @@ on:
     tags:
       - 'v*'
   pull_request:
+    # labeled : ajouter l'étiquette e2e à une PR relance le workflow avec les tests E2E
+    types: [opened, synchronize, reopened, labeled]
     branches:
       - main
       - 'release/**'
@@ -127,10 +129,10 @@ jobs:
         run: ./.sonar/scanner/dotnet-sonarscanner end /d:sonar.token="${{ env.SONAR_TOKEN }}"
 
   # Parcours de l'interface (Playwright, API simulée, Chromium mobile 375px et desktop) : voir docs/tests.md.
-  # Seulement sur les PR vers main (livraison d'une version ou hotfix), en parallèle de verifier : n'allonge pas les
-  # autres PR ni le déploiement. Un échec est visible sur la PR avant le merge.
+  # Sur les PR vers main (livraison d'une version ou hotfix) et sur toute PR portant l'étiquette e2e, en parallèle de
+  # verifier : n'allonge pas les autres PR ni le déploiement. Un échec est visible sur la PR avant le merge.
   e2e:
-    if: github.event_name == 'pull_request' && github.base_ref == 'main'
+    if: github.event_name == 'pull_request' && (github.base_ref == 'main' || contains(github.event.pull_request.labels.*.name, 'e2e'))
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
