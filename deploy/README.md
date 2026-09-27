@@ -6,7 +6,8 @@ toute modification est appliquée à la main sur le serveur, puis commitée ici.
 | Fichier | Rôle | Emplacement sur le VPS |
 |---|---|---|
 | `docker-compose.prod.yml` | Services `db`, `app`, `nginx`, `dozzle` | `~/app/docker-compose.prod.yml` |
-| `nginx.conf` | Proxy HTTPS, redirection HTTP → HTTPS, HSTS | `~/app/nginx.conf` |
+| `nginx.conf` | Proxy HTTPS, redirection HTTP → HTTPS, HSTS, défis Let's Encrypt | `~/app/nginx.conf` |
+| `certbot-deploy-hook.sh` | Copie du certificat renouvelé et rechargement de nginx | `/etc/letsencrypt/renewal-hooks/deploy/monendo-nginx.sh` |
 | `logrotate-monendo-nginx` | Rotation des logs nginx (30 jours) | `/etc/logrotate.d/monendo-nginx` |
 
 Les secrets ne sont **jamais** dans ce dossier (dépôt public). Ils restent sur le VPS :
@@ -85,9 +86,33 @@ docker run --rm --add-host app:127.0.0.1 -v "$PWD/nginx.conf.new:/etc/nginx/ngin
 
 Contrôle : `curl -sI http://monendoapp.fr/` redirige vers `https://monendoapp.fr/`, et `curl -sI https://monendoapp.fr/`
 n'envoie qu'une fois chaque en-tête de sécurité. Retour arrière : `mv nginx.conf.bak nginx.conf` puis la même recréation.
+TLS 1.2 doit aussi aboutir : `echo | openssl s_client -connect monendoapp.fr:443 -tls1_2 2>&1 | grep 'Cipher is'`.
 
 Seul `Strict-Transport-Security` est posé par nginx ; tous les autres en-têtes de sécurité viennent de l'application
 (`Services/EntetesSecurite.cs`) : ne pas les ajouter dans nginx, un en-tête en double est considéré comme invalide.
+
+## Certificat TLS (Let's Encrypt)
+
+Certificat `monendoapp.fr` (+ `www`), clé ECDSA, géré par certbot sur l'hôte (`certbot.timer`, deux fois par jour).
+certbot fonctionne en mode **webroot** : il écrit ses défis dans `~/app/certbot-www`, que nginx sert sur le port 80
+(`/.well-known/acme-challenge/`). Le mode `standalone` est inutilisable, nginx occupant déjà le port 80.
+Après chaque renouvellement, le hook `certbot-deploy-hook.sh` copie le certificat dans `~/app/ssl` et recharge nginx.
+
+Mise en place (une fois) : créer le dossier des défis, appliquer le compose et `nginx.conf` (sections ci-dessus), puis :
+
+```bash
+sudo curl -fsSL https://raw.githubusercontent.com/ClementBartholome/MonEndoV2/main/deploy/certbot-deploy-hook.sh -o /etc/letsencrypt/renewal-hooks/deploy/monendo-nginx.sh
+sudo chmod 755 /etc/letsencrypt/renewal-hooks/deploy/monendo-nginx.sh
+sudo certbot certonly --webroot -w /home/debian/app/certbot-www --cert-name monendoapp.fr -d monendoapp.fr -d www.monendoapp.fr --dry-run
+sudo certbot certonly --webroot -w /home/debian/app/certbot-www --cert-name monendoapp.fr -d monendoapp.fr -d www.monendoapp.fr --force-renewal --non-interactive
+sudo RENEWED_LINEAGE=/etc/letsencrypt/live/monendoapp.fr /etc/letsencrypt/renewal-hooks/deploy/monendo-nginx.sh
+sudo certbot renew --dry-run
+```
+
+Le premier `certonly` vérifie le défi sans rien changer ; le second renouvelle réellement et enregistre le mode webroot
+dans `/etc/letsencrypt/renewal/monendoapp.fr.conf` ; le hook est lancé à la main cette fois (les hooks du dossier ne
+s'exécutent qu'avec `certbot renew`). Contrôle : `certbot renew --dry-run` réussit, et la date d'expiration servie
+(`echo | openssl s_client -connect monendoapp.fr:443 2>/dev/null | openssl x509 -noout -enddate`) est repoussée.
 
 ## Logs
 
