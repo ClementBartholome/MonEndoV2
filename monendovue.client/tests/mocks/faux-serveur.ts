@@ -31,7 +31,7 @@ interface Route {
 export class FauxServeur {
   private readonly routes: Route[] = [];
   readonly nonGerees: string[] = [];
-  readonly appels: { methode: string; chemin: string; corps: any }[] = [];
+  readonly appels: { methode: string; chemin: string; parametres: URLSearchParams; corps: any }[] = [];
 
   /** Déclare une route ; une route déclarée plus tard l'emporte (un test peut remplacer une route par défaut). */
   on(methode: string, motif: RegExp, gerer: Gestionnaire): this {
@@ -39,7 +39,7 @@ export class FauxServeur {
     return this;
   }
 
-  /** Appels reçus pour une méthode et un chemin (pour vérifier ce que l'interface a envoyé). */
+  /** Appels reçus pour une méthode et un chemin (pour vérifier ce que l'interface a demandé ou envoyé). */
   appelsVers(methode: string, motif: RegExp) {
     return this.appels.filter((a) => a.methode === methode && motif.test(a.chemin));
   }
@@ -57,7 +57,7 @@ export class FauxServeur {
       const methode = requete.method();
       const chemin = decodeURIComponent(url.pathname.replace(/^\//, ''));
       const corps = lireCorps(requete.postData());
-      this.appels.push({ methode, chemin, corps });
+      this.appels.push({ methode, chemin, parametres: url.searchParams, corps });
 
       const trouvee = this.routes.find((r) => r.methode === methode && r.motif.test(chemin));
       if (!trouvee) {

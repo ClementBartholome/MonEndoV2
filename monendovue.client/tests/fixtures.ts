@@ -1,28 +1,27 @@
 import { test as base, expect } from '@playwright/test';
-import { FauxServeur } from './faux-serveur';
-
-/** Date du jour vue par l'application pendant les tests : les parcours ne dépendent pas du jour où ils tournent. */
-export const MAINTENANT = new Date(2026, 8, 15, 10, 0, 0);
-
-export const CARNET_ID = 1;
-
-const UTILISATRICE = {
-  email: 'utilisatrice@test.local',
-  carnetSanteId: CARNET_ID,
-  // Loin dans le futur : l'application ne tente pas de rafraîchir le jeton.
-  tokenExpiry: new Date(2099, 0, 1).toISOString(),
-};
+import { FauxServeur } from './mocks/faux-serveur';
+import { MAINTENANT, UTILISATRICE, CARNET_ID } from './mocks/session';
+import { ActivitePage } from './pages/activite.page';
+import { BilanQuotidienPage } from './pages/bilan-quotidien.page';
 
 interface Options {
   /** Session ouverte au chargement de la page (faux utilisateur dans localStorage, comme après une connexion). */
   connectee: boolean;
 }
 
+interface Fixtures {
+  /** Faux backend du test : les données y sont préparées (`simulerBilans(serveur, …)`) puis vérifiées. */
+  serveur: FauxServeur;
+  activitePage: ActivitePage;
+  bilanQuotidienPage: BilanQuotidienPage;
+}
+
 /**
- * `test` des parcours E2E : chaque test a sa page, son faux serveur (`serveur`), une horloge fixée à MAINTENANT et,
- * par défaut, une session ouverte. `test.use({ connectee: false })` pour un parcours sans session (connexion).
+ * `test` des parcours E2E : chaque test a sa page, son faux serveur, une horloge fixée à MAINTENANT et, par défaut, une
+ * session ouverte. Les objets de page (`bilanQuotidienPage`…) sont fournis comme fixtures.
+ * `test.use({ connectee: false })` pour un parcours sans session (connexion).
  */
-export const test = base.extend<Options & { serveur: FauxServeur }>({
+export const test = base.extend<Options & Fixtures>({
   connectee: [true, { option: true }],
 
   serveur: [
@@ -39,13 +38,22 @@ export const test = base.extend<Options & { serveur: FauxServeur }>({
 
       await use(serveur);
 
-      expect(serveur.nonGerees, 'appels API sans réponse simulée (route à ajouter dans tests/support)').toEqual([]);
+      expect(serveur.nonGerees, 'appels API sans réponse simulée (route à ajouter dans tests/mocks)').toEqual([]);
     },
     { auto: true },
   ],
+
+  activitePage: async ({ page }, use) => {
+    await use(new ActivitePage(page));
+  },
+
+  bilanQuotidienPage: async ({ page }, use) => {
+    await use(new BilanQuotidienPage(page));
+  },
 });
 
 export { expect };
+export { MAINTENANT, CARNET_ID };
 
 /** Réponses des appels faits sur toutes les pages (accueil, session, agenda). */
 function routesCommunes(serveur: FauxServeur) {

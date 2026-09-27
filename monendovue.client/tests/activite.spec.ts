@@ -1,67 +1,48 @@
-import type { Page, TestInfo } from '@playwright/test';
-import { expect, test } from './support/fixtures';
-import { simulerActivite } from './support/activite';
-
-/** Texte visible : la page contient à la fois les cartes (mobile) et le tableau (desktop), l'un des deux est masqué. */
-const visible = (page: Page, texte: string) => page.getByText(texte, { exact: true }).and(page.locator(':visible'));
-
-/** Bouton « Modifier » ou « Supprimer » d'une séance : carte sur mobile, ligne du tableau sur desktop. */
-const actionSur = (page: Page, testInfo: TestInfo, titre: string, action: 'Modifier' | 'Supprimer') => {
-  if (testInfo.project.name === 'mobile') {
-    return page.locator('div', { has: visible(page, titre) })
-      .getByRole('button', { name: action }).last();
-  }
-  return page.getByRole('row', { name: new RegExp(titre) })
-    .locator(action === 'Modifier' ? '.edit-btn' : '.delete-btn');
-};
+import { expect, test } from './fixtures';
+import { simulerActivite } from './mocks/activite';
 
 test.describe('Activité physique', () => {
-  test('affiche les séances du mois', async ({ page, serveur }) => {
+  test('affiche les séances du mois', async ({ activitePage, serveur }) => {
     simulerActivite(serveur, [{ typeActivite: 'Natation', date: '2026-09-10T08:00:00', duree: 45 }]);
 
-    await page.goto('/activite');
+    await activitePage.ouvrir();
 
-    await expect(visible(page, 'Natation')).toBeVisible();
+    await expect(activitePage.seance('Natation')).toBeVisible();
   });
 
-  test('ajoute une séance', async ({ page, serveur }) => {
+  test('ajoute une séance', async ({ activitePage, serveur }) => {
     const seances = simulerActivite(serveur);
-    await page.goto('/activite');
+    await activitePage.ouvrir();
 
-    await page.locator('.form-modal button').first().click();
-    const formulaire = page.getByRole('dialog');
-    await formulaire.getByPlaceholder('Course à pied').fill('Yoga');
-    await formulaire.locator('input[type="date"]').fill('2026-09-14');
-    await formulaire.locator('input[type="time"]').fill('18:30');
-    await formulaire.getByPlaceholder('Durée en minutes').fill('40');
-    await formulaire.getByRole('button', { name: 'Enregistrer' }).click();
+    await activitePage.ouvrirAjout();
+    await activitePage.remplir({ type: 'Yoga', date: '2026-09-14', heure: '18:30', duree: 40 });
+    await activitePage.valider('Enregistrer');
 
-    await expect(visible(page, 'Yoga')).toBeVisible();
+    await expect(activitePage.seance('Yoga')).toBeVisible();
     expect(seances).toHaveLength(1);
     expect(seances[0]).toMatchObject({ typeActivite: 'Yoga', duree: 40 });
   });
 
-  test('modifie une séance', async ({ page, serveur }, testInfo) => {
+  test('modifie une séance', async ({ activitePage, serveur }) => {
     const seances = simulerActivite(serveur, [{ typeActivite: 'Marche', duree: 30 }]);
-    await page.goto('/activite');
+    await activitePage.ouvrir();
 
-    await actionSur(page, testInfo, 'Marche', 'Modifier').click();
-    const formulaire = page.getByRole('dialog');
-    await formulaire.getByPlaceholder('Durée en minutes').fill('50');
-    await formulaire.getByRole('button', { name: 'Mettre à jour' }).click();
+    await activitePage.action('Marche', 'Modifier').click();
+    await activitePage.remplir({ duree: 50 });
+    await activitePage.valider('Mettre à jour');
 
-    await expect(formulaire).toBeHidden();
+    await expect(activitePage.formulaire).toBeHidden();
     expect(seances[0]).toMatchObject({ typeActivite: 'Marche', duree: 50 });
   });
 
-  test('supprime une séance', async ({ page, serveur }, testInfo) => {
+  test('supprime une séance', async ({ activitePage, page, serveur }) => {
     const seances = simulerActivite(serveur, [{ typeActivite: 'Vélo' }]);
-    await page.goto('/activite');
+    await activitePage.ouvrir();
 
-    await actionSur(page, testInfo, 'Vélo', 'Supprimer').click();
+    await activitePage.action('Vélo', 'Supprimer').click();
 
     await expect(page.getByText('La session a été supprimée avec succès', { exact: true })).toBeVisible();
-    await expect(visible(page, 'Vélo')).toHaveCount(0);
+    await expect(activitePage.seance('Vélo')).toHaveCount(0);
     expect(seances).toHaveLength(0);
   });
 });
