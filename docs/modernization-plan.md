@@ -159,6 +159,8 @@ Regles:
   « Comme hier ») et modification d'un bilan passe, un seul bilan par jour (issues #11, #14)
 - [x] Historique des bilans par semaine ou par mois : calendrier (douleur ou emotions, jours de regles), courbes sur deux
   echelles avec les regles en fond, une seule periode pour toute la page (issue #12)
+- [x] Tendances neutres a la place du score de bien-etre : moyenne et evolution par indicateur vs periode precedente,
+  reperes personnels, observations factuelles douleur / regles (issue #13)
 
 ### Lot C - Engineering quality
 - [ ] Suppression progressive des `any` critiques
