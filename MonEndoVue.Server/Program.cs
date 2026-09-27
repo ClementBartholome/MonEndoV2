@@ -16,6 +16,7 @@ using MonEndoVue.Server.Services.Agenda;
 using MonEndoVue.Server.Services.WebPush;
 using MonEndoVue.Server.Services.WebPush.Rappels;
 using Quartz;
+using MonEndoVue.Server.Services.Consentement;
 using Serilog;
 using Serilog.Events;
 using System.Threading.RateLimiting;
@@ -118,7 +119,7 @@ namespace MonEndoVue.Server
 
 
 
-            builder.Services.AddControllers().AddJsonOptions(options =>
+            builder.Services.AddControllers(options => options.Filters.Add<ExigeConsentementFilter>()).AddJsonOptions(options =>
             {
                 options.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.Preserve;
             });

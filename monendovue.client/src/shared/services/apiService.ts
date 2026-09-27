@@ -10,6 +10,10 @@ import type { BilanQuotidien, BilanQuotidienSaisie, EmotionBilan } from '@/featu
 import type { HistoriqueBilans } from '@/features/bilan-quotidien/types/historique';
 import type { EvenementAgenda } from '@/features/schedule/types/agenda';
 import { enTableau } from '@/shared/utils/json';
+import type { ReponseConsentement } from '@/features/auth/types/user';
+
+/** Code du 403 renvoyé par l'API quand le consentement aux données de santé manque (ExigeConsentementFilter). */
+const CONSENTEMENT_REQUIS = 'consentement-requis';
 
 const API_URL = import.meta.env.VITE_DOCKER === 'true'
     ? '' 
@@ -72,6 +76,10 @@ class ApiService {
             });
             return response.data;
         } catch (error: any) {
+            if (error?.response?.status === 403 && error.response.data?.code === CONSENTEMENT_REQUIS) {
+                this.authStore?.setConsentement(false);
+                router.push({ name: 'consentement' });
+            }
             console.error(`Error in ${method} request to ${url}:`, error);
             // Re-throw the error so it can be handled by the caller and background sync
             throw error;
@@ -239,6 +247,10 @@ class ApiService {
     }
 
     // NOTIFICATIONS WEB PUSH
+
+    async postConsentement(): Promise<ReponseConsentement> {
+        return this.request<ReponseConsentement>('POST', 'Account/consentement');
+    }
 
     async getClePubliquePush(): Promise<string> {
         const response = await this.request<{ clePublique: string }>('GET', 'Notifications/cle-publique');

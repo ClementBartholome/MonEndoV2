@@ -21,6 +21,9 @@ public sealed class IdentityDeTest : IDisposable
 {
     public const string MotDePasseValide = "MotDePasse1!";
 
+    /// <summary>Heure fixe injectée dans le contrôleur (date du consentement).</summary>
+    public static readonly DateTimeOffset Maintenant = new(2026, 9, 27, 10, 0, 0, TimeSpan.Zero);
+
     private readonly ServiceProvider _provider;
     private readonly IServiceScope _scope;
 
@@ -70,6 +73,7 @@ public sealed class IdentityDeTest : IDisposable
             sp.GetRequiredService<SignInManager<ApplicationUser>>(),
             carnetSanteService,
             new TokenService(sp.GetRequiredService<IConfiguration>()),
+            new HorlogeFixe(Maintenant),
             NullLogger<AccountController>.Instance)
         {
             ControllerContext = new ControllerContext { HttpContext = httpContext },

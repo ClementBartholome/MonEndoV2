@@ -5,6 +5,7 @@ using System.Text;
 using Microsoft.IdentityModel.Tokens;
 using MonEndoVue.Server.Data;
 using MonEndoVue.Server.Models;
+using MonEndoVue.Server.Services.Consentement;
 
 namespace MonEndoVue.Server.Services
 {
@@ -21,11 +22,7 @@ namespace MonEndoVue.Server.Services
                 .FirstOrDefault();
             var tokenDescriptor = new SecurityTokenDescriptor
             {
-                Subject = new ClaimsIdentity(new Claim[]
-                {
-                    new Claim(ClaimTypes.Name, user.UserName!),
-                    new Claim(ClaimTypes.NameIdentifier, user.Id)
-                }),
+                Subject = new ClaimsIdentity(ClaimsDe(user)),
                 Expires = DateTime.Now.AddMinutes(30),
                 Issuer = issuer,
                 Audience = audience,
@@ -34,6 +31,14 @@ namespace MonEndoVue.Server.Services
             var token = tokenHandler.CreateToken(tokenDescriptor);
             var tokenString = tokenHandler.WriteToken(token);
             return (tokenString, tokenDescriptor.Expires.Value);
+        }
+
+        private static IEnumerable<Claim> ClaimsDe(ApplicationUser user)
+        {
+            yield return new Claim(ClaimTypes.Name, user.UserName!);
+            yield return new Claim(ClaimTypes.NameIdentifier, user.Id);
+            // Version de la politique acceptée : lue par ExigeConsentementFilter à chaque requête, sans accès à la base.
+            if (user.VersionPolitiqueAcceptee is { } version) yield return new Claim(PolitiqueConfidentialite.TypeClaim, version);
         }
 
         public string GenerateRefreshToken()

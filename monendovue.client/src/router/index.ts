@@ -14,6 +14,7 @@ import RegisterPage from "@/features/auth/pages/RegisterPage.vue";
 import CyclePage from "@/features/cycle/pages/CyclePage.vue";
 import PolitiqueConfidentialitePage from "@/features/legal/pages/PolitiqueConfidentialitePage.vue";
 import MentionsLegalesPage from "@/features/legal/pages/MentionsLegalesPage.vue";
+import ConsentementPage from "@/features/legal/pages/ConsentementPage.vue";
 
 const router = createRouter({
     history: createWebHistory(import.meta.env.BASE_URL),
@@ -91,6 +92,12 @@ const router = createRouter({
             name: 'mentions-legales',
             component: MentionsLegalesPage,
             meta: {public: true}
+        },
+        {
+            path: '/consentement',
+            name: 'consentement',
+            component: ConsentementPage,
+            meta: {sansNavigation: true}
         }
     ]
 })
@@ -100,6 +107,9 @@ router.beforeEach((to, from, next) => {
     // Pages publiques (connexion, inscription, documents légaux) : meta.public.
     if (!authStore.user && !to.meta.public) {
         next({name: 'login'});
+    } else if (authStore.user?.consentementAJour === false && !to.meta.public && to.name !== 'consentement') {
+        // Compte sans consentement aux données de santé : rien d'autre n'est accessible avant l'accord.
+        next({name: 'consentement'});
     } else {
         next();
     }
