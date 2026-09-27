@@ -157,7 +157,7 @@ Regles:
 - [x] Humeur du bilan en emotions multiples (1 a 3 parmi 10) et emotion de la semaine (issue #2) ; anciens bilans conserves
 - [x] Bilan quotidien en un ecran (douleur et emotions obligatoires, le reste facultatif et null si non renseigne,
   « Comme hier ») et modification d'un bilan passe, un seul bilan par jour (issues #11, #14)
-- [x] Historique des bilans par semaine ou par mois : calendrier (douleur ou humeur, jours de regles), courbes sur deux
+- [x] Historique des bilans par semaine ou par mois : calendrier (douleur ou emotions, jours de regles), courbes sur deux
   echelles avec les regles en fond, une seule periode pour toute la page (issue #12)
 
 ### Lot C - Engineering quality

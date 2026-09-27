@@ -10,8 +10,8 @@ versions en [SemVer](https://semver.org/lang/fr/) (voir la section Déploiement 
   « Modifier » sur le détail du jour). Quitter une saisie non enregistrée demande une confirmation.
 - Bilan quotidien : bouton « Comme hier » qui reprend le transit, l'alimentation, les pas et l'hydratation de la veille.
 - Bilan quotidien : historique par semaine ou par mois. Un calendrier montre chaque jour en couleur selon la douleur
-  ou l'humeur, avec les jours de règles et les jours sans bilan ; les courbes séparent la douleur (0 à 10) de la
-  fatigue, du stress et de l'humeur (0 à 5) et affichent les règles en fond.
+  ou les émotions, avec les jours de règles et les jours sans bilan ; les courbes séparent la douleur (0 à 10) de la
+  fatigue, du stress et des émotions (0 à 5) et affichent les règles en fond.
 
 ### Modifié
 - Bilan quotidien rempli sur un seul écran : seules la douleur et les émotions sont nécessaires (deux touchers suffisent).
