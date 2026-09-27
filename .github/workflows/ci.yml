@@ -175,8 +175,6 @@ jobs:
           cache-to: type=gha,mode=max
           build-args: |
             VITE_API_URL_PROD=https://monendoapp.fr/
-            VITE_GOOGLE_CALENDAR_API_KEY=${{ secrets.VITE_GOOGLE_CALENDAR_API_KEY }}
-            VITE_GOOGLE_CALENDAR_ID=${{ secrets.VITE_GOOGLE_CALENDAR_ID }}
 
   deployer:
     needs: image

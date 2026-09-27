@@ -61,7 +61,7 @@ dotnet ef migrations add NomEnPascalCase --project MonEndoVue.Server
   **nullables** (null = non renseigné, jamais compté pour 0) ; **un seul bilan par jour** et aucun jour futur (409 / 400).
   Les bilans antérieurs gardent leur ancienne humeur `Mood` (`Heureuse`/`Neutre`/`Triste`) : tout calcul d'humeur passe
   par `features/bilan-quotidien/utils/humeur.ts`, qui prend en compte les deux.
-- Accueil `/` (carnet : dernières entrées), agenda `/agenda` (Google Calendar), export PDF `/export`.
+- Accueil `/` (carnet : dernières entrées), agenda `/agenda` (Google Calendar en lecture via le serveur, seulement pour une utilisatrice associée à un calendrier dans la configuration `Agenda`), export PDF `/export`.
 - Notifications **Web Push standard** envoyées par le serveur (clés VAPID, sans service tiers) : chaque appareil s'abonne
   depuis `/parametres` ; rappels réglables (job Quartz toutes les 15 min), chacun omis si le suivi est déjà fait :
   bilan quotidien (bilan du jour pas encore rempli, ouvre `/bilan-quotidien`) et photo de suivi de l'acné hebdomadaire
