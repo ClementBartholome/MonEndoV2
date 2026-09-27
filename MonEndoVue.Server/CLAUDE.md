@@ -148,4 +148,8 @@ Projet `MonEndoVue.Server.Tests` (xUnit, **net8.0** comme la CI et le Dockerfile
   (coverlet, OpenCover) ; migrations et client sont exclus. Donc **toute ligne C# ajoutée ou modifiée hors migration doit être
   exécutée par un test**, sinon le check Sonar de la PR échoue. Vérifier en local :
   `dotnet test --collect:"XPlat Code Coverage;Format=opencover"`.
+  Un cas défensif impossible (`if (x == null) throw` après une vérification qui le garantit, `catch` d'une exception
+  jamais levée) compte comme ligne non couverte : l'écrire en une expression (`?? throw`) ou le supprimer plutôt
+  que de chercher à le tester. Lignes non couvertes d'une PR : `https://sonarcloud.io/api/sources/lines?key=ClementBartholome_MonEndoV2:<chemin>&pullRequest=<n>`
+  (`isNew` et `lineHits: 0`).
 - Prochaine étape : tests d'intégration avec `WebApplicationFactory` (routage, `[Authorize]`, code HTTP réel des refus).
