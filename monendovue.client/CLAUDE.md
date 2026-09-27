@@ -133,4 +133,14 @@ Nouveau composant shadcn : `npx shadcn-vue add <nom>` (alias configurés vers `@
 - `npm run type-check` après chaque changement significatif, `npm run build` avant de commiter.
 - `npx eslint <fichiers modifiés>` (le script `npm run lint` corrige tout le client et mélangerait les commits).
 - Test visuel dans le navigateur à 375px et en desktop ; console sans erreur. Pas de `console.log` laissé dans le code.
-- E2E Playwright (`npm run test:e2e`) : uniquement contre un environnement local, avec `E2E_EMAIL`/`E2E_PASSWORD`.
+- **Tests E2E** (`npm run test:e2e`) : Playwright pilote l'interface comme une utilisatrice, avec une **API simulée**
+  (pas de Vitest ni de tests unitaires client : le serveur est couvert par xUnit). Vue d'ensemble : `docs/tests.md`.
+  - Un fichier `tests/<page>.spec.ts` par page ; importer `test`/`expect` de `tests/support/fixtures.ts` (session ouverte,
+    horloge fixée à `MAINTENANT`, faux serveur `serveur`). `test.use({ connectee: false })` pour un parcours sans session.
+  - Données d'une page : `tests/support/<page>.ts` (modèle : `simulerActivite`), avec un état propre au test (ajout,
+    modification, suppression), typées avec les types de `features/*/types`.
+  - **Reproduire le format réel de l'endpoint** : un tableau C# (`ToArrayAsync`) arrive en tableau JSON, une `List` en
+    `{ $values }` (`liste()`). Tout appel API sans route simulée fait échouer le test (appel oublié ou contrat modifié).
+  - Chaque test tourne en **mobile 375px et en desktop** : cibler le texte visible (`visible()` dans `activite.spec.ts`),
+    la page contenant à la fois les cartes mobiles et le tableau desktop.
+  - Vérifier le résultat côté utilisatrice (texte affiché) **et** ce qui a été envoyé (état du faux serveur).

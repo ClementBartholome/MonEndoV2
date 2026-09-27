@@ -23,13 +23,14 @@ transit, activité, bilan quotidien) et à préparer leurs rendez-vous médicaux
 | `.github/workflows/ci.yml` | CI/CD : vérification → image Docker → déploiement VPS |
 | `Dockerfile` | Image unique : le client est buildé par `dotnet publish` (esproj) et servi depuis `wwwroot` |
 | `deploy/` | Référence versionnée de la config du VPS (compose de prod, logrotate) et procédure d'application |
-| `docs/` | Roadmap (`modernization-plan.md`) ; `docs/private/` local et non versionné |
+| `docs/` | Roadmap (`modernization-plan.md`), vue d'ensemble des tests (`tests.md`) ; `docs/private/` local et non versionné |
 
 ## Commandes
 ```bash
 # Client (depuis monendovue.client/)
 npm run dev          # serveur Vite https://localhost:5173
-npm run type-check   # vue-tsc, à lancer après chaque changement significatif
+npm run type-check   # vue-tsc (code) + tsc (tests E2E), à lancer après chaque changement significatif
+npm run test:e2e     # parcours de l'interface avec une API simulée (Playwright, mobile 375px + desktop)
 npm run build        # type-check + build (même commande que la CI et le Dockerfile)
 npx eslint <fichiers>  # préférer au `npm run lint`, qui fait --fix sur tout le client
 
@@ -40,7 +41,9 @@ dotnet ef migrations add NomEnPascalCase --project MonEndoVue.Server
 ```
 - Lancement complet en dev : profil `https` de `MonEndoVue.Server` (démarre Vite via SpaProxy). API : https://localhost:7206.
 - Configuration locale : `MonEndoVue.Server/appsettings.Development.json` et `monendovue.client/.env` (non versionnés, **ne pas les lire ni les afficher**).
-- Tests E2E Playwright : `E2E_EMAIL`/`E2E_PASSWORD` d'un compte **local**, jamais contre la production. Tests backend : projet `MonEndoVue.Server.Tests` (xUnit) ; pas encore de tests unitaires front.
+- **Tests** : vue d'ensemble (types, emplacements, CI, bloquant ou non, limites) dans [docs/tests.md](docs/tests.md).
+- Tests backend : projet `MonEndoVue.Server.Tests` (xUnit). Tests front : parcours E2E Playwright avec une **API simulée**
+  (`monendovue.client/tests/`, ni serveur ni compte), lancés en CI sur les PR vers `main` ou avec l'étiquette `e2e` (conventions : `monendovue.client/CLAUDE.md`).
 
 ## Domaine fonctionnel
 - **`CarnetSante`** : un carnet par utilisatrice (1-1 avec `ApplicationUser`), racine de toutes les données.
@@ -161,7 +164,8 @@ Utiliser le skill `revue-securite` avant de commiter un changement touchant auth
   `fix(auth): corrige le path des cookies JWT`. Contre-exemples : `fix: petits correctifs`, `feat(cycle) ajout` (pas de `:`), message en anglais.
 
 ## Definition of Done
-- `npm run build` (client), `dotnet build -c Release` et `dotnet test` (serveur) verts ; toute règle métier nouvelle côté serveur a ses tests.
+- `npm run build` et `npm run test:e2e` (client), `dotnet build -c Release` et `dotnet test` (serveur) verts ; toute règle
+  métier nouvelle a ses tests (serveur : xUnit) et tout parcours d'écran nouveau ou modifié a son test E2E.
 - Test manuel à 375px **et** sur desktop des écrans touchés, clavier compris.
 - Revue sécurité (skill `revue-securite`) si auth, endpoint, upload ou données partagées sont touchés.
 - Types TS alignés sur les contrats C# modifiés ; migration relue si le modèle change.
