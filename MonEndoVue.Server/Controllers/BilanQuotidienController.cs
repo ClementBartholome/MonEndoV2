@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.EntityFrameworkCore;
 using MonEndoVue.Server.Data;
 using MonEndoVue.Server.Models;
@@ -31,39 +32,15 @@ namespace MonEndoVue.Server.Controllers
             return bilanQuotidien;
         }
         
-        // GET: BilanQuotidien/ByMonth/5/2021
-        [HttpGet("{month}/{year}")]
-        public async Task<ActionResult<IEnumerable<BilanQuotidien>>> GetBilanQuotidienByMonth(int carnetSanteId, int month, int year)
-        {
-            var securityCheck = await this.ValidateCarnetAccess(carnetSanteService, carnetSanteId);
-            if (securityCheck != null) return securityCheck;
-            
-            var bilansQuotidiens = await context.BilansQuotidiens
-                .Where(d => d.Date.Month == month && d.Date.Year == year && d.CarnetSanteId == carnetSanteId)
-                .ToArrayAsync();
+        // GET: BilanQuotidien/periode?du=2026-09-01&au=2026-09-30 (carnet déduit de la session)
+        [HttpGet("periode")]
+        public async Task<IActionResult> GetPeriode(
+            [FromQuery, BindRequired] DateOnly du, [FromQuery, BindRequired] DateOnly au,
+            [FromServices] HistoriqueBilansService historique, CancellationToken cancellationToken) =>
+            this.VersReponse(
+                await historique.GetPeriodeAsync(User.GetCurrentUserId(), du, au, cancellationToken),
+                periode => Ok(periode));
 
-            return bilansQuotidiens;
-        }
-        
-        // GET: BilanQuotidien/ByWeek/5/2021
-        [HttpGet("by-week/{carnetSanteId}/{week}/{year}")]
-        public async Task<ActionResult<IEnumerable<BilanQuotidien>>> GetBilanQuotidienByWeek(int carnetSanteId, int week, int year)
-        {
-            var securityCheck = await this.ValidateCarnetAccess(carnetSanteService, carnetSanteId);
-            if (securityCheck != null) return securityCheck;
-            
-            var firstDayOfYear = new DateTime(year, 1, 1);
-            var startOfWeek = firstDayOfYear.AddDays((week - 1) * 7 - (int)firstDayOfYear.DayOfWeek + (int)DayOfWeek.Monday);
-            var endOfWeek = startOfWeek.AddDays(7);
-
-            var bilansQuotidiens = await context.BilansQuotidiens
-                .Where(d => d.Date >= startOfWeek && d.Date < endOfWeek && d.CarnetSanteId == carnetSanteId)
-                .ToArrayAsync();
-
-            return bilansQuotidiens;
-        }
-        
-        
         // PUT: BilanQuotidien/5
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPut("{id}")]
