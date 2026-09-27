@@ -110,7 +110,9 @@
           <Datatable :entries="entries" :columns="columns" :deleteFunction="handleDelete" @edit-entry="handleEditEntry">
             <thead>
               <tr>
-                <th>Type</th><th>Date</th><th>Heure</th><th>Durée</th><th>Intensité</th><th>Commentaire</th><th></th><th></th>
+                <th scope="col">Type</th><th scope="col">Date</th><th scope="col">Heure</th><th scope="col">Durée</th>
+                <th scope="col">Intensité</th><th scope="col">Commentaire</th>
+                <th scope="col"><span class="sr-only">Supprimer</span></th><th scope="col"><span class="sr-only">Modifier</span></th>
               </tr>
             </thead>
           </Datatable>
