@@ -118,23 +118,27 @@ const compressImageToTarget = async (file: File, targetMaxBytes: number): Promis
   return file
 }
 
+/**
+ * Conversion par le navigateur lui-même : Safari (iOS 17+, macOS 14+) décode le HEIC nativement.
+ * Pas de bibliothèque de décodage (heic2any) : elle lance un worker depuis une URL blob: et évalue du code,
+ * ce que la Content-Security-Policy interdit. Ailleurs, la photo HEIC est envoyée telle quelle (acceptée par le serveur).
+ */
 const convertHeicToJpeg = async (file: File): Promise<File | null> => {
   try {
-    const heic2anyModule = await import('heic2any')
-    const heic2any = heic2anyModule.default
+    const image = await createImageFromFile(file)
+    const canvas = document.createElement('canvas')
+    canvas.width = image.naturalWidth
+    canvas.height = image.naturalHeight
 
-    const outputBlob = await heic2any({
-      blob: file,
-      toType: 'image/jpeg',
-      quality: 0.9,
-    })
-
-    const normalizedBlob = Array.isArray(outputBlob) ? outputBlob[0] : outputBlob
-    if (!(normalizedBlob instanceof Blob)) {
+    const context = canvas.getContext('2d')
+    if (!context) {
       return null
     }
 
-    return new File([normalizedBlob], `${getBaseName(file.name)}.jpg`, {
+    context.drawImage(image, 0, 0)
+    const jpegBlob = await canvasToJpegBlob(canvas, 0.9)
+
+    return new File([jpegBlob], `${getBaseName(file.name)}.jpg`, {
       type: 'image/jpeg',
       lastModified: Date.now(),
     })
