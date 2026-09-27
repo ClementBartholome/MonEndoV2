@@ -89,6 +89,10 @@ Nouveau composant shadcn : `npx shadcn-vue add <nom>` (alias configurés vers `@
 - Textes 100 % en français, dates via `useDateTimeFormat` (`fr-FR`).
 - **Jour calendaire envoyé à l'API** : jamais un `Date` à minuit (sérialisé en UTC, il glisse au jour précédent et le
   serveur le stocke sans fuseau) ; envoyer `format(jour, "yyyy-MM-dd'T'12:00:00")` (modèle : `useSaisieBilan`).
+- **Jour calendaire reçu de l'API** : le comparer par sa clé `yyyy-MM-dd` en heure locale (`cleJour` de
+  `features/bilan-quotidien/utils/historique.ts`), jamais par timestamp.
+- Courbes à plusieurs échelles ou avec des bandes de fond (règles) : `GraphiqueLignes.vue` (SVG simple, jours non
+  renseignés non tracés) plutôt que `LineChart` (unovis), qui n'a qu'un axe et relie les trous.
 - Élément collé en bas d'écran (`sticky`/`fixed`) : sous 1024px la navigation est fixée en bas (`.navbar-side`, ~4.25rem),
   le décaler d'autant (modèle : barre d'enregistrement de `SaisieBilan.vue`).
 - La taille de police racine grandit en desktop (20px à 1280px) : les largeurs en `rem` (`max-w-3xl`…) y sont plus
