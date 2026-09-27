@@ -6,7 +6,7 @@
           <i class="material-symbols-outlined bg-blue-100 text-blue-600 rounded-xl p-3 shrink-0" style="font-size: 28px;">event_note</i>
           <div class="flex-1 min-w-0">
             <h3 class="font-semibold text-headline">Bilan quotidien</h3>
-            <p class="text-sm text-paragraph truncate">Humeur, stress, fatigue... fais le point sur ta journée</p>
+            <p class="text-sm text-paragraph">Douleur, émotions, fatigue… fais le point sur ta journée</p>
           </div>
           <i class="material-symbols-outlined text-muted-foreground shrink-0">chevron_right</i>
         </div>
