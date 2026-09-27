@@ -107,6 +107,12 @@ Nouveau composant shadcn : `npx shadcn-vue add <nom>` (alias configurés vers `@
 - Accessibilité : labels associés aux champs, navigation clavier, cibles tactiles d'au moins 44px, contraste suffisant.
 - Jamais de `v-html` ; pour `Datatable`, ne pas rendre de texte saisi comme HTML.
 
+## Routage
+- Toute route exige une session, sauf celles marquées `meta: { public: true }` (connexion, inscription, documents légaux) :
+  le garde de `router/index.ts` ne teste que ce drapeau.
+- Documents légaux (`features/legal/`) : gabarit `DocumentLegal.vue`, éditeur et date de mise à jour dans
+  `config/editeur.ts`, liens de pied `LiensLegaux.vue`. Texte en tutoiement, comme le reste de l'app.
+
 ## État et stockage
 - Pinia uniquement pour l'authentification (`features/auth/store/auth.ts`) ; le reste en état local ou composable.
 - `localStorage` réservé aux préférences non sensibles (`user` sans token, `monendo.wellbeing-goals`).

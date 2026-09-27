@@ -29,11 +29,13 @@
       <p class="mt-4">
         Déjà inscrit ? <router-link to="/login" class="!text-highlight">Connectez-vous</router-link>
       </p>
+      <LiensLegaux/>
     </form>
   </div>
 </template>
 
 <script setup lang="ts">
+import LiensLegaux from '@/features/legal/components/LiensLegaux.vue';
 import { onMounted } from 'vue';
 import {Button} from '@/shared/components/ui/button'
 import {

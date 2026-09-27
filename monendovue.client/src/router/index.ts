@@ -12,6 +12,8 @@ import BilanQuotidienPage from "@/features/bilan-quotidien/pages/BilanQuotidienP
 import ParametresPage from "@/features/parametres/pages/ParametresPage.vue";
 import RegisterPage from "@/features/auth/pages/RegisterPage.vue";
 import CyclePage from "@/features/cycle/pages/CyclePage.vue";
+import PolitiqueConfidentialitePage from "@/features/legal/pages/PolitiqueConfidentialitePage.vue";
+import MentionsLegalesPage from "@/features/legal/pages/MentionsLegalesPage.vue";
 
 const router = createRouter({
     history: createWebHistory(import.meta.env.BASE_URL),
@@ -49,7 +51,8 @@ const router = createRouter({
         {
             path: '/login',
             name: 'login',
-            component: LoginPage
+            component: LoginPage,
+            meta: {public: true}
         },
         {
             path: '/export',
@@ -69,19 +72,33 @@ const router = createRouter({
         {
             path: '/register',
             name: 'register',
-            component: RegisterPage
+            component: RegisterPage,
+            meta: {public: true}
         },
         {
             path: '/cycle',
             name: 'cycle',
             component: CyclePage
+        },
+        {
+            path: '/confidentialite',
+            name: 'confidentialite',
+            component: PolitiqueConfidentialitePage,
+            meta: {public: true}
+        },
+        {
+            path: '/mentions-legales',
+            name: 'mentions-legales',
+            component: MentionsLegalesPage,
+            meta: {public: true}
         }
     ]
 })
 
 router.beforeEach((to, from, next) => {
     const authStore = useAuthStore();
-    if (!authStore.user && to.name !== 'login' && to.name !== 'register') {
+    // Pages publiques (connexion, inscription, documents légaux) : meta.public.
+    if (!authStore.user && !to.meta.public) {
         next({name: 'login'});
     } else {
         next();
