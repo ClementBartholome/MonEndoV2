@@ -122,5 +122,18 @@ public sealed class CarnetSanteControllerReponsesTests : IDisposable
         Assert.Contains(_carnet.Context.CarnetSantes, c => c.UserId == SansCarnetId);
     }
 
+    [Fact]
+    public async Task CreateCarnetForCurrentUser_ErreurDeLaBase_Retourne500SansDetailTechnique()
+    {
+        var controller = Controller(SansCarnetId);
+        await _carnet.Context.DisposeAsync();
+
+        var resultat = await controller.CreateCarnetForCurrentUser();
+
+        var erreur = Assert.IsType<ObjectResult>(resultat);
+        Assert.Equal(StatusCodes.Status500InternalServerError, erreur.StatusCode);
+        Assert.Equal("Erreur lors de la création du carnet", erreur.Value);
+    }
+
     public void Dispose() => _carnet.Dispose();
 }

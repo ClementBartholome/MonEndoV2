@@ -14,19 +14,6 @@ public class CarnetSanteService(AppDbContext context, ILogger<CarnetSanteService
             .AnyAsync(c => c.Id == carnetSanteId && c.UserId == userId);
     }
     
-    public async Task<int> GetCarnetSanteId(string userId)
-    {
-        var carnetSante = await context.CarnetSantes
-            .FirstOrDefaultAsync(c => c.UserId == userId);
-
-        if (carnetSante == null)
-        {
-            throw new KeyNotFoundException("Carnet de santé introuvable");
-        }
-
-        return carnetSante.Id;
-    }
-
     public async Task<CarnetSante> GetCarnetSanteByUserId(string userId)
     {
         var carnetSante = await context.CarnetSantes
@@ -83,12 +70,7 @@ public class CarnetSanteService(AppDbContext context, ILogger<CarnetSanteService
             .Include(c => c.DonneesTransit.OrderBy(d => d.Date))
             .Include(c => c.JourRegles.OrderBy(d => d.Date))
             .Where(c => c.Id == carnetSanteId && c.UserId == userId) // Double vérification dans la requête
-            .FirstOrDefaultAsync();
-
-        if (carnetSante == null)
-        {
-            throw new KeyNotFoundException("Carnet de santé introuvable");
-        }
+            .FirstOrDefaultAsync() ?? throw new KeyNotFoundException("Carnet de santé introuvable");
 
         var donneesMedicamentViewModel = carnetSante.DonneesMedicaments.Select(dm => new DonneesMedicamentViewModel
         {
@@ -167,10 +149,7 @@ public class CarnetSanteService(AppDbContext context, ILogger<CarnetSanteService
                     })
                     .FirstOrDefault()
             })
-            .FirstOrDefaultAsync();
-
-        if (carnetSante == null)
-            throw new KeyNotFoundException("Carnet de santé introuvable");
+            .FirstOrDefaultAsync() ?? throw new KeyNotFoundException("Carnet de santé introuvable");
 
         return carnetSante;
     }
@@ -248,10 +227,8 @@ public class CarnetSanteService(AppDbContext context, ILogger<CarnetSanteService
             .Include(c => c.DonneesTransit.Where(d => d.Date.Month == month && d.Date.Year == year))
             .Include(c => c.JourRegles.Where(d => d.Date.Month == month && d.Date.Year == year))
             .Include(c => c.BilansQuotidiens.Where(d => d.Date.Month == month && d.Date.Year == year))
-            .FirstOrDefaultAsync(c => c.Id == carnetSanteId && c.UserId == userId);
-
-        if (carnetSante == null)
-            throw new KeyNotFoundException("Carnet de santé introuvable");
+            .FirstOrDefaultAsync(c => c.Id == carnetSanteId && c.UserId == userId)
+            ?? throw new KeyNotFoundException("Carnet de santé introuvable");
 
         return new CarnetPdfExportViewModel
         {

@@ -80,10 +80,6 @@ namespace MonEndoVue.Server.Controllers
             {
                 return Forbid();
             }
-            catch (KeyNotFoundException)
-            {
-                return NotFound();
-            }
         }
 
         [HttpGet("{carnetSanteId}/{month}/{year}")]
@@ -101,10 +97,6 @@ namespace MonEndoVue.Server.Controllers
             catch (UnauthorizedAccessException)
             {
                 return Forbid();
-            }
-            catch (KeyNotFoundException)
-            {
-                return NotFound();
             }
         }
 
@@ -143,10 +135,6 @@ namespace MonEndoVue.Server.Controllers
             catch (UnauthorizedAccessException)
             {
                 return Forbid();
-            }
-            catch (KeyNotFoundException)
-            {
-                return NotFound();
             }
         }
 
