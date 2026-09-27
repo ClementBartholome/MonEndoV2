@@ -45,6 +45,15 @@ test.describe('Consentement aux données de santé', () => {
     await expect(page).toHaveURL(/\/login$/);
   });
 
+  test("sans donner son accord, on peut supprimer son compte", async ({ page }) => {
+    await ouvrirSessionSansConsentement(page, 'refuse');
+    await page.goto('/');
+
+    await page.getByRole('button', { name: 'Supprimer mon compte' }).click();
+
+    await expect(page.getByRole('dialog', { name: 'Supprimer ton compte ?' })).toBeVisible();
+  });
+
   test("une session d'avant l'accord est renvoyée vers la page d'accord quand l'API le demande", async ({ consentementPage, serveur, page }) => {
     serveur.on('GET', /^CarnetSante\/last-entries\/\d+$/, () => REFUS_CONSENTEMENT);
     await ouvrirSessionSansConsentement(page, 'absent');

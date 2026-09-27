@@ -21,10 +21,10 @@
 
       <div class="flex flex-col gap-3 border-t border-gray-300 pt-5">
         <p class="text-sm text-muted-foreground">
-          Tu ne souhaites pas donner ton accord ? Pour supprimer ton compte et toutes tes données, écris à
-          <a :href="`mailto:${EDITEUR.email}`" class="underline">{{ EDITEUR.email }}</a>.
+          Tu ne souhaites pas donner ton accord ? Tu peux te déconnecter, ou supprimer ton compte et toutes tes données.
         </p>
         <Button type="button" variant="outline" class="min-h-11" @click="seDeconnecter">Me déconnecter</Button>
+        <SuppressionCompte/>
       </div>
     </div>
   </section>
@@ -36,7 +36,7 @@ import {Button} from '@/shared/components/ui/button';
 import {useAuthStore} from '@/features/auth/store/auth';
 import CaseConsentement from '../components/CaseConsentement.vue';
 import {useConsentement} from '../composables/useConsentement';
-import {EDITEUR} from '../config/editeur';
+import SuppressionCompte from '@/features/parametres/components/SuppressionCompte.vue';
 
 const router = useRouter();
 const auth = useAuthStore();

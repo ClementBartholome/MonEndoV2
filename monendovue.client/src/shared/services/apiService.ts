@@ -258,6 +258,11 @@ class ApiService {
         return this.request<Blob>('GET', 'DonneesPersonnelles/export', undefined, { responseType: 'blob' });
     }
 
+    /** Suppression définitive du compte et de toutes ses données, confirmée par le mot de passe (corps de la requête). */
+    async postSuppressionCompte(password: string): Promise<void> {
+        await this.request<void>('POST', 'DonneesPersonnelles/suppression-compte', { password });
+    }
+
     async getClePubliquePush(): Promise<string> {
         const response = await this.request<{ clePublique: string }>('GET', 'Notifications/cle-publique');
         return response.clePublique;
