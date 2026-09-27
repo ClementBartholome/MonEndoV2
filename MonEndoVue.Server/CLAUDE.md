@@ -107,10 +107,9 @@ modifiables, jamais `Entry(dto).State = Modified`, jamais de changement de `Carn
 - **Appliquées automatiquement au démarrage en production** : migrations rétro-compatibles, relire le fichier généré,
   signaler toute opération destructive. Ne jamais modifier une migration déjà déployée.
 - En développement, les migrations ne sont pas appliquées au démarrage (`dotnet ef database update` à la main).
-- **Table conservée hors modèle : `PreferencesRappel`** (ancien réglage du rappel, recopié dans `Rappels` par
-  `GeneraliseRappels`, gardé pour un retour à une image antérieure à la 1.0.0). Elle est absente du modèle **et** du
-  snapshot : une nouvelle migration ne la touche pas (vérifié avec `RendFacultativesMesuresBilan`). Sa suppression se fera
-  par une migration dédiée écrite à la main (prévue en 1.1, voir la roadmap).
+- **Supprimer une table hors modèle** (cas de `PreferencesRappel`, supprimée en 1.2.0 par `SupprimePreferencesRappel`) :
+  `migrations add` génère une migration vide (modèle et snapshot inchangés) ; écrire à la main le `DropTable` et, dans
+  le `Down`, le `CreateTable` du schéma d'origine. La tester sur une base jetable avec des lignes (`sqlcmd -I`).
 - **Rollback après une colonne rendue nullable** : une image antérieure lit la colonne comme non nullable et plante dès
   qu'une valeur nulle est enregistrée (cas de `RendFacultativesMesuresBilan`). Le signaler dans la PR et ajouter la
   requête de remise à niveau à exécuter avant un retour arrière dans le skill `release` (section « Annuler »).

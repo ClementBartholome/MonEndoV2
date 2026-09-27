@@ -65,8 +65,8 @@ Points d'attention connus :
 - **Retour à une image antérieure à la 1.0.0** : les bilans saisis depuis la 1.0.0 ont `Mood` à NULL, que l'ancienne image
   (propriété `Mood` obligatoire) ne sait pas lire. Avant de repointer l'image, exécuter sur la base de prod
   `UPDATE BilansQuotidiens SET Mood = 'Neutre' WHERE Mood IS NULL` (sans effet sur la 1.0.0 et suivantes, où les émotions
-  priment sur `Mood`). Les réglages de rappel modifiés depuis la 1.0.0 ne sont pas vus par l'ancienne image
-  (elle relit `PreferencesRappel`).
+  priment sur `Mood`). **Depuis la 1.2.0, ce retour n'est plus possible tel quel** : ces images lisent la table
+  `PreferencesRappel`, supprimée par `SupprimePreferencesRappel`. Le plus ancien point de retour est la 1.0.0.
 - **Retour à une image antérieure à la 1.1.0** : `StressPro`, `StressPerso`, `Fatigue`, `Pas` et `Hydratation` sont
   nullables depuis la 1.1.0 (migration `RendFacultativesMesuresBilan`), l'ancienne image plante sur une valeur nulle.
   Avant de repointer l'image, exécuter sur la base de prod
