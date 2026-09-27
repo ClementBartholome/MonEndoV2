@@ -32,8 +32,8 @@ export interface Observation {
 }
 
 export interface Tendances {
-  /** Bilans saisis et jours écoulés de la période. */
-  couverture: { bilans: number; jours: number };
+  /** Bilans saisis et jours écoulés de la période, bilans de la période précédente. */
+  couverture: { bilans: number; jours: number; bilansPrecedents: number };
   indicateurs: TendanceIndicateur[];
   reperes: RepereSuivi[];
   observations: Observation[];
