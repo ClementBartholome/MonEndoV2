@@ -48,7 +48,8 @@ Complète le [CLAUDE.md racine](../CLAUDE.md). S'applique à tout le code de `Mo
 - **Dette connue** (lot C de la roadmap), à résorber quand on touche la zone :
   - les contrôleurs injectent `AppDbContext` et contiennent des requêtes (sauf `NotificationsController`, déjà conforme) ;
   - `CarnetSanteService` mélange lecture du carnet, page d'accueil, export PDF et cache ;
-  - `AzureBlobStorageService` (réseau) sans abstraction : en introduire une seulement pour tester l'upload sans Azure ;
+  - `AzureBlobStorageService` : seule la lecture passe par `IStockagePhotos` (`Services/Photos/`, faux en test) ; l'upload
+    et la suppression l'appellent encore directement : les ajouter à cette interface quand on les teste ;
   - `DateTime.Now` subsiste dans l'authentification.
 
 ## Style C#
@@ -85,6 +86,11 @@ modifiables, jamais `Entry(dto).State = Modified`, jamais de changement de `Carn
   suppression du compte en sont exemptés par `[SansConsentement]` : retirer son accord ne doit jamais être bloqué.
 - Changer `PolitiqueConfidentialite.Version` (avec la date de `features/legal/config/editeur.ts`) redemande l'accord à toutes
   les utilisatrices : seulement pour une évolution importante de la politique.
+
+## Droits sur les données (RGPD)
+- `DonneesPersonnellesController` (`[SansConsentement]`) : export complet par `ExportDonneesService` (ZIP en fichier temporaire
+  supprimé à la fermeture, `donnees.json` + `photos/` + `LISEZMOI.txt`, carnet déduit de la session).
+- **Toute nouvelle donnée enregistrée s'ajoute à l'export** (`LireDonneesAsync`) et à son test, dans la même PR.
 
 ## Erreurs et réponses
 - `BadRequest(new { message = "Message en français" })` : format lu par `useDialogForm.getErrorDescription` côté client.

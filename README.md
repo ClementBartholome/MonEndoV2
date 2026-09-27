@@ -11,7 +11,8 @@ MonEndoV2 est une application destinée aux personnes souffrant d'endométriose,
 - Agenda Google Calendar (lecture seule, pour un compte associé à un calendrier) : prochains rendez-vous médicaux.
 - Notifications : rappel du bilan quotidien à l'heure choisie (envoyé seulement si le bilan du jour n'est pas rempli) et rappel hebdomadaire de la photo de suivi de l'acné au jour et à l'heure choisis (envoyé seulement si aucune photo d'acné n'a été ajoutée depuis 7 jours) ; chaque notification ouvre la page concernée. Activation par appareil dans Paramètres ; sur iPhone/iPad (iOS 16.4+), l'application doit être ajoutée à l'écran d'accueil.
 - Confidentialité : politique de confidentialité et mentions légales publiques (`/confidentialite`, `/mentions-legales`) ;
-  consentement explicite aux données de santé à l'inscription, redemandé si la politique change de façon importante.
+  consentement explicite aux données de santé à l'inscription, redemandé si la politique change de façon importante ;
+  export de toutes ses données (JSON lisible + photos) depuis Paramètres.
 
 ![2025-05-27 19_21_26-Mon Endo](https://github.com/user-attachments/assets/60c809d8-6284-4538-81a9-ff8e9d4c59f0)
 ![2025-05-27 19_16_39-Mon Endo](https://github.com/user-attachments/assets/10247a19-9cff-4d9d-8450-98a9ac456f2b)
