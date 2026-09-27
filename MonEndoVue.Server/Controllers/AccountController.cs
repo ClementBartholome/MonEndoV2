@@ -35,33 +35,7 @@ namespace MonEndoVue.Server.Controllers
             }
             await carnetSanteService.CreateCarnetSante(user.Id);
 
-            var (accessToken, tokenExpiry) = tokenService.GenerateAccessToken(user);
-            var refreshToken = tokenService.GenerateRefreshToken();
-
-            user.RefreshToken = refreshToken;
-            user.RefreshTokenExpiryTime = DateTime.Now.AddDays(2);
-            await userManager.UpdateAsync(user);
-
-            var accessTokenOptions = new CookieOptions
-            {
-                HttpOnly = true,
-                Secure = true,
-                SameSite = SameSiteMode.Strict,
-                Path = "/",
-                Expires = DateTime.Now.AddMinutes(30)
-            };
-
-            var refreshTokenOptions = new CookieOptions
-            {
-                HttpOnly = true,
-                Secure = true,
-                SameSite = SameSiteMode.Strict,
-                Path = "/",
-                Expires = DateTime.Now.AddDays(2)
-            };
-
-            Response.Cookies.Append("accessToken", accessToken, accessTokenOptions);
-            Response.Cookies.Append("refreshToken", refreshToken, refreshTokenOptions);
+            var (accessToken, refreshToken, tokenExpiry) = await OuvrirSessionAsync(user);
 
             var carnetSante = await carnetSanteService.GetCarnetSanteByUserId(user.Id);
             return Ok(new { AccessToken = accessToken, RefreshToken = refreshToken, TokenExpiry = tokenExpiry, user.UserName, CarnetSanteId = carnetSante.Id });
@@ -83,33 +57,7 @@ namespace MonEndoVue.Server.Controllers
                 var result = await signInManager.CheckPasswordSignInAsync(user, identifiants.Password, lockoutOnFailure: true);
                 if (!result.Succeeded) return Unauthorized();
 
-                var (accessToken, tokenExpiry) = tokenService.GenerateAccessToken(user);
-                var refreshToken = tokenService.GenerateRefreshToken();
-                
-                user.RefreshToken = refreshToken;
-                user.RefreshTokenExpiryTime = DateTime.Now.AddDays(2);
-                await userManager.UpdateAsync(user);
-                
-                var accessTokenOptions = new CookieOptions
-                {
-                    HttpOnly = true,
-                    Secure = true,
-                    SameSite = SameSiteMode.Strict,
-                    Path = "/",
-                    Expires = DateTime.Now.AddMinutes(30)
-                };
-                
-                var refreshTokenOptions = new CookieOptions
-                {
-                    HttpOnly = true,
-                    Secure = true,
-                    SameSite = SameSiteMode.Strict,
-                    Path = "/",
-                    Expires = DateTime.Now.AddDays(2)
-                };
-                
-                Response.Cookies.Append("accessToken", accessToken, accessTokenOptions);
-                Response.Cookies.Append("refreshToken", refreshToken, refreshTokenOptions);
+                var (accessToken, refreshToken, tokenExpiry) = await OuvrirSessionAsync(user);
 
                 var carnetSante = await carnetSanteService.GetCarnetSanteByUserId(user.Id);
                 return Ok(new { AccessToken = accessToken, RefreshToken = refreshToken, TokenExpiry = tokenExpiry, user.UserName, CarnetSanteId = carnetSante.Id });
@@ -144,33 +92,7 @@ namespace MonEndoVue.Server.Controllers
                 return BadRequest("Expired refresh token");
             }
 
-            var (newAccessToken, tokenExpiry) = tokenService.GenerateAccessToken(user);
-            var newRefreshToken = tokenService.GenerateRefreshToken();
-
-            user.RefreshToken = newRefreshToken;
-            user.RefreshTokenExpiryTime = DateTime.Now.AddDays(2);
-            await userManager.UpdateAsync(user);
-
-            var accessTokenOptions = new CookieOptions
-            {
-                HttpOnly = true,
-                Secure = true,
-                SameSite = SameSiteMode.Strict,
-                Path = "/",
-                Expires = DateTime.Now.AddMinutes(30)
-            };
-
-            var refreshTokenOptions = new CookieOptions
-            {
-                HttpOnly = true,
-                Secure = true,
-                SameSite = SameSiteMode.Strict,
-                Path = "/",
-                Expires = DateTime.Now.AddDays(2)
-            };
-
-            Response.Cookies.Append("accessToken", newAccessToken, accessTokenOptions);
-            Response.Cookies.Append("refreshToken", newRefreshToken, refreshTokenOptions);
+            var (newAccessToken, newRefreshToken, tokenExpiry) = await OuvrirSessionAsync(user);
 
             logger.LogInformation("Refresh token successfully generated for user: {UserId}", user.Id);
             return Ok(new { AccessToken = newAccessToken, RefreshToken = newRefreshToken, TokenExpiry = tokenExpiry });
@@ -245,6 +167,34 @@ namespace MonEndoVue.Server.Controllers
             return BadRequest(errors);
         }
         
+        /// <summary>
+        /// Émet un jeton d'accès (30 min) et un refresh token (2 jours), enregistre ce dernier sur l'utilisatrice et les pose
+        /// en cookies HttpOnly (Path=/, SameSite=Strict).
+        /// </summary>
+        private async Task<(string accessToken, string refreshToken, DateTime tokenExpiry)> OuvrirSessionAsync(ApplicationUser user)
+        {
+            var (accessToken, tokenExpiry) = tokenService.GenerateAccessToken(user);
+            var refreshToken = tokenService.GenerateRefreshToken();
+
+            user.RefreshToken = refreshToken;
+            user.RefreshTokenExpiryTime = DateTime.Now.AddDays(2);
+            await userManager.UpdateAsync(user);
+
+            Response.Cookies.Append("accessToken", accessToken, CookieSession(DateTime.Now.AddMinutes(30)));
+            Response.Cookies.Append("refreshToken", refreshToken, CookieSession(DateTime.Now.AddDays(2)));
+
+            return (accessToken, refreshToken, tokenExpiry);
+        }
+
+        private static CookieOptions CookieSession(DateTime expiration) => new()
+        {
+            HttpOnly = true,
+            Secure = true,
+            SameSite = SameSiteMode.Strict,
+            Path = "/",
+            Expires = expiration
+        };
+
         private static string TranslateError(IdentityError error)
         {
             return error.Code switch
