@@ -13,7 +13,45 @@ Les secrets ne sont **jamais** dans ce dossier (dépôt public). Ils restent sur
 - `~/app/config/app.env` : variables secrètes de l'application (`AZURE_STORAGE_CONNECTION_STRING=...`) ;
 - `~/app/config/appsettings.Production.json`, `~/app/keys/`, `~/app/ssl/`.
 
+## Créer `config/app.env` (une fois, avant le premier compose qui l'utilise)
+
+Le compose lit les secrets de l'application dans `~/app/config/app.env` (une ligne `CLE=valeur` par variable, sans
+guillemets). Pour ne rien recopier à la main, ce script reprend la valeur dans le compose actuel, écrit le fichier en
+`600` et n'affiche que des longueurs :
+
+```bash
+cat > /tmp/app_env.py <<'EOF'
+import os, re, sys
+src = os.path.expanduser('~/app/docker-compose.prod.yml')
+dst = os.path.expanduser('~/app/config/app.env')
+cles = ['AZURE_STORAGE_CONNECTION_STRING']
+if os.path.exists(dst):
+    sys.exit(f'{dst} existe déjà : rien écrit')
+texte = open(src).read()
+lignes = []
+for cle in cles:
+    m = re.search(r'^[ \t-]*["\']?' + cle + r'["\']?[ \t]*[=:][ \t]*(.+?)[ \t\r]*$', texte, re.M)
+    if not m:
+        sys.exit(f'{cle} introuvable dans {src} : rien écrit')
+    valeur = m.group(1).strip('"\'')
+    lignes.append(f'{cle}={valeur}')
+    print(f'{cle} : {len(valeur)} caractères')
+fd = os.open(dst, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+with os.fdopen(fd, 'w') as f:
+    f.write('\n'.join(lignes) + '\n')
+print(f'écrit : {dst}')
+EOF
+python3 /tmp/app_env.py; rm -f /tmp/app_env.py
+ls -l ~/app/config/app.env
+```
+
+Une connexion Azure Storage fait environ 170 à 200 caractères. Une longueur très différente signale une mauvaise
+extraction : supprimer le fichier et recommencer.
+
 ## Appliquer une modification du compose
+
+Tant que la modification n'est pas sur `main` (cycle de version en cours), remplacer `main` par le nom de la branche
+(par exemple `release/1.2.0`) dans l'URL ci-dessous.
 
 ```bash
 cd ~/app
@@ -25,6 +63,7 @@ docker compose -f docker-compose.prod.yml config --quiet && docker compose -f do
 ```
 
 Retour arrière : `mv docker-compose.prod.yml.bak docker-compose.prod.yml` puis `docker compose -f docker-compose.prod.yml up -d`.
+Une fois le nouveau compose validé, supprimer la sauvegarde si elle contient encore des secrets (`rm docker-compose.prod.yml.bak`).
 
 ## Logs
 
