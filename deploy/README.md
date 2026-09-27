@@ -6,6 +6,7 @@ toute modification est appliquée à la main sur le serveur, puis commitée ici.
 | Fichier | Rôle | Emplacement sur le VPS |
 |---|---|---|
 | `docker-compose.prod.yml` | Services `db`, `app`, `nginx`, `dozzle` | `~/app/docker-compose.prod.yml` |
+| `nginx.conf` | Proxy HTTPS, redirection HTTP → HTTPS, HSTS | `~/app/nginx.conf` |
 | `logrotate-monendo-nginx` | Rotation des logs nginx (30 jours) | `/etc/logrotate.d/monendo-nginx` |
 
 Les secrets ne sont **jamais** dans ce dossier (dépôt public). Ils restent sur le VPS :
@@ -65,6 +66,28 @@ docker compose -f docker-compose.prod.yml config --quiet && docker compose -f do
 
 Retour arrière : `mv docker-compose.prod.yml.bak docker-compose.prod.yml` puis `docker compose -f docker-compose.prod.yml up -d`.
 Une fois le nouveau compose validé, supprimer la sauvegarde si elle contient encore des secrets (`rm docker-compose.prod.yml.bak`).
+
+## Appliquer une modification de nginx
+
+`nginx.conf` est monté comme un fichier seul : après l'avoir remplacé, **recréer** le conteneur (un simple `reload`
+verrait encore l'ancien fichier). La configuration est testée avant, dans un conteneur jetable (`app` y est résolu
+vers une adresse factice). Même remarque que pour le compose sur le nom de la branche dans l'URL.
+
+```bash
+cd ~/app
+cp nginx.conf nginx.conf.bak
+curl -fsSL https://raw.githubusercontent.com/ClementBartholome/MonEndoV2/main/deploy/nginx.conf -o nginx.conf.new
+diff nginx.conf nginx.conf.new
+docker run --rm --add-host app:127.0.0.1 -v "$PWD/nginx.conf.new:/etc/nginx/nginx.conf:ro" -v "$PWD/ssl:/etc/nginx/ssl:ro" nginx:alpine nginx -t \
+  && mv nginx.conf.new nginx.conf \
+  && docker compose -f docker-compose.prod.yml up -d --force-recreate nginx
+```
+
+Contrôle : `curl -sI http://monendoapp.fr/` redirige vers `https://monendoapp.fr/`, et `curl -sI https://monendoapp.fr/`
+n'envoie qu'une fois chaque en-tête de sécurité. Retour arrière : `mv nginx.conf.bak nginx.conf` puis la même recréation.
+
+Seul `Strict-Transport-Security` est posé par nginx ; tous les autres en-têtes de sécurité viennent de l'application
+(`Services/EntetesSecurite.cs`) : ne pas les ajouter dans nginx, un en-tête en double est considéré comme invalide.
 
 ## Logs
 
