@@ -135,12 +135,27 @@ Nouveau composant shadcn : `npx shadcn-vue add <nom>` (alias configurés vers `@
 - Test visuel dans le navigateur à 375px et en desktop ; console sans erreur. Pas de `console.log` laissé dans le code.
 - **Tests E2E** (`npm run test:e2e`) : Playwright pilote l'interface comme une utilisatrice, avec une **API simulée**
   (pas de Vitest ni de tests unitaires client : le serveur est couvert par xUnit). Vue d'ensemble : `docs/tests.md`.
-  - Un fichier `tests/<page>.spec.ts` par page ; importer `test`/`expect` de `tests/support/fixtures.ts` (session ouverte,
-    horloge fixée à `MAINTENANT`, faux serveur `serveur`). `test.use({ connectee: false })` pour un parcours sans session.
-  - Données d'une page : `tests/support/<page>.ts` (modèle : `simulerActivite`), avec un état propre au test (ajout,
-    modification, suppression), typées avec les types de `features/*/types`.
+  Organisation (bonnes pratiques Playwright : Page Object Model, fixtures, localisateurs accessibles) :
+  ```
+  tests/
+    fixtures.ts                  test/expect du projet : session, horloge, faux serveur, objets de page
+    mocks/faux-serveur.ts        interception des appels API (page.route), état propre au test
+    mocks/session.ts             MAINTENANT (mardi 15/09/2026 10 h), utilisatrice connectée
+    mocks/<fonctionnalite>.ts    routes simulées d'un contrôleur (simulerBilans, simulerActivite)
+    pages/<page>.page.ts         objet de page : localisateurs et actions d'un écran
+    <fonctionnalite>.spec.ts     ou <fonctionnalite>/<parcours>.spec.ts quand la page a plusieurs parcours
+  ```
+  - Importer `test`/`expect` de `tests/fixtures.ts` ; les objets de page sont des fixtures (`{ bilanQuotidienPage: bilanPage }`).
+    `test.use({ connectee: false })` pour un parcours sans session.
+  - **Localisateurs** : rôle et nom accessible (`getByRole('button', { name: 'Douleur 4 sur 10' })`), libellé, texte ;
+    CSS seulement en dernier recours, commenté. Un élément difficile à cibler signale souvent un manque d'accessibilité.
+  - Les localisateurs et actions vivent dans l'objet de page, les assertions dans le test. Assertions qui attendent
+    (`await expect(locator).toBeVisible()`), jamais de `waitForTimeout`.
+  - Données : `mocks/<fonctionnalite>.ts` avec un état propre au test (ajout, modification, suppression), typées avec
+    les types de `features/*/types` ; le test ne précise que les champs qui comptent (`{ jour: '2026-09-14', pas: 7500 }`).
   - **Reproduire le format réel de l'endpoint** : un tableau C# (`ToArrayAsync`) arrive en tableau JSON, une `List` en
     `{ $values }` (`liste()`). Tout appel API sans route simulée fait échouer le test (appel oublié ou contrat modifié).
-  - Chaque test tourne en **mobile 375px et en desktop** : cibler le texte visible (`visible()` dans `activite.spec.ts`),
-    la page contenant à la fois les cartes mobiles et le tableau desktop.
-  - Vérifier le résultat côté utilisatrice (texte affiché) **et** ce qui a été envoyé (état du faux serveur).
+  - Chaque test tourne en **mobile 375px et en desktop** : quand une page a deux présentations (cartes / tableau), l'objet
+    de page choisit la bonne (`ActivitePage.action`) et cible le texte visible.
+  - Pas de propriétés de paramètre (`constructor(readonly page: Page)`) ni d'`enum` dans `tests/` : le chargeur TypeScript
+    de Playwright retire seulement les types et refuse cette syntaxe.

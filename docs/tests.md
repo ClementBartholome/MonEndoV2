@@ -53,10 +53,10 @@ dans un workflow (utiliser `./node_modules/.bin/<outil>`), test sans assertion r
 Playwright ouvre l'application dans Chromium et la pilote comme une utilisatrice (clics, saisie, lecture de l'écran).
 Chaque test tourne deux fois : **mobile 375px** et **desktop**.
 
-- **API simulée** (`tests/support/faux-serveur.ts`) : l'application tourne sur un serveur Vite dédié (port 5174,
+- **API simulée** (`tests/mocks/faux-serveur.ts`) : l'application tourne sur un serveur Vite dédié (port 5174,
   `VITE_DOCKER=true`), ses appels API sont interceptés et reçoivent des réponses simulées. Chaque test a son propre état :
   une donnée ajoutée puis relue ou supprimée se comporte comme avec la vraie API. Ni serveur .NET, ni base, ni compte.
-- **Session** : un faux utilisateur est posé dans `localStorage` (fixture `tests/support/fixtures.ts`) ; l'horloge est fixée
+- **Session** : un faux utilisateur est posé dans `localStorage` (fixture `tests/fixtures.ts`) ; l'horloge est fixée
   (`MAINTENANT`) pour que les parcours ne dépendent pas du jour.
 - **Garde-fou** : un appel API sans réponse simulée fait échouer le test (appel oublié ou contrat modifié).
 - **Limite** : si le format d'une réponse change côté serveur sans que la simulation suive, le test reste vert. Les données
@@ -65,7 +65,14 @@ Chaque test tourne deux fois : **mobile 375px** et **desktop**.
 - **CI** : job `e2e`, sur les PR vers `main` (livraison d'une version ou hotfix) et sur toute PR à laquelle on ajoute
   l'étiquette `e2e` (`gh pr edit <n> --add-label e2e`), en parallèle de `verifier`.
   En cas d'échec, le rapport Playwright est joint au run (artefact `playwright-report`).
-- Couverture actuelle : page Activité (affichage, ajout, modification, suppression). Parcours principaux : issue #23.
+- **Organisation** (bonnes pratiques Playwright) : objets de page (`tests/pages/`) fournis par des fixtures, localisateurs
+  par rôle et nom accessible, un dossier par fonctionnalité quand elle a plusieurs parcours. Détail : `monendovue.client/CLAUDE.md`.
+- Couverture actuelle :
+  - Activité : affichage, ajout, modification, suppression ;
+  - Bilan quotidien : saisie (minimale, trois émotions, « Comme hier », confirmation de sortie, refus du serveur),
+    modification du jour et d'un jour passé, bilan oublié, jours à venir, historique (mois, semaine, période précédente,
+    description des jours), analyse (moyennes sans les valeurs non renseignées, comparaison, douleur et règles).
+- Parcours restants : issue #23 (connexion, douleurs, cycle, traitements, paramètres, export).
 
 ## Contrôles manuels (Definition of Done)
 
@@ -76,7 +83,7 @@ Chaque test tourne deux fois : **mobile 375px** et **desktop**.
 
 ## Limites connues et suites
 
-- Parcours E2E encore limités à la page Activité : issue #23 (connexion, bilan quotidien, douleurs, cycle, traitements, export).
+- Parcours E2E encore à écrire : issue #23 (connexion, douleurs, cycle, traitements, paramètres, export).
 - Aucun test ne fait dialoguer la vraie interface avec le vrai serveur : le contrat entre les deux repose sur les types
   TypeScript alignés à la main et sur le test local de bout en bout avant une livraison.
 - Pas de tests d'intégration HTTP (`WebApplicationFactory`) : le routage, `[Authorize]` et les codes de refus réels ne
@@ -92,5 +99,5 @@ Chaque test tourne deux fois : **mobile 375px** et **desktop**.
 | une règle métier ou un service serveur | un test xUnit dans `MonEndoVue.Server.Tests/Services/` |
 | un endpoint qui lit ou modifie un carnet | ses cas dans `Controllers/<Controleur>CloisonnementTests.cs` |
 | un appel à un service externe | un test avec un `HttpMessageHandler` factice |
-| un écran ou un parcours (saisie, affichage, calcul affiché) | un test dans `monendovue.client/tests/<page>.spec.ts` et ses routes simulées dans `tests/support/` |
-| le format d'une réponse de l'API | le type TypeScript **et** la simulation correspondante dans `tests/support/` |
+| un écran ou un parcours (saisie, affichage, calcul affiché) | un test dans `monendovue.client/tests/`, ses routes simulées dans `tests/mocks/` et son objet de page dans `tests/pages/` |
+| le format d'une réponse de l'API | le type TypeScript **et** la simulation correspondante dans `tests/mocks/` |
