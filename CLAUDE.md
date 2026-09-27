@@ -54,6 +54,8 @@ dotnet ef migrations add NomEnPascalCase --project MonEndoVue.Server
   **transit** facultative : selles avec type de Bristol 1-7, crampes d'estomac et ballonnements avec intensité) — `/bilan-quotidien`,
   avec des objectifs bien-être réglables dans `/parametres`. Émotions : 1 à 3 **`EmotionBilan`** par bilan (table
   `EmotionsBilan`, type possédé chargé avec le bilan ; enum `Emotion`, libellés et tonalité dans `config/emotions.ts`).
+  Saisie en un écran (`components/saisie/`) : douleur et émotions obligatoires, stress, fatigue, pas et hydratation
+  **nullables** (null = non renseigné, jamais compté pour 0) ; **un seul bilan par jour** et aucun jour futur (409 / 400).
   Les bilans antérieurs gardent leur ancienne humeur `Mood` (`Heureuse`/`Neutre`/`Triste`) : tout calcul d'humeur passe
   par `features/bilan-quotidien/utils/humeur.ts`, qui prend en compte les deux.
 - Accueil `/` (carnet : dernières entrées), agenda `/agenda` (Google Calendar), export PDF `/export`.
@@ -185,8 +187,11 @@ Objectif : que l'utilisateur n'ait jamais à répéter une consigne ou une infor
   `Lib.Net.Http.WebPush` (`aes128gcm`, schéma `vapid`).
 - `python` lance le stub du Microsoft Store et bloque : utiliser **node** pour les scripts ponctuels (JSON, remplacements).
 - Git Bash convertit les arguments `/xxx` en chemins : `dotnet publish … -p:UseAppHost=false` (et non `/p:`).
-- Ne jamais mettre de backticks Markdown dans une chaîne bash entre guillemets doubles (substitution de commande silencieuse) :
-  écrire ou modifier le Markdown avec les outils d'édition de fichiers.
+- Ne jamais mettre de backticks dans une chaîne bash entre guillemets doubles (substitution de commande silencieuse) :
+  Markdown, mais aussi template literals JS/TS dans un `node -e "…"` (le code est tronqué sans erreur). Écrire ces
+  contenus avec les outils d'édition de fichiers.
+- `dotnet build` lance `npm install` dans `monendovue.client/` (projet esproj) : il peut créer `node_modules` dans un
+  worktree et modifier `package-lock.json` (ex. version resynchronisée). Relire ce fichier avant de commiter.
 - Beaucoup de fichiers sont en CRLF : un script de remplacement doit normaliser (`\r\n` → `\n`) puis restaurer les fins de ligne.
 - Chemins trop longs lors d'un checkout d'anciens commits (dossier `packages/` historique) : `git -c core.longpaths=true …`.
 - **Plusieurs sessions Claude peuvent travailler en parallèle dans le même dossier** : ne jamais changer de branche,
