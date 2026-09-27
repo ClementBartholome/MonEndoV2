@@ -84,7 +84,9 @@ Nouveau composant shadcn : `npx shadcn-vue add <nom>` (alias configurés vers `@
   dans le `<style scoped>` ou la classe `.hide-xsm`. Tester à 375px.
 - Tokens de marque (`src/assets/index.css`) : `var(--button)`, `var(--headline)`, classes `.bg-clearer`, `.text-headline`,
   `.text-paragraph`, `Button variant="custom"` / `"selected"`. Pas de couleurs en dur.
-- Icônes Material Symbols (`<i class="material-symbols-outlined">nom</i>`) ; les correspondances type → icône vont dans
+- Polices servies par l'app (`src/assets/polices.css`, paquets `@fontsource`), **jamais Google Fonts** (IP envoyée à Google, RGPD) :
+  Poppins 400/400 italique/500/600/700 en latin ; une graisse ou un axe d'icône en plus s'ajoute dans ce fichier.
+- Icônes Material Symbols (`<i class="material-symbols-outlined">nom</i>`, axe FILL seul, graisse 400) ; les correspondances type → icône vont dans
   `shared/config/materialSymbols.ts`.
 - Textes 100 % en français, dates via `useDateTimeFormat` (`fr-FR`).
 - **Jour calendaire envoyé à l'API** : jamais un `Date` à minuit (sérialisé en UTC, il glisse au jour précédent et le
@@ -141,6 +143,9 @@ Nouveau composant shadcn : `npx shadcn-vue add <nom>` (alias configurés vers `@
 ## Vérifications
 - `npm run type-check` après chaque changement significatif, `npm run build` avant de commiter.
 - `npx eslint <fichiers modifiés>` (le script `npm run lint` corrige tout le client et mélangerait les commits).
+- SonarCloud analyse aussi le client (TS, Vue, **CSS**) : la note de fiabilité du nouveau code doit rester A, sinon le
+  check de la PR échoue. Piège déjà rencontré : `font-family` sans famille générique (S4649), y compris pour une police
+  d'icônes. Constats d'une PR : `https://sonarcloud.io/api/issues/search?componentKeys=ClementBartholome_MonEndoV2&pullRequest=<n>&resolved=false`.
 - Test visuel dans le navigateur à 375px et en desktop ; console sans erreur. Pas de `console.log` laissé dans le code.
 - **Tests E2E** (`npm run test:e2e`) : Playwright pilote l'interface comme une utilisatrice, avec une **API simulée**
   (pas de Vitest ni de tests unitaires client : le serveur est couvert par xUnit). Vue d'ensemble : `docs/tests.md`.
