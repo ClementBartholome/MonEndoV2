@@ -110,7 +110,7 @@
           <Datatable :entries="entries" :columns="columns" :deleteFunction="handleDelete" @edit-entry="handleEditEntry">
             <thead>
               <tr>
-                <th>Type</th><th>Date</th><th>Heure</th><th>Durée</th><th>Intensité</th><th>Commentaire</th><th></th>
+                <th>Type</th><th>Date</th><th>Heure</th><th>Durée</th><th>Intensité</th><th>Commentaire</th><th></th><th></th>
               </tr>
             </thead>
           </Datatable>
@@ -213,6 +213,7 @@ const columns: any = [
     data: null,
     defaultContent: '<span class="material-symbols-outlined delete-btn">delete</span>'
   },
+  { data: null, defaultContent: '<span class="material-symbols-outlined edit-btn">edit</span>' },
 ]
 
 const editingEntryId = ref<number | null>(null)
