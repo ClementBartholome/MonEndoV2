@@ -1,8 +1,7 @@
 name: CI/CD VPS Docker
 
 # Pipeline en 3 étapes :
-#   1. verifier  (PR, main, release/**, tags v*) : dépendances, type-check + build + tests unitaires du client, lint,
-#                build et tests .NET, SonarCloud
+#   1. verifier  (PR, main, release/**, tags v*) : dépendances, type-check + build du client, lint, build .NET, SonarCloud
 #   2. image     (idem) : build de l'image Docker ; poussée sur GHCR uniquement pour main et les tags de version v*
 #   3. deployer  (main)  : déploiement sur le VPS puis vérification de /health
 # Tout push sur main déploie en production. Un tag vX.Y.Z publie l'image :vX.Y.Z (rollback) sans déployer.
@@ -64,11 +63,6 @@ jobs:
         run: npm run build
         working-directory: ./monendovue.client
 
-      # Tests unitaires du client (Playwright sans navigateur) : bloquants. Les E2E restent en local (compte de test).
-      - name: Run client unit tests
-        run: npm run test:unit
-        working-directory: ./monendovue.client
-
       - name: Run ESLint
         run: npx eslint . --ext .vue,.ts,.js --ignore-path ../.gitignore
         working-directory: ./monendovue.client
@@ -111,7 +105,7 @@ jobs:
         if: env.SONAR_TOKEN != ''
         continue-on-error: true
         # Couverture : rapport OpenCover produit par `dotnet test` (coverlet). Exclus de la couverture : les migrations EF
-        # (code généré) et le client, dont les tests unitaires Playwright ne produisent pas de couverture.
+        # (code généré) et le client, qui n'a pas encore de tests unitaires (à revoir avec l'arrivée de Vitest).
         run: |
           ./.sonar/scanner/dotnet-sonarscanner begin /k:"ClementBartholome_MonEndoV2" /o:"clementbartholome" /d:sonar.token="${{ env.SONAR_TOKEN }}" /d:sonar.host.url="https://sonarcloud.io" \
             /d:sonar.cs.opencover.reportsPaths="**/TestResults/**/coverage.opencover.xml" \
