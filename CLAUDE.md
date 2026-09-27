@@ -172,6 +172,7 @@ Utiliser le skill `revue-securite` avant de commiter un changement touchant auth
 - `release` — préparer, livrer ou annuler une version numérotée (branche de release, CHANGELOG, tag, rollback).
 - `revue-pr` — évaluer une PR existante avant merge (conflits, fichiers parasites, migrations, cohérence front/back, impact déploiement).
 - `capitaliser` — en fin de tâche, reporter ce qui a été appris dans CLAUDE.md, les skills ou la mémoire.
+- `endometriose` — connaissance métier (maladie, parcours de soins, attentes des utilisatrices, apps existantes, ton) à consulter avant toute décision produit.
 
 ## Amélioration continue
 Objectif : que l'utilisateur n'ait jamais à répéter une consigne ou une information.
