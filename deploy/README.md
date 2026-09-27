@@ -10,7 +10,8 @@ toute modification est appliquée à la main sur le serveur, puis commitée ici.
 
 Les secrets ne sont **jamais** dans ce dossier (dépôt public). Ils restent sur le VPS :
 - `~/app/.env` : `DB_PASSWORD`, réécrit par la CI à chaque déploiement (ne rien y ajouter d'autre) ;
-- `~/app/config/app.env` : variables secrètes de l'application (`AZURE_STORAGE_CONNECTION_STRING=...`) ;
+- `~/app/config/app.env` : variables secrètes de l'application (`AZURE_STORAGE_CONNECTION_STRING=...`, et pour l'agenda
+  `Agenda__CleApi=...` et `Agenda__Calendriers__<id du compte>=<id du calendrier>`, clé limitée aux IPv4 et IPv6 du VPS) ;
 - `~/app/config/appsettings.Production.json`, `~/app/keys/`, `~/app/ssl/`.
 
 ## Créer `config/app.env` (une fois, avant le premier compose qui l'utilise)
