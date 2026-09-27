@@ -2,6 +2,7 @@
 using Azure.Storage.Blobs.Models;
 using Azure;
 using Microsoft.Extensions.Options;
+using MonEndoVue.Server.Services.Photos;
 
 namespace MonEndoVue.Server.Services;
 
@@ -11,7 +12,7 @@ public class AzureBlobStorageOptions
     public string ContainerName { get; set; } = string.Empty;
 }
 
-public class AzureBlobStorageService
+public class AzureBlobStorageService : IStockagePhotos
 {
     private readonly BlobContainerClient _containerClient;
 
@@ -88,6 +89,22 @@ public class AzureBlobStorageService
         }
 
         return path;
+    }
+
+    public async Task<Stream?> OuvrirAsync(string url, CancellationToken ct)
+    {
+        var blobName = GetBlobNameFromUrl(url);
+        if (string.IsNullOrWhiteSpace(blobName)) return null;
+
+        try
+        {
+            var reponse = await _containerClient.GetBlobClient(blobName).DownloadStreamingAsync(cancellationToken: ct);
+            return reponse.Value.Content;
+        }
+        catch (RequestFailedException ex) when (ex.Status == 404)
+        {
+            return null;
+        }
     }
 
     public async Task DeleteFileAsync(string blobName)

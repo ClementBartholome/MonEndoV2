@@ -1,5 +1,5 @@
 ﻿import axios from 'axios';
-import type { AxiosInstance, AxiosResponse } from 'axios';
+import type { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
 import { useAuthStore } from '@/features/auth/store/auth';
 import type { Pinia } from 'pinia';
 import { tokenService } from '@/features/auth/services/tokenService';
@@ -56,7 +56,7 @@ class ApiService {
     //         }
     //     );
     // }
-    private async request<T>(method: string, url: string, data?: any): Promise<T> {
+    private async request<T>(method: string, url: string, data?: any, config?: AxiosRequestConfig): Promise<T> {
         try {
             const tokenExpired = this.isTokenExpired();
             if (tokenExpired) {
@@ -70,6 +70,7 @@ class ApiService {
             }
 
             const response: AxiosResponse<T> = await this.axiosInstance.request({
+                ...config,
                 method,
                 url,
                 data,
@@ -250,6 +251,11 @@ class ApiService {
 
     async postConsentement(): Promise<ReponseConsentement> {
         return this.request<ReponseConsentement>('POST', 'Account/consentement');
+    }
+
+    /** Archive ZIP de toutes les données de l'utilisatrice connectée (JSON + photos). */
+    async getExportDonnees(): Promise<Blob> {
+        return this.request<Blob>('GET', 'DonneesPersonnelles/export', undefined, { responseType: 'blob' });
     }
 
     async getClePubliquePush(): Promise<string> {
