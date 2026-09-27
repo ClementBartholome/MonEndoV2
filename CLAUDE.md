@@ -202,6 +202,9 @@ Objectif : que l'utilisateur n'ait jamais à répéter une consigne ou une infor
   rebaser ou réécrire l'historique dans la copie principale sans vérifier `git status` / `git worktree list` ; travailler
   dans un worktree dédié (`git worktree add ../MonEndoVue-<sujet> -b <branche> origin/main`) puis le supprimer après merge.
 - Pas de Docker sur le poste : le build d'image n'est validé que par la CI d'une PR (job `image`, sans push).
+- `dotnet build` du serveur lance un `npm install` du client (esproj) : ne jamais le faire tourner en même temps qu'un
+  `npm ci` dans le même worktree (`node_modules` corrompu) ; un seul build à la fois par worktree.
+- `sqlcmd` : ajouter `-I` (QUOTED_IDENTIFIER) pour écrire dans une table qui a un index filtré (ex. `AspNetUsers`).
 - `gh` est authentifié (jeton dans le trousseau Windows, scopes `repo` et `workflow`) : l'utiliser pour lire PR, checks et runs.
   Si `gh auth status` signale un jeton invalide, demander à l'utilisateur de lancer lui-même
   `gh auth login -h github.com -p https -w` (connexion par navigateur) ; ne jamais demander ni manipuler de jeton.

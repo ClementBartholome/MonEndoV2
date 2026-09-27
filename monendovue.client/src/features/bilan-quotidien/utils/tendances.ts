@@ -115,7 +115,11 @@ export const calculerTendances = (
 ): Tendances => {
   const bilans = jours.flatMap((j) => (j.bilan ? [j.bilan] : []));
   return {
-    couverture: { bilans: bilans.length, jours: jours.filter((j) => !j.aVenir).length },
+    couverture: {
+      bilans: bilans.length,
+      jours: jours.filter((j) => !j.aVenir).length,
+      bilansPrecedents: bilansPrecedents.length,
+    },
     indicateurs: calculerIndicateurs(bilans, bilansPrecedents),
     reperes: calculerReperes(bilans, objectifs),
     observations: calculerObservations(jours),

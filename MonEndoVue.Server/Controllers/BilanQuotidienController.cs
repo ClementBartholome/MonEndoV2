@@ -63,7 +63,10 @@ namespace MonEndoVue.Server.Controllers
             var securityCheck = await this.ValidateCarnetAccess(carnetSanteService, existing.CarnetSanteId);
             if (securityCheck != null) return securityCheck;
 
-            if (await ExisteUnAutreBilanLeMemeJour(existing.CarnetSanteId, bilanQuotidien.Date, id))
+            // Contrôle seulement si le jour change : d'anciens bilans ont pu être enregistrés en double sur un même jour
+            // (date envoyée à minuit UTC par l'ancien client) et doivent rester modifiables.
+            if (existing.Date.Date != bilanQuotidien.Date.Date
+                && await ExisteUnAutreBilanLeMemeJour(existing.CarnetSanteId, bilanQuotidien.Date, id))
             {
                 return Conflict(new { message = BilanDejaSaisi });
             }

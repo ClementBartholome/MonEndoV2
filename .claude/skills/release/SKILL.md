@@ -25,6 +25,14 @@ Rappel : **merger sur `main` = déployer en production** (migrations EF appliqu�
 
 ## Valider
 - Test local de bout en bout de la branche complète (procédure du `CLAUDE.md` racine), migrations comprises.
+- Migrations de la version testées sur une **base jetable** (jamais la base de dev) :
+  1. `dotnet ef database update <dernière migration de main>` avec `--connection "…Database=MonEndo_RecetteXYZ…"` ;
+  2. insérer au `sqlcmd -I` des lignes représentatives des données existantes ;
+  3. `dotnet ef database update`, puis vérifier les données, les nouvelles règles, `dotnet ef migrations has-pending-model-changes`
+     et la requête de retour arrière de la section « Annuler » ;
+  4. supprimer la base (`DROP DATABASE`).
+- Revue sécurité et revue de justesse du diff `origin/main...release/X.Y.Z` : sur un gros diff, les confier à deux subagents
+  en parallèle (lecture seule), puis recouper chaque constat dans le code avant de le retenir.
 - Skill `revue-pr` sur la PR `release/X.Y.Z` → `main` : liste des migrations (additives ?), impact du déploiement,
   actions manuelles sur le VPS (configuration, secrets) à faire **avant** le merge.
 

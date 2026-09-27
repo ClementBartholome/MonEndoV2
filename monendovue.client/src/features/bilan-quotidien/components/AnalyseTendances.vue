@@ -20,8 +20,8 @@ const presentationEvolution: Record<Evolution, { icone: string; libelle: string 
   stable: { icone: 'trending_flat', libelle: 'stable' },
 };
 
-// Aucune comparaison possible (période précédente sans bilan) : on le dit une fois plutôt que sur chaque carte.
-const sansComparaison = computed(() => props.tendances.indicateurs.every((i) => i.evolution === null));
+// Période précédente sans bilan : on le dit une fois plutôt que sur chaque carte.
+const sansComparaison = computed(() => props.tendances.couverture.bilansPrecedents === 0);
 
 const couverture = computed(() => {
   const { bilans, jours } = props.tendances.couverture;
@@ -36,8 +36,9 @@ const couverture = computed(() => {
       {{ couverture }}
     </p>
 
-    <p v-if="tendances.indicateurs.length === 0" class="mt-4 text-paragraph text-center">
-      Aucun bilan sur cette période ni la précédente.
+    <!-- Début de semaine ou de mois : rien à analyser tant que le premier bilan n'est pas saisi. -->
+    <p v-if="tendances.couverture.bilans === 0" class="mt-4 text-paragraph text-center">
+      Pas encore de bilan sur cette période : les tendances apparaîtront dès le premier.
     </p>
 
     <template v-else>
