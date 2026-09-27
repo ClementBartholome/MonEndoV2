@@ -4,17 +4,19 @@ Vue d'ensemble de tout ce qui vérifie l'application : quoi, où, quand, et si c
 Conventions détaillées : [MonEndoVue.Server/CLAUDE.md](../MonEndoVue.Server/CLAUDE.md) (section Tests) et
 [monendovue.client/CLAUDE.md](../monendovue.client/CLAUDE.md) (section Vérifications).
 
+Répartition : le **serveur** (règles métier, cloisonnement, réponses de l'API) est couvert par des tests xUnit ; l'**interface**
+(ce que voit et fait l'utilisatrice, calculs affichés compris) par des tests E2E Playwright avec une API simulée.
+
 ## Vue d'ensemble
 
 | Contrôle | Outil | Emplacement | Commande locale | En CI | Bloquant |
 |---|---|---|---|---|---|
 | Tests serveur | xUnit, EF Core InMemory | `MonEndoVue.Server.Tests/` | `dotnet test` (racine) | job `verifier` | oui |
 | Couverture serveur | coverlet → SonarCloud | rapport OpenCover | `dotnet test --collect:"XPlat Code Coverage;Format=opencover"` | job `verifier` + check SonarCloud | seuil 80 % du nouveau code (check de PR) |
-| Tests unitaires client | Playwright **sans navigateur** | `monendovue.client/src/**/__tests__/*.spec.ts` | `npm run test:unit` | job `verifier` | oui |
-| Type-check client (code + tests) | vue-tsc | `tsconfig.app.json`, `tsconfig.unit.json` | `npm run type-check` | job `verifier` (via `npm run build`) | oui |
+| **Tests E2E de l'interface** | Playwright (Chromium), API simulée | `monendovue.client/tests/` | `npm run test:e2e` | job `e2e`, **PR vers `main` seulement** | check de PR |
+| Type-check client (code + tests E2E) | vue-tsc, tsc | `tsconfig.app.json`, `tests/tsconfig.test.json` | `npm run type-check` | job `verifier` (via `npm run build`) | oui |
 | Build client | Vite | — | `npm run build` | job `verifier` | oui |
 | Lint client | ESLint | — | `npx eslint <fichiers>` | job `verifier` | non (`continue-on-error`) |
-| Tests E2E | Playwright (Chromium, Firefox, WebKit) | `monendovue.client/tests/` | `npm run test:e2e` | **non** | — |
 | Build de l'image | Docker | `Dockerfile` | — (pas de Docker sur le poste) | job `image` | oui |
 | Secrets commités | GitGuardian (application GitHub) | — | — | check de PR | alerte |
 | Santé après déploiement | `curl` sur `/health` | `ci.yml`, job `deployer` | `curl https://monendoapp.fr/health` | après chaque déploiement | oui (le job échoue) |
@@ -41,23 +43,23 @@ faux clients HTTP. Outils partagés dans `Support/`.
 Couverture : SonarCloud exige 80 % sur le nouveau code (plan gratuit, non modifiable). Toute ligne C# ajoutée hors
 migration doit être exécutée par un test.
 
-## Tests unitaires client (Playwright sans navigateur)
+## Tests E2E de l'interface (Playwright, API simulée)
 
-`playwright.unit.config.ts` : fichiers `src/<dossier>/__tests__/<module>.spec.ts`, alias `@/` résolu par
-`tsconfig.unit.json`. Pas de navigateur, de serveur ni de compte : ils tournent partout, CI comprise.
+Playwright ouvre l'application dans Chromium et la pilote comme une utilisatrice (clics, saisie, lecture de l'écran).
+Chaque test tourne deux fois : **mobile 375px** et **desktop**.
 
-Limite : le code est chargé par Node, pas par Vite. Seules les **fonctions pures** (`utils/`, `config/`) se testent ici ;
-un module qui utilise `import.meta.env`, importe un `.vue` ou `apiService` passe par les E2E.
-
-## Tests E2E (Playwright, local uniquement)
-
-`playwright.config.ts` : projet `setup` (`tests/auth.setup.ts`, connexion puis `storageState`) puis Chromium, Firefox et
-WebKit en desktop. Le serveur Vite est lancé automatiquement ; l'API doit tourner à côté (procédure « Tester une branche
-de bout en bout » du [CLAUDE.md](../CLAUDE.md)).
-
-- Compte **local** fourni par `E2E_EMAIL` / `E2E_PASSWORD`, jamais la production, aucun identifiant versionné.
-- Couverture actuelle : parcours ajout / lecture / suppression de la page Activité.
-- Pas exécutés en CI (il faudrait une API et une base de test dans le pipeline).
+- **API simulée** (`tests/support/faux-serveur.ts`) : l'application tourne sur un serveur Vite dédié (port 5174,
+  `VITE_DOCKER=true`), ses appels API sont interceptés et reçoivent des réponses simulées. Chaque test a son propre état :
+  une donnée ajoutée puis relue ou supprimée se comporte comme avec la vraie API. Ni serveur .NET, ni base, ni compte.
+- **Session** : un faux utilisateur est posé dans `localStorage` (fixture `tests/support/fixtures.ts`) ; l'horloge est fixée
+  (`MAINTENANT`) pour que les parcours ne dépendent pas du jour.
+- **Garde-fou** : un appel API sans réponse simulée fait échouer le test (appel oublié ou contrat modifié).
+- **Limite** : si le format d'une réponse change côté serveur sans que la simulation suive, le test reste vert. Les données
+  simulées sont typées avec les types TypeScript du client (alignés sur les contrats C#) et doivent reproduire le format
+  réel : un tableau C# (`ToArrayAsync`) arrive en tableau JSON, une `List` en `{ $values }`.
+- **CI** : job `e2e`, uniquement sur les PR vers `main` (livraison d'une version ou hotfix), en parallèle de `verifier`.
+  En cas d'échec, le rapport Playwright est joint au run (artefact `playwright-report`).
+- Couverture actuelle : page Activité (affichage, ajout, modification, suppression). Parcours principaux : issue #23.
 
 ## Contrôles manuels (Definition of Done)
 
@@ -68,8 +70,9 @@ de bout en bout » du [CLAUDE.md](../CLAUDE.md)).
 
 ## Limites connues et suites
 
-- Pas d'E2E en CI ni de projet mobile (375px) dans la config E2E : issue #23 pour les parcours principaux.
-- Pas de couverture mesurée côté client.
+- Parcours E2E encore limités à la page Activité : issue #23 (connexion, bilan quotidien, douleurs, cycle, traitements, export).
+- Aucun test ne fait dialoguer la vraie interface avec le vrai serveur : le contrat entre les deux repose sur les types
+  TypeScript alignés à la main et sur le test local de bout en bout avant une livraison.
 - Pas de tests d'intégration HTTP (`WebApplicationFactory`) : le routage, `[Authorize]` et les codes de refus réels ne
   sont vérifiés qu'indirectement.
 - EF Core InMemory ne reproduit pas SQL Server (contraintes, traduction des requêtes) : les migrations et requêtes
@@ -83,5 +86,5 @@ de bout en bout » du [CLAUDE.md](../CLAUDE.md)).
 | une règle métier ou un service serveur | un test xUnit dans `MonEndoVue.Server.Tests/Services/` |
 | un endpoint qui lit ou modifie un carnet | ses cas dans `Controllers/<Controleur>CloisonnementTests.cs` |
 | un appel à un service externe | un test avec un `HttpMessageHandler` factice |
-| une fonction pure du client (`utils/`, `config/`) | un `__tests__/<module>.spec.ts` à côté |
-| un parcours d'écran | un test E2E dans `monendovue.client/tests/` (local) |
+| un écran ou un parcours (saisie, affichage, calcul affiché) | un test dans `monendovue.client/tests/<page>.spec.ts` et ses routes simulées dans `tests/support/` |
+| le format d'une réponse de l'API | le type TypeScript **et** la simulation correspondante dans `tests/support/` |

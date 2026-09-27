@@ -23,7 +23,7 @@ MonEndoV2 est une application destinée aux personnes souffrant d'endométriose,
 - Base de données : SQL Server
 - Notifications : Web Push standard (VAPID) envoyé par le serveur
 - Outils externes : Google Calendar
-- Qualité ([détail des tests](docs/tests.md)) : tests xUnit du serveur, tests unitaires du client (Playwright), CI GitHub Actions (vérification, image Docker, déploiement sur VPS), analyse SonarCloud
+- Qualité ([détail des tests](docs/tests.md)) : tests xUnit du serveur, tests E2E de l'interface (Playwright), CI GitHub Actions (vérification, image Docker, déploiement sur VPS), analyse SonarCloud
 
 ## Versions
 

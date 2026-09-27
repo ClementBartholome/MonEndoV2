@@ -18,7 +18,7 @@ Sur les lignes ajoutées uniquement (`git diff --staged -U0 | grep '^+'`) :
 - description d'une faille non corrigée (dépôt public) → **bloquant**, la déplacer dans `docs/private/`.
 
 ## 3. Vérifier selon la zone touchée
-- `monendovue.client/` : `npm run build` (type-check + build), `npm run test:unit` et `npx eslint <fichiers modifiés>`.
+- `monendovue.client/` : `npm run build` (type-check + build), `npm run test:e2e` si un écran est touché, et `npx eslint <fichiers modifiés>`.
 - `MonEndoVue.Server/` : `dotnet build -c Release` ; si une migration est incluse, la relire (appliquée automatiquement en production).
 - Contrat C# modifié : le type TS correspondant doit être mis à jour dans le même commit.
 - Signaler tout échec au lieu de le contourner (pas de `--no-verify`).
