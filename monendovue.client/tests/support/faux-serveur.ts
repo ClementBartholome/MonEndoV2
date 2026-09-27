@@ -65,7 +65,7 @@ export class FauxServeur {
         return route.fulfill({ status: 404 });
       }
 
-      const reponse = trouvee.gerer({ params: chemin.match(trouvee.motif)!.slice(1), corps, url }) ?? {};
+      const reponse = trouvee.gerer({ params: trouvee.motif.exec(chemin)!.slice(1), corps, url }) ?? {};
       return route.fulfill({
         status: reponse.status ?? 200,
         contentType: 'application/json',

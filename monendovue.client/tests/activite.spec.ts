@@ -50,7 +50,8 @@ test.describe('Activité physique', () => {
     await formulaire.getByPlaceholder('Durée en minutes').fill('50');
     await formulaire.getByRole('button', { name: 'Mettre à jour' }).click();
 
-    await expect.poll(() => seances[0].duree).toBe(50);
+    await expect(formulaire).toBeHidden();
+    expect(seances[0]).toMatchObject({ typeActivite: 'Marche', duree: 50 });
   });
 
   test('supprime une séance', async ({ page, serveur }, testInfo) => {
