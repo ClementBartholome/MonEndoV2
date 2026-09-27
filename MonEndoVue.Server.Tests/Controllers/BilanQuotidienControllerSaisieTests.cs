@@ -103,6 +103,22 @@ public sealed class BilanQuotidienControllerSaisieTests : IDisposable
     }
 
     [Fact]
+    public async Task Put_AncienDoublonDuMemeJour_ResteModifiable()
+    {
+        // Deux bilans le même jour stocké (l'ancien client envoyait minuit UTC, soit 22h ou 23h la veille).
+        Enregistrer(Bilan(new DateTime(2026, 9, 4, 12, 0, 0)));
+        var decale = Enregistrer(Bilan(new DateTime(2026, 9, 4, 22, 0, 0)));
+        var modification = Bilan(new DateTime(2026, 9, 4, 22, 0, 0));
+        modification.Id = decale.Id;
+        modification.Fatigue = 2;
+
+        var resultat = await _controller.PutBilanQuotidien(decale.Id, modification);
+
+        Assert.IsType<NoContentResult>(resultat);
+        Assert.Equal(2, _carnet.Context.BilansQuotidiens.Single(b => b.Id == decale.Id).Fatigue);
+    }
+
+    [Fact]
     public async Task Put_VersUnJourDejaSaisi_RetourneConflictSansModifier()
     {
         Enregistrer(Bilan(new DateTime(2026, 9, 24)));
