@@ -91,6 +91,12 @@ modifiables, jamais `Entry(dto).State = Modified`, jamais de changement de `Carn
   un log utile en production doit donc être au moins `Information`. Fichiers `Logs/MonEndoVue-AAAAMMJJ.log` purgés après 30 jours.
 
 ## Sécurité transverse
+- En-têtes de sécurité et **Content-Security-Policy** dans `Services/EntetesSecurite.cs` (posés sur toutes les réponses).
+  La CSP est en mode `Report-Only` depuis la 1.2.0 (violations dans la console, rien de bloqué). Toute nouvelle ressource
+  tierce (police, image, API appelée par le navigateur) s'y déclare, ou mieux, s'héberge localement. Vérification : client
+  buildé (`VITE_DOCKER=true npx vite build` puis `npx vite preview`), en-tête ajouté aux documents par un script Playwright
+  (`route.fetch` puis `route.fulfill`), toutes les pages parcourues à 375px et 1280px, messages « Content Security Policy »
+  relevés dans la console. Le serveur de dev Vite (scripts en ligne) ne convient pas pour cette vérification.
 - Rate limiting : politiques `api` (par défaut) et `auth` (20 req/min), constantes dans `Services/PolitiquesDebit.cs`.
   La politique `api` n'est posée que sur les endpoints qui n'en déclarent pas (`PolitiquesDebit.AppliquerParDefaut`) :
   un `[EnableRateLimiting(PolitiquesDebit.Auth)]` sur une action est donc réellement appliqué. À mettre sur tout endpoint
