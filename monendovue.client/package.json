@@ -9,8 +9,9 @@
     "build:docker": "vite build",
     "preview": "vite preview",
     "build-only": "vite build",
-    "type-check": "vue-tsc --build --force",
+    "type-check": "vue-tsc --build --force && vue-tsc -p tsconfig.unit.json",
     "lint": "eslint . --ext .vue,.js,.jsx,.cjs,.mjs,.ts,.tsx,.cts,.mts --fix --ignore-path ../.gitignore",
+    "test:unit": "playwright test -c playwright.unit.config.ts",
     "test:e2e": "playwright test"
   },
   "dependencies": {
