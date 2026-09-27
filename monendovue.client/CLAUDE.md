@@ -134,6 +134,9 @@ Nouveau composant shadcn : `npx shadcn-vue add <nom>` (alias configurés vers `@
 ## Vérifications
 - `npm run type-check` après chaque changement significatif, `npm run build` avant de commiter.
 - `npx eslint <fichiers modifiés>` (le script `npm run lint` corrige tout le client et mélangerait les commits).
+- SonarCloud analyse aussi le client (TS, Vue, **CSS**) : la note de fiabilité du nouveau code doit rester A, sinon le
+  check de la PR échoue. Piège déjà rencontré : `font-family` sans famille générique (S4649), y compris pour une police
+  d'icônes. Constats d'une PR : `https://sonarcloud.io/api/issues/search?componentKeys=ClementBartholome_MonEndoV2&pullRequest=<n>&resolved=false`.
 - Test visuel dans le navigateur à 375px et en desktop ; console sans erreur. Pas de `console.log` laissé dans le code.
 - **Tests E2E** (`npm run test:e2e`) : Playwright pilote l'interface comme une utilisatrice, avec une **API simulée**
   (pas de Vitest ni de tests unitaires client : le serveur est couvert par xUnit). Vue d'ensemble : `docs/tests.md`.
