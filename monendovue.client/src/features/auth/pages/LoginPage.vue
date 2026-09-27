@@ -28,10 +28,12 @@
     <p class="mt-4">
       Pas de compte ? <router-link to="/register" class="!text-highlight">Créez-en un</router-link>
     </p>
+    <LiensLegaux/>
   </form>
 </template>
 
 <script setup lang="ts">
+import LiensLegaux from '@/features/legal/components/LiensLegaux.vue';
 import {Button} from '@/shared/components/ui/button'
 import {
   FormControl,

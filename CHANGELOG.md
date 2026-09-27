@@ -5,6 +5,10 @@ versions en [SemVer](https://semver.org/lang/fr/) (voir la section Déploiement 
 
 ## [1.3.0] - non publiée
 
+### Ajouté
+- Politique de confidentialité et mentions légales, lisibles sans compte depuis la connexion, l'inscription et les
+  Paramètres : quelles données, pourquoi, qui y accède, combien de temps, et comment exercer ses droits.
+
 ## [1.2.1] - 2026-09-27
 
 ### Sécurité

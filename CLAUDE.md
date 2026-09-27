@@ -66,6 +66,10 @@ dotnet ef migrations add NomEnPascalCase --project MonEndoVue.Server
   Les bilans antérieurs gardent leur ancienne humeur `Mood` (`Heureuse`/`Neutre`/`Triste`) : tout calcul d'humeur passe
   par `features/bilan-quotidien/utils/humeur.ts`, qui prend en compte les deux.
 - Accueil `/` (carnet : dernières entrées), agenda `/agenda` (Google Calendar en lecture via le serveur, seulement pour une utilisatrice associée à un calendrier dans la configuration `Agenda`), export PDF `/export`.
+- Pages publiques (sans compte, `meta: { public: true }` dans le routeur) : connexion, inscription, politique de
+  confidentialité `/confidentialite` et mentions légales `/mentions-legales` (`features/legal/`). **Tout changement de
+  donnée collectée, de sous-traitant ou de durée de conservation met à jour la politique** (et sa date, `config/editeur.ts`)
+  dans la même PR.
 - Notifications **Web Push standard** envoyées par le serveur (clés VAPID, sans service tiers) : chaque appareil s'abonne
   depuis `/parametres` ; rappels réglables (job Quartz toutes les 15 min), chacun omis si le suivi est déjà fait :
   bilan quotidien (bilan du jour pas encore rempli, ouvre `/bilan-quotidien`) et photo de suivi de l'acné hebdomadaire
@@ -151,7 +155,8 @@ Utiliser le skill `revue-securite` avant de commiter un changement touchant auth
   `monendovue.client/package.json` **et** `MonEndoVue.Server.csproj`, historique dans `CHANGELOG.md`. Procédure : skill `release`.
 - Rollback : repointer l'image du service `app` sur une version précédente (`vX.Y.Z`, ou `sha-…` / `main-<sha>` avant la 1.0.0), puis `docker compose up -d`.
   Les images antérieures à 2026-09 chargent encore `serviceAccountKey.json` au démarrage : garder ce montage tant qu'un tel retour est envisageable.
-- Ne jamais pousser sur `main` ni ouvrir/merger une PR sans demande explicite. Travailler sur une branche.
+- Ne jamais pousser sur `main`. Travailler sur une branche. **Ouvrir une PR** vers `release/X.Y.Z` (ou `main` pour un hotfix)
+  est permis sans demande (décision du 2026-09-27) ; **le merge reste toujours à l'utilisateur**.
 
 ## Convention de commit
 - Format : `type(perimetre): message court` — **en français**, impératif ou présent, sans point final.
@@ -218,7 +223,7 @@ Objectif : que l'utilisateur n'ait jamais à répéter une consigne ou une infor
 - `gh` est authentifié (jeton dans le trousseau Windows, scopes `repo` et `workflow`) : l'utiliser pour lire PR, checks et runs.
   Si `gh auth status` signale un jeton invalide, demander à l'utilisateur de lancer lui-même
   `gh auth login -h github.com -p https -w` (connexion par navigateur) ; ne jamais demander ni manipuler de jeton.
-  Ouvrir ou merger une PR reste soumis à une demande explicite.
+  Merger une PR reste réservé à l'utilisateur.
 - Contrôle visuel sans backend : lancer `npx vite --port <port>` puis, dans le navigateur intégré, poser un faux `user` dans
   `localStorage` (le garde de routes ne vérifie que sa présence) ; les appels API échouent, l'UI reste testable.
 

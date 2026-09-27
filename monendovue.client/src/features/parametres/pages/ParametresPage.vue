@@ -59,10 +59,12 @@
       <ChangePassword/>
     </section>
     <p class="mt-6 text-center text-sm text-muted-foreground">MonEndo v{{ version }}</p>
+    <LiensLegaux class="mb-6"/>
   </div>
 </template>
 
 <script setup lang="ts">
+import LiensLegaux from '@/features/legal/components/LiensLegaux.vue';
 
 import BackButton from "@/shared/components/BackButton.vue";
 import NotificationSettings from "@/features/parametres/components/NotificationSettings.vue";
