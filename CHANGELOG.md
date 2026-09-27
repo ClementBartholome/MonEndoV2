@@ -9,6 +9,15 @@ versions en [SemVer](https://semver.org/lang/fr/) (voir la section Déploiement 
 - Les journaux techniques du serveur sont conservés 30 jours au maximum, puis supprimés automatiquement ; ils
   enregistrent moins de détails en production.
 
+## [1.1.1] - 2026-09-27
+
+### Modifié
+- Agenda : les événements récurrents apparaissent à chaque occurrence.
+
+### Sécurité
+- Agenda : les rendez-vous sont lus par le serveur, sans clé Google dans l'application ; le bloc
+  « Prochains rendez-vous » de l'accueil n'apparaît que pour un compte associé à un agenda.
+
 ## [1.1.0] - 2026-09-27
 
 ### Ajouté

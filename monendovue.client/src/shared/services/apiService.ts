@@ -8,6 +8,7 @@ import type { DonneesDouleurModification } from '@/features/douleurs/types/donne
 import type { AbonnementPush, Rappel, ReglageRappel, TypeRappel } from '@/features/parametres/types/notifications';
 import type { BilanQuotidien, BilanQuotidienSaisie, EmotionBilan } from '@/features/bilan-quotidien/types/bilan-quotidien';
 import type { HistoriqueBilans } from '@/features/bilan-quotidien/types/historique';
+import type { EvenementAgenda } from '@/features/schedule/types/agenda';
 import { enTableau } from '@/shared/utils/json';
 
 const API_URL = import.meta.env.VITE_DOCKER === 'true'
@@ -263,6 +264,28 @@ class ApiService {
 
     async envoyerNotificationTest(): Promise<void> {
         return this.request('POST', 'Notifications/test');
+    }
+
+    // AGENDA
+
+    /** Événements de l'agenda sur la période, ou null si l'utilisatrice n'a pas d'agenda (404). */
+    async getEvenementsAgenda(debut: Date, fin: Date): Promise<EvenementAgenda[] | null> {
+        const periode = `debut=${encodeURIComponent(debut.toISOString())}&fin=${encodeURIComponent(fin.toISOString())}`;
+        return this.agendaOuNull(`Agenda/evenements?${periode}`);
+    }
+
+    /** Trois prochains rendez-vous à heure fixe, ou null si l'utilisatrice n'a pas d'agenda (404). */
+    async getProchainsRendezVous(): Promise<EvenementAgenda[] | null> {
+        return this.agendaOuNull('Agenda/prochains');
+    }
+
+    private async agendaOuNull(url: string): Promise<EvenementAgenda[] | null> {
+        try {
+            return enTableau(await this.request<EvenementAgenda[] | { $values: EvenementAgenda[] }>('GET', url));
+        } catch (error) {
+            if (axios.isAxiosError(error) && error.response?.status === 404) return null;
+            throw error;
+        }
     }
 }
 

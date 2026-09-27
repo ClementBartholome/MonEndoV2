@@ -62,7 +62,7 @@ dotnet ef migrations add NomEnPascalCase --project MonEndoVue.Server
   **nullables** (null = non renseigné, jamais compté pour 0) ; **un seul bilan par jour** et aucun jour futur (409 / 400).
   Les bilans antérieurs gardent leur ancienne humeur `Mood` (`Heureuse`/`Neutre`/`Triste`) : tout calcul d'humeur passe
   par `features/bilan-quotidien/utils/humeur.ts`, qui prend en compte les deux.
-- Accueil `/` (carnet : dernières entrées), agenda `/agenda` (Google Calendar), export PDF `/export`.
+- Accueil `/` (carnet : dernières entrées), agenda `/agenda` (Google Calendar en lecture via le serveur, seulement pour une utilisatrice associée à un calendrier dans la configuration `Agenda`), export PDF `/export`.
 - Notifications **Web Push standard** envoyées par le serveur (clés VAPID, sans service tiers) : chaque appareil s'abonne
   depuis `/parametres` ; rappels réglables (job Quartz toutes les 15 min), chacun omis si le suivi est déjà fait :
   bilan quotidien (bilan du jour pas encore rempli, ouvre `/bilan-quotidien`) et photo de suivi de l'acné hebdomadaire
@@ -206,6 +206,7 @@ Objectif : que l'utilisateur n'ait jamais à répéter une consigne ou une infor
 - **Plusieurs sessions Claude peuvent travailler en parallèle dans le même dossier** : ne jamais changer de branche,
   rebaser ou réécrire l'historique dans la copie principale sans vérifier `git status` / `git worktree list` ; travailler
   dans un worktree dédié (`git worktree add ../MonEndoVue-<sujet> -b <branche> origin/main`) puis le supprimer après merge.
+  GitHub supprime seul la branche distante d'une PR mergée ; la branche locale et le worktree restent à supprimer à la main.
 - Pas de Docker sur le poste : le build d'image n'est validé que par la CI d'une PR (job `image`, sans push).
 - `dotnet build` du serveur lance un `npm install` du client (esproj) : ne jamais le faire tourner en même temps qu'un
   `npm ci` dans le même worktree (`node_modules` corrompu) ; un seul build à la fois par worktree.

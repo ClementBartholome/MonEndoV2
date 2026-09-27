@@ -12,6 +12,7 @@ using MonEndoVue.Server.Data;
 using MonEndoVue.Server.Jobs;
 using MonEndoVue.Server.Models;
 using MonEndoVue.Server.Services;
+using MonEndoVue.Server.Services.Agenda;
 using MonEndoVue.Server.Services.WebPush;
 using MonEndoVue.Server.Services.WebPush.Rappels;
 using Quartz;
@@ -69,6 +70,10 @@ namespace MonEndoVue.Server
             // Un rappel = une règle (ajouter un type : nouvelle implémentation de IRegleRappel)
             builder.Services.AddScoped<IRegleRappel, RappelBilanQuotidien>();
             builder.Services.AddScoped<IRegleRappel, RappelSuiviAcne>();
+
+            // Agenda Google en lecture : clé API côté serveur, calendrier associé à une utilisatrice par la configuration
+            builder.Services.Configure<AgendaOptions>(builder.Configuration.GetSection(AgendaOptions.Section));
+            builder.Services.AddHttpClient<AgendaService>(client => client.Timeout = TimeSpan.FromSeconds(10));
 
             builder.Services.AddCors(options =>
             {

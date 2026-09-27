@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <section class="container mt-20">
     <div class="flex justify-between items-center w-full gap-4 mb-4">
       <router-link to="/">
@@ -8,132 +8,93 @@
           <span class="hide-xsm">Revenir en arrière</span>
         </Button>
       </router-link>
-      <Button variant="custom" @click="refreshData"
+      <Button v-if="agendaDisponible" variant="custom" @click="refreshData"
               class="flex gap-2 items-center cursor-pointer hover:opacity-80 transition-opacity">
         <span class="hide-xsm">Actualiser les données</span>
         <span class="material-symbols-outlined">refresh</span>
       </Button>
     </div>
 
-    <div v-if="loading">Chargement des données du calendrier...</div>
-    <div v-else-if="events.length === 0">Aucun événement trouvé</div>
-    <FullCalendar v-else :options="calendarOptions"/>
+    <p v-if="!agendaDisponible">Aucun agenda n'est associé à ton compte.</p>
+    <template v-else>
+      <p v-if="loading">Chargement des données du calendrier...</p>
+      <p v-if="erreur" class="text-sm text-muted-foreground mb-2">{{ erreur }}</p>
+      <FullCalendar ref="calendrier" :options="calendarOptions"/>
+    </template>
   </section>
 </template>
 
 <script setup lang="ts">
-import {computed, onMounted, onUnmounted, ref, type Ref} from 'vue'
+import {ref} from 'vue'
 import FullCalendar from '@fullcalendar/vue3'
-import googleCalendarPlugin from '@fullcalendar/google-calendar';
-import dayGridMonth from "@fullcalendar/daygrid";
-import dayGridWeek from "@fullcalendar/daygrid";
+import dayGridPlugin from "@fullcalendar/daygrid";
 import frLocale from '@fullcalendar/core/locales/fr';
 import interactionPlugin from "@fullcalendar/interaction";
+import type {CalendarOptions, EventInput, EventSourceFuncArg} from '@fullcalendar/core'
 import {Button} from '@/shared/components/ui/button';
-import type {CalendarEvent} from '@/features/schedule/models/calendar-events/calendar-event';
-import type { CalendarOptions } from '@fullcalendar/core' 
+import apiService from '@/shared/services/apiService';
+import type {EvenementAgenda} from '@/features/schedule/types/agenda';
 
-const events = ref<CalendarEvent[]>([]);
 const loading = ref(true);
-const selectedDate = ref<string | null>(null);
+const agendaDisponible = ref(true);
+const erreur = ref<string | null>(null);
+const calendrier = ref<InstanceType<typeof FullCalendar> | null>(null);
 
-type PositionType = { x: number; y: number; };
-const popperPosition: Ref<PositionType> = ref({x: 0, y: 0});
+const versEvenementCalendrier = (evenement: EvenementAgenda): EventInput => ({
+  id: evenement.id,
+  title: evenement.titre,
+  start: evenement.debut,
+  end: evenement.fin ?? undefined,
+  allDay: evenement.journeeEntiere,
+  url: evenement.lien ?? undefined,
+});
 
-let refreshIntervalId: number;
-
-const fetchEvents = async () => {
-  events.value = [];
-  loading.value = true;
-
-  const calendarOptions = {
-    googleCalendarApiKey: import.meta.env.VITE_GOOGLE_CALENDAR_API_KEY,
-    googleCalendarId: import.meta.env.VITE_GOOGLE_CALENDAR_ID
-  };
-
+// Les événements sont demandés au serveur pour la période affichée, à chaque changement de vue ou de mois.
+const chargerEvenements = async (periode: EventSourceFuncArg): Promise<EventInput[]> => {
+  erreur.value = null;
   try {
-    let allEvents: CalendarEvent[] = [];
-    let pageToken: string | undefined;
-
-    do {
-      const url = `https://www.googleapis.com/calendar/v3/calendars/${calendarOptions.googleCalendarId}/events?key=${calendarOptions.googleCalendarApiKey}${pageToken ? '&pageToken=' + pageToken : ''}`;
-      const response = await fetch(url);
-      const data = await response.json();
-
-      // Mapper les événements au format FullCalendar
-      const mappedEvents: CalendarEvent[] = data.items
-          .filter((item: any) => item.summary) // Filtrer les événements sans titre
-          .map((item: any) => ({
-            title: item.summary,
-            start: item.start.dateTime || item.start.date,
-            end: item.end.dateTime || item.end.date,
-            url: item.htmlLink
-          }));
-
-      allEvents = [...allEvents, ...mappedEvents];
-      pageToken = data.nextPageToken;
-
-    } while (pageToken);
-
-    events.value = allEvents;
-  } catch (error) {
-    console.error('Erreur lors de la récupération des événements:', error);
-  } finally {
-    loading.value = false;
+    const evenements = await apiService.getEvenementsAgenda(periode.start, periode.end);
+    if (evenements === null) {
+      agendaDisponible.value = false;
+      return [];
+    }
+    return evenements.map(versEvenementCalendrier);
+  } catch {
+    erreur.value = "L'agenda est momentanément indisponible. Réessaie dans quelques instants.";
+    return [];
   }
 };
 
-const calendarOptions = computed<CalendarOptions>(() => { 
-  const isMobile = window.matchMedia('(max-width: 767px)').matches;
-  const initialView = isMobile ? 'dayGridFourWeek' : 'dayGridMonth';
+const isMobile = window.matchMedia('(max-width: 767px)').matches;
 
-  return {
-    plugins: [googleCalendarPlugin, dayGridMonth, interactionPlugin, dayGridWeek],
-    initialView: initialView,
-    views: {
-      dayGridFourWeek: {
-        type: 'dayGridWeek',
-        duration: {days: 4},
-        dayHeaderFormat: { weekday: 'narrow', day: 'numeric', omitCommas: true }
-      }
-    },
-    headerToolbar: {
-      left: 'prev,next today',
-      center: 'title',
-      right: 'dayGridMonth,dayGridFourWeek'
-    },
-    buttonText: {
-      dayGridFourWeek: 'semaine'
-    },
-    googleCalendarApiKey: import.meta.env.VITE_GOOGLE_CALENDAR_API_KEY,
-    events: events.value, // Utilisation directe des événements mappés
-    height: 850,
-    locale: frLocale,
-    dateClick: function (info: any) {
-      selectedDate.value = info.dateStr;
-      popperPosition.value = {
-        x: info.jsEvent.clientX,
-        y: info.jsEvent.clientY
-      };
-    },
-  }
-});
-
-onMounted(async () => {
-  await fetchEvents();
-
-  // Actualiser les événements toutes les 60 secondes
-  refreshIntervalId = setInterval(fetchEvents, 60000);
-});
-
-onUnmounted(() => {
-  if (refreshIntervalId) {
-    clearInterval(refreshIntervalId);
-  }
-});
+const calendarOptions: CalendarOptions = {
+  plugins: [dayGridPlugin, interactionPlugin],
+  initialView: isMobile ? 'dayGridFourWeek' : 'dayGridMonth',
+  views: {
+    dayGridFourWeek: {
+      type: 'dayGridWeek',
+      duration: {days: 4},
+      dayHeaderFormat: {weekday: 'narrow', day: 'numeric', omitCommas: true}
+    }
+  },
+  headerToolbar: {
+    left: 'prev,next today',
+    center: 'title',
+    right: 'dayGridMonth,dayGridFourWeek'
+  },
+  buttonText: {
+    dayGridFourWeek: 'semaine'
+  },
+  events: chargerEvenements,
+  loading: (enCours: boolean) => {
+    loading.value = enCours;
+  },
+  height: 850,
+  locale: frLocale,
+};
 
 // Actions
-const refreshData = async () => {
-  await fetchEvents();
+const refreshData = () => {
+  calendrier.value?.getApi().refetchEvents();
 };
 </script>
