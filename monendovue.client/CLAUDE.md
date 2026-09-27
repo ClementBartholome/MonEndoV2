@@ -82,8 +82,16 @@ Nouveau composant shadcn : `npx shadcn-vue add <nom>` (alias configurés vers `@
 ## Style et UX
 - **Mobile d'abord** : styles de base = mobile, `md:` = desktop ; ajustements ≤ 425px via `@media (max-width: 425px)`
   dans le `<style scoped>` ou la classe `.hide-xsm`. Tester à 375px.
-- Tokens de marque (`src/assets/index.css`) : `var(--button)`, `var(--headline)`, classes `.bg-clearer`, `.text-headline`,
-  `.text-paragraph`, `Button variant="custom"` / `"selected"`. Pas de couleurs en dur.
+- **Tokens de design** (`src/assets/tokens.css`, palette validée en 1.3.0, contrastes WCAG AA vérifiés) exposés à Tailwind :
+  `bg-fond`, `bg-surface`, `bg-surface-2`, `border-trait`, `text-texte` / `-2` / `-3`, `text-lien`, `border-contour` (champs,
+  3:1), `text-danger`, `rounded-petit` / `moyen` / `grand`, `shadow-elevation` (la seule ombre). **Aucune couleur en dur ni
+  couleur Tailwind brute** (`blue-100`, `gray-300`…) dans le code nouveau ou modifié. Les anciens noms (`--headline`,
+  `--button`, `.text-headline`, `Button variant="custom"`) et les variables shadcn pointent vers ces tokens.
+  - Une **rubrique = une teinte**, partout (tuile + icône) : `bg-teinte-<r>-fond` + `text-teinte-<r>` avec <r> = `bilan`,
+    `douleur`, `regles`, `symptome`, `traitement`, `neutre`. Les types d'une rubrique se distinguent par icône et libellé.
+  - Le rose `--couleur-accent` (`bg-button`) est un **fond** avec texte foncé ; jamais de texte blanc dessus ni de texte rose.
+  - Intensité 0-10 : `var(--intensite-N)` (texte foncé jusqu'à 5, blanc à partir de 6).
+  - Les pages pas encore refaites (Cycle, Traitements, accueil…) gardent des couleurs brutes : les migrer quand on les touche.
 - Polices servies par l'app (`src/assets/polices.css`, paquets `@fontsource`), **jamais Google Fonts** (IP envoyée à Google, RGPD) :
   Poppins 400/400 italique/500/600/700 en latin ; une graisse ou un axe d'icône en plus s'ajoute dans ce fichier.
 - Icônes Material Symbols (`<i class="material-symbols-outlined">nom</i>`, axe FILL seul, graisse 400) ; les correspondances type → icône vont dans
