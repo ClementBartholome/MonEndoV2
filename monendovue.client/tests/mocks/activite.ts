@@ -1,5 +1,5 @@
 import type { DonneesActivitePhysique } from '../../src/features/activite/types/donnees-activite-physique';
-import { CARNET_ID } from './fixtures';
+import { CARNET_ID } from './session';
 import type { FauxServeur } from './faux-serveur';
 
 /**

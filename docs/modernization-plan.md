@@ -231,7 +231,7 @@ Regles:
   - logs de production : conservation 30 jours (Serilog quotidien, logrotate nginx, rotation Docker), niveaux adaptes,
     consultation via Dozzle en tunnel SSH ; compose de production versionne dans `deploy/` (sans secret)
   - tests E2E de l'interface avec une API simulee (Playwright, mobile 375px et desktop), executes en CI sur les PR vers
-    main (issue #22) ; parcours principaux a completer (issue #23)
+    main (issue #22) ; parcours du bilan quotidien (issue #23), autres pages a completer
   - suivi des tests Playwright (Piwi Dashboard) reporte : a reevaluer une fois les tests E2E executes en CI
 
 ## Definition of Done (pour chaque lot)
