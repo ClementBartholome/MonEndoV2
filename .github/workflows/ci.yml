@@ -151,12 +151,14 @@ jobs:
         with:
           dotnet-version: '8.0.x'
 
+      # --ignore-scripts : aucun script d'installation de dépendance n'est exécuté (inutiles pour Vite et Playwright).
       - name: Install client dependencies
-        run: npm ci
+        run: npm ci --ignore-scripts
         working-directory: ./monendovue.client
 
+      # Binaire local de Playwright (version figée par package-lock.json), pas de npx.
       - name: Install Chromium for Playwright
-        run: npx playwright install --with-deps chromium
+        run: ./node_modules/.bin/playwright install --with-deps chromium
         working-directory: ./monendovue.client
 
       - name: Run E2E tests
