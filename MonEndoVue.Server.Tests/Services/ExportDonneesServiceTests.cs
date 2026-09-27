@@ -6,7 +6,6 @@ using MonEndoVue.Server.Controllers;
 using MonEndoVue.Server.Models;
 using MonEndoVue.Server.Services;
 using MonEndoVue.Server.Services.Export;
-using MonEndoVue.Server.Services.Photos;
 using MonEndoVue.Server.Tests.Support;
 
 namespace MonEndoVue.Server.Tests.Services;
@@ -120,12 +119,4 @@ public sealed class ExportDonneesServiceTests : IDisposable
     }
 
     public void Dispose() => _carnet.Dispose();
-
-    private sealed class FauxStockagePhotos : IStockagePhotos
-    {
-        public Dictionary<string, byte[]> Contenus { get; } = [];
-
-        public Task<Stream?> OuvrirAsync(string url, CancellationToken ct) =>
-            Task.FromResult<Stream?>(Contenus.TryGetValue(url, out var octets) ? new MemoryStream(octets) : null);
-    }
 }

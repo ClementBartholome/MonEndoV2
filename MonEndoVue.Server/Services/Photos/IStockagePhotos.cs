@@ -8,4 +8,7 @@ public interface IStockagePhotos
 {
     /// <summary>Contenu de la photo, ou null si elle n'existe plus.</summary>
     Task<Stream?> OuvrirAsync(string url, CancellationToken ct);
+
+    /// <summary>Supprime la photo ; sans effet si elle n'existe plus. Lève une exception si le stockage est indisponible.</summary>
+    Task SupprimerAsync(string url, CancellationToken ct);
 }

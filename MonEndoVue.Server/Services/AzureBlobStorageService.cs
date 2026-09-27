@@ -107,6 +107,8 @@ public class AzureBlobStorageService : IStockagePhotos
         }
     }
 
+    public Task SupprimerAsync(string url, CancellationToken ct) => DeleteFileByUrlAsync(url);
+
     public async Task DeleteFileAsync(string blobName)
     {
         if (string.IsNullOrWhiteSpace(blobName)) return;
