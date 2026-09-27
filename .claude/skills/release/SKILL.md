@@ -18,6 +18,7 @@ Versionnage fin, les versions s'enchaînant vite (décision du 2026-09-27) :
   - Sur la branche du hotfix : numéro de version (mêmes fichiers qu'une version) et section du CHANGELOG **déjà datée**
     avant la PR vers `main` (pas de commit possible sur `main` après coup).
   - Configuration du VPS exigée par le correctif : faite et vérifiée **avant** le merge (la PR le dit en tête).
+  - PR vers `main` avec le même titre et la même description qu'une version (voir « Livrer », étape 2).
   - Après la livraison, merger `main` dans la `release/X.Y.Z` en cours. Conflits attendus sur les numéros de version :
     reprendre `package.json`, `package-lock.json` et le `.csproj` de `main` (dépendances à jour) puis remettre le numéro
     de la version en cours ; garder « ours » réintroduirait une dépendance retirée par le correctif. CHANGELOG : les deux sections.
@@ -48,7 +49,11 @@ Versionnage fin, les versions s'enchaînant vite (décision du 2026-09-27) :
 
 ## Livrer (uniquement sur demande explicite de l'utilisateur)
 1. Dater la section du CHANGELOG (`## [X.Y.Z] - AAAA-MM-JJ`) sur la branche de release.
-2. PR `release/X.Y.Z` → `main`, merge (commit de merge, pas de squash : l'historique des sujets est conservé).
+2. PR `release/X.Y.Z` (ou `hotfix/X.Y.Z`) → `main`, merge (commit de merge, pas de squash : l'historique des sujets est conservé).
+   **Titre : `release: MonEndo X.Y.Z`** (jamais le nom de la branche proposé par défaut par GitHub). Description :
+   `## MonEndo X.Y.Z` suivi de la section du CHANGELOG, précédée pour un hotfix des actions faites sur le VPS
+   (ou « aucune »), puis migrations (« aucune » si c'est le cas) et impact du déploiement.
+   `gh pr create --base main --title "release: MonEndo X.Y.Z" --body-file <fichier>`.
 3. Attendre le job `deployer` et `https://monendoapp.fr/health` = `Healthy`.
 4. Tag sur le commit de merge : `git tag -a vX.Y.Z <sha> -m "MonEndo X.Y.Z"` puis `git push origin vX.Y.Z` :
    la CI publie l'image `ghcr.io/…:vX.Y.Z` (sans redéployer).
