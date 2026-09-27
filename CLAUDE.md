@@ -72,7 +72,7 @@ dotnet ef migrations add NomEnPascalCase --project MonEndoVue.Server
   (aucune photo d'acné depuis 7 jours, ouvre `/cycle?onglet=acne`). Sur iOS (16.4+), uniquement dans l'app ajoutée à l'écran d'accueil.
   Entités : **`AbonnementPush`** (un par appareil, endpoint unique, rattaché au carnet) et **`Rappel`** (un par carnet et
   par type : actif, heure locale, jour de la semaine si hebdomadaire, fuseau IANA, date du dernier envoi). L'ancienne table
-  `PreferencesRappel` n'est plus mappée (conservée pour un rollback, à supprimer).
+  `PreferencesRappel` est supprimée depuis la 1.2.0.
 
 ## Principes produit (non négociables)
 - **Mobile-first** : écrans pensés d'abord pour ≤ 425px, aucune information clé tronquée ; le desktop enrichit ensuite.

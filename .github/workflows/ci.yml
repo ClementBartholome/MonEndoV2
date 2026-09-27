@@ -108,11 +108,13 @@ jobs:
         if: env.SONAR_TOKEN != ''
         continue-on-error: true
         # Couverture : rapport OpenCover produit par `dotnet test` (coverlet). Exclus de la couverture : les migrations EF
-        # (code généré) et le client, qui n'a pas encore de tests unitaires (à revoir avec l'arrivée de Vitest).
+        # (code généré) et le client (couvert par les tests E2E, sans mesure de couverture). Exclues de la détection de
+        # doublons : les migrations EF (un Down reprend le schéma d'une migration précédente).
         run: |
           ./.sonar/scanner/dotnet-sonarscanner begin /k:"ClementBartholome_MonEndoV2" /o:"clementbartholome" /d:sonar.token="${{ env.SONAR_TOKEN }}" /d:sonar.host.url="https://sonarcloud.io" \
             /d:sonar.cs.opencover.reportsPaths="**/TestResults/**/coverage.opencover.xml" \
-            /d:sonar.coverage.exclusions="**/Migrations/**,monendovue.client/**"
+            /d:sonar.coverage.exclusions="**/Migrations/**,monendovue.client/**" \
+            /d:sonar.cpd.exclusions="**/Migrations/**"
 
       - name: Restore .NET dependencies
         run: dotnet restore
