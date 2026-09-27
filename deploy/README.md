@@ -84,7 +84,10 @@ Dozzle n'écoute que sur `127.0.0.1:8888` du VPS : il n'est pas joignable depuis
 ssh -N -L 8888:127.0.0.1:8888 debian@<hôte-du-vps>
 ```
 
-puis ouvrir http://localhost:8888. Seuls les conteneurs `monendo_*` sont visibles ; recherche plein texte et filtre par niveau
+(`<hôte-du-vps>` : l'adresse IP ou le nom utilisé pour la connexion SSH habituelle ; le nom affiché dans l'invite du VPS,
+`vps-…`, n'est pas résolu depuis le poste). La commande reste ouverte sans rien afficher ; `Ctrl+C` ferme le tunnel. Ouvrir ensuite http://localhost:8888.
+Dozzle propose d'activer une connexion et de monter `/data` : volontairement non fait, puisque seul un accès SSH au VPS
+permet de l'atteindre (et donne déjà `docker logs`). À revoir si Dozzle devait un jour être exposé. Seuls les conteneurs `monendo_*` sont visibles ; recherche plein texte et filtre par niveau
 dans l'interface. Pour l'historique au-delà de ce que garde Docker, lire les fichiers Serilog :
 
 ```bash
@@ -93,7 +96,11 @@ grep -h " \[ERR\]" ~/app/logs/MonEndoVue-*.log | tail -50
 
 ### Installer la rotation des logs nginx (une fois)
 
+L'image Debian du VPS ne fournit pas `logrotate` : l'installer d'abord (le paquet active le timer systemd quotidien).
+
 ```bash
+sudo apt-get update && sudo apt-get install -y logrotate
+systemctl list-timers logrotate.timer
 sudo curl -fsSL https://raw.githubusercontent.com/ClementBartholome/MonEndoV2/main/deploy/logrotate-monendo-nginx -o /etc/logrotate.d/monendo-nginx
 sudo logrotate --debug /etc/logrotate.d/monendo-nginx
 ```
