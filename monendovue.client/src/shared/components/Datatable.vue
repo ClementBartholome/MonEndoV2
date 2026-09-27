@@ -1,8 +1,8 @@
 <template>
-  <DataTable :data="entries" class="display custom-datatable " :columns="columns" :options="options">
+  <DataTable :data="entries" class="display custom-datatable " :columns="colonnes" :options="options">
     <slot></slot>
     <tr v-for="(entry) in entries" :key="entry.id" :data-id="entry.id">
-      <td v-for="column in columns">{{ entry[column.data] }}</td>
+      <td v-for="column in columns">{{ entry[String(column.data)] }}</td>
       <td>
         <span class="material-symbols-outlined delete-btn" @click="deleteEntry(entry.id)">delete</span>
       </td>
@@ -14,11 +14,11 @@
 </template>
 
 <script setup lang="ts">
-import {ref, watch, nextTick, onMounted, defineEmits} from 'vue'
+import {computed, ref, watch, nextTick, onMounted, defineEmits} from 'vue'
 import type {PropType} from 'vue'
 import DataTable from 'datatables.net-vue3';
 import DataTablesCore from 'datatables.net';
-import type {Config} from 'datatables.net';
+import type {Config, ConfigColumns} from 'datatables.net';
 
 
 DataTable.use(DataTablesCore);
@@ -26,15 +26,21 @@ DataTable.use(DataTablesCore);
 type Entry = Record<string, any>;
 const entries = ref<Entry[]>([]);
 
-type Column = { data: string };
 
 const props = defineProps({
   entries: Array as () => Entry[],
-  columns: Array as () => Column[],
+  columns: Array as () => ConfigColumns[],
   deleteFunction: Function as PropType<(id: number) => Promise<void>>,
 });
 
 const emit = defineEmits(['edit-entry']);
+
+// DataTables insère les valeurs en HTML : une colonne de données sans rendu propre est affichée comme du texte
+// (échappée), pour qu'une saisie ne soit jamais interprétée. Les colonnes d'icônes (defaultContent) gardent leur HTML.
+const colonnes = computed<ConfigColumns[]>(() => (props.columns ?? []).map((colonne) =>
+  colonne.data && !colonne.render && colonne.defaultContent === undefined
+    ? { ...colonne, render: DataTablesCore.render.text() }
+    : colonne));
 
 onMounted(async () => {
   entries.value = props.entries!;

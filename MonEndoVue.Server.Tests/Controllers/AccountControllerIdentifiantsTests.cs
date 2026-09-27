@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using MonEndoVue.Server.Dto;
+using MonEndoVue.Server.Services;
 using MonEndoVue.Server.Tests.Support;
 
 namespace MonEndoVue.Server.Tests.Controllers;
@@ -112,6 +113,46 @@ public sealed class AccountControllerIdentifiantsTests : IDisposable
         });
 
         Assert.IsType<BadRequestObjectResult>(resultat);
+    }
+
+    [Fact]
+    public async Task Login_TropDeMotsDePasseErrones_VerrouilleLeCompteMemeAvecLeBonMotDePasse()
+    {
+        var utilisatrice = await _identity.CreerUtilisatrice("verrou@local");
+        var controller = _identity.CreerController();
+        for (var i = 0; i < OptionsIdentite.EchecsAvantVerrouillage; i++)
+        {
+            await controller.Login(new IdentifiantsDto { Email = "verrou@local", Password = "MauvaisMotDePasse1!" });
+        }
+
+        var resultat = await controller.Login(new IdentifiantsDto
+        {
+            Email = "verrou@local",
+            Password = IdentityDeTest.MotDePasseValide,
+        });
+
+        // Même réponse qu'un mot de passe erroné : rien n'indique que le compte existe.
+        Assert.IsType<UnauthorizedResult>(resultat);
+        Assert.True(await _identity.UserManager.IsLockedOutAsync(utilisatrice));
+    }
+
+    [Fact]
+    public async Task Login_QuelquesEchecsPuisBonMotDePasse_RetourneOk()
+    {
+        await _identity.CreerUtilisatrice("distraite@local");
+        var controller = _identity.CreerController();
+        for (var i = 0; i < OptionsIdentite.EchecsAvantVerrouillage - 1; i++)
+        {
+            await controller.Login(new IdentifiantsDto { Email = "distraite@local", Password = "MauvaisMotDePasse1!" });
+        }
+
+        var resultat = await controller.Login(new IdentifiantsDto
+        {
+            Email = "distraite@local",
+            Password = IdentityDeTest.MotDePasseValide,
+        });
+
+        Assert.IsType<OkObjectResult>(resultat);
     }
 
     public void Dispose() => _identity.Dispose();

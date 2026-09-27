@@ -87,8 +87,16 @@ modifiables, jamais `Entry(dto).State = Modified`, jamais de changement de `Carn
 ## Logs
 - `ILogger<T>` avec templates structurés (`"… {SymptomeId}"`), jamais de concaténation ni de `Console.WriteLine`.
 - Interdits dans les logs : email, nom d'utilisateur, token, code OAuth, contenu d'une donnée de santé. Les identifiants numériques suffisent.
+- Serilog (configuré dans `Program.cs`) : hors dev, `Information` pour l'application et `Warning` pour `Microsoft`/`System` ;
+  un log utile en production doit donc être au moins `Information`. Fichiers `Logs/MonEndoVue-AAAAMMJJ.log` purgés après 30 jours.
 
 ## Sécurité transverse
+- En-têtes de sécurité et **Content-Security-Policy** dans `Services/EntetesSecurite.cs` (posés sur toutes les réponses).
+  La CSP est en mode `Report-Only` depuis la 1.2.0 (violations dans la console, rien de bloqué). Toute nouvelle ressource
+  tierce (police, image, API appelée par le navigateur) s'y déclare, ou mieux, s'héberge localement. Vérification : client
+  buildé (`VITE_DOCKER=true npx vite build` puis `npx vite preview`), en-tête ajouté aux documents par un script Playwright
+  (`route.fetch` puis `route.fulfill`), toutes les pages parcourues à 375px et 1280px, messages « Content Security Policy »
+  relevés dans la console. Le serveur de dev Vite (scripts en ligne) ne convient pas pour cette vérification.
 - Rate limiting : politiques `api` (par défaut) et `auth` (20 req/min), constantes dans `Services/PolitiquesDebit.cs`.
   La politique `api` n'est posée que sur les endpoints qui n'en déclarent pas (`PolitiquesDebit.AppliquerParDefaut`) :
   un `[EnableRateLimiting(PolitiquesDebit.Auth)]` sur une action est donc réellement appliqué. À mettre sur tout endpoint
@@ -105,10 +113,9 @@ modifiables, jamais `Entry(dto).State = Modified`, jamais de changement de `Carn
 - **Appliquées automatiquement au démarrage en production** : migrations rétro-compatibles, relire le fichier généré,
   signaler toute opération destructive. Ne jamais modifier une migration déjà déployée.
 - En développement, les migrations ne sont pas appliquées au démarrage (`dotnet ef database update` à la main).
-- **Table conservée hors modèle : `PreferencesRappel`** (ancien réglage du rappel, recopié dans `Rappels` par
-  `GeneraliseRappels`, gardé pour un retour à une image antérieure à la 1.0.0). Elle est absente du modèle **et** du
-  snapshot : une nouvelle migration ne la touche pas (vérifié avec `RendFacultativesMesuresBilan`). Sa suppression se fera
-  par une migration dédiée écrite à la main (prévue en 1.1, voir la roadmap).
+- **Supprimer une table hors modèle** (cas de `PreferencesRappel`, supprimée en 1.2.0 par `SupprimePreferencesRappel`) :
+  `migrations add` génère une migration vide (modèle et snapshot inchangés) ; écrire à la main le `DropTable` et, dans
+  le `Down`, le `CreateTable` du schéma d'origine. La tester sur une base jetable avec des lignes (`sqlcmd -I`).
 - **Rollback après une colonne rendue nullable** : une image antérieure lit la colonne comme non nullable et plante dès
   qu'une valeur nulle est enregistrée (cas de `RendFacultativesMesuresBilan`). Le signaler dans la PR et ajouter la
   requête de remise à niveau à exécuter avant un retour arrière dans le skill `release` (section « Annuler »).
@@ -122,7 +129,7 @@ modifiables, jamais `Entry(dto).State = Modified`, jamais de changement de `Carn
 Chargée depuis `appsettings.{Environment}.json` (**obligatoire**, non versionné), variables d'environnement puis user-secrets.
 Clés attendues (noms seulement) : `ConnectionStrings:DefaultConnection`, `AzureBlobStorage:ConnectionString`,
 `AzureBlobStorage:ContainerName` (ou variables `AZURE_STORAGE_CONNECTION_STRING`/`AZURE_CONTAINER_NAME`),
-`Authentication:Schemes:Bearer:{Secret,ValidIssuer,ValidAudiences}`, `Jwt:Key`, `RootUser:{UserName,Email,Password}`,
+`Authentication:Schemes:Bearer:{Secret,ValidIssuer,ValidAudiences}`, `Jwt:Key`, `RootUser:{UserName,Email,Password}` (compte créé au démarrage en **développement** seulement),
 `WebPush:{Subject,PublicKey,PrivateKey}` (clés VAPID ; absentes ou invalides — sujet sans `mailto:`/`https:`, clés ≠ 87/43 caractères — = notifications désactivées
  avec un avertissement au démarrage, sans bloquer ni faire échouer les routes ;
  en dev via `dotnet user-secrets`), `Agenda:CleApi` (clé API Google Calendar) et `Agenda:Calendriers:<id de l'utilisatrice>` (identifiant du calendrier affiché ; sans entrée, pas d'agenda : 404). En production, dans `config/app.env` sous la forme `Agenda__CleApi=…` et `Agenda__Calendriers__<id>=…`. Ne jamais lire ni afficher les valeurs.
@@ -146,4 +153,8 @@ Projet `MonEndoVue.Server.Tests` (xUnit, **net8.0** comme la CI et le Dockerfile
   (coverlet, OpenCover) ; migrations et client sont exclus. Donc **toute ligne C# ajoutée ou modifiée hors migration doit être
   exécutée par un test**, sinon le check Sonar de la PR échoue. Vérifier en local :
   `dotnet test --collect:"XPlat Code Coverage;Format=opencover"`.
+  Un cas défensif impossible (`if (x == null) throw` après une vérification qui le garantit, `catch` d'une exception
+  jamais levée) compte comme ligne non couverte : l'écrire en une expression (`?? throw`) ou le supprimer plutôt
+  que de chercher à le tester. Lignes non couvertes d'une PR : `https://sonarcloud.io/api/sources/lines?key=ClementBartholome_MonEndoV2:<chemin>&pullRequest=<n>`
+  (`isNew` et `lineHits: 0`).
 - Prochaine étape : tests d'intégration avec `WebApplicationFactory` (routage, `[Authorize]`, code HTTP réel des refus).

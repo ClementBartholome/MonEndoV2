@@ -1,88 +1,44 @@
 import { defineConfig, devices } from '@playwright/test';
 
 /**
- * Tests E2E : toujours contre un environnement local, jamais contre la production.
- * Variables d'environnement : E2E_EMAIL, E2E_PASSWORD (compte de test local),
- * E2E_BASE_URL (optionnelle, par défaut le serveur Vite local).
- * See https://playwright.dev/docs/test-configuration.
+ * Tests E2E des parcours de l'interface, avec une API simulée (tests/support/faux-serveur.ts) : ni serveur .NET, ni base,
+ * ni compte. Le serveur et ses règles sont couverts par les tests xUnit (voir docs/tests.md).
+ *
+ * L'application tourne sur un serveur Vite dédié (port 5174) avec VITE_DOCKER=true : ses appels API sont relatifs et
+ * interceptés par le faux serveur. Lancement : `npm run test:e2e` ; en CI, job `e2e` sur les PR vers main.
  */
-const baseURL = process.env.E2E_BASE_URL ?? 'https://localhost:5173';
+const PORT = 5174;
 
 export default defineConfig({
   testDir: './tests',
-  /* Run tests in files in parallel */
   fullyParallel: true,
-  /* Fail the build on CI if you accidentally left test.only in the source code. */
   forbidOnly: !!process.env.CI,
-  /* Retry on CI only */
-  retries: process.env.CI ? 2 : 0,
-  /* Opt out of parallel tests on CI. */
-  workers: process.env.CI ? 1 : 1,
-  /* Reporter to use. See https://playwright.dev/docs/test-reporters */
-  reporter: 'html',
-  /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
+  retries: process.env.CI ? 1 : 0,
+  workers: process.env.CI ? 2 : undefined,
+  reporter: process.env.CI ? [['list'], ['html', { open: 'never' }]] : [['list']],
   use: {
-    /* Base URL to use in actions like `await page.goto('/')`. */
-    baseURL,
-
-    /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
-    trace: 'on-first-retry',
+    baseURL: `https://localhost:${PORT}`,
     ignoreHTTPSErrors: true,
+    locale: 'fr-FR',
+    timezoneId: 'Europe/Paris',
+    trace: 'retain-on-failure',
   },
-
-  /* Configure projects for major browsers */
+  // Chromium seulement, en deux formats : l'application est pensée mobile d'abord (375px), le desktop l'enrichit.
   projects: [
-    { name: 'setup', testMatch: /.*\.setup\.ts/ },
     {
-      name: 'chromium',
-      use: {
-        ...devices['Desktop Chrome'],
-        storageState: 'playwright/.auth/user.json',
-      },
-      dependencies: ['setup'],
+      name: 'mobile',
+      use: { ...devices['Pixel 5'], viewport: { width: 375, height: 812 } },
     },
     {
-      name: 'firefox',
-      use: {
-        ...devices['Desktop Firefox'],
-        storageState: 'playwright/.auth/user.json',
-      },
-      dependencies: ['setup'],
+      name: 'desktop',
+      use: { ...devices['Desktop Chrome'] },
     },
-    {
-      name: 'webkit',
-      use: {
-        ...devices['Desktop Safari'],
-        storageState: 'playwright/.auth/user.json',
-      },
-      dependencies: ['setup'],
-    },
-    /* Test against mobile viewports. */
-    // {
-    //   name: 'Mobile Chrome',
-    //   use: { ...devices['Pixel 5'] },
-    // },
-    // {
-    //   name: 'Mobile Safari',
-    //   use: { ...devices['iPhone 12'] },
-    // },
-
-    /* Test against branded browsers. */
-    // {
-    //   name: 'Microsoft Edge',
-    //   use: { ...devices['Desktop Edge'], channel: 'msedge' },
-    // },
-    // {
-    //   name: 'Google Chrome',
-    //   use: { ...devices['Desktop Chrome'], channel: 'chrome' },
-    // },
   ],
-
-  /* Run your local dev server before starting the tests */
   webServer: {
-    command: 'npm run dev',
-    url: baseURL,
+    command: `npx vite --port ${PORT} --strictPort`,
+    url: `https://localhost:${PORT}`,
+    ignoreHTTPSErrors: true,
     reuseExistingServer: !process.env.CI,
-    ignoreHTTPSErrors: true, 
+    env: { VITE_DOCKER: 'true' },
   },
 });

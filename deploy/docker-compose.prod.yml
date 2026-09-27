@@ -1,0 +1,112 @@
+# Référence versionnée de ~/app/docker-compose.prod.yml sur le VPS (procédure : deploy/README.md).
+# Aucun secret ici : ils vivent uniquement sur le VPS (.env écrit par la CI, dossier config/).
+name: monendovue-prod
+
+# Rotation des logs console des conteneurs (sinon le fichier json de Docker grossit sans limite)
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
+services:
+  # Base de données SQL Server (port interne seulement)
+  db:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: monendo_database_prod
+    environment:
+      - ACCEPT_EULA=Y
+      - SA_PASSWORD=${DB_PASSWORD:?DB_PASSWORD absent du fichier .env}
+      - MSSQL_PID=Express
+      # VPS de 2 Go partagé avec d'autres conteneurs : SQL Server plafonné pour éviter la swap
+      - MSSQL_MEMORY_LIMIT_MB=768
+    expose:
+      - "1433"
+    volumes:
+      - sqlserver_data:/var/opt/mssql
+      - ./backups:/var/backups
+    networks:
+      - monendo_network
+    restart: unless-stopped
+    logging: *logging
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+        reservations:
+          memory: 512M
+
+  # Application MonEndoVue (image GHCR, mise à jour par la CI à chaque push sur main)
+  app:
+    image: ghcr.io/clementbartholome/monendov2:latest
+    container_name: monendo_app_prod
+    # Secrets de l'application (AZURE_STORAGE_CONNECTION_STRING) : fichier présent uniquement sur le VPS
+    env_file:
+      - ./config/app.env
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ASPNETCORE_URLS=http://+:80
+      - AZURE_CONTAINER_NAME=photos-symptomes
+    expose:
+      - "80"
+    volumes:
+      - ./logs:/app/Logs
+      - ./keys:/app/keys
+      - ./uploads:/app/uploads
+      - ./config/appsettings.Production.json:/app/appsettings.Production.json
+      # Encore chargé par les images antérieures à 2026-09 : à garder tant qu'un rollback vers elles est envisageable
+      - ./config/serviceAccountKey.json:/app/serviceAccountKey.json
+    networks:
+      - monendo_network
+    restart: unless-stopped
+    logging: *logging
+    # curl est absent de l'image aspnet : ce healthcheck est toujours en échec, se fier au contrôle /health de la CI
+    healthcheck:
+      test: [ "CMD-SHELL", "curl -f http://localhost:80/ || exit 1" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Reverse proxy nginx (seul service exposé vers l'extérieur, TLS)
+  nginx:
+    image: nginx:alpine
+    container_name: monendo_nginx_prod
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./ssl:/etc/nginx/ssl:ro
+      - ./logs/nginx:/var/log/nginx
+    networks:
+      - monendo_network
+    restart: unless-stopped
+    logging: *logging
+
+  # Consultation des logs des conteneurs MonEndo dans le navigateur (lecture seule).
+  # Accessible uniquement depuis le VPS : tunnel SSH, voir deploy/README.md.
+  dozzle:
+    image: amir20/dozzle:latest
+    container_name: monendo_dozzle_prod
+    environment:
+      - DOZZLE_FILTER=name=monendo_
+      - DOZZLE_NO_ANALYTICS=true
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    ports:
+      - "127.0.0.1:8888:8080"
+    restart: unless-stopped
+    logging: *logging
+    deploy:
+      resources:
+        limits:
+          memory: 96M
+
+volumes:
+  sqlserver_data:
+    driver: local
+
+networks:
+  monendo_network:
+    driver: bridge

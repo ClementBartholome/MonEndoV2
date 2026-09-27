@@ -8,9 +8,19 @@ description: Préparer, livrer et, si besoin, annuler une version numérotée de
 Rappel : **merger sur `main` = déployer en production** (migrations EF appliquées au démarrage).
 
 ## Choisir le numéro (SemVer)
-- **MAJEUR** (2.0.0) : migration destructive, rupture de contrat ou de données visible par l'utilisatrice.
-- **MINEUR** (1.1.0) : nouvelle fonctionnalité, migrations additives.
+Versionnage fin, les versions s'enchaînant vite (décision du 2026-09-27) :
+- **MAJEUR** (2.0.0) : réservé à une fonctionnalité ou une refonte vraiment majeure (ex. refonte du design, liaison des
+  comptes externes à grande échelle), ou à une rupture visible par l'utilisatrice (données perdues, fonctionnalité retirée).
+  Une migration destructive invisible pour l'utilisatrice (table inutilisée) ne justifie pas un saut majeur : elle est
+  signalée dans la PR et dans la section « Annuler ».
+- **MINEUR** (1.1.0) : nouvelles fonctionnalités, améliorations, migrations (additives ou destructives invisibles).
 - **CORRECTIF** (1.0.1) : correctifs seulement. Un **hotfix** part de `main` (`hotfix/X.Y.Z`), sans passer par une branche de release.
+  - Sur la branche du hotfix : numéro de version (mêmes fichiers qu'une version) et section du CHANGELOG **déjà datée**
+    avant la PR vers `main` (pas de commit possible sur `main` après coup).
+  - Configuration du VPS exigée par le correctif : faite et vérifiée **avant** le merge (la PR le dit en tête).
+  - Après la livraison, merger `main` dans la `release/X.Y.Z` en cours. Conflits attendus sur les numéros de version :
+    reprendre `package.json`, `package-lock.json` et le `.csproj` de `main` (dépendances à jour) puis remettre le numéro
+    de la version en cours ; garder « ours » réintroduirait une dépendance retirée par le correctif. CHANGELOG : les deux sections.
 
 ## Préparer
 1. Worktree dédié : `git worktree add ../MonEndoVue-release -b release/X.Y.Z origin/main`, puis `git push -u origin release/X.Y.Z`.
@@ -59,8 +69,8 @@ Points d'attention connus :
 - **Retour à une image antérieure à la 1.0.0** : les bilans saisis depuis la 1.0.0 ont `Mood` à NULL, que l'ancienne image
   (propriété `Mood` obligatoire) ne sait pas lire. Avant de repointer l'image, exécuter sur la base de prod
   `UPDATE BilansQuotidiens SET Mood = 'Neutre' WHERE Mood IS NULL` (sans effet sur la 1.0.0 et suivantes, où les émotions
-  priment sur `Mood`). Les réglages de rappel modifiés depuis la 1.0.0 ne sont pas vus par l'ancienne image
-  (elle relit `PreferencesRappel`).
+  priment sur `Mood`). **Depuis la 1.2.0, ce retour n'est plus possible tel quel** : ces images lisent la table
+  `PreferencesRappel`, supprimée par `SupprimePreferencesRappel`. Le plus ancien point de retour est la 1.0.0.
 - **Retour à une image antérieure à la 1.1.0** : `StressPro`, `StressPerso`, `Fatigue`, `Pas` et `Hydratation` sont
   nullables depuis la 1.1.0 (migration `RendFacultativesMesuresBilan`), l'ancienne image plante sur une valeur nulle.
   Avant de repointer l'image, exécuter sur la base de prod

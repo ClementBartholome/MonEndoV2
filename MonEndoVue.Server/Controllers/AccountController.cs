@@ -79,7 +79,8 @@ namespace MonEndoVue.Server.Controllers
                     return Unauthorized();
                 }
 
-                var result = await signInManager.CheckPasswordSignInAsync(user, identifiants.Password, lockoutOnFailure: false);
+                // Compte verrouillé ou mot de passe erroné : même réponse, pour ne pas révéler qu'un compte existe.
+                var result = await signInManager.CheckPasswordSignInAsync(user, identifiants.Password, lockoutOnFailure: true);
                 if (!result.Succeeded) return Unauthorized();
 
                 var (accessToken, tokenExpiry) = tokenService.GenerateAccessToken(user);

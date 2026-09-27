@@ -1,7 +1,17 @@
-﻿{
+{
   "extends": "../tsconfig.node.json",
   "include": ["./**/*", "../playwright.config.ts"],
   "compilerOptions": {
-    "types": ["node", "@playwright/test"]
+    "composite": false,
+    "noEmit": true,
+    "tsBuildInfoFile": null,
+    "rootDir": "..",
+    // DOM : les scripts passés à page.addInitScript / page.evaluate s'exécutent dans le navigateur.
+    "lib": ["ES2022", "DOM"],
+    "types": ["node", "@playwright/test"],
+    "baseUrl": "..",
+    "paths": {
+      "@/*": ["./src/*"]
+    }
   }
 }

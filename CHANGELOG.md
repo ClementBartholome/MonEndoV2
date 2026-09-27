@@ -3,7 +3,22 @@
 Toutes les évolutions notables de MonEndo. Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/),
 versions en [SemVer](https://semver.org/lang/fr/) (voir la section Déploiement de `CLAUDE.md`).
 
-## [1.1.1] - non publiée
+## [1.2.0] - 2026-09-27
+
+### Corrigé
+- Sur ordinateur, la barre de navigation ne recouvre plus le bord gauche des pages (boutons et calendrier devenus
+  inaccessibles sur les écrans de moins de 1800 pixels de large).
+- Activité : une séance peut de nouveau être modifiée depuis le tableau affiché sur ordinateur.
+- Tableaux (activité, douleurs, cycle, traitements, transit) : le texte saisi s'affiche toujours tel quel, sans mise en forme.
+
+### Sécurité
+- Politique de sécurité du contenu (CSP) déclarée, en mode observation : le navigateur signale toute ressource non prévue.
+- Paramètres : plus aucune image chargée depuis un site tiers.
+- Connexion : un compte est verrouillé pendant 15 minutes après cinq mots de passe erronés de suite.
+- Les journaux techniques du serveur sont conservés 30 jours au maximum, puis supprimés automatiquement ; ils
+  enregistrent moins de détails en production.
+
+## [1.1.1] - 2026-09-27
 
 ### Modifié
 - Agenda : les événements récurrents apparaissent à chaque occurrence.

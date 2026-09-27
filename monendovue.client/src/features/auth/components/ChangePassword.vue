@@ -101,19 +101,20 @@ summary {
   align-items: center;
 }
 
+/* Chevron en CSS (aucune image tierce) : vers la droite replié, vers le bas déplié. */
 summary::after {
   content: '';
-  width: 16px;
-  height: 9px;
-  background: url('https://uploads.sitepoint.com/wp-content/uploads/2023/10/1697699669arrow.svg') no-repeat;
-  background-size: cover;
+  width: 8px;
+  height: 8px;
+  border-right: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
   margin-left: .75em;
-  transition: 0.2s;
-  transform: rotate(270deg);
+  transition: transform 0.2s;
+  transform: rotate(-45deg);
 }
 
 details[open] > summary::after {
-  transform: rotate(360deg);
+  transform: rotate(45deg);
 }
 
 summary::-webkit-details-marker {

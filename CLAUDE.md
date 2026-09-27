@@ -22,13 +22,15 @@ transit, activité, bilan quotidien) et à préparer leurs rendez-vous médicaux
 | `monendovue.client/` | Vue 3.4 + TypeScript, Vite 5, Pinia, shadcn-vue (radix-vue), Tailwind 3, vee-validate + zod, Playwright |
 | `.github/workflows/ci.yml` | CI/CD : vérification → image Docker → déploiement VPS |
 | `Dockerfile` | Image unique : le client est buildé par `dotnet publish` (esproj) et servi depuis `wwwroot` |
-| `docs/` | Roadmap (`modernization-plan.md`) ; `docs/private/` local et non versionné |
+| `deploy/` | Référence versionnée de la config du VPS (compose de prod, logrotate) et procédure d'application |
+| `docs/` | Roadmap (`modernization-plan.md`), vue d'ensemble des tests (`tests.md`) ; `docs/private/` local et non versionné |
 
 ## Commandes
 ```bash
 # Client (depuis monendovue.client/)
 npm run dev          # serveur Vite https://localhost:5173
-npm run type-check   # vue-tsc, à lancer après chaque changement significatif
+npm run type-check   # vue-tsc (code) + tsc (tests E2E), à lancer après chaque changement significatif
+npm run test:e2e     # parcours de l'interface avec une API simulée (Playwright, mobile 375px + desktop)
 npm run build        # type-check + build (même commande que la CI et le Dockerfile)
 npx eslint <fichiers>  # préférer au `npm run lint`, qui fait --fix sur tout le client
 
@@ -39,7 +41,9 @@ dotnet ef migrations add NomEnPascalCase --project MonEndoVue.Server
 ```
 - Lancement complet en dev : profil `https` de `MonEndoVue.Server` (démarre Vite via SpaProxy). API : https://localhost:7206.
 - Configuration locale : `MonEndoVue.Server/appsettings.Development.json` et `monendovue.client/.env` (non versionnés, **ne pas les lire ni les afficher**).
-- Tests E2E Playwright : `E2E_EMAIL`/`E2E_PASSWORD` d'un compte **local**, jamais contre la production. Tests backend : projet `MonEndoVue.Server.Tests` (xUnit) ; pas encore de tests unitaires front.
+- **Tests** : vue d'ensemble (types, emplacements, CI, bloquant ou non, limites) dans [docs/tests.md](docs/tests.md).
+- Tests backend : projet `MonEndoVue.Server.Tests` (xUnit). Tests front : parcours E2E Playwright avec une **API simulée**
+  (`monendovue.client/tests/`, ni serveur ni compte), lancés en CI sur les PR vers `main` ou avec l'étiquette `e2e` (conventions : `monendovue.client/CLAUDE.md`).
 
 ## Domaine fonctionnel
 - **`CarnetSante`** : un carnet par utilisatrice (1-1 avec `ApplicationUser`), racine de toutes les données.
@@ -68,7 +72,7 @@ dotnet ef migrations add NomEnPascalCase --project MonEndoVue.Server
   (aucune photo d'acné depuis 7 jours, ouvre `/cycle?onglet=acne`). Sur iOS (16.4+), uniquement dans l'app ajoutée à l'écran d'accueil.
   Entités : **`AbonnementPush`** (un par appareil, endpoint unique, rattaché au carnet) et **`Rappel`** (un par carnet et
   par type : actif, heure locale, jour de la semaine si hebdomadaire, fuseau IANA, date du dernier envoi). L'ancienne table
-  `PreferencesRappel` n'est plus mappée (conservée pour un rollback, à supprimer).
+  `PreferencesRappel` est supprimée depuis la 1.2.0.
 
 ## Principes produit (non négociables)
 - **Mobile-first** : écrans pensés d'abord pour ≤ 425px, aucune information clé tronquée ; le desktop enrichit ensuite.
@@ -120,12 +124,14 @@ Utiliser le skill `revue-securite` avant de commiter un changement touchant auth
   (build Docker ; poussée sur GHCR avec les tags `latest`, `main`, `main-<sha>` et `sha-<court>` uniquement sur `main`,
   et `vX.Y.Z` sur un push de tag de version ; simple build sur les PR et les branches `release/**`) → **deployer** (`main` seulement)
   (SSH vers le VPS, `docker compose -f docker-compose.prod.yml pull app && up -d`, puis contrôle de `https://monendoapp.fr/health`).
-- Le VPS (`~/app`, hors dépôt) fournit `docker-compose.prod.yml` avec trois services sur un réseau interne :
-  `db` (SQL Server, port non exposé, mot de passe via `DB_PASSWORD` du `.env` écrit par la CI), `app` (image GHCR
-  `:latest`, écoute en HTTP sur le port 80 interne) et `nginx` (seul service exposé, 80/443, TLS). Montés dans `app` :
+- Le VPS (`~/app`) utilise `docker-compose.prod.yml`, dont la référence versionnée est
+  [deploy/docker-compose.prod.yml](deploy/docker-compose.prod.yml) (procédure et logs : [deploy/README.md](deploy/README.md)).
+  Services : `db` (SQL Server, port non exposé, mot de passe via `DB_PASSWORD` du `.env` écrit par la CI), `app` (image GHCR
+  `:latest`, HTTP sur le port 80 interne), `nginx` (seul service exposé, 80/443, TLS) et `dozzle` (lecture des logs,
+  `127.0.0.1:8888`, tunnel SSH). Montés dans `app` :
   `config/appsettings.Production.json` → `/app/appsettings.Production.json` (**obligatoire**, `optional: false`),
   `keys/` → `/app/keys` (Data Protection), `logs/` → `/app/Logs`. Les secrets de production vivent uniquement sur le VPS
-  (`config/`, `.env`, variables du compose) : ne jamais les demander ni les recopier.
+  (`config/`, dont `config/app.env`, et `.env`, réécrit par la CI à chaque déploiement) : ne jamais les demander ni les recopier.
 - **Modifier la configuration de prod** (`~/app/config/appsettings.Production.json`, et non `~/app/appsettings.Production.json`) :
   - les options sont lues au démarrage : recréer le conteneur ensuite (`docker compose -f docker-compose.prod.yml up -d --force-recreate app`) ;
     un 502 pendant quelques secondes est normal ;
@@ -134,8 +140,10 @@ Utiliser le skill `revue-securite` avant de commiter un changement touchant auth
   - **générer les secrets directement sur le VPS** (openssl + script) : un collage dans une saisie masquée a déjà tronqué une clé ;
   - une configuration Web Push invalide est signalée au démarrage par l'avertissement `Web Push notifications disabled: <raison>`
     (`docker compose -f docker-compose.prod.yml logs app | grep -i "web push"`).
+- Une modification du compose se fait **à la main sur le VPS** (la CI ne le copie pas), puis dans `deploy/` via une PR.
+  VPS de 2 Go partagé avec d'autres projets : pas d'outil de logs lourd (Seq, Loki…), garder les plafonds mémoire.
 - Le healthcheck Docker du compose de prod appelle `curl`, absent de l'image aspnet : il est toujours en échec, se fier
-  au contrôle `/health` de la CI. Une modification du compose de prod se fait à la main sur le VPS.
+  au contrôle `/health` de la CI.
 - **Les migrations EF sont appliquées automatiquement au démarrage en production** : elles doivent être rétro-compatibles ;
   toute migration destructive (DROP, colonne supprimée) doit être signalée explicitement avant merge.
 - **Versions (SemVer, depuis la 1.0.0)** : les sujets sont regroupés sur une branche `release/X.Y.Z` (PR dont la base est
@@ -156,7 +164,8 @@ Utiliser le skill `revue-securite` avant de commiter un changement touchant auth
   `fix(auth): corrige le path des cookies JWT`. Contre-exemples : `fix: petits correctifs`, `feat(cycle) ajout` (pas de `:`), message en anglais.
 
 ## Definition of Done
-- `npm run build` (client), `dotnet build -c Release` et `dotnet test` (serveur) verts ; toute règle métier nouvelle côté serveur a ses tests.
+- `npm run build` et `npm run test:e2e` (client), `dotnet build -c Release` et `dotnet test` (serveur) verts ; toute règle
+  métier nouvelle a ses tests (serveur : xUnit) et tout parcours d'écran nouveau ou modifié a son test E2E.
 - Test manuel à 375px **et** sur desktop des écrans touchés, clavier compris.
 - Revue sécurité (skill `revue-securite`) si auth, endpoint, upload ou données partagées sont touchés.
 - Types TS alignés sur les contrats C# modifiés ; migration relue si le modèle change.

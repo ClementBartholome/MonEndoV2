@@ -408,6 +408,14 @@ td, th {
     }
 }
 
+/* Au-delà de 1023px, la navigation est une barre latérale fixe de 200px : le contenu lui laisse sa place au lieu
+   de passer dessous (sous environ 1800px de large, les marges automatiques ne suffisent plus). */
+@media (min-width: 1024px) {
+    #app:has(> header > .navbar-side) {
+        padding-left: 200px;
+    }
+}
+
 .navbar-side {
     position: fixed;
     top: 0;

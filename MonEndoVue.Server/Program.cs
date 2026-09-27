@@ -36,12 +36,19 @@ namespace MonEndoVue.Server
                 .AddEnvironmentVariables()
                 .AddUserSecrets<Program>();
 
+            // Hors dev : Information pour l'application, Warning pour le framework (EF Core, ASP.NET Core).
+            // Un fichier par jour, supprimé automatiquement au bout de 30 jours.
+            var estDev = builder.Environment.IsDevelopment();
             Log.Logger = new LoggerConfiguration()
-                .MinimumLevel.Debug()
-                .MinimumLevel.Override("Microsoft", LogEventLevel.Information)
+                .MinimumLevel.Is(estDev ? LogEventLevel.Debug : LogEventLevel.Information)
+                .MinimumLevel.Override("Microsoft", estDev ? LogEventLevel.Information : LogEventLevel.Warning)
+                .MinimumLevel.Override("System", estDev ? LogEventLevel.Information : LogEventLevel.Warning)
+                .MinimumLevel.Override("Microsoft.Hosting.Lifetime", LogEventLevel.Information)
                 .Enrich.FromLogContext()
                 .WriteTo.Console()
-                .WriteTo.File("Logs/MonEndoVue-.log", rollingInterval: RollingInterval.Month)
+                .WriteTo.File("Logs/MonEndoVue-.log",
+                    rollingInterval: RollingInterval.Day,
+                    retainedFileTimeLimit: TimeSpan.FromDays(30))
                 .CreateLogger();
 
             builder.Host.UseSerilog();
@@ -84,7 +91,7 @@ namespace MonEndoVue.Server
             });
 
             builder.Services
-                .AddDefaultIdentity<ApplicationUser>(options => options.SignIn.RequireConfirmedAccount = true)
+                .AddDefaultIdentity<ApplicationUser>(OptionsIdentite.Appliquer)
                 .AddEntityFrameworkStores<AppDbContext>();
 
             var azureBlobOptions = new AzureBlobStorageOptions
@@ -249,30 +256,23 @@ namespace MonEndoVue.Server
                 await RootUserSeeder.Seed(scope, builder.Configuration, dbContext);
             }
 
+            // Pas de compte créé automatiquement en production : les comptes passent par l'inscription (Account/register).
             if (app.Environment.IsProduction())
             {
                 using var scope = app.Services.CreateScope();
                 var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-
-                await RootUserSeeder.Seed(scope, builder.Configuration, dbContext);
 
                 await dbContext.Database.MigrateAsync();
 
                 app.UseHsts();
             }
 
-            var identityApi = app.MapIdentityApi<ApplicationUser>();
-            identityApi.RequireRateLimiting("auth");
-
 
             app.UseCors("CorsPolicy");
 
             app.Use(async (context, next) =>
             {
-                context.Response.Headers["X-Frame-Options"] = "DENY";
-                context.Response.Headers["X-Content-Type-Options"] = "nosniff";
-                context.Response.Headers["Referrer-Policy"] = "strict-origin-when-cross-origin";
-                context.Response.Headers["Permissions-Policy"] = "camera=(self), microphone=(), geolocation=()";
+                EntetesSecurite.Appliquer(context.Response.Headers);
                 await next();
             });
 
