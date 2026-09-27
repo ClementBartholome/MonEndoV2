@@ -5,6 +5,11 @@ versions en [SemVer](https://semver.org/lang/fr/) (voir la section Déploiement 
 
 ## [1.2.0] - non publiée
 
+### Corrigé
+- Sur ordinateur, la barre de navigation ne recouvre plus le bord gauche des pages (boutons et calendrier devenus
+  inaccessibles sur les écrans de moins de 1800 pixels de large).
+- Activité : une séance peut de nouveau être modifiée depuis le tableau affiché sur ordinateur.
+
 ### Sécurité
 - Les journaux techniques du serveur sont conservés 30 jours au maximum, puis supprimés automatiquement ; ils
   enregistrent moins de détails en production.
