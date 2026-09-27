@@ -8,8 +8,6 @@ public static class EntetesSecurite
     /// bloquer. À passer en <c>Content-Security-Policy</c> (blocage) une fois la politique vérifiée en production.
     /// Sources tierces : polices Google, traduction DataTables, photos sur Azure Blob Storage.
     /// </summary>
-    public const string NomEnteteCsp = "Content-Security-Policy-Report-Only";
-
     public static readonly string ContentSecurityPolicy = string.Join("; ",
         "default-src 'self'",
         "script-src 'self'",
@@ -29,10 +27,10 @@ public static class EntetesSecurite
 
     public static void Appliquer(IHeaderDictionary entetes)
     {
-        entetes["X-Frame-Options"] = "DENY";
-        entetes["X-Content-Type-Options"] = "nosniff";
+        entetes.XFrameOptions = "DENY";
+        entetes.XContentTypeOptions = "nosniff";
         entetes["Referrer-Policy"] = "strict-origin-when-cross-origin";
         entetes["Permissions-Policy"] = "camera=(self), microphone=(), geolocation=()";
-        entetes[NomEnteteCsp] = ContentSecurityPolicy;
+        entetes.ContentSecurityPolicyReportOnly = ContentSecurityPolicy;
     }
 }

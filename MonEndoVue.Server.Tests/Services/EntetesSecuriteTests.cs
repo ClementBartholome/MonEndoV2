@@ -5,7 +5,7 @@ namespace MonEndoVue.Server.Tests.Services;
 
 public class EntetesSecuriteTests
 {
-    private static IHeaderDictionary Entetes()
+    private static HeaderDictionary Entetes()
     {
         var entetes = new HeaderDictionary();
         EntetesSecurite.Appliquer(entetes);
@@ -15,10 +15,10 @@ public class EntetesSecuriteTests
     [Fact]
     public void Appliquer_PoseLesEntetesDeSecurite()
     {
-        var entetes = Entetes();
+        IHeaderDictionary entetes = Entetes();
 
-        Assert.Equal("DENY", entetes["X-Frame-Options"]);
-        Assert.Equal("nosniff", entetes["X-Content-Type-Options"]);
+        Assert.Equal("DENY", entetes.XFrameOptions);
+        Assert.Equal("nosniff", entetes.XContentTypeOptions);
         Assert.Equal("strict-origin-when-cross-origin", entetes["Referrer-Policy"]);
         Assert.Equal("camera=(self), microphone=(), geolocation=()", entetes["Permissions-Policy"]);
     }
@@ -26,10 +26,10 @@ public class EntetesSecuriteTests
     [Fact]
     public void Appliquer_PoseLaPolitiqueDeContenuEnModeSignalementSeulement()
     {
-        var entetes = Entetes();
+        IHeaderDictionary entetes = Entetes();
 
-        Assert.Equal(EntetesSecurite.ContentSecurityPolicy, entetes["Content-Security-Policy-Report-Only"]);
-        Assert.False(entetes.ContainsKey("Content-Security-Policy"));
+        Assert.Equal(EntetesSecurite.ContentSecurityPolicy, entetes.ContentSecurityPolicyReportOnly);
+        Assert.Equal(string.Empty, entetes.ContentSecurityPolicy.ToString());
     }
 
     [Theory]
