@@ -11,6 +11,12 @@ Rappel : **merger sur `main` = déployer en production** (migrations EF appliqu�
 - **MAJEUR** (2.0.0) : migration destructive, rupture de contrat ou de données visible par l'utilisatrice.
 - **MINEUR** (1.1.0) : nouvelle fonctionnalité, migrations additives.
 - **CORRECTIF** (1.0.1) : correctifs seulement. Un **hotfix** part de `main` (`hotfix/X.Y.Z`), sans passer par une branche de release.
+  - Sur la branche du hotfix : numéro de version (mêmes fichiers qu'une version) et section du CHANGELOG **déjà datée**
+    avant la PR vers `main` (pas de commit possible sur `main` après coup).
+  - Configuration du VPS exigée par le correctif : faite et vérifiée **avant** le merge (la PR le dit en tête).
+  - Après la livraison, merger `main` dans la `release/X.Y.Z` en cours. Conflits attendus sur les numéros de version :
+    reprendre `package.json`, `package-lock.json` et le `.csproj` de `main` (dépendances à jour) puis remettre le numéro
+    de la version en cours ; garder « ours » réintroduirait une dépendance retirée par le correctif. CHANGELOG : les deux sections.
 
 ## Préparer
 1. Worktree dédié : `git worktree add ../MonEndoVue-release -b release/X.Y.Z origin/main`, puis `git push -u origin release/X.Y.Z`.
