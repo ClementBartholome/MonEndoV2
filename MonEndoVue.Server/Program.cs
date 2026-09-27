@@ -91,7 +91,7 @@ namespace MonEndoVue.Server
             });
 
             builder.Services
-                .AddDefaultIdentity<ApplicationUser>(options => options.SignIn.RequireConfirmedAccount = true)
+                .AddDefaultIdentity<ApplicationUser>(OptionsIdentite.Appliquer)
                 .AddEntityFrameworkStores<AppDbContext>();
 
             var azureBlobOptions = new AzureBlobStorageOptions
@@ -256,20 +256,16 @@ namespace MonEndoVue.Server
                 await RootUserSeeder.Seed(scope, builder.Configuration, dbContext);
             }
 
+            // Pas de compte créé automatiquement en production : les comptes passent par l'inscription (Account/register).
             if (app.Environment.IsProduction())
             {
                 using var scope = app.Services.CreateScope();
                 var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
-                await RootUserSeeder.Seed(scope, builder.Configuration, dbContext);
-
                 await dbContext.Database.MigrateAsync();
 
                 app.UseHsts();
             }
-
-            var identityApi = app.MapIdentityApi<ApplicationUser>();
-            identityApi.RequireRateLimiting("auth");
 
 
             app.UseCors("CorsPolicy");

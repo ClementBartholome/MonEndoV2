@@ -10,6 +10,16 @@ test.describe('Activité physique', () => {
     await expect(activitePage.seance('Natation')).toBeVisible();
   });
 
+  test('affiche un commentaire comme du texte, sans interpréter le HTML saisi', async ({ activitePage, page, serveur }) => {
+    const commentaire = '<b id="injection">gras</b>';
+    simulerActivite(serveur, [{ typeActivite: 'Marche', commentaire }]);
+
+    await activitePage.ouvrir();
+
+    await expect(activitePage.seance(commentaire)).toBeVisible();
+    await expect(page.locator('#injection')).toHaveCount(0);
+  });
+
   test('ajoute une séance', async ({ activitePage, serveur }) => {
     const seances = simulerActivite(serveur);
     await activitePage.ouvrir();
