@@ -3,6 +3,16 @@
 Toutes les évolutions notables de MonEndo. Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/),
 versions en [SemVer](https://semver.org/lang/fr/) (voir la section Déploiement de `CLAUDE.md`).
 
+## [1.2.1] - 2026-09-27
+
+### Sécurité
+- La politique de sécurité du contenu (CSP) est désormais appliquée : le navigateur bloque toute ressource non prévue.
+- Le passage de l'adresse http:// à https:// garde le nom du site, et chaque en-tête de sécurité n'est plus envoyé qu'une fois.
+
+### Modifié
+- Cycle, photos d'acné : une photo HEIC (iPhone) est convertie en JPG par le navigateur lui-même, sans bibliothèque
+  supplémentaire ; sur un navigateur qui ne lit pas le HEIC, la photo est envoyée telle quelle.
+
 ## [1.2.0] - 2026-09-27
 
 ### Corrigé
