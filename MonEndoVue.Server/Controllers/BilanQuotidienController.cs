@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.EntityFrameworkCore;
 using MonEndoVue.Server.Data;
 using MonEndoVue.Server.Models;
@@ -45,6 +46,15 @@ namespace MonEndoVue.Server.Controllers
             return bilansQuotidiens;
         }
         
+        // GET: BilanQuotidien/periode?du=2026-09-01&au=2026-09-30 (carnet déduit de la session)
+        [HttpGet("periode")]
+        public async Task<IActionResult> GetPeriode(
+            [FromQuery, BindRequired] DateOnly du, [FromQuery, BindRequired] DateOnly au,
+            [FromServices] HistoriqueBilansService historique, CancellationToken cancellationToken) =>
+            this.VersReponse(
+                await historique.GetPeriodeAsync(User.GetCurrentUserId(), du, au, cancellationToken),
+                periode => Ok(periode));
+
         // GET: BilanQuotidien/ByWeek/5/2021
         [HttpGet("by-week/{carnetSanteId}/{week}/{year}")]
         public async Task<ActionResult<IEnumerable<BilanQuotidien>>> GetBilanQuotidienByWeek(int carnetSanteId, int week, int year)

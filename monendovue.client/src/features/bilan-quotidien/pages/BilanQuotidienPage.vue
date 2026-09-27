@@ -1,29 +1,29 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from 'vue';
-import { format, isToday, startOfDay, startOfWeek, subDays } from 'date-fns';
+import { computed, onMounted, ref } from 'vue';
+import { format, isAfter, isToday, startOfDay, subDays } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import BackButton from '@/shared/components/BackButton.vue';
-import SelectWeek from '@/shared/components/SelectWeek.vue';
-import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/card';
-import { LineChart } from '@/shared/components/ui/chart-line';
+import { Button } from '@/shared/components/ui/button';
+import { Card, CardContent } from '@/shared/components/ui/card';
 import { Skeleton } from '@/shared/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui/tabs';
+import { useToast } from '@/shared/components/ui/toast';
 import { useAuthStore } from '@/features/auth/store/auth';
 import SaisieBilan from '@/features/bilan-quotidien/components/saisie/SaisieBilan.vue';
 import BilanDuJourCard from '@/features/bilan-quotidien/components/BilanDuJourCard.vue';
-import BilanWeekSelector from '@/features/bilan-quotidien/components/BilanWeekSelector.vue';
 import DashboardBilanQuotidien from '@/features/bilan-quotidien/components/DashboardBilanQuotidien.vue';
 import EmotionSemaineCard from '@/features/bilan-quotidien/components/EmotionSemaineCard.vue';
-import { useBilansQuotidiens } from '@/features/bilan-quotidien/composables/useBilansQuotidiens';
-import { scoreHumeur } from '@/features/bilan-quotidien/utils/humeur';
-import { stressDuBilan } from '@/features/bilan-quotidien/utils/mesures';
+import CalendrierBilans from '@/features/bilan-quotidien/components/historique/CalendrierBilans.vue';
+import CourbesBilans from '@/features/bilan-quotidien/components/historique/CourbesBilans.vue';
+import SelecteurPeriode from '@/features/bilan-quotidien/components/historique/SelecteurPeriode.vue';
+import { useHistoriqueBilans } from '@/features/bilan-quotidien/composables/useHistoriqueBilans';
 import type { BilanQuotidien } from '@/features/bilan-quotidien/types/bilan-quotidien';
 
 const carnetSanteId = useAuthStore().user!.carnetSanteId;
-const { bilans, chargerSemaine, chargerSemaineDe, bilanDu, enregistrerLocalement } = useBilansQuotidiens(carnetSanteId);
+const { toast } = useToast();
+const { model, actions, bilanDu, chargerJours, enregistrerLocalement } = useHistoriqueBilans();
 
 const isLoading = ref(true);
-const selectedDate = ref(startOfDay(new Date()));
 
 /** Saisie ouverte : création pour un jour, ou modification d'un bilan existant. */
 interface SaisieOuverte {
@@ -36,8 +36,13 @@ const cleSaisie = ref(0);
 
 const ouvrirSaisie = async (date: Date) => {
   const jour = startOfDay(date);
-  // La veille peut tomber la semaine précédente : la charger pour « Comme hier ».
-  await Promise.all([chargerSemaineDe(jour), chargerSemaineDe(subDays(jour, 1))]);
+  try {
+    // La veille peut tomber hors de la période affichée : la charger pour « Comme hier ».
+    await chargerJours(subDays(jour, 1), jour);
+  } catch {
+    toast({ title: 'Erreur', description: 'Impossible de charger ce bilan. Réessaie dans un instant.', variant: 'destructive' });
+    return;
+  }
   saisie.value = { date: jour, bilan: bilanDu(jour) };
   cleSaisie.value++;
   window.scrollTo({ top: 0 });
@@ -47,74 +52,26 @@ const bilanVeille = computed(() => (saisie.value ? bilanDu(subDays(saisie.value.
 
 const apresEnregistrement = (bilan: BilanQuotidien) => {
   enregistrerLocalement(bilan);
-  selectedDate.value = saisie.value?.date ?? selectedDate.value;
+  if (saisie.value) actions.selectionnerJour(saisie.value.date);
   saisie.value = null;
 };
 
 onMounted(async () => {
   const aujourdhui = startOfDay(new Date());
-  await Promise.all([chargerSemaineDe(aujourdhui), chargerSemaineDe(subDays(aujourdhui, 1))]);
+  await actions.recharger();
   // Pas encore de bilan aujourd'hui : on ouvre directement la saisie (rappel du soir).
-  if (!bilanDu(aujourdhui)) await ouvrirSaisie(aujourdhui);
+  if (!model.value.erreur && !bilanDu(aujourdhui)) await ouvrirSaisie(aujourdhui);
   isLoading.value = false;
 });
 
 // --- Consultation ---
-const selectedBilan = computed(() => bilanDu(selectedDate.value) ?? null);
+const jourSelectionne = computed(() => model.value.jourSelectionne);
+const bilanSelectionne = computed(() => bilanDu(jourSelectionne.value) ?? null);
 
-const selectedDateTitle = computed(() =>
-  isToday(selectedDate.value) ? "Aujourd'hui" : format(selectedDate.value, 'EEEE d MMMM', { locale: fr }));
+const titreJour = computed(() =>
+  isToday(jourSelectionne.value) ? "Aujourd'hui" : format(jourSelectionne.value, 'EEEE d MMMM', { locale: fr }));
 
-const selectionnerJour = (date: Date) => {
-  selectedDate.value = startOfDay(date);
-  void chargerSemaineDe(date);
-};
-
-const modifierBilanSelectionne = () => ouvrirSaisie(selectedDate.value);
-
-// --- Évolution hebdomadaire (graphique) ---
-const selectedWeekYear = ref(format(new Date(), "RRRR-'W'II"));
-const startYear = ref(new Date().getFullYear());
-const endYear = ref(new Date().getFullYear());
-
-const handleUpdateYears = ({ startYear: start, endYear: end }: { startYear: number; endYear: number }) => {
-  startYear.value = start;
-  endYear.value = end;
-};
-
-watch(selectedWeekYear, (valeur) => {
-  const [, semaine] = valeur.split('-W');
-  void chargerSemaine(semaine, endYear.value.toString());
-});
-
-const filteredBilans = computed<BilanQuotidien[]>(() => {
-  if (!selectedWeekYear.value) return [];
-  const [, week] = selectedWeekYear.value.split('-W');
-  const startDate = startOfWeek(new Date(Number(endYear.value), 0, 1), { weekStartsOn: 1 });
-  const adjustedStartDate = new Date(startDate.setDate(startDate.getDate() + (Number(week) - 1) * 7));
-  const endDate = new Date(adjustedStartDate);
-  endDate.setDate(adjustedStartDate.getDate() + 6);
-  endDate.setHours(23, 59, 59, 999);
-
-  return bilans.value.filter((bilan) => {
-    const bilanDate = new Date(bilan.date);
-    return bilanDate >= adjustedStartDate && bilanDate <= endDate &&
-      bilanDate.getFullYear() >= startYear.value && bilanDate.getFullYear() <= endYear.value;
-  });
-});
-
-// Mesures non renseignées laissées vides (undefined) : jamais tracées à 0.
-const chartData = computed(() => filteredBilans.value.map((bilan) => {
-  const humeur = scoreHumeur(bilan);
-  return {
-    date: format(new Date(bilan.date), 'dd/MM/yyyy'),
-    stress: stressDuBilan(bilan) ?? undefined,
-    fatigue: bilan.fatigue ?? undefined,
-    // Même échelle que le stress et la fatigue (0 à 5) ; les anciens bilans comptent par leur humeur.
-    humeur: humeur === null ? undefined : Math.round(humeur * 50) / 10,
-    douleur: bilan.douleurMoyenne,
-  };
-}));
+const jourAVenir = computed(() => isAfter(jourSelectionne.value, startOfDay(new Date())));
 </script>
 
 <template>
@@ -140,58 +97,62 @@ const chartData = computed(() => filteredBilans.value.map((bilan) => {
     />
 
     <div v-else class="w-full">
-      <Tabs default-value="recap" class="w-full">
+      <Card class="container mx-auto w-full bg-clearer rounded-3xl shadow-xl flex flex-col">
+        <CardContent class="p-3 md:p-6">
+          <SelecteurPeriode
+              :periode="model.periode"
+              @changer-mode="actions.changerMode"
+              @precedente="actions.precedente"
+              @suivante="actions.suivante"
+              @aujourdhui="actions.revenirAujourdhui"
+          />
+        </CardContent>
+      </Card>
+
+      <div v-if="model.erreur" class="flex flex-col items-center gap-3 text-center py-6" role="alert">
+        <p class="text-paragraph">Les bilans de cette période n'ont pas pu être chargés.</p>
+        <Button type="button" variant="outline" class="h-11" @click="actions.recharger">Réessayer</Button>
+      </div>
+
+      <Tabs v-else default-value="historique" class="w-full mt-4" :class="{ 'opacity-60': model.chargement }"
+            :aria-busy="model.chargement">
         <TabsList class="bilan-tabs-list">
-          <TabsTrigger value="recap" class="bilan-tab-trigger">Récapitulatif & Historique</TabsTrigger>
-          <TabsTrigger value="dashboard" class="bilan-tab-trigger">Analyse & Tendances</TabsTrigger>
+          <TabsTrigger value="historique" class="bilan-tab-trigger">Historique</TabsTrigger>
+          <TabsTrigger value="analyse" class="bilan-tab-trigger">Analyse & Tendances</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="recap">
-          <div class="w-full">
-            <Card class="container mt-4 mx-auto w-full bg-clearer rounded-3xl shadow-xl flex flex-col">
-              <CardContent class="p-4 md:p-6">
-                <BilanWeekSelector
-                    :bilans="bilans"
-                    :selected-date="selectedDate"
-                    @update:selected-date="selectionnerJour"
-                    @semaine-affichee="chargerSemaineDe"
-                />
-              </CardContent>
-            </Card>
+        <TabsContent value="historique">
+          <Card class="container mt-4 mx-auto w-full bg-clearer rounded-3xl shadow-xl flex flex-col">
+            <CardContent class="p-3 md:p-6">
+              <CalendrierBilans
+                  :jours="model.jours"
+                  :mode="model.periode.mode"
+                  :jour-selectionne="jourSelectionne"
+                  @selectionner="actions.selectionnerJour"
+              />
+            </CardContent>
+          </Card>
 
-            <BilanDuJourCard
-                :titre="selectedDateTitle"
-                :bilan="selectedBilan"
-                :a-venir="selectedDate > startOfDay(new Date())"
-                @modifier="modifierBilanSelectionne"
-                @remplir="ouvrirSaisie(selectedDate)"
-            />
+          <BilanDuJourCard
+              :titre="titreJour"
+              :bilan="bilanSelectionne"
+              :a-venir="jourAVenir"
+              @modifier="ouvrirSaisie(jourSelectionne)"
+              @remplir="ouvrirSaisie(jourSelectionne)"
+          />
 
-            <EmotionSemaineCard :bilans="filteredBilans"/>
+          <EmotionSemaineCard :bilans="model.bilans" :mode="model.periode.mode"/>
 
-            <Card class="container !mx-0 mt-4 w-full bg-clearer rounded-3xl shadow-xl flex flex-col">
-              <CardHeader class="p-4 md:p-6">
-                <CardTitle class="m-0 text-lg leading-tight flex items-center gap-2">
-                  <i class="material-symbols-outlined" aria-hidden="true">show_chart</i>Évolution de la semaine
-                </CardTitle>
-              </CardHeader>
-              <CardContent class="px-4 pb-4 md:px-6 md:pb-6">
-                <SelectWeek v-model="selectedWeekYear" class="text-left" @update:years="handleUpdateYears"/>
-                <LineChart
-                    :data="chartData"
-                    :categories="['stress', 'fatigue', 'humeur', 'douleur']"
-                    index="date"
-                    :colors="['#ff6b6b', '#4ecdc4', '#ffa726', '#8e44ad']"
-                    :y-formatter="(value) => `${value}`"
-                    :y-domain="[0, 10]"
-                />
-              </CardContent>
-            </Card>
-          </div>
+          <CourbesBilans
+              :jours="model.jours"
+              :mode="model.periode.mode"
+              :jour-selectionne="jourSelectionne"
+              @selectionner="actions.selectionnerJour"
+          />
         </TabsContent>
 
-        <TabsContent value="dashboard">
-          <DashboardBilanQuotidien :bilans="bilans"/>
+        <TabsContent value="analyse">
+          <DashboardBilanQuotidien :bilans="model.bilans"/>
         </TabsContent>
       </Tabs>
     </div>

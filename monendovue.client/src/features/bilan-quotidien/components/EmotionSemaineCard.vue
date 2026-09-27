@@ -4,8 +4,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui
 import { presentationEmotion } from '@/features/bilan-quotidien/config/emotions';
 import { emotionDeLaSemaine } from '@/features/bilan-quotidien/utils/humeur';
 import type { BilanQuotidien } from '@/features/bilan-quotidien/types/bilan-quotidien';
+import type { ModePeriode } from '@/features/bilan-quotidien/types/historique';
 
-const props = defineProps<{ bilans: BilanQuotidien[] }>();
+const props = defineProps<{ bilans: BilanQuotidien[]; mode: ModePeriode }>();
+
+const periode = computed(() => (props.mode === 'mois' ? { de: 'du mois', cette: 'ce mois-ci' } : { de: 'de la semaine', cette: 'cette semaine' }));
 
 const semaine = computed(() => emotionDeLaSemaine(props.bilans));
 </script>
@@ -14,7 +17,7 @@ const semaine = computed(() => emotionDeLaSemaine(props.bilans));
   <Card class="container !mx-0 mt-4 w-full bg-clearer rounded-3xl shadow-xl ml-auto flex flex-col">
     <CardHeader class="p-4 md:p-6">
       <CardTitle class="m-0 text-lg leading-tight flex items-center gap-2">
-        <i class="material-symbols-outlined" aria-hidden="true">mood</i>Émotion de la semaine
+        <i class="material-symbols-outlined" aria-hidden="true">mood</i>Émotion {{ periode.de }}
       </CardTitle>
     </CardHeader>
     <CardContent class="px-4 pb-4 md:px-6 md:pb-6 text-left">
@@ -32,11 +35,11 @@ const semaine = computed(() => emotionDeLaSemaine(props.bilans));
             </li>
           </ul>
           <p class="text-sm text-muted-foreground">
-            D'après {{ semaine.nombreBilans }} bilan{{ semaine.nombreBilans > 1 ? 's' : '' }} de la semaine
+            D'après {{ semaine.nombreBilans }} bilan{{ semaine.nombreBilans > 1 ? 's' : '' }} {{ periode.de }}
           </p>
         </div>
       </div>
-      <p v-else class="text-paragraph">Aucune émotion renseignée cette semaine.</p>
+      <p v-else class="text-paragraph">Aucune émotion renseignée {{ periode.cette }}.</p>
     </CardContent>
   </Card>
 </template>
