@@ -10,7 +10,7 @@ export interface HistoriqueBilans {
 export type ModePeriode = 'semaine' | 'mois';
 
 /** Indicateur qui colore les pastilles du calendrier. */
-export type IndicateurCalendrier = 'douleur' | 'humeur';
+export type IndicateurCalendrier = 'douleur' | 'emotions';
 
 export interface PeriodeHistorique {
   mode: ModePeriode;

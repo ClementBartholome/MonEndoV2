@@ -37,7 +37,7 @@ const libelleJour = (jour: JourHistorique) => {
   const valeur = valeurDu(jour);
   if (jour.aVenir) morceaux.push('à venir');
   else if (!jour.bilan) morceaux.push('pas de bilan');
-  else if (valeur === null) morceaux.push(`${echelle.value.libelle.toLowerCase()} non renseignée`);
+  else if (valeur === null) morceaux.push(echelle.value.nonRenseigne);
   else morceaux.push(echelle.value.description(valeur));
   if (jour.regles) morceaux.push('règles');
   return morceaux.join(', ');
@@ -46,9 +46,9 @@ const libelleJour = (jour: JourHistorique) => {
 
 <template>
   <div class="w-full flex flex-col gap-3">
-    <div class="flex items-center justify-between gap-2">
-      <p id="calendrier-indicateur" class="text-sm text-paragraph">Couleur selon</p>
-      <div class="grid grid-cols-2 gap-1" role="group" aria-labelledby="calendrier-indicateur">
+    <div>
+      <p id="calendrier-indicateur" class="sr-only">Couleur des jours selon</p>
+      <div class="grid grid-cols-2 gap-2" role="group" aria-labelledby="calendrier-indicateur">
         <button
             v-for="(config, cle) in echellesCalendrier"
             :key="cle"

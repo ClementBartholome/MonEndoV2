@@ -11,13 +11,15 @@ export interface EchelleCalendrier {
   niveau: (valeur: number) => number;
   /** Description lue par les lecteurs d'écran (« douleur 4 sur 10 »). */
   description: (valeur: number) => string;
+  /** Lu quand le bilan existe sans cette valeur. */
+  nonRenseigne: string;
   /** Classes de fond et de texte par niveau (0 à 4), une seule teinte : pas de code couleur « bon / mauvais ». */
   classes: string[];
   /** Libellés des deux extrémités de l'échelle, pour la légende. */
   bornes: [string, string];
 }
 
-const LIBELLES_HUMEUR = ['difficile', 'plutôt difficile', 'mitigée', 'plutôt agréable', 'agréable'];
+const LIBELLES_EMOTIONS = ['difficiles', 'plutôt difficiles', 'partagées', 'plutôt agréables', 'agréables'];
 
 /** Indicateurs proposés pour colorer les pastilles du calendrier. */
 export const echellesCalendrier: Record<IndicateurCalendrier, EchelleCalendrier> = {
@@ -26,6 +28,7 @@ export const echellesCalendrier: Record<IndicateurCalendrier, EchelleCalendrier>
     valeur: (bilan) => bilan.douleurMoyenne,
     niveau: niveauDouleur,
     description: (valeur) => `douleur ${valeur} sur 10`,
+    nonRenseigne: 'douleur non renseignée',
     classes: [
       'bg-violet-100 text-violet-950',
       'bg-violet-200 text-violet-950',
@@ -35,12 +38,14 @@ export const echellesCalendrier: Record<IndicateurCalendrier, EchelleCalendrier>
     ],
     bornes: ['0', '10'],
   },
-  humeur: {
-    libelle: 'Humeur',
+  emotions: {
+    libelle: 'Émotions',
     valeur: scoreHumeur,
-    // Comme pour la douleur, plus c'est foncé, plus la journée a été lourde : foncé = humeur difficile.
+    // Comme pour la douleur, plus c'est foncé, plus la journée a été lourde : foncé = émotions difficiles.
+    // Les anciens bilans comptent par leur humeur (Positive, Neutre, Négative).
     niveau: (valeur) => 4 - niveauHumeur(valeur),
-    description: (valeur) => `humeur ${LIBELLES_HUMEUR[niveauHumeur(valeur)]}`,
+    description: (valeur) => `émotions ${LIBELLES_EMOTIONS[niveauHumeur(valeur)]}`,
+    nonRenseigne: 'émotions non renseignées',
     classes: [
       'bg-sky-100 text-sky-950',
       'bg-sky-200 text-sky-950',
@@ -48,7 +53,7 @@ export const echellesCalendrier: Record<IndicateurCalendrier, EchelleCalendrier>
       'bg-sky-500 text-white',
       'bg-sky-700 text-white',
     ],
-    bornes: ['agréable', 'difficile'],
+    bornes: ['agréables', 'difficiles'],
   },
 };
 
@@ -69,7 +74,7 @@ export interface GraphiqueCourbes {
   series: SerieCourbe[];
 }
 
-/** Deux graphiques, chacun sur sa propre échelle : douleur de 0 à 10, fatigue, stress et humeur de 0 à 5. */
+/** Deux graphiques, chacun sur sa propre échelle : douleur de 0 à 10, fatigue, stress et émotions de 0 à 5. */
 export const graphiquesCourbes: GraphiqueCourbes[] = [
   {
     titre: 'Douleur (0 à 10)',
@@ -81,7 +86,7 @@ export const graphiquesCourbes: GraphiqueCourbes[] = [
     }],
   },
   {
-    titre: 'Fatigue, stress et humeur (0 à 5)',
+    titre: 'Fatigue, stress et émotions (0 à 5)',
     max: 5,
     graduations: [0, 2.5, 5],
     series: [
@@ -94,8 +99,8 @@ export const graphiquesCourbes: GraphiqueCourbes[] = [
         trait: 'stroke-amber-600', point: 'fill-amber-600', pastille: 'bg-amber-600',
       },
       {
-        // Même échelle que le stress et la fatigue ; les anciens bilans comptent par leur humeur.
-        cle: 'humeur', libelle: 'Humeur', valeur: (b) => {
+        // Tonalité des émotions (0 difficiles, 5 agréables) ; les anciens bilans comptent par leur humeur.
+        cle: 'emotions', libelle: 'Émotions', valeur: (b) => {
           const score = scoreHumeur(b);
           return score === null ? null : score * 5;
         },
