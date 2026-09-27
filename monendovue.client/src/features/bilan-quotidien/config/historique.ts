@@ -38,7 +38,8 @@ export const echellesCalendrier: Record<IndicateurCalendrier, EchelleCalendrier>
   humeur: {
     libelle: 'Humeur',
     valeur: scoreHumeur,
-    niveau: niveauHumeur,
+    // Comme pour la douleur, plus c'est foncé, plus la journée a été lourde : foncé = humeur difficile.
+    niveau: (valeur) => 4 - niveauHumeur(valeur),
     description: (valeur) => `humeur ${LIBELLES_HUMEUR[niveauHumeur(valeur)]}`,
     classes: [
       'bg-sky-100 text-sky-950',
@@ -47,7 +48,7 @@ export const echellesCalendrier: Record<IndicateurCalendrier, EchelleCalendrier>
       'bg-sky-500 text-white',
       'bg-sky-700 text-white',
     ],
-    bornes: ['difficile', 'agréable'],
+    bornes: ['agréable', 'difficile'],
   },
 };
 
@@ -86,7 +87,7 @@ export const graphiquesCourbes: GraphiqueCourbes[] = [
     series: [
       {
         cle: 'fatigue', libelle: 'Fatigue', valeur: (b) => b.fatigue,
-        trait: 'stroke-teal-600', point: 'fill-teal-600', pastille: 'bg-teal-600',
+        trait: 'stroke-emerald-500', point: 'fill-emerald-500', pastille: 'bg-emerald-500',
       },
       {
         cle: 'stress', libelle: 'Stress', valeur: stressDuBilan,
@@ -98,7 +99,7 @@ export const graphiquesCourbes: GraphiqueCourbes[] = [
           const score = scoreHumeur(b);
           return score === null ? null : score * 5;
         },
-        trait: 'stroke-sky-600', point: 'fill-sky-600', pastille: 'bg-sky-600',
+        trait: 'stroke-blue-700', point: 'fill-blue-700', pastille: 'bg-blue-700',
       },
     ],
   },
