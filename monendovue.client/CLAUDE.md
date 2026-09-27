@@ -110,6 +110,9 @@ Nouveau composant shadcn : `npx shadcn-vue add <nom>` (alias configurés vers `@
 ## Routage
 - Toute route exige une session, sauf celles marquées `meta: { public: true }` (connexion, inscription, documents légaux) :
   le garde de `router/index.ts` ne teste que ce drapeau.
+- Session sans consentement (`user.consentementAJour === false`, ou 403 `consentement-requis` de l'API traité dans
+  `apiService`) : seule `/consentement` est accessible (avec les pages publiques). `meta: { sansNavigation: true }` masque
+  la navigation.
 - Documents légaux (`features/legal/`) : gabarit `DocumentLegal.vue`, éditeur et date de mise à jour dans
   `config/editeur.ts`, liens de pied `LiensLegaux.vue`. Texte en tutoiement, comme le reste de l'app.
 

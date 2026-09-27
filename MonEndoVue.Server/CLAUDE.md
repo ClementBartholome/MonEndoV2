@@ -77,6 +77,15 @@ modifiables, jamais `Entry(dto).State = Modified`, jamais de changement de `Carn
 - Refus d'accès : `Forbid()` **sans argument** (son paramètre est un nom de schéma d'authentification ; passer un message
   provoque une erreur 500).
 
+## Consentement aux données de santé
+- Filtre MVC global `ExigeConsentementFilter` : une utilisatrice connectée dont le jeton ne porte pas la version en
+  vigueur de la politique (claim `politique`, `Services/Consentement/PolitiqueConfidentialite.cs`) reçoit un 403
+  `{ code: "consentement-requis" }`, que le client traduit en redirection vers `/consentement`.
+- **Tout nouveau contrôleur est donc soumis au consentement.** Seuls l'authentification, le recueil du consentement et la
+  suppression du compte en sont exemptés par `[SansConsentement]` : retirer son accord ne doit jamais être bloqué.
+- Changer `PolitiqueConfidentialite.Version` (avec la date de `features/legal/config/editeur.ts`) redemande l'accord à toutes
+  les utilisatrices : seulement pour une évolution importante de la politique.
+
 ## Erreurs et réponses
 - `BadRequest(new { message = "Message en français" })` : format lu par `useDialogForm.getErrorDescription` côté client.
 - `NotFound()`, `NoContent()` après PUT/DELETE, `CreatedAtAction` après POST, `ValidationProblem` pour la validation de modèle.
