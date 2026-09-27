@@ -140,6 +140,7 @@
 
 <script setup lang="ts">
 import { scoreHumeur } from '@/features/bilan-quotidien/utils/humeur';
+import { moyenneDesBilans, stressDuBilan } from '@/features/bilan-quotidien/utils/mesures';
 import {computed} from 'vue';
 import {Card, CardContent, CardHeader, CardTitle} from "@/shared/components/ui/card";
 import type {BilanQuotidien} from "@/features/bilan-quotidien/types/bilan-quotidien";
@@ -153,6 +154,8 @@ const props = defineProps<{
 }>();
 
 const wellbeingGoals = getWellbeingGoals();
+
+const NOTE_NEUTRE = 10;
 
 const getMoodScore = (bilan: BilanQuotidien): number => (scoreHumeur(bilan) ?? 0.5) * 20;
 
@@ -249,10 +252,13 @@ const scoreBreakdown = computed((): ScoreMetric[] => {
   if (recent.length === 0) return [];
 
   const avgMoodScore = recent.reduce((sum, b) => sum + getMoodScore(b), 0) / recent.length;
-  const avgStress = recent.reduce((sum, b) => sum + ((b.stressPro || 0) + (b.stressPerso || 0)) / 2, 0) / recent.length;
-  const avgFatigue = recent.reduce((sum, b) => sum + (b.fatigue || 0), 0) / recent.length;
-  const avgPain = recent.reduce((sum, b) => sum + (b.douleurMoyenne || 0), 0) / recent.length;
-  const avgSteps = recent.reduce((sum, b) => sum + (b.pas || 0), 0) / recent.length;
+  const avgStress = moyenneDesBilans(recent, stressDuBilan);
+  const avgFatigue = moyenneDesBilans(recent, (b) => b.fatigue);
+  const avgPain = moyenneDesBilans(recent, (b) => b.douleurMoyenne) ?? 0;
+  const avgSteps = moyenneDesBilans(recent, (b) => b.pas);
+  // Mesure jamais renseignée sur la période : note neutre (moitié des points) plutôt que 0.
+  const note = (moyenne: number | null, calcul: (m: number) => number) =>
+    moyenne === null ? NOTE_NEUTRE : Math.round(calcul(moyenne));
 
   return [
     {
@@ -262,12 +268,12 @@ const scoreBreakdown = computed((): ScoreMetric[] => {
     },
     {
       name: 'Stress',
-      value: Math.round((5 - Math.min(Math.max(avgStress, 0), 5)) / 5 * 20),
+      value: note(avgStress, (m) => (5 - Math.min(Math.max(m, 0), 5)) / 5 * 20),
       icon: 'psychology'
     },
     {
       name: 'Fatigue',
-      value: Math.round((5 - Math.min(Math.max(avgFatigue, 0), 5)) / 5 * 20),
+      value: note(avgFatigue, (m) => (5 - Math.min(Math.max(m, 0), 5)) / 5 * 20),
       icon: 'bedtime'
     },
     {
@@ -277,7 +283,7 @@ const scoreBreakdown = computed((): ScoreMetric[] => {
     },
     {
       name: 'Activité',
-      value: Math.round(Math.min(avgSteps / wellbeingGoals.stepsGoal, 1) * 20),
+      value: note(avgSteps, (m) => Math.min(m / wellbeingGoals.stepsGoal, 1) * 20),
       icon: 'directions_walk'
     }
   ];
@@ -297,12 +303,13 @@ const goals = computed((): Goal[] => {
 
   const recent = props.bilans.slice(-7);
 
-  const avgHydration = recent.reduce((sum, b) => sum + (b.hydratation || 0), 0) / recent.length;
-  const avgSteps = recent.reduce((sum, b) => sum + (b.pas || 0), 0) / recent.length;
-  const avgStress = recent.reduce((sum, b) => sum + ((b.stressPro || 0) + (b.stressPerso || 0)) / 2, 0) / recent.length;
+  const avgHydration = moyenneDesBilans(recent, (b) => b.hydratation);
+  const avgSteps = moyenneDesBilans(recent, (b) => b.pas);
+  const avgStress = moyenneDesBilans(recent, stressDuBilan);
 
-  return [
-    {
+  // Un objectif dont la mesure n'a jamais été renseignée sur la période n'est pas affiché.
+  const objectifs: (Goal | null)[] = [
+    avgHydration === null ? null : {
       id: 1,
       title: 'Hydratation quotidienne',
       description: `Objectif: ${wellbeingGoals.hydrationLitersGoal}L/jour`,
@@ -312,7 +319,7 @@ const goals = computed((): Goal[] => {
       targetValue: wellbeingGoals.hydrationLitersGoal,
       targetLabel: 'L/jour'
     },
-    {
+    avgSteps === null ? null : {
       id: 2,
       title: 'Activité physique',
       description: `Objectif: ${wellbeingGoals.stepsGoal.toLocaleString()} pas/jour`,
@@ -322,7 +329,7 @@ const goals = computed((): Goal[] => {
       targetValue: wellbeingGoals.stepsGoal,
       targetLabel: 'pas/jour'
     },
-    {
+    avgStress === null ? null : {
       id: 3,
       title: 'Gestion du stress',
       description: `Objectif: <= ${wellbeingGoals.stressMaxGoal}/5`,
@@ -333,6 +340,7 @@ const goals = computed((): Goal[] => {
       targetLabel: '/5 max'
     }
   ];
+  return objectifs.filter((objectif): objectif is Goal => objectif !== null);
 });
 
 const insightsWithActions = computed((): InsightWithAction[] => {
@@ -351,8 +359,9 @@ const insightsWithActions = computed((): InsightWithAction[] => {
   }
 
   // Analyse Hydratation
-  const avgHydration = recent.reduce((sum, b) => sum + (b.hydratation || 0), 0) / recent.length;
-  if (avgHydration < wellbeingGoals.hydrationLitersGoal) {
+  const avgHydration = moyenneDesBilans(recent, (b) => b.hydratation);
+  // Une mesure non renseignée sur la période ne donne lieu à aucune analyse.
+  if (avgHydration !== null && avgHydration < wellbeingGoals.hydrationLitersGoal) {
     insights.push({
       id: 1,
       title: 'Hydratation insuffisante',
@@ -366,7 +375,7 @@ const insightsWithActions = computed((): InsightWithAction[] => {
       },
       target: `${wellbeingGoals.hydrationLitersGoal}L/jour`
     });
-  } else if (avgHydration >= wellbeingGoals.hydrationLitersGoal) {
+  } else if (avgHydration !== null) {
     insights.push({
       id: 1,
       title: 'Excellente hydratation',
@@ -379,8 +388,8 @@ const insightsWithActions = computed((): InsightWithAction[] => {
   }
 
   // Analyse Fatigue
-  const avgFatigue = recent.reduce((sum, b) => sum + (b.fatigue || 0), 0) / recent.length;
-  if (avgFatigue > wellbeingGoals.fatigueMaxGoal) {
+  const avgFatigue = moyenneDesBilans(recent, (b) => b.fatigue);
+  if (avgFatigue !== null && avgFatigue > wellbeingGoals.fatigueMaxGoal) {
     insights.push({
       id: 2,
       title: 'Fatigue élevée',
@@ -397,8 +406,8 @@ const insightsWithActions = computed((): InsightWithAction[] => {
   }
 
   // Analyse Activité
-  const avgSteps = recent.reduce((sum, b) => sum + (b.pas || 0), 0) / recent.length;
-  if (avgSteps < wellbeingGoals.stepsGoal * 0.6) {
+  const avgSteps = moyenneDesBilans(recent, (b) => b.pas);
+  if (avgSteps !== null && avgSteps < wellbeingGoals.stepsGoal * 0.6) {
     insights.push({
       id: 3,
       title: 'Activité physique faible',
@@ -412,7 +421,7 @@ const insightsWithActions = computed((): InsightWithAction[] => {
       },
       target: `${wellbeingGoals.stepsGoal.toLocaleString()} pas/jour`
     });
-  } else if (avgSteps >= wellbeingGoals.stepsGoal * 0.6) {
+  } else if (avgSteps !== null) {
     insights.push({
       id: 3,
       title: 'Bonne activité physique !',
@@ -425,8 +434,8 @@ const insightsWithActions = computed((): InsightWithAction[] => {
   }
 
   // Analyse Stress
-  const avgStress = recent.reduce((sum, b) => sum + ((b.stressPro || 0) + (b.stressPerso || 0)) / 2, 0) / recent.length;
-  if (avgStress > wellbeingGoals.stressMaxGoal + 0.5) {
+  const avgStress = moyenneDesBilans(recent, stressDuBilan);
+  if (avgStress !== null && avgStress > wellbeingGoals.stressMaxGoal + 0.5) {
     insights.push({
       id: 4,
       title: 'Niveau de stress élevé',
@@ -440,7 +449,7 @@ const insightsWithActions = computed((): InsightWithAction[] => {
       },
       target: `<= ${wellbeingGoals.stressMaxGoal}/5`
     });
-  } else if (avgStress < Math.max(wellbeingGoals.stressMaxGoal - 1, 0)) {
+  } else if (avgStress !== null && avgStress < Math.max(wellbeingGoals.stressMaxGoal - 1, 0)) {
     insights.push({
       id: 4,
       title: 'Stress bien géré',
@@ -453,7 +462,7 @@ const insightsWithActions = computed((): InsightWithAction[] => {
   }
 
   // Analyse Douleur
-  const avgPain = recent.reduce((sum, b) => sum + (b.douleurMoyenne || 0), 0) / recent.length;
+  const avgPain = moyenneDesBilans(recent, (b) => b.douleurMoyenne) ?? 0;
   if (avgPain > wellbeingGoals.painMaxGoal + 1) {
     insights.push({
       id: 5,

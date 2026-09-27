@@ -56,11 +56,12 @@ public class BilanQuotidienExportViewModel
     public bool Lactose { get; set; }
     public bool Grignotage { get; set; }
     public bool Gluten { get; set; }
-    public int Fatigue { get; set; }
-    public int Pas { get; set; }
+    // Mesures facultatives : null = non renseigné ce jour-là.
+    public int? Fatigue { get; set; }
+    public int? Pas { get; set; }
     public int DouleurMoyenne { get; set; }
-    public double Hydratation { get; set; }
-    public double StressMoyenne { get; set; }
+    public double? Hydratation { get; set; }
+    public double? StressMoyenne { get; set; }
     public bool? Selles { get; set; }
     public int? TypeBristol { get; set; }
     public bool? CrampesEstomac { get; set; }

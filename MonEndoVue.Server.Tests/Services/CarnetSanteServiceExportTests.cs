@@ -82,5 +82,30 @@ public class CarnetSanteServiceExportTests : IDisposable
         Assert.Null(nouveau.Mood);
     }
 
+    [Theory]
+    [InlineData(null, null, null)]
+    [InlineData(4, null, 4.0)]
+    [InlineData(1, 2, 1.5)]
+    public async Task ExportPdf_StressMoyen_IgnoreLesValeursNonRenseignees(int? stressPro, int? stressPerso, double? attendu)
+    {
+        _carnet.Context.BilansQuotidiens.Add(new BilanQuotidien
+        {
+            CarnetSanteId = CarnetDeTest.CarnetSanteId,
+            Date = new DateTime(2026, 9, 26),
+            Mood = "Neutre",
+            StressPro = stressPro,
+            StressPerso = stressPerso,
+        });
+        await _carnet.Context.SaveChangesAsync();
+
+        var export = await _carnet.CarnetSanteService.GetDonneesCarnetSanteByMonthForPdf(
+            CarnetDeTest.CarnetSanteId, 9, 2026, CarnetDeTest.UserId);
+
+        var bilan = Assert.Single(export.BilansQuotidiens);
+        Assert.Equal(attendu, bilan.StressMoyenne);
+        Assert.Null(bilan.Pas);
+        Assert.Null(bilan.Hydratation);
+    }
+
     public void Dispose() => _carnet.Dispose();
 }

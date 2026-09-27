@@ -1,23 +1,23 @@
 ﻿<template>
   <div class="w-full">
     <!-- Navigation semaine -->
-    <div class="flex items-center justify-between mb-4">
-      <h3 class="text-lg">{{ formatCurrentWeek }}</h3>
-      <div class="flex items-center space-x-2">
-        <Button @click="previousWeek" variant="outline" size="sm">
+    <div class="flex flex-wrap items-center justify-between gap-2 mb-4">
+      <h3 class="text-base font-semibold text-headline text-left">{{ formatCurrentWeek }}</h3>
+      <div class="flex items-center gap-1.5">
+        <Button @click="previousWeek" variant="outline" size="sm" class="h-11 w-11 p-0" aria-label="Semaine précédente">
           <i class="material-symbols-outlined text-lg">chevron_left</i>
         </Button>
-        <Button @click="goToToday" variant="outline" size="sm">
+        <Button @click="goToToday" variant="outline" size="sm" class="h-11">
           Aujourd'hui
         </Button>
-        <Button @click="nextWeek" variant="outline" size="sm">
+        <Button @click="nextWeek" variant="outline" size="sm" class="h-11 w-11 p-0" aria-label="Semaine suivante">
           <i class="material-symbols-outlined text-lg">chevron_right</i>
         </Button>
       </div>
     </div>
 
     <!-- Calendrier semaine -->
-    <div class="grid grid-cols-7 gap-1 mb-6">
+    <div class="grid grid-cols-7 gap-1">
       <div v-for="day in weekDays" :key="day.dateString" class="flex flex-col items-center">
         <!-- Nom du jour -->
         <div class="text-xs text-gray-500 mb-1 font-medium">
@@ -27,7 +27,7 @@
         <!-- Date cliquable -->
         <button
             @click="selectDate(day.date)"
-            class="relative w-12 h-12 rounded-xl flex flex-col items-center justify-center transition-all duration-200 group"
+            class="relative w-full max-w-12 aspect-square rounded-xl flex flex-col items-center justify-center transition-all duration-200 group"
             :class="getDateButtonClasses(day)">
 
           <!-- Numéro du jour -->
@@ -53,6 +53,7 @@
 
 <script setup lang="ts">
 import { scoreHumeur } from '@/features/bilan-quotidien/utils/humeur';
+import { moyenne, stressDuBilan } from '@/features/bilan-quotidien/utils/mesures';
 import { ref, computed, watch } from 'vue';
 import { format, startOfWeek, addDays, addWeeks, subWeeks, isSameDay, isToday } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -75,20 +76,24 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   'update:selectedDate': [date: Date];
+  /** Premier jour de la semaine affichée, pour charger ses bilans. */
+  'semaine-affichee': [debut: Date];
 }>();
 
 const currentWeekStart = ref(startOfWeek(props.selectedDate || new Date(), { weekStartsOn: 1 }));
 
+// Score indicatif (0-100) calculé sur les seules mesures renseignées : un champ vide ne pénalise pas la journée.
 const calculateBilanScore = (bilan: BilanQuotidien): number => {
-  const getMoodScore = (bilan: BilanQuotidien): number => (scoreHumeur(bilan) ?? 0.5) * 20;
-
-  const moodScore = getMoodScore(bilan);
-  const stressScore = (5 - Math.min(Math.max((bilan.stressPro + bilan.stressPerso) / 2, 0), 5)) / 5 * 20;
-  const fatigueScore = (5 - Math.min(Math.max(bilan.fatigue, 0), 5)) / 5 * 20;
-  const painScore = (10 - Math.min(Math.max(bilan.douleurMoyenne, 0), 10)) / 10 * 20;
-  const activityScore = Math.min(bilan.pas / 10000, 1) * 20;
-
-  return Math.min(Math.max(Math.round(moodScore + stressScore + fatigueScore + painScore + activityScore), 0), 100);
+  const borne = (valeur: number, max: number) => Math.min(Math.max(valeur, 0), max);
+  const stress = stressDuBilan(bilan);
+  const composantes = [
+    scoreHumeur(bilan),
+    stress === null ? null : 1 - borne(stress, 5) / 5,
+    bilan.fatigue === null ? null : 1 - borne(bilan.fatigue, 5) / 5,
+    1 - borne(bilan.douleurMoyenne, 10) / 10,
+    bilan.pas === null ? null : Math.min(bilan.pas / 10000, 1),
+  ];
+  return Math.round((moyenne(composantes) ?? 0.5) * 100);
 };
 
 const weekDays = computed((): WeekDay[] => {
@@ -190,6 +195,8 @@ watch(() => props.selectedDate, (newDate) => {
     currentWeekStart.value = startOfWeek(newDate, { weekStartsOn: 1 });
   }
 });
+
+watch(currentWeekStart, (debut) => emit('semaine-affichee', debut));
 </script>
 
 <style scoped>

@@ -20,22 +20,42 @@ export interface EmotionBilan {
     emotion: CodeEmotion;
 }
 
-export interface BilanQuotidien extends Partial<TransitBilan> {
+/** Mesures chiffrées du bilan : seule la douleur est obligatoire, null = non renseigné. */
+export interface MesuresBilan {
+    /** Douleur du jour, de 0 à 10. */
+    douleurMoyenne: number;
+    /** Stress (vie pro, vie perso) et fatigue, de 0 à 5. */
+    stressPro: number | null;
+    stressPerso: number | null;
+    fatigue: number | null;
+    pas: number | null;
+    /** En litres. */
+    hydratation: number | null;
+}
+
+export interface BilanQuotidien extends Partial<TransitBilan>, MesuresBilan {
     id: number;
     carnetSanteId: number;
-    date: Date;
+    date: Date | string;
     /** Ancienne humeur (Heureuse, Neutre, Triste) des bilans saisis avant les émotions ; null ensuite. */
     mood?: string | null;
     /** Une à trois émotions (bilans récents). */
     emotions: EmotionBilan[];
-    stressPro: number;
-    stressPerso: number;
-    fatigue: number;
-    pas: number;
-    douleurMoyenne: number;
-    hydratation: number;
     gluten: boolean;
     lactose: boolean;
     grignotage: boolean;
-    commentaire?: string;
+    commentaire?: string | null;
+}
+
+/** Corps envoyé en création (POST, id = 0) ou en modification (PUT) ; date au format yyyy-MM-ddTHH:mm:ss, heure locale. */
+export interface BilanQuotidienSaisie extends TransitBilan, MesuresBilan {
+    id: number;
+    carnetSanteId: number;
+    date: string;
+    mood: string | null;
+    emotions: EmotionBilan[];
+    gluten: boolean;
+    lactose: boolean;
+    grignotage: boolean;
+    commentaire: string | null;
 }

@@ -303,9 +303,7 @@ public class CarnetSanteService(AppDbContext context, ILogger<CarnetSanteService
                 Pas = b.Pas,
                 DouleurMoyenne = b.DouleurMoyenne,
                 Hydratation = b.Hydratation,
-                StressMoyenne = b.StressPro + b.StressPerso > 0
-                    ? (b.StressPro + b.StressPerso) / 2.0
-                    : 0,
+                StressMoyenne = MoyenneRenseignee(b.StressPro, b.StressPerso),
                 Selles = b.Selles,
                 TypeBristol = b.TypeBristol,
                 CrampesEstomac = b.CrampesEstomac,
@@ -314,6 +312,13 @@ public class CarnetSanteService(AppDbContext context, ILogger<CarnetSanteService
                 IntensiteBallonnements = b.IntensiteBallonnements
             }).ToList()
         };
+    }
+
+    // Moyenne des seules valeurs renseignées (null si aucune) : un stress non saisi ne compte pas pour 0.
+    private static double? MoyenneRenseignee(params int?[] valeurs)
+    {
+        var renseignees = valeurs.OfType<int>().ToList();
+        return renseignees.Count == 0 ? null : renseignees.Average();
     }
 
     public void InvalidateCache(int carnetSanteId)

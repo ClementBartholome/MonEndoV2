@@ -12,7 +12,7 @@ public sealed class BilanQuotidienControllerCloisonnementTests : IDisposable
 
     public BilanQuotidienControllerCloisonnementTests()
     {
-        _controller = new BilanQuotidienController(_carnet.Context, _carnet.CarnetSanteService)
+        _controller = new BilanQuotidienController(_carnet.Context, _carnet.CarnetSanteService, TimeProvider.System)
         {
             ControllerContext = CarnetDeTest.ContexteAuthentifie(),
         };
@@ -40,7 +40,7 @@ public sealed class BilanQuotidienControllerCloisonnementTests : IDisposable
         Mood = "Bien",
         StressPro = 1,
         StressPerso = 2,
-        Fatigue = 7,
+        Fatigue = 4,
         Pas = 8000,
         DouleurMoyenne = 4,
         Hydratation = 1.5,
@@ -126,7 +126,7 @@ public sealed class BilanQuotidienControllerCloisonnementTests : IDisposable
         Assert.Equal("Bien", bilan.Mood);
         Assert.Equal(1, bilan.StressPro);
         Assert.Equal(2, bilan.StressPerso);
-        Assert.Equal(7, bilan.Fatigue);
+        Assert.Equal(4, bilan.Fatigue);
         Assert.Equal(8000, bilan.Pas);
         Assert.Equal(4, bilan.DouleurMoyenne);
         Assert.Equal(1.5, bilan.Hydratation);

@@ -9,12 +9,15 @@
         public string? Mood { get; set; }
         // Une à trois émotions (table EmotionsBilan), chargées automatiquement avec le bilan.
         public List<EmotionBilan> Emotions { get; set; } = [];
-        public int StressPro { get; set; }
-        public int StressPerso { get; set; }
-        public int Fatigue { get; set; }
-        public int Pas { get; set; }
+        // Douleur du jour (0 à 10) : seule mesure obligatoire du bilan.
         public int DouleurMoyenne { get; set; }
-        public double Hydratation { get; set; }
+        // Mesures facultatives : null = non renseigné (jamais 0 par défaut, qui fausserait les moyennes).
+        // Stress et fatigue de 0 à 5, pas et hydratation (en litres) positifs.
+        public int? StressPro { get; set; }
+        public int? StressPerso { get; set; }
+        public int? Fatigue { get; set; }
+        public int? Pas { get; set; }
+        public double? Hydratation { get; set; }
         public bool Gluten { get; set; }
         public bool Lactose { get; set; }
         public bool Grignotage { get; set; }
