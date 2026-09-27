@@ -58,6 +58,15 @@
       <hr class="mb-4 border-gray-300">      
       <ChangePassword/>
     </section>
+    <section
+        class="container !mt-0  mx-auto py-8 w-full bg-clearer rounded-3xl shadow-xl ml-auto">
+      <div class="flex gap-2 mb-4 items-center">
+        <i class="material-symbols-outlined">folder_shared</i>
+        <h3 class="text-headline text-2xl">Mes données</h3>
+      </div>
+      <hr class="mb-4 border-gray-300">
+      <MesDonnees/>
+    </section>
     <p class="mt-6 text-center text-sm text-muted-foreground">MonEndo v{{ version }}</p>
     <LiensLegaux class="mb-6"/>
   </div>
@@ -68,6 +77,7 @@ import LiensLegaux from '@/features/legal/components/LiensLegaux.vue';
 
 import BackButton from "@/shared/components/BackButton.vue";
 import NotificationSettings from "@/features/parametres/components/NotificationSettings.vue";
+import MesDonnees from "@/features/parametres/components/MesDonnees.vue";
 import ChangePassword from "@/features/auth/components/ChangePassword.vue";
 import { Button } from '@/shared/components/ui/button';
 import { ref } from 'vue';

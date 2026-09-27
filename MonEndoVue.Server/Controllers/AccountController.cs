@@ -206,6 +206,7 @@ namespace MonEndoVue.Server.Controllers
 
             user.RefreshToken = refreshToken;
             user.RefreshTokenExpiryTime = DateTime.Now.AddDays(2);
+            user.DerniereActiviteLe = horloge.GetUtcNow().UtcDateTime;
             await userManager.UpdateAsync(user);
 
             Response.Cookies.Append("accessToken", accessToken, CookieSession(DateTime.Now.AddMinutes(30)));

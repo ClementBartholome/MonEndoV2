@@ -8,12 +8,17 @@ versions en [SemVer](https://semver.org/lang/fr/) (voir la section Déploiement 
 ### Ajouté
 - Consentement aux données de santé : une case (jamais cochée d'avance) à l'inscription ; les comptes existants
   donnent leur accord à leur prochaine visite, avant de retrouver leur suivi.
+- Paramètres, « Mes données » : téléchargement de tout ce qui a été noté dans MonEndo (fichier lisible et photos de
+  suivi, dans une archive ZIP).
+- Paramètres, « Mes données » : suppression définitive du compte et de toutes ses données (photos comprises), confirmée
+  par le mot de passe ; aussi proposée sur la page d'accord, pour qui ne souhaite pas le donner.
 - Politique de confidentialité et mentions légales, lisibles sans compte depuis la connexion, l'inscription et les
   Paramètres : quelles données, pourquoi, qui y accède, combien de temps, et comment exercer ses droits.
 
 ### Sécurité
 - Les polices et les icônes sont servies par MonEndo lui-même : plus aucune page ne contacte Google Fonts, qui
   recevait jusqu'ici l'adresse IP à chaque visite.
+- Un compte sans aucune connexion pendant 2 ans est supprimé automatiquement, avec toutes ses données.
 - Sauvegarde chiffrée de la base chaque nuit, copiée hors du serveur (Azure, en Europe) et conservée 30 jours.
 
 ## [1.2.1] - 2026-09-27

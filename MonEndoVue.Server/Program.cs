@@ -17,6 +17,9 @@ using MonEndoVue.Server.Services.WebPush;
 using MonEndoVue.Server.Services.WebPush.Rappels;
 using Quartz;
 using MonEndoVue.Server.Services.Consentement;
+using MonEndoVue.Server.Services.Export;
+using MonEndoVue.Server.Services.Photos;
+using MonEndoVue.Server.Services.SuppressionCompte;
 using Serilog;
 using Serilog.Events;
 using System.Threading.RateLimiting;
@@ -110,6 +113,10 @@ namespace MonEndoVue.Server
             });
 
             builder.Services.AddScoped<AzureBlobStorageService>();
+            builder.Services.AddScoped<IStockagePhotos>(sp => sp.GetRequiredService<AzureBlobStorageService>());
+            builder.Services.AddScoped<ExportDonneesService>();
+            builder.Services.AddScoped<SuppressionCompteService>();
+            builder.Services.AddScoped<ComptesInactifsService>();
 
             builder.Services.Configure<FormOptions>(options =>
             {
@@ -204,6 +211,14 @@ namespace MonEndoVue.Server
                     .ForJob(rappelBilanJobKey)
                     .WithIdentity("RappelBilan-trigger")
                     .WithCronSchedule(RappelBilanJob.Cron));
+
+                // Durée de conservation : suppression des comptes inactifs depuis 2 ans
+                var comptesInactifsJobKey = JobKey.Create("SuppressionComptesInactifs");
+                q.AddJob<SuppressionComptesInactifsJob>(opts => opts.WithIdentity(comptesInactifsJobKey));
+                q.AddTrigger(opts => opts
+                    .ForJob(comptesInactifsJobKey)
+                    .WithIdentity("SuppressionComptesInactifs-trigger")
+                    .WithCronSchedule(SuppressionComptesInactifsJob.Cron));
             });
 
             builder.Services.AddQuartzHostedService(opts => { opts.WaitForJobsToComplete = true; });

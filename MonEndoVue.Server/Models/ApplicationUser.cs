@@ -15,4 +15,10 @@ public class ApplicationUser : IdentityUser
     /// <summary>Version de la politique de confidentialité acceptée (voir <c>PolitiqueConfidentialite.Version</c>).</summary>
     [MaxLength(20)]
     public string? VersionPolitiqueAcceptee { get; set; }
+
+    /// <summary>
+    /// Dernière ouverture ou prolongation de session (UTC) : un compte sans activité depuis 2 ans est supprimé
+    /// (<c>ComptesInactifsService</c>). Renseignée pour les comptes existants par la migration qui l'ajoute.
+    /// </summary>
+    public DateTime? DerniereActiviteLe { get; set; }
 }
