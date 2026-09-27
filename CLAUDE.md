@@ -66,6 +66,10 @@ dotnet ef migrations add NomEnPascalCase --project MonEndoVue.Server
   Les bilans antérieurs gardent leur ancienne humeur `Mood` (`Heureuse`/`Neutre`/`Triste`) : tout calcul d'humeur passe
   par `features/bilan-quotidien/utils/humeur.ts`, qui prend en compte les deux.
 - Accueil `/` (carnet : dernières entrées), agenda `/agenda` (Google Calendar en lecture via le serveur, seulement pour une utilisatrice associée à un calendrier dans la configuration `Agenda`), export PDF `/export`.
+- Pages publiques (sans compte, `meta: { public: true }` dans le routeur) : connexion, inscription, politique de
+  confidentialité `/confidentialite` et mentions légales `/mentions-legales` (`features/legal/`). **Tout changement de
+  donnée collectée, de sous-traitant ou de durée de conservation met à jour la politique** (et sa date, `config/editeur.ts`)
+  dans la même PR.
 - Notifications **Web Push standard** envoyées par le serveur (clés VAPID, sans service tiers) : chaque appareil s'abonne
   depuis `/parametres` ; rappels réglables (job Quartz toutes les 15 min), chacun omis si le suivi est déjà fait :
   bilan quotidien (bilan du jour pas encore rempli, ouvre `/bilan-quotidien`) et photo de suivi de l'acné hebdomadaire
