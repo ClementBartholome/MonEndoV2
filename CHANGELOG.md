@@ -22,6 +22,11 @@ versions en [SemVer](https://semver.org/lang/fr/) (voir la section Déploiement 
 - Un seul bilan par jour, et pas de bilan pour un jour à venir.
 - Bilan quotidien : une seule navigation dans le temps pilote toute la page, onglet « Analyse & Tendances » compris
   (fin des sélecteurs de semaine séparés).
+- Bilan quotidien, « Analyse & Tendances » : le score de bien-être sur 100 et ses couleurs rouge / orange / vert sont
+  remplacés par des tendances neutres. Chaque indicateur affiche sa moyenne et son évolution par rapport à la semaine
+  ou au mois précédent, les repères personnels indiquent le nombre de jours où ils sont atteints, et des observations
+  factuelles rapprochent les jours de douleur des jours de règles.
+- Paramètres : les objectifs bien-être deviennent des « repères personnels ».
 
 ### Corrigé
 - Un bilan rempli pour un jour passé pouvait s'afficher la veille du jour choisi.
