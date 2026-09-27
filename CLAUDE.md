@@ -43,7 +43,7 @@ dotnet ef migrations add NomEnPascalCase --project MonEndoVue.Server
 - Configuration locale : `MonEndoVue.Server/appsettings.Development.json` et `monendovue.client/.env` (non versionnés, **ne pas les lire ni les afficher**).
 - **Tests** : vue d'ensemble (types, emplacements, CI, bloquant ou non, limites) dans [docs/tests.md](docs/tests.md).
 - Tests backend : projet `MonEndoVue.Server.Tests` (xUnit). Tests front : parcours E2E Playwright avec une **API simulée**
-  (`monendovue.client/tests/`, ni serveur ni compte), lancés en CI sur les PR vers `main` (conventions : `monendovue.client/CLAUDE.md`).
+  (`monendovue.client/tests/`, ni serveur ni compte), lancés en CI sur les PR vers `main` ou avec l'étiquette `e2e` (conventions : `monendovue.client/CLAUDE.md`).
 
 ## Domaine fonctionnel
 - **`CarnetSante`** : un carnet par utilisatrice (1-1 avec `ApplicationUser`), racine de toutes les données.

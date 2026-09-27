@@ -13,7 +13,7 @@ Répartition : le **serveur** (règles métier, cloisonnement, réponses de l'AP
 |---|---|---|---|---|---|
 | Tests serveur | xUnit, EF Core InMemory | `MonEndoVue.Server.Tests/` | `dotnet test` (racine) | job `verifier` | oui |
 | Couverture serveur | coverlet → SonarCloud | rapport OpenCover | `dotnet test --collect:"XPlat Code Coverage;Format=opencover"` | job `verifier` + check SonarCloud | seuil 80 % du nouveau code (check de PR) |
-| **Tests E2E de l'interface** | Playwright (Chromium), API simulée | `monendovue.client/tests/` | `npm run test:e2e` | job `e2e`, **PR vers `main` seulement** | check de PR |
+| **Tests E2E de l'interface** | Playwright (Chromium), API simulée | `monendovue.client/tests/` | `npm run test:e2e` | job `e2e` : PR vers `main`, ou PR avec l'étiquette `e2e` | check de PR |
 | Type-check client (code + tests E2E) | vue-tsc, tsc | `tsconfig.app.json`, `tests/tsconfig.test.json` | `npm run type-check` | job `verifier` (via `npm run build`) | oui |
 | Build client | Vite | — | `npm run build` | job `verifier` | oui |
 | Lint client | ESLint | — | `npx eslint <fichiers>` | job `verifier` | non (`continue-on-error`) |
@@ -57,7 +57,8 @@ Chaque test tourne deux fois : **mobile 375px** et **desktop**.
 - **Limite** : si le format d'une réponse change côté serveur sans que la simulation suive, le test reste vert. Les données
   simulées sont typées avec les types TypeScript du client (alignés sur les contrats C#) et doivent reproduire le format
   réel : un tableau C# (`ToArrayAsync`) arrive en tableau JSON, une `List` en `{ $values }`.
-- **CI** : job `e2e`, uniquement sur les PR vers `main` (livraison d'une version ou hotfix), en parallèle de `verifier`.
+- **CI** : job `e2e`, sur les PR vers `main` (livraison d'une version ou hotfix) et sur toute PR à laquelle on ajoute
+  l'étiquette `e2e` (`gh pr edit <n> --add-label e2e`), en parallèle de `verifier`.
   En cas d'échec, le rapport Playwright est joint au run (artefact `playwright-report`).
 - Couverture actuelle : page Activité (affichage, ajout, modification, suppression). Parcours principaux : issue #23.
 
