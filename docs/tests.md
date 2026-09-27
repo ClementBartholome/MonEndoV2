@@ -13,6 +13,7 @@ Répartition : le **serveur** (règles métier, cloisonnement, réponses de l'AP
 |---|---|---|---|---|---|
 | Tests serveur | xUnit, EF Core InMemory | `MonEndoVue.Server.Tests/` | `dotnet test` (racine) | job `verifier` | oui |
 | Couverture serveur | coverlet → SonarCloud | rapport OpenCover | `dotnet test --collect:"XPlat Code Coverage;Format=opencover"` | job `verifier` + check SonarCloud | seuil 80 % du nouveau code (check de PR) |
+| Qualité du nouveau code (C#, TS/Vue, workflows) | SonarCloud | tout le dépôt | issues d'une PR : `https://sonarcloud.io/api/issues/search?componentKeys=ClementBartholome_MonEndoV2&pullRequest=<n>&resolved=false` | check de PR | quality gate : notes A en fiabilité et sécurité |
 | **Tests E2E de l'interface** | Playwright (Chromium), API simulée | `monendovue.client/tests/` | `npm run test:e2e` | job `e2e` : PR vers `main`, ou PR avec l'étiquette `e2e` | check de PR |
 | Type-check client (code + tests E2E) | vue-tsc, tsc | `tsconfig.app.json`, `tests/tsconfig.test.json` | `npm run type-check` | job `verifier` (via `npm run build`) | oui |
 | Build client | Vite | — | `npm run build` | job `verifier` | oui |
@@ -42,6 +43,10 @@ faux clients HTTP. Outils partagés dans `Support/`.
 
 Couverture : SonarCloud exige 80 % sur le nouveau code (plan gratuit, non modifiable). Toute ligne C# ajoutée hors
 migration doit être exécutée par un test.
+
+Le quality gate SonarCloud porte aussi sur le **client et les workflows** : une seule issue de fiabilité ou de sécurité sur
+le nouveau code le fait échouer. Pièges déjà rencontrés : `<th>` sans `scope`, `npm ci` sans `--ignore-scripts` et `npx`
+dans un workflow (utiliser `./node_modules/.bin/<outil>`), test sans assertion reconnue (`expect.poll` seul).
 
 ## Tests E2E de l'interface (Playwright, API simulée)
 
