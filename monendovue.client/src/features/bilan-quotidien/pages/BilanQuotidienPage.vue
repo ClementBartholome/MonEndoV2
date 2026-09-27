@@ -97,17 +97,14 @@ const jourAVenir = computed(() => isAfter(jourSelectionne.value, startOfDay(new 
     />
 
     <div v-else class="w-full">
-      <Card class="container mx-auto w-full bg-clearer rounded-3xl shadow-xl flex flex-col">
-        <CardContent class="p-3 md:p-6">
-          <SelecteurPeriode
-              :periode="model.periode"
-              @changer-mode="actions.changerMode"
-              @precedente="actions.precedente"
-              @suivante="actions.suivante"
-              @aujourdhui="actions.revenirAujourdhui"
-          />
-        </CardContent>
-      </Card>
+      <SelecteurPeriode
+          class="mt-2"
+          :periode="model.periode"
+          @changer-mode="actions.changerMode"
+          @precedente="actions.precedente"
+          @suivante="actions.suivante"
+          @aujourdhui="actions.revenirAujourdhui"
+      />
 
       <div v-if="model.erreur" class="flex flex-col items-center gap-3 text-center py-6" role="alert">
         <p class="text-paragraph">Les bilans de cette période n'ont pas pu être chargés.</p>
