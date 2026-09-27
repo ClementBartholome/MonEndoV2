@@ -8,8 +8,12 @@ description: Préparer, livrer et, si besoin, annuler une version numérotée de
 Rappel : **merger sur `main` = déployer en production** (migrations EF appliquées au démarrage).
 
 ## Choisir le numéro (SemVer)
-- **MAJEUR** (2.0.0) : migration destructive, rupture de contrat ou de données visible par l'utilisatrice.
-- **MINEUR** (1.1.0) : nouvelle fonctionnalité, migrations additives.
+Versionnage fin, les versions s'enchaînant vite (décision du 2026-09-27) :
+- **MAJEUR** (2.0.0) : réservé à une fonctionnalité ou une refonte vraiment majeure (ex. refonte du design, liaison des
+  comptes externes à grande échelle), ou à une rupture visible par l'utilisatrice (données perdues, fonctionnalité retirée).
+  Une migration destructive invisible pour l'utilisatrice (table inutilisée) ne justifie pas un saut majeur : elle est
+  signalée dans la PR et dans la section « Annuler ».
+- **MINEUR** (1.1.0) : nouvelles fonctionnalités, améliorations, migrations (additives ou destructives invisibles).
 - **CORRECTIF** (1.0.1) : correctifs seulement. Un **hotfix** part de `main` (`hotfix/X.Y.Z`), sans passer par une branche de release.
   - Sur la branche du hotfix : numéro de version (mêmes fichiers qu'une version) et section du CHANGELOG **déjà datée**
     avant la PR vers `main` (pas de commit possible sur `main` après coup).
