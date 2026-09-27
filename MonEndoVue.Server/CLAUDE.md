@@ -110,8 +110,8 @@ modifiables, jamais `Entry(dto).State = Modified`, jamais de changement de `Carn
   snapshot : une nouvelle migration ne la touche pas (vérifié avec `RendFacultativesMesuresBilan`). Sa suppression se fera
   par une migration dédiée écrite à la main (prévue en 1.1, voir la roadmap).
 - **Rollback après une colonne rendue nullable** : une image antérieure lit la colonne comme non nullable et plante dès
-  qu'une valeur nulle est enregistrée (cas de `RendFacultativesMesuresBilan`). Le signaler dans la PR : le point de retour
-  devient la version qui introduit la migration.
+  qu'une valeur nulle est enregistrée (cas de `RendFacultativesMesuresBilan`). Le signaler dans la PR et ajouter la
+  requête de remise à niveau à exécuter avant un retour arrière dans le skill `release` (section « Annuler »).
 - **Générer une migration sans lire les secrets** : l'outil EF démarre l'hôte, qui exige `appsettings.{Environment}.json`.
   Plutôt que de lire ou copier `appsettings.Development.json` (interdit), créer temporairement dans `MonEndoVue.Server/`
   un `appsettings.DesignTime.json` contenant uniquement une chaîne de connexion factice (fichier ignoré par git, l'écrire
