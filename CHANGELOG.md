@@ -3,6 +3,12 @@
 Toutes les évolutions notables de MonEndo. Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/),
 versions en [SemVer](https://semver.org/lang/fr/) (voir la section Déploiement de `CLAUDE.md`).
 
+## [1.2.0] - non publiée
+
+### Sécurité
+- Les journaux techniques du serveur sont conservés 30 jours au maximum, puis supprimés automatiquement ; ils
+  enregistrent moins de détails en production.
+
 ## [1.1.0] - 2026-09-27
 
 ### Ajouté

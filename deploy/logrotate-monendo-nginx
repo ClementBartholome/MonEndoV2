@@ -1,0 +1,12 @@
+# Rotation quotidienne des logs nginx de MonEndo (adresses IP = données personnelles) : 30 jours conservés.
+# À installer dans /etc/logrotate.d/ sur le VPS (voir deploy/README.md).
+/home/debian/app/logs/nginx/*.log {
+    daily
+    rotate 30
+    maxage 30
+    compress
+    delaycompress
+    missingok
+    notifempty
+    copytruncate
+}
