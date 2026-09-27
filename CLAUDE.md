@@ -23,7 +23,7 @@ transit, activité, bilan quotidien) et à préparer leurs rendez-vous médicaux
 | `.github/workflows/ci.yml` | CI/CD : vérification → image Docker → déploiement VPS |
 | `Dockerfile` | Image unique : le client est buildé par `dotnet publish` (esproj) et servi depuis `wwwroot` |
 | `deploy/` | Référence versionnée de la config du VPS (compose de prod, logrotate) et procédure d'application |
-| `docs/` | Roadmap (`modernization-plan.md`) ; `docs/private/` local et non versionné |
+| `docs/` | Roadmap (`modernization-plan.md`), vue d'ensemble des tests (`tests.md`) ; `docs/private/` local et non versionné |
 
 ## Commandes
 ```bash
@@ -41,6 +41,7 @@ dotnet ef migrations add NomEnPascalCase --project MonEndoVue.Server
 ```
 - Lancement complet en dev : profil `https` de `MonEndoVue.Server` (démarre Vite via SpaProxy). API : https://localhost:7206.
 - Configuration locale : `MonEndoVue.Server/appsettings.Development.json` et `monendovue.client/.env` (non versionnés, **ne pas les lire ni les afficher**).
+- **Tests** : vue d'ensemble (types, emplacements, CI, bloquant ou non, limites) dans [docs/tests.md](docs/tests.md).
 - Tests E2E Playwright : `E2E_EMAIL`/`E2E_PASSWORD` d'un compte **local**, jamais contre la production. Tests backend : projet `MonEndoVue.Server.Tests` (xUnit). Tests unitaires front :
   `src/**/__tests__/*.spec.ts` (`playwright.unit.config.ts`), fonctions pures seulement (voir `monendovue.client/CLAUDE.md`).
 
