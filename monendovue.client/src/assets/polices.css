@@ -21,7 +21,8 @@
 }
 
 .material-symbols-outlined {
-    font-family: 'Material Symbols Outlined';
+    /* Police générique de secours exigée par Sonar (S4649) : sans la police, le nom de l'icône s'affiche en texte. */
+    font-family: 'Material Symbols Outlined', sans-serif;
     font-weight: normal;
     font-style: normal;
     font-size: 24px;
