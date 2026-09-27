@@ -204,10 +204,9 @@ jobs:
             set -e
             cd ~/app
 
-            # Création du fichier .env pour la production
+            # .env ne sert qu'à l'interpolation du compose (DB_PASSWORD) ; l'environnement est fixé dans le compose
             cat > .env << EOF
             DB_PASSWORD=${{ secrets.DB_PASSWORD }}
-            ASPNETCORE_ENVIRONMENT=Production
             EOF
 
             # Connexion au registry
