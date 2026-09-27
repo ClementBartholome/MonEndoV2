@@ -201,6 +201,7 @@ Objectif : que l'utilisateur n'ait jamais à répéter une consigne ou une infor
 - **Plusieurs sessions Claude peuvent travailler en parallèle dans le même dossier** : ne jamais changer de branche,
   rebaser ou réécrire l'historique dans la copie principale sans vérifier `git status` / `git worktree list` ; travailler
   dans un worktree dédié (`git worktree add ../MonEndoVue-<sujet> -b <branche> origin/main`) puis le supprimer après merge.
+  GitHub supprime seul la branche distante d'une PR mergée ; la branche locale et le worktree restent à supprimer à la main.
 - Pas de Docker sur le poste : le build d'image n'est validé que par la CI d'une PR (job `image`, sans push).
 - `dotnet build` du serveur lance un `npm install` du client (esproj) : ne jamais le faire tourner en même temps qu'un
   `npm ci` dans le même worktree (`node_modules` corrompu) ; un seul build à la fois par worktree.

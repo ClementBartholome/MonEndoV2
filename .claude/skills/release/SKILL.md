@@ -43,7 +43,11 @@ Rappel : **merger sur `main` = déployer en production** (migrations EF appliqu�
 4. Tag sur le commit de merge : `git tag -a vX.Y.Z <sha> -m "MonEndo X.Y.Z"` puis `git push origin vX.Y.Z` :
    la CI publie l'image `ghcr.io/…:vX.Y.Z` (sans redéployer).
 5. `gh release create vX.Y.Z --title "MonEndo X.Y.Z" --notes-file <section du CHANGELOG>`.
-6. Supprimer la branche et le worktree de release, faire `git pull` dans la copie principale.
+6. Nettoyer : GitHub supprime seul la branche distante d'une PR mergée (réglage « delete head branches » du dépôt).
+   En local, pour chaque branche intégrée à la version, vérifier `git merge-base --is-ancestor <branche> origin/main` et un
+   worktree propre, puis `git worktree remove`, `git branch -D` et `git fetch --prune origin`.
+   Mettre `main` à jour sans changer la branche de la copie principale : `git fetch origin main:main`.
+   Ne pas toucher aux branches non mergées ni à celle de la copie principale sans accord (d'autres sessions peuvent y travailler).
 
 ## Annuler (rollback)
 Sur le VPS, repointer le service `app` du `docker-compose.prod.yml` sur l'image de la version précédente
