@@ -11,6 +11,7 @@ versions en [SemVer](https://semver.org/lang/fr/) (voir la section Déploiement 
 - Activité : une séance peut de nouveau être modifiée depuis le tableau affiché sur ordinateur.
 
 ### Sécurité
+- Connexion : un compte est verrouillé pendant 15 minutes après cinq mots de passe erronés de suite.
 - Les journaux techniques du serveur sont conservés 30 jours au maximum, puis supprimés automatiquement ; ils
   enregistrent moins de détails en production.
 

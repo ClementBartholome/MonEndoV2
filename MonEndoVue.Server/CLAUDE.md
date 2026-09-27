@@ -124,7 +124,7 @@ modifiables, jamais `Entry(dto).State = Modified`, jamais de changement de `Carn
 Chargée depuis `appsettings.{Environment}.json` (**obligatoire**, non versionné), variables d'environnement puis user-secrets.
 Clés attendues (noms seulement) : `ConnectionStrings:DefaultConnection`, `AzureBlobStorage:ConnectionString`,
 `AzureBlobStorage:ContainerName` (ou variables `AZURE_STORAGE_CONNECTION_STRING`/`AZURE_CONTAINER_NAME`),
-`Authentication:Schemes:Bearer:{Secret,ValidIssuer,ValidAudiences}`, `Jwt:Key`, `RootUser:{UserName,Email,Password}`,
+`Authentication:Schemes:Bearer:{Secret,ValidIssuer,ValidAudiences}`, `Jwt:Key`, `RootUser:{UserName,Email,Password}` (compte créé au démarrage en **développement** seulement),
 `WebPush:{Subject,PublicKey,PrivateKey}` (clés VAPID ; absentes ou invalides — sujet sans `mailto:`/`https:`, clés ≠ 87/43 caractères — = notifications désactivées
  avec un avertissement au démarrage, sans bloquer ni faire échouer les routes ;
  en dev via `dotnet user-secrets`), `Agenda:CleApi` (clé API Google Calendar) et `Agenda:Calendriers:<id de l'utilisatrice>` (identifiant du calendrier affiché ; sans entrée, pas d'agenda : 404). En production, dans `config/app.env` sous la forme `Agenda__CleApi=…` et `Agenda__Calendriers__<id>=…`. Ne jamais lire ni afficher les valeurs.

@@ -41,7 +41,7 @@ public sealed class IdentityDeTest : IDisposable
         services.AddSingleton<IConfiguration>(configuration);
         services.AddDbContext<AppDbContext>(options => options.UseInMemoryDatabase($"monendo-identity-{Guid.NewGuid()}"));
         services.AddAuthentication();
-        services.AddIdentityCore<ApplicationUser>()
+        services.AddIdentityCore<ApplicationUser>(OptionsIdentite.Appliquer)
             .AddSignInManager()
             .AddEntityFrameworkStores<AppDbContext>();
         services.AddMemoryCache();
