@@ -11,12 +11,14 @@ import { useToast } from '@/shared/components/ui/toast';
 import { useAuthStore } from '@/features/auth/store/auth';
 import SaisieBilan from '@/features/bilan-quotidien/components/saisie/SaisieBilan.vue';
 import BilanDuJourCard from '@/features/bilan-quotidien/components/BilanDuJourCard.vue';
-import DashboardBilanQuotidien from '@/features/bilan-quotidien/components/DashboardBilanQuotidien.vue';
+import AnalyseTendances from '@/features/bilan-quotidien/components/AnalyseTendances.vue';
 import EmotionSemaineCard from '@/features/bilan-quotidien/components/EmotionSemaineCard.vue';
 import CalendrierBilans from '@/features/bilan-quotidien/components/historique/CalendrierBilans.vue';
 import CourbesBilans from '@/features/bilan-quotidien/components/historique/CourbesBilans.vue';
 import SelecteurPeriode from '@/features/bilan-quotidien/components/historique/SelecteurPeriode.vue';
 import { useHistoriqueBilans } from '@/features/bilan-quotidien/composables/useHistoriqueBilans';
+import { calculerTendances } from '@/features/bilan-quotidien/utils/tendances';
+import { getWellbeingGoals } from '@/shared/services/wellbeingGoalsStorage';
 import type { BilanQuotidien } from '@/features/bilan-quotidien/types/bilan-quotidien';
 
 const carnetSanteId = useAuthStore().user!.carnetSanteId;
@@ -72,6 +74,10 @@ const titreJour = computed(() =>
   isToday(jourSelectionne.value) ? "Aujourd'hui" : format(jourSelectionne.value, 'EEEE d MMMM', { locale: fr }));
 
 const jourAVenir = computed(() => isAfter(jourSelectionne.value, startOfDay(new Date())));
+
+// --- Analyse ---
+const reperes = getWellbeingGoals();
+const tendances = computed(() => calculerTendances(model.value.jours, model.value.bilansPrecedents, reperes));
 </script>
 
 <template>
@@ -149,7 +155,7 @@ const jourAVenir = computed(() => isAfter(jourSelectionne.value, startOfDay(new 
         </TabsContent>
 
         <TabsContent value="analyse">
-          <DashboardBilanQuotidien :bilans="model.bilans"/>
+          <AnalyseTendances :tendances="tendances" :mode="model.periode.mode"/>
         </TabsContent>
       </Tabs>
     </div>

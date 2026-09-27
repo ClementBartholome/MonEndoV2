@@ -22,6 +22,9 @@ export const useHistoriqueBilans = (options: { mode?: ModePeriode } = {}) => {
   const joursRegles = ref(new Set<string>());
 
   const intervalle = computed(() => intervalleDe(mode.value, ancre.value));
+  const decalage = (date: Date, sens: number) => (mode.value === 'mois' ? addMonths(date, sens) : addWeeks(date, sens));
+  // Période de même nature juste avant (semaine ou mois précédent), pour les comparaisons de l'analyse.
+  const intervallePrecedent = computed(() => intervalleDe(mode.value, decalage(intervalle.value.debut, -1)));
 
   const periode = computed<PeriodeHistorique>(() => {
     const { debut, fin } = intervalle.value;
@@ -52,6 +55,12 @@ export const useHistoriqueBilans = (options: { mode?: ModePeriode } = {}) => {
 
   const bilans = computed(() => jours.value.flatMap((jour) => (jour.bilan ? [jour.bilan] : [])));
 
+  const bilansPrecedents = computed(() => joursEntre(intervallePrecedent.value.debut, intervallePrecedent.value.fin)
+    .flatMap((date) => {
+      const bilan = bilansParJour.value.get(cleJour(date));
+      return bilan ? [bilan] : [];
+    }));
+
   /** Charge les jours du `debut` au `fin` inclus ; remplace ce qui était connu pour ces jours. */
   const chargerJours = async (debut: Date, fin: Date) => {
     const resultat = await apiService.getHistoriqueBilans(cleJour(debut), cleJour(fin));
@@ -73,7 +82,10 @@ export const useHistoriqueBilans = (options: { mode?: ModePeriode } = {}) => {
     chargement.value = true;
     erreur.value = false;
     try {
-      await chargerJours(intervalle.value.debut, intervalle.value.fin);
+      await Promise.all([
+        chargerJours(intervalle.value.debut, intervalle.value.fin),
+        chargerJours(intervallePrecedent.value.debut, intervallePrecedent.value.fin),
+      ]);
     } catch {
       if (demande === derniereDemande) erreur.value = true;
     } finally {
@@ -88,8 +100,7 @@ export const useHistoriqueBilans = (options: { mode?: ModePeriode } = {}) => {
     void recharger();
   };
 
-  const decaler = (sens: 1 | -1) =>
-    allerA(mode.value === 'mois' ? addMonths(intervalle.value.debut, sens) : addWeeks(intervalle.value.debut, sens));
+  const decaler = (sens: 1 | -1) => allerA(decalage(intervalle.value.debut, sens));
 
   const actions: HistoriqueActions = {
     changerMode: (nouveau) => {
@@ -114,6 +125,7 @@ export const useHistoriqueBilans = (options: { mode?: ModePeriode } = {}) => {
     periode: periode.value,
     jours: jours.value,
     bilans: bilans.value,
+    bilansPrecedents: bilansPrecedents.value,
     jourSelectionne: jourSelectionne.value,
     chargement: chargement.value,
     erreur: erreur.value,

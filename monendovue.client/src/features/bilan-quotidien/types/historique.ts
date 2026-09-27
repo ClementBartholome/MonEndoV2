@@ -38,6 +38,8 @@ export interface HistoriqueModel {
   jours: JourHistorique[];
   /** Bilans de la période, triés par date. */
   bilans: BilanQuotidien[];
+  /** Bilans de la période précédente de même nature (semaine ou mois), pour les comparaisons. */
+  bilansPrecedents: BilanQuotidien[];
   jourSelectionne: Date;
   chargement: boolean;
   erreur: boolean;
