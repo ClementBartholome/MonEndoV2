@@ -230,6 +230,7 @@ Regles:
     notification ouvre sa page (`/bilan-quotidien`, `/cycle?onglet=acne`)
   - logs de production : conservation 30 jours (Serilog quotidien, logrotate nginx, rotation Docker), niveaux adaptes,
     consultation via Dozzle en tunnel SSH ; compose de production versionne dans `deploy/` (sans secret)
+  - tests unitaires du client (fonctions pures) avec Playwright sans navigateur, executes par la CI (issue #22)
   - suivi des tests Playwright (Piwi Dashboard) reporte : a reevaluer une fois les tests E2E executes en CI
 
 ## Definition of Done (pour chaque lot)
