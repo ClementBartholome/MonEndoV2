@@ -3,6 +3,7 @@ import { FauxServeur } from './mocks/faux-serveur';
 import { MAINTENANT, UTILISATRICE, CARNET_ID } from './mocks/session';
 import { ActivitePage } from './pages/activite.page';
 import { BilanQuotidienPage } from './pages/bilan-quotidien.page';
+import { DocumentsLegauxPage } from './pages/documents-legaux.page';
 
 interface Options {
   /** Session ouverte au chargement de la page (faux utilisateur dans localStorage, comme après une connexion). */
@@ -14,6 +15,7 @@ interface Fixtures {
   serveur: FauxServeur;
   activitePage: ActivitePage;
   bilanQuotidienPage: BilanQuotidienPage;
+  documentsLegauxPage: DocumentsLegauxPage;
 }
 
 /**
@@ -49,6 +51,10 @@ export const test = base.extend<Options & Fixtures>({
 
   bilanQuotidienPage: async ({ page }, use) => {
     await use(new BilanQuotidienPage(page));
+  },
+
+  documentsLegauxPage: async ({ page }, use) => {
+    await use(new DocumentsLegauxPage(page));
   },
 });
 
