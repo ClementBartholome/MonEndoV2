@@ -92,11 +92,15 @@ modifiables, jamais `Entry(dto).State = Modified`, jamais de changement de `Carn
 
 ## Sécurité transverse
 - En-têtes de sécurité et **Content-Security-Policy** dans `Services/EntetesSecurite.cs` (posés sur toutes les réponses).
-  La CSP est en mode `Report-Only` depuis la 1.2.0 (violations dans la console, rien de bloqué). Toute nouvelle ressource
+  La CSP est **bloquante** depuis la 1.2.1 (`Report-Only` en 1.2.0) : une ressource non déclarée ne se charge pas. Toute nouvelle ressource
   tierce (police, image, API appelée par le navigateur) s'y déclare, ou mieux, s'héberge localement. Vérification : client
   buildé (`VITE_DOCKER=true npx vite build` puis `npx vite preview`), en-tête ajouté aux documents par un script Playwright
   (`route.fetch` puis `route.fulfill`), toutes les pages parcourues à 375px et 1280px, messages « Content Security Policy »
   relevés dans la console. Le serveur de dev Vite (scripts en ligne) ne convient pas pour cette vérification.
+  En production, un écouteur `securitypolicyviolation` posé dans la console puis `$router.push` sur chaque route
+  (session de l'utilisateur) relève aussi les violations. Pas de bibliothèque qui lance un worker depuis une URL `blob:`
+  ou évalue du code (`new Function`) : c'est pour cela que `heic2any` a été retiré (HEIC converti par le navigateur).
+  Seul HSTS est posé par nginx (`deploy/nginx.conf`) : un en-tête posé à la fois par nginx et par l'app est en double, donc invalide.
 - Rate limiting : politiques `api` (par défaut) et `auth` (20 req/min), constantes dans `Services/PolitiquesDebit.cs`.
   La politique `api` n'est posée que sur les endpoints qui n'en déclarent pas (`PolitiquesDebit.AppliquerParDefaut`) :
   un `[EnableRateLimiting(PolitiquesDebit.Auth)]` sur une action est donc réellement appliqué. À mettre sur tout endpoint
