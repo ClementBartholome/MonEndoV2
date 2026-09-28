@@ -89,7 +89,11 @@ Nouveau composant shadcn : `npx shadcn-vue add <nom>` (alias configurés vers `@
   `--button`, `.text-headline`, `Button variant="custom"`) et les variables shadcn pointent vers ces tokens.
   - Une **rubrique = une teinte**, partout (tuile + icône) : `bg-teinte-<r>-fond` + `text-teinte-<r>` avec <r> = `bilan`,
     `douleur`, `regles`, `symptome`, `traitement`, `neutre`. Les types d'une rubrique se distinguent par icône et libellé.
-  - Le rose `--couleur-accent` (`bg-button`) est un **fond** avec texte foncé ; jamais de texte blanc dessus ni de texte rose.
+  - Le rose poudré `--couleur-accent` (`bg-button`, `#f2b3c2`) est un **fond** avec texte foncé (8.2:1) ; jamais de texte blanc
+    dessus ni de texte rose. L'ancien `#ff8ba7`, trop saturé, tranchait avec le reste.
+  - Icônes : `polices.css` force `line-height: 1` (les classes `text-lg`… décalaient le glyphe) ; ne pas le surcharger.
+  - Pas de bouton « Revenir en arrière » dans les pages : la navigation est toujours visible. L'en-tête (logo, compte) est
+    posé sur la page en `pointer-events-none` : la première carte peut passer dessous sans perdre ses clics.
   - Intensité 0-10 : `var(--intensite-N)` (texte foncé jusqu'à 5, blanc à partir de 6).
   - Les pages pas encore refaites (Cycle, Traitements, accueil…) gardent des couleurs brutes : les migrer quand on les touche.
 - Polices servies par l'app (`src/assets/polices.css`, paquets `@fontsource`), **jamais Google Fonts** (IP envoyée à Google, RGPD) :
