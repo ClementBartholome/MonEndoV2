@@ -19,6 +19,9 @@ versions en [SemVer](https://semver.org/lang/fr/) (voir la section Déploiement 
   Paramètres : quelles données, pourquoi, qui y accède, combien de temps, et comment exercer ses droits.
 
 ### Modifié
+- Boutons principaux d'un rose plus doux, icônes bien centrées, plus d'air en haut des pages (le bouton « Revenir en
+  arrière » disparaît : la navigation est toujours à portée) ; une prise de traitement notée depuis l'accueil est confirmée
+  par un message.
 - Navigation repensée sur mobile : Accueil, Bilan, Douleurs et Cycle en bas de l'écran, et un menu « Plus » pour
   les traitements, l'activité, la préparation d'un rendez-vous, le transit et les paramètres (avec la déconnexion) ;
   sur ordinateur, toutes les rubriques dans la barre latérale.
