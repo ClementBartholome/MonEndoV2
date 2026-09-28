@@ -16,6 +16,7 @@ using MonEndoVue.Server.Services.Agenda;
 using MonEndoVue.Server.Services.WebPush;
 using MonEndoVue.Server.Services.WebPush.Rappels;
 using Quartz;
+using MonEndoVue.Server.Services.Accueil;
 using MonEndoVue.Server.Services.Consentement;
 using MonEndoVue.Server.Services.Export;
 using MonEndoVue.Server.Services.Photos;
@@ -117,6 +118,7 @@ namespace MonEndoVue.Server
             builder.Services.AddScoped<ExportDonneesService>();
             builder.Services.AddScoped<SuppressionCompteService>();
             builder.Services.AddScoped<ComptesInactifsService>();
+            builder.Services.AddScoped<AccueilService>();
 
             builder.Services.Configure<FormOptions>(options =>
             {

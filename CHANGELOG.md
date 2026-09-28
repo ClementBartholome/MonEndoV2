@@ -6,6 +6,9 @@ versions en [SemVer](https://semver.org/lang/fr/) (voir la section Déploiement 
 ## [1.3.0] - non publiée
 
 ### Ajouté
+- Nouvel accueil « Aujourd'hui » : jour de règles ou du cycle, bilan du jour (à faire ou son résumé), ajout rapide
+  d'une douleur, des règles ou d'un symptôme, traitements en cours avec la prise du jour notée en un geste, prochain
+  rendez-vous et quelques faits de la semaine, sans interprétation.
 - Consentement aux données de santé : une case (jamais cochée d'avance) à l'inscription ; les comptes existants
   donnent leur accord à leur prochaine visite, avant de retrouver leur suivi.
 - Paramètres, « Mes données » : téléchargement de tout ce qui a été noté dans MonEndo (fichier lisible et photos de

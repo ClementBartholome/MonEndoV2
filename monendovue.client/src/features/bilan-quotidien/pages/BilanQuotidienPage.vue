@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue';
+import { useRoute } from 'vue-router';
 import { format, isAfter, isToday, startOfDay, subDays } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import BackButton from '@/shared/components/BackButton.vue';
@@ -19,6 +20,9 @@ import SelecteurPeriode from '@/features/bilan-quotidien/components/historique/S
 import { useHistoriqueBilans } from '@/features/bilan-quotidien/composables/useHistoriqueBilans';
 import { calculerTendances } from '@/features/bilan-quotidien/utils/tendances';
 import { getWellbeingGoals } from '@/shared/services/wellbeingGoalsStorage';
+
+/** Lien profond vers un onglet (`/bilan-quotidien?onglet=analyse`, depuis l'accueil). */
+const ongletInitial = useRoute().query.onglet === 'analyse' ? 'analyse' : 'historique';
 import type { BilanQuotidien } from '@/features/bilan-quotidien/types/bilan-quotidien';
 
 const carnetSanteId = useAuthStore().user!.carnetSanteId;
@@ -117,7 +121,7 @@ const tendances = computed(() => calculerTendances(model.value.jours, model.valu
         <Button type="button" variant="outline" class="h-11" @click="actions.recharger">Réessayer</Button>
       </div>
 
-      <Tabs v-else default-value="historique" class="w-full mt-4" :class="{ 'opacity-60': model.chargement }"
+      <Tabs v-else :default-value="ongletInitial" class="w-full mt-4" :class="{ 'opacity-60': model.chargement }"
             :aria-busy="model.chargement">
         <TabsList class="bilan-tabs-list">
           <TabsTrigger value="historique" class="bilan-tab-trigger">Historique</TabsTrigger>

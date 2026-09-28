@@ -1,5 +1,5 @@
 import {createRouter, createWebHistory} from 'vue-router'
-import HomePage from '@/features/home/pages/HomePage.vue'
+import AccueilPage from '@/features/accueil/pages/AccueilPage.vue'
 import Schedule from '@/features/schedule/pages/Schedule.vue'
 import LoginPage from "@/features/auth/pages/LoginPage.vue";
 import {useAuthStore} from "@/features/auth/store/auth";
@@ -22,7 +22,7 @@ const router = createRouter({
         {
             path: '/',
             name: 'home',
-            component: HomePage,
+            component: AccueilPage,
         },
         {
             path: '/douleurs',
