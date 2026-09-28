@@ -8,6 +8,7 @@ import { ConsentementPage } from './pages/consentement.page';
 import { ParametresPage } from './pages/parametres.page';
 import { NavigationPage } from './pages/navigation.page';
 import { AccueilPage } from './pages/accueil.page';
+import { DouleursPage } from './pages/douleurs.page';
 import { ACCUEIL_VIDE } from './mocks/accueil';
 
 interface Options {
@@ -25,6 +26,7 @@ interface Fixtures {
   parametresPage: ParametresPage;
   navigationPage: NavigationPage;
   accueilPage: AccueilPage;
+  douleursPage: DouleursPage;
 }
 
 /**
@@ -80,6 +82,10 @@ export const test = base.extend<Options & Fixtures>({
 
   accueilPage: async ({ page }, use) => {
     await use(new AccueilPage(page));
+  },
+
+  douleursPage: async ({ page }, use) => {
+    await use(new DouleursPage(page));
   },
 });
 
