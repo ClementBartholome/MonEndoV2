@@ -179,10 +179,12 @@ SQL Server Express n'a ni Agent ni chiffrement des sauvegardes : d'où le cron e
    (à noter dans l'agenda : le renouveler avant), protocole HTTPS uniquement → **Générer**. Garder la page ouverte.
 
 **Sur le VPS** : la clé de chiffrement est générée sur place ; le jeton SAS est saisi une fois (seules des longueurs
-sont affichées).
+sont affichées). `backups/` doit être accessible en écriture à SQL Server (utilisateur `mssql`, uid 10001, qui y écrit
+la sauvegarde brute) et à `debian` (copie chiffrée) : sinon `BACKUP DATABASE` échoue (accès refusé).
 
 ```bash
 cd ~/app
+sudo chown 10001:debian backups && sudo chmod 770 backups
 ( umask 077; openssl rand -base64 48 > config/sauvegarde.cle ); wc -c config/sauvegarde.cle
 docker exec monendo_database_prod bash -c 'S=/opt/mssql-tools18/bin/sqlcmd; [ -x $S ] || S=/opt/mssql-tools/bin/sqlcmd; SQLCMDPASSWORD="$SA_PASSWORD" $S -S localhost -U sa -C -h -1 -Q "SET NOCOUNT ON; SELECT name FROM sys.databases WHERE database_id > 4"'
 cat > /tmp/sauvegarde_env.py <<'EOF'
