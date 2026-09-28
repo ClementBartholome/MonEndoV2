@@ -7,7 +7,7 @@ versions en [SemVer](https://semver.org/lang/fr/) (voir la section Déploiement 
 
 ### Ajouté
 - Nouvel accueil « Aujourd'hui » : jour de règles ou du cycle, bilan du jour (à faire ou son résumé), ajout rapide
-  d'une douleur, des règles ou d'un symptôme, traitements en cours avec la prise du jour notée en un geste, prochain
+  d'une douleur, des règles ou d'un symptôme, prises de traitement prévues ce jour-là, notées en un geste, prochain
   rendez-vous et quelques faits de la semaine, sans interprétation.
 - Consentement aux données de santé : une case (jamais cochée d'avance) à l'inscription ; les comptes existants
   donnent leur accord à leur prochaine visite, avant de retrouver leur suivi.
@@ -17,6 +17,10 @@ versions en [SemVer](https://semver.org/lang/fr/) (voir la section Déploiement 
   par le mot de passe ; aussi proposée sur la page d'accord, pour qui ne souhaite pas le donner.
 - Politique de confidentialité et mentions légales, lisibles sans compte depuis la connexion, l'inscription et les
   Paramètres : quelles données, pourquoi, qui y accède, combien de temps, et comment exercer ses droits.
+- Traitements, à la manière de l'app Santé d'Apple : chaque médicament a sa fréquence (tous les jours, certains jours
+  de la semaine, tous les N jours ou au besoin) et ses horaires ; la page et l'accueil ne montrent que les prises prévues
+  aujourd'hui, regroupées par moment, à noter « Pris » ou « Ignorer » (et à annuler en cas d'erreur). Les traitements au
+  besoin et les soins (kiné, ostéo…) se notent en un geste ; les traitements terminés restent consultables.
 
 ### Modifié
 - Douleurs : page repensée pour le téléphone, avec les chiffres du mois, un graphique jour par jour qui montre les
