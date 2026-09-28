@@ -69,7 +69,7 @@ export function useSaisieTraitement({ maintenant = () => new Date() }: { mainten
             frequence: frequence.value,
             joursSemaine: frequence.value === 'CertainsJours' ? joursSemaine.value : [],
             intervalleJours: frequence.value === 'TousLesNJours' ? intervalleJours.value : null,
-            horaires: avecHoraires.value ? [...new Set(horaires.value)].sort().map((h) => `${h}:00`) : [],
+            horaires: avecHoraires.value ? [...new Set(horaires.value)].sort((a, b) => a.localeCompare(b)).map((h) => `${h}:00`) : [],
             dateDebut: dateDebut.value,
             dateFin: dateFin.value || null,
         };

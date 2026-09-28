@@ -31,7 +31,7 @@ export function simulerTraitements(serveur: FauxServeur, initiaux: Partial<Trait
 
   const enCours = () => traitements.filter((t) => t.dateFin === null);
   const medicaments = () => enCours().filter((t) => t.type === 'Medicamenteux');
-  const derniere = (dates: string[]) => dates.sort().at(-1) ?? null;
+  const derniere = (dates: string[]) => [...dates].sort((a, b) => a.localeCompare(b)).at(-1) ?? null;
   const versTraitement = (id: number, saisie: TraitementSaisie): Traitement =>
     ({ ...saisie, id, horaires: saisie.horaires.map((h) => h.slice(0, 5)) });
 

@@ -21,7 +21,8 @@ export function reponse(statut: StatutPrise, heurePrevue: string | null, mainten
 /** Moment de la journée d'une prise prévue, pour les regrouper comme dans l'app Santé. */
 export function momentDe(heurePrevue: string): 'Matin' | 'Après-midi' | 'Soir' {
     const heure = Number(heurePrevue.slice(0, 2));
-    return heure < 12 ? 'Matin' : heure < 18 ? 'Après-midi' : 'Soir';
+    if (heure < 12) return 'Matin';
+    return heure < 18 ? 'Après-midi' : 'Soir';
 }
 
 export interface GroupePrises {

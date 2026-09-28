@@ -36,13 +36,14 @@
                     @click="form.frequence.value = f.valeur">{{ f.libelle }}</button>
           </div>
 
-          <div v-if="form.frequence.value === 'CertainsJours'" class="mt-3 grid grid-cols-7 gap-1" role="group" aria-label="Jours de prise">
+          <fieldset v-if="form.frequence.value === 'CertainsJours'" class="m-0 mt-3 grid grid-cols-7 gap-1 border-0 p-0">
+            <legend class="sr-only">Jours de prise</legend>
             <button v-for="jour in JOURS_SEMAINE" :key="jour" type="button"
                     class="min-h-11 rounded-full p-0 text-[13px]"
                     :class="form.joursSemaine.value.includes(jour) ? 'bg-texte font-semibold text-fond' : 'border-[1.5px] border-trait bg-surface text-texte'"
                     :aria-label="jour" :aria-pressed="form.joursSemaine.value.includes(jour)"
                     @click="form.basculerJour(jour)">{{ jour.charAt(0) }}</button>
-          </div>
+          </fieldset>
 
           <label v-if="form.frequence.value === 'TousLesNJours'" class="mt-3 flex items-center gap-2 text-[15px] text-texte">
             Tous les

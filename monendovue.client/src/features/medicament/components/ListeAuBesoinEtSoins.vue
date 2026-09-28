@@ -48,8 +48,11 @@ const jour = (date: string) => format(new Date(date), 'd MMMM', { locale: fr });
 
 function dernierePrise(date: string | null): string {
   if (!date) return 'Aucune prise notée';
-  const moment = new Date(date);
-  const quand = isToday(moment) ? 'aujourd\'hui' : isYesterday(moment) ? 'hier' : `le ${jour(date)}`;
-  return `Dernière prise : ${quand}, ${heureAffichee(date)}`;
+  return `Dernière prise : ${quand(new Date(date), date)}, ${heureAffichee(date)}`;
+}
+
+function quand(moment: Date, date: string): string {
+  if (isToday(moment)) return 'aujourd\'hui';
+  return isYesterday(moment) ? 'hier' : `le ${jour(date)}`;
 }
 </script>
