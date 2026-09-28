@@ -93,6 +93,8 @@ modifiables, jamais `Entry(dto).State = Modified`, jamais de changement de `Carn
   `SuppressionCompteController` (même préfixe `DonneesPersonnelles/`, `[SansConsentement]`) : suppression du compte par
   `SuppressionCompteService` (mot de passe exigé ; photos supprimées d'abord, abandon sans rien toucher si le
   stockage est indisponible ; puis toutes les entités du carnet et le compte en un seul `SaveChanges`).
+- **Accueil** : `AccueilService` (`Services/Accueil/`) ; la position dans le cycle est calculée par `CycleDuJour` (classe pure,
+  testée) : un oubli d'un jour ne coupe pas les règles, rien au-delà de 60 jours, aucune prédiction.
 - **Comptes inactifs** : `ApplicationUser.DerniereActiviteLe` est mise à jour à chaque ouverture ou prolongation de session
   (`OuvrirSessionAsync`) ; `ComptesInactifsService` supprime chaque nuit les comptes sans activité depuis 2 ans (durée
   annoncée par la politique de confidentialité : la changer dans les deux). Une date nulle n'est jamais supprimée.
