@@ -268,10 +268,12 @@ ul {
     align-items: center;
     gap: 2rem;
     max-width: 1400px;
-    margin: 3rem auto 0;
+    /* Sous l'en-tête (compte en haut à droite) : la première carte ne passe jamais dessous. */
+    margin: 5rem auto 0;
     
+    /* Sous l'en-tête mobile (logo et compte, 80px) : un peu d'air avant la première carte. */
     @media (max-width: 1024px){
-        margin: 5rem 1rem 7rem 1rem;
+        margin: 6rem 1rem 7rem 1rem;
     }
 }
 

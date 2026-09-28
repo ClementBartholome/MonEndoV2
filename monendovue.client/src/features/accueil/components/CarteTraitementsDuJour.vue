@@ -24,7 +24,9 @@
               :disabled="priseEnCours === traitement.id"
               :aria-label="traitement.dernierePrise ? `Noter une autre prise de ${traitement.nom}` : `Noter une prise de ${traitement.nom}`"
               @click="emit('prendre', traitement)">
-        <i class="material-symbols-outlined text-lg" aria-hidden="true">add</i><span v-if="!traitement.dernierePrise">Pris</span>
+        <i class="material-symbols-outlined text-lg" :class="{ 'animate-spin': priseEnCours === traitement.id }" aria-hidden="true">
+          {{ priseEnCours === traitement.id ? 'progress_activity' : 'add' }}
+        </i><span v-if="!traitement.dernierePrise">Pris</span>
       </button>
     </div>
   </section>

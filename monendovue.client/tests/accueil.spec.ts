@@ -28,13 +28,14 @@ test.describe('Accueil « Aujourd\'hui »', () => {
     await expect(accueilPage.semaine).toContainText('Fatigue moyenne plus basse que la semaine précédente.');
   });
 
-  test('une prise de traitement se note en un geste, à l\'heure locale', async ({ accueilPage, serveur }) => {
+  test('une prise de traitement se note en un geste, à l\'heure locale', async ({ accueilPage, serveur, page }) => {
     simulerAccueil(serveur, { traitements: [traitement({ id: 7, nom: 'Diénogest 2 mg' })] });
     await accueilPage.ouvrir();
 
     await accueilPage.boutonPrise('Diénogest 2 mg').click();
 
     await expect(accueilPage.traitements).toContainText('Pris à 10 h 00');
+    await expect(page.getByText('Diénogest 2 mg à 10 h 00', { exact: true })).toBeVisible();
     expect(serveur.appelsVers('POST', /^DonneesMedicament$/)[0].corps).toMatchObject({
       medicamentId: 7,
       nombreComprimes: 1,

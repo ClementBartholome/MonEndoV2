@@ -1,6 +1,5 @@
 <template>
   <div class="flex-column-container">
-    <BackButton/>
     <section class="container !mt-0  mx-auto py-8 w-full bg-clearer rounded-3xl shadow-xl ml-auto">
       <div class="flex justify-between items-center mb-4 medicament-section-header">
         <h2 class="text-2xl flex gap-2 ml-2"><i class="material-symbols-outlined text-3xl">medication</i>
@@ -499,7 +498,6 @@ import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectVa
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/shared/components/ui/dialog'
 import { Skeleton } from "@/shared/components/ui/skeleton"
 import Datatable from "@/shared/components/Datatable.vue"
-import BackButton from "@/shared/components/BackButton.vue"
 import SelectMonth from "@/shared/components/SelectMonth.vue"
 import GenericCardList from "@/shared/components/GenericCardList.vue"
 
