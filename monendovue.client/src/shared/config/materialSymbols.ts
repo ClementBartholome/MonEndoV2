@@ -17,17 +17,6 @@ export const symptomeIconConfig: Record<string, CardIconConfig> = {
   'Autre': { color: 'text-teinte-neutre', bg: 'bg-teinte-neutre-fond', icon: materialSymbols.fallback },
 }
 
-export const douleurIconConfig: Record<string, CardIconConfig> = {
-  'Douleur pelvienne': { color: 'text-teinte-douleur', bg: 'bg-teinte-douleur-fond', icon: 'person' },
-  'Douleur abdominale': { color: 'text-teinte-douleur', bg: 'bg-teinte-douleur-fond', icon: 'sick' },
-  'Douleur lombaire': { color: 'text-teinte-douleur', bg: 'bg-teinte-douleur-fond', icon: 'chair' },
-  'Douleur thoracique': { color: 'text-teinte-douleur', bg: 'bg-teinte-douleur-fond', icon: 'favorite' },
-  'Douleur projetée': { color: 'text-teinte-douleur', bg: 'bg-teinte-douleur-fond', icon: 'neurology' },
-  'Douleur neuropathique': { color: 'text-teinte-douleur', bg: 'bg-teinte-douleur-fond', icon: 'bolt' },
-  'Dyspareunie': { color: 'text-teinte-douleur', bg: 'bg-teinte-douleur-fond', icon: 'favorite' },
-  'Autre': { color: 'text-teinte-neutre', bg: 'bg-teinte-neutre-fond', icon: materialSymbols.fallback },
-}
-
 export const traitementPriseIconConfig: Record<string, CardIconConfig> = {
   'Antalgique': { color: 'text-teinte-traitement', bg: 'bg-teinte-traitement-fond', icon: materialSymbols.treatments },
   'AINS': { color: 'text-teinte-traitement', bg: 'bg-teinte-traitement-fond', icon: materialSymbols.treatments },

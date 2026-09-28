@@ -19,6 +19,9 @@ versions en [SemVer](https://semver.org/lang/fr/) (voir la section Déploiement 
   Paramètres : quelles données, pourquoi, qui y accède, combien de temps, et comment exercer ses droits.
 
 ### Modifié
+- Douleurs : page repensée pour le téléphone, avec les chiffres du mois, un graphique jour par jour qui montre les
+  règles, les douleurs regroupées par jour et une saisie rapide (type, intensité, moment) qui s'ouvre depuis le bas de
+  l'écran, aussi depuis la tuile « Douleur » de l'accueil ; modification et suppression depuis la même fenêtre.
 - Boutons principaux d'un rose plus doux, icônes bien centrées, plus d'air en haut des pages (le bouton « Revenir en
   arrière » disparaît : la navigation est toujours à portée) ; une prise de traitement notée depuis l'accueil est confirmée
   par un message.

@@ -16,7 +16,7 @@ import { materialSymbols } from '@/shared/config/materialSymbols';
 
 /** Raccourcis de saisie : chaque page de suivi ouvre sa saisie depuis ces liens. */
 const tuiles = [
-  { libelle: 'Douleur', icone: 'sick', vers: '/douleurs', teinte: 'bg-teinte-douleur-fond text-teinte-douleur' },
+  { libelle: 'Douleur', icone: 'sick', vers: '/douleurs?ajouter', teinte: 'bg-teinte-douleur-fond text-teinte-douleur' },
   { libelle: 'Règles', icone: materialSymbols.cycle, vers: '/cycle?onglet=cycles', teinte: 'bg-teinte-regles-fond text-teinte-regles' },
   { libelle: 'Symptôme', icone: materialSymbols.symptoms, vers: '/cycle?onglet=symptomes', teinte: 'bg-teinte-symptome-fond text-teinte-symptome' },
 ];

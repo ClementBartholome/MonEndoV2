@@ -31,6 +31,14 @@ Nouveau composant shadcn : `npx shadcn-vue add <nom>` (alias configurés vers `@
 - Réutiliser l'existant avant de créer : `GenericCardList` (cartes mobiles, callbacks `onEdit`/`onDelete`/`onPhotoClick`),
   `SectionKpiHeader`, `EmptyStateAction`, `Datatable`, `SelectMonth`, composants `ui/`.
 
+## Page de suivi refondue (1.3.0) : modèle à suivre
+`features/douleurs/` est le modèle des pages du lot 3 : `utils/` (calculs purs : chiffres, graphique, regroupement par jour),
+composable de page (`useDouleurs` : chargement, mois, enregistrement), composable de formulaire (`useSaisieDouleur`),
+composants de présentation (`ChiffresDuMois`, `GraphiqueDouleursMois`, `ListeDouleurs`) et saisie dans `PanneauBas` avec des
+**actions en props** (`ActionsSaisieDouleur`) plutôt que des événements. Choix en boutons (`aria-pressed`), dates envoyées en
+AAAA-MM-JJTHH:mm:ss, lien profond `?ajouter`, bouton flottant au-dessus de la barre (mobile) et bouton d'en-tête (desktop),
+plus de DataTables.
+
 ## Deux patterns de référence
 1. **Page CRUD par mois** — modèle : `features/douleurs/pages/DouleursPage.vue`.
    `useMonthData({ fetchFunction, transformData })` + `useCrudOperations(entries)` + `useDialogForm`, formulaire
