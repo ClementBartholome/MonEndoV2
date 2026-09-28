@@ -27,19 +27,22 @@ source "${CONFIG}"
 : "${SAUVEGARDE_BASE:?absent de sauvegarde.env}" "${SAUVEGARDE_URL_CONTENEUR:?absent de sauvegarde.env}" "${SAUVEGARDE_SAS:?absent de sauvegarde.env}"
 
 # sqlcmd dans le conteneur (chemin selon la version de l'image) ; le mot de passe reste dans le conteneur (SA_PASSWORD).
+# Silencieux en cas de succès ; en cas d'échec, affiche le message de SQL Server (jamais de secret).
 sqlcmd() {
-  docker exec "${CONTENEUR_DB}" bash -c \
+  local sortie
+  sortie=$(docker exec "${CONTENEUR_DB}" bash -c \
     'SQLCMD=/opt/mssql-tools18/bin/sqlcmd; [ -x "$SQLCMD" ] || SQLCMD=/opt/mssql-tools/bin/sqlcmd;
-     SQLCMDPASSWORD="$SA_PASSWORD" "$SQLCMD" -S localhost -U sa -C -b -Q "$1"' _ "$1"
+     SQLCMDPASSWORD="$SA_PASSWORD" "$SQLCMD" -S localhost -U sa -C -b -Q "$1"' _ "$1" 2>&1) \
+    || { echo "${sortie}" | tail -n 5; return 1; }
 }
 
 nom="monendo-$(date -u '+%Y-%m-%d').bak.enc"
 chiffre="${LOCAL}/${nom}"
 
 journal "Sauvegarde de ${SAUVEGARDE_BASE}"
-sqlcmd "BACKUP DATABASE [${SAUVEGARDE_BASE}] TO DISK = N'${BAK_CONTENEUR}' WITH INIT, FORMAT, CHECKSUM" > /dev/null \
+sqlcmd "BACKUP DATABASE [${SAUVEGARDE_BASE}] TO DISK = N'${BAK_CONTENEUR}' WITH INIT, FORMAT, CHECKSUM" \
   || echec "BACKUP DATABASE"
-sqlcmd "RESTORE VERIFYONLY FROM DISK = N'${BAK_CONTENEUR}' WITH CHECKSUM" > /dev/null || echec "vérification de la sauvegarde"
+sqlcmd "RESTORE VERIFYONLY FROM DISK = N'${BAK_CONTENEUR}' WITH CHECKSUM" || echec "vérification de la sauvegarde"
 
 # Lecture par le conteneur (propriétaire du fichier), chiffrement sur l'hôte : aucune copie en clair ne reste.
 umask 077
