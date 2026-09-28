@@ -55,7 +55,7 @@ test.describe('Consentement aux données de santé', () => {
   });
 
   test("une session d'avant l'accord est renvoyée vers la page d'accord quand l'API le demande", async ({ consentementPage, serveur, page }) => {
-    serveur.on('GET', /^CarnetSante\/last-entries\/\d+$/, () => REFUS_CONSENTEMENT);
+    serveur.on('GET', /^Accueil\/aujourdhui$/, () => REFUS_CONSENTEMENT);
     await ouvrirSessionSansConsentement(page, 'absent');
 
     await page.goto('/');

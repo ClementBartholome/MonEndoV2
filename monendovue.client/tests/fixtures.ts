@@ -7,6 +7,8 @@ import { DocumentsLegauxPage } from './pages/documents-legaux.page';
 import { ConsentementPage } from './pages/consentement.page';
 import { ParametresPage } from './pages/parametres.page';
 import { NavigationPage } from './pages/navigation.page';
+import { AccueilPage } from './pages/accueil.page';
+import { ACCUEIL_VIDE } from './mocks/accueil';
 
 interface Options {
   /** Session ouverte au chargement de la page (faux utilisateur dans localStorage, comme après une connexion). */
@@ -22,6 +24,7 @@ interface Fixtures {
   consentementPage: ConsentementPage;
   parametresPage: ParametresPage;
   navigationPage: NavigationPage;
+  accueilPage: AccueilPage;
 }
 
 /**
@@ -74,6 +77,10 @@ export const test = base.extend<Options & Fixtures>({
   navigationPage: async ({ page }, use) => {
     await use(new NavigationPage(page));
   },
+
+  accueilPage: async ({ page }, use) => {
+    await use(new AccueilPage(page));
+  },
 });
 
 export { expect };
@@ -82,7 +89,8 @@ export { MAINTENANT, CARNET_ID };
 /** Réponses des appels faits sur toutes les pages (accueil, session, agenda). */
 function routesCommunes(serveur: FauxServeur) {
   serveur
-    .on('GET', /^CarnetSante\/last-entries\/\d+$/, () => ({ body: { carnetSanteId: CARNET_ID } }))
+    // Accueil vide par défaut (tests/mocks/accueil.ts pour un accueil rempli).
+    .on('GET', /^Accueil\/aujourdhui$/, () => ({ body: ACCUEIL_VIDE }))
     // Pas d'agenda associé au compte par défaut : pas de bloc « Prochains rendez-vous ».
     .on('GET', /^Agenda\//, () => ({ status: 404 }))
     .on('POST', /^Account\/logout$/, () => ({ status: 200 }));

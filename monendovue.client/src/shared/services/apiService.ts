@@ -9,6 +9,7 @@ import type { AbonnementPush, Rappel, ReglageRappel, TypeRappel } from '@/featur
 import type { BilanQuotidien, BilanQuotidienSaisie, EmotionBilan } from '@/features/bilan-quotidien/types/bilan-quotidien';
 import type { HistoriqueBilans } from '@/features/bilan-quotidien/types/historique';
 import type { EvenementAgenda } from '@/features/schedule/types/agenda';
+import type { Aujourdhui, BilanAujourdhui, TraitementAujourdhui } from '@/features/accueil/types/aujourdhui';
 import { enTableau } from '@/shared/utils/json';
 import type { ReponseConsentement } from '@/features/auth/types/user';
 
@@ -99,10 +100,6 @@ class ApiService {
     // GET
     async getDonneesCarnetSante(carnetSanteId: number): Promise<any> {
         return this.request('GET', `CarnetSante/${carnetSanteId}`);
-    }
-
-    async getLastDonneesCarnetSante(carnetSanteId: number): Promise<any> {
-        return this.request('GET', `CarnetSante/last-entries/${carnetSanteId}`);
     }
 
     async getDonneesCarnetSanteByMonth(carnetSanteId: number, month: number, year: number): Promise<any> {
@@ -298,6 +295,20 @@ class ApiService {
     }
 
     /** Trois prochains rendez-vous à heure fixe, ou null si l'utilisatrice n'a pas d'agenda (404). */
+    /** Accueil « Aujourd'hui » : le jour local est envoyé (le serveur ne connaît pas le fuseau de l'utilisatrice). */
+    async getAujourdhui(jour: string): Promise<Aujourdhui> {
+        type Brut = Omit<Aujourdhui, 'traitements' | 'bilan'> & {
+            traitements: TraitementAujourdhui[] | { $values: TraitementAujourdhui[] };
+            bilan: (Omit<BilanAujourdhui, 'emotions'> & { emotions: BilanAujourdhui['emotions'] | { $values: BilanAujourdhui['emotions'] } }) | null;
+        };
+        const brut = await this.request<Brut>('GET', `Accueil/aujourdhui?jour=${jour}`);
+        return {
+            ...brut,
+            traitements: enTableau(brut.traitements),
+            bilan: brut.bilan ? { ...brut.bilan, emotions: enTableau(brut.bilan.emotions) } : null,
+        };
+    }
+
     async getProchainsRendezVous(): Promise<EvenementAgenda[] | null> {
         return this.agendaOuNull('Agenda/prochains');
     }
