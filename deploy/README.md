@@ -213,9 +213,11 @@ Tant que la section n'est pas sur `main`, remplacer `main` par la branche de ver
 **Copier la clé hors du VPS** (gestionnaire de mots de passe) : sans elle, les sauvegardes sont illisibles, et un VPS perdu
 emporte la clé. `cat ~/app/config/sauvegarde.cle` l'affiche une seule fois pour la copier, puis effacer le terminal.
 
-Programmer la sauvegarde chaque nuit à 2 h 30 (avant la purge des comptes inactifs de 3 h 30) :
+Programmer la sauvegarde chaque nuit à 2 h 30 (avant la purge des comptes inactifs de 3 h 30). Le VPS (Debian minimale)
+n'a pas `cron` d'origine : l'installer d'abord.
 
 ```bash
+sudo apt-get update && sudo apt-get install -y cron && sudo systemctl enable --now cron
 ( crontab -l 2>/dev/null; echo '30 2 * * * $HOME/app/sauvegarde-base.sh >> $HOME/app/logs/sauvegarde.log 2>&1' ) | crontab -
 crontab -l
 ```
