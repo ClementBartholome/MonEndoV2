@@ -26,7 +26,12 @@
     font-weight: normal;
     font-style: normal;
     font-size: 24px;
-    line-height: 1;
+    /*
+     * Hauteur de ligne forcée à 1 : les classes de taille Tailwind (text-lg, text-2xl…) imposent aussi une hauteur de
+     * ligne, qui décalait le glyphe vers le bas dans sa boîte de 1em (icônes mal centrées dans leur tuile ou leur bouton).
+     */
+    line-height: 1 !important;
+    text-align: center;
     letter-spacing: normal;
     text-transform: none;
     display: inline-block;
