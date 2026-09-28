@@ -155,6 +155,9 @@ Utiliser le skill `revue-securite` avant de commiter un changement touchant auth
 - **Versions (SemVer, depuis la 1.0.0)** : les sujets sont regroupés sur une branche `release/X.Y.Z` (PR dont la base est
   cette branche), puis livrés par une PR vers `main`, suivie du tag `vX.Y.Z` et d'une GitHub Release. Numéro de version dans
   `monendovue.client/package.json` **et** `MonEndoVue.Server.csproj`, historique dans `CHANGELOG.md`. Procédure : skill `release`.
+- **Sauvegardes de la base** : `deploy/sauvegarde-base.sh` (cron du VPS, 2 h 30) → sauvegarde SQL Server chiffrée par
+  `openssl` sur l'hôte → conteneur Azure `sauvegardes` (SAS « Créer » seul, suppression à 30 jours par une règle de cycle de
+  vie : durée annoncée par la politique de confidentialité). Restauration et test : `deploy/README.md`.
 - Rollback : repointer l'image du service `app` sur une version précédente (`vX.Y.Z`, ou `sha-…` / `main-<sha>` avant la 1.0.0), puis `docker compose up -d`.
   Les images antérieures à 2026-09 chargent encore `serviceAccountKey.json` au démarrage : garder ce montage tant qu'un tel retour est envisageable.
 - Ne jamais pousser sur `main`. Travailler sur une branche. **Ouvrir une PR** vers `release/X.Y.Z` (ou `main` pour un hotfix)
