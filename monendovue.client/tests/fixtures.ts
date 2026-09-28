@@ -6,6 +6,7 @@ import { BilanQuotidienPage } from './pages/bilan-quotidien.page';
 import { DocumentsLegauxPage } from './pages/documents-legaux.page';
 import { ConsentementPage } from './pages/consentement.page';
 import { ParametresPage } from './pages/parametres.page';
+import { NavigationPage } from './pages/navigation.page';
 
 interface Options {
   /** Session ouverte au chargement de la page (faux utilisateur dans localStorage, comme après une connexion). */
@@ -20,6 +21,7 @@ interface Fixtures {
   documentsLegauxPage: DocumentsLegauxPage;
   consentementPage: ConsentementPage;
   parametresPage: ParametresPage;
+  navigationPage: NavigationPage;
 }
 
 /**
@@ -67,6 +69,10 @@ export const test = base.extend<Options & Fixtures>({
 
   parametresPage: async ({ page }, use) => {
     await use(new ParametresPage(page));
+  },
+
+  navigationPage: async ({ page }, use) => {
+    await use(new NavigationPage(page));
   },
 });
 

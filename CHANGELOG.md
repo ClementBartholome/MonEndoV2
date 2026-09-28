@@ -16,6 +16,9 @@ versions en [SemVer](https://semver.org/lang/fr/) (voir la section Déploiement 
   Paramètres : quelles données, pourquoi, qui y accède, combien de temps, et comment exercer ses droits.
 
 ### Modifié
+- Navigation repensée sur mobile : Accueil, Bilan, Douleurs et Cycle en bas de l'écran, et un menu « Plus » pour
+  les traitements, l'activité, la préparation d'un rendez-vous, le transit et les paramètres (avec la déconnexion) ;
+  sur ordinateur, toutes les rubriques dans la barre latérale.
 - Couleurs harmonisées et plus lisibles : une teinte par rubrique, textes et liens plus contrastés, champs de
   formulaire mieux délimités, intensité de la douleur sur une seule teinte (plus foncé = plus fort).
 - Les icônes gardent leur taille pendant le chargement de la page (plus de décalage ni de défilement horizontal).

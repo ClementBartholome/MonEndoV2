@@ -25,6 +25,8 @@
     /* Contour des champs et contrôles (≥ 3:1 sur fond et surface) */
     --couleur-contour: #97817b;
     --couleur-danger: #b42318;
+    /* Voile derrière une fenêtre ou un panneau modal */
+    --couleur-voile: rgb(51 39 42 / 0.45);
 
     /* Couples tuile / icône par rubrique (icône ≥ 5:1 sur sa tuile). Une rubrique = une teinte, partout. */
     --teinte-bilan-fond: #e0eef3;

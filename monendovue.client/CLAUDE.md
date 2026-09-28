@@ -108,14 +108,21 @@ Nouveau composant shadcn : `npx shadcn-vue add <nom>` (alias configurés vers `@
   signifie irritable). « Humeur » ne désigne que l'ancienne saisie (Positive, Neutre, Négative) des anciens bilans.
 - Courbes à plusieurs échelles ou avec des bandes de fond (règles) : `GraphiqueLignes.vue` (SVG simple, jours non
   renseignés non tracés) plutôt que `LineChart` (unovis), qui n'a qu'un axe et relie les trous.
-- Élément collé en bas d'écran (`sticky`/`fixed`) : sous 1024px la navigation est fixée en bas (`.navbar-side`, ~4.25rem),
-  le décaler d'autant (modèle : barre d'enregistrement de `SaisieBilan.vue`).
+- Élément collé en bas d'écran (`sticky`/`fixed`) : sous 1024px la navigation est fixée en bas (`BarreNavigation.vue`,
+  4.25rem), le décaler d'autant (modèle : barre d'enregistrement de `SaisieBilan.vue`).
 - La taille de police racine grandit en desktop (20px à 1280px) : les largeurs en `rem` (`max-w-3xl`…) y sont plus
   larges que prévu, vérifier en situation.
 - Pastilles, préréglages et chips : grilles à colonnes égales (`grid-cols-n`) plutôt que `flex-wrap`, pour des rangées
   alignées à 375px ; libellés courts, `whitespace-nowrap` si besoin.
 - Accessibilité : labels associés aux champs, navigation clavier, cibles tactiles d'au moins 44px, contraste suffisant.
 - Jamais de `v-html` ; pour `Datatable`, ne pas rendre de texte saisi comme HTML.
+
+## Navigation
+- Une seule liste des rubriques : `shared/config/navigation.ts` (principales = barre du bas mobile, secondaires = menu
+  « Plus », compte). Ajouter une page = une entrée ici, rien à toucher dans les composants.
+- Sous 1024px : `BarreNavigation.vue` (Accueil · Bilan · Douleurs · Cycle · Plus) et `MenuPlus.vue` ; au-delà :
+  `NavigationLaterale.vue` (toutes les entrées). Orchestration dans `shared/components/Layout.vue`.
+- Panneau qui monte du bas (menus, saisies rapides) : `shared/components/PanneauBas.vue` (Dialog radix accessible).
 
 ## Routage
 - Toute route exige une session, sauf celles marquées `meta: { public: true }` (connexion, inscription, documents légaux) :
