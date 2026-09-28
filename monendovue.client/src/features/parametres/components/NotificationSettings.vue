@@ -67,7 +67,7 @@ const onTest = async () => {
     <i class="material-symbols-outlined">notifications</i>
     <h3 class="text-headline text-2xl">Notifications</h3>
   </div>
-  <hr class="mb-4 border-gray-300">
+  <hr class="mb-4 border-trait">
 
   <Skeleton v-if="etat === 'chargement'" class="h-16 w-full rounded-xl" />
 

@@ -15,6 +15,11 @@ versions en [SemVer](https://semver.org/lang/fr/) (voir la section Déploiement 
 - Politique de confidentialité et mentions légales, lisibles sans compte depuis la connexion, l'inscription et les
   Paramètres : quelles données, pourquoi, qui y accède, combien de temps, et comment exercer ses droits.
 
+### Modifié
+- Couleurs harmonisées et plus lisibles : une teinte par rubrique, textes et liens plus contrastés, champs de
+  formulaire mieux délimités, intensité de la douleur sur une seule teinte (plus foncé = plus fort).
+- Les icônes gardent leur taille pendant le chargement de la page (plus de décalage ni de défilement horizontal).
+
 ### Sécurité
 - Les polices et les icônes sont servies par MonEndo lui-même : plus aucune page ne contacte Google Fonts, qui
   recevait jusqu'ici l'adresse IP à chaque visite.

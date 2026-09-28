@@ -3,35 +3,36 @@
 @tailwind utilities;
 
 @layer base {
+    /* Variables shadcn-vue (HSL) alignées sur les tokens de assets/tokens.css : mêmes couleurs, autre format. */
     :root {
-        --background: 0 0% 100%;
-        --foreground: 222.2 84% 4.9%;
+        --background: 22.1 65.5% 94.3%; /* --couleur-fond */
+        --foreground: 345 13.3% 17.6%; /* --couleur-texte */
 
-        --muted: 210 40% 96.1%;
-        --muted-foreground: 215.4 16.3% 46.9%;
+        --muted: 20 50% 90.6%; /* --couleur-surface-2 */
+        --muted-foreground: 344.2 9.7% 38.2%; /* --couleur-texte-3 */
 
-        --popover: 0 0% 100%;
-        --popover-foreground: 222.2 84% 4.9%;
+        --popover: 22.5 100% 98.4%; /* --couleur-surface */
+        --popover-foreground: 345 13.3% 17.6%;
 
-        --card: 0 0% 100%;
-        --card-foreground: 222.2 84% 4.9%;
+        --card: 22.5 100% 98.4%;
+        --card-foreground: 345 13.3% 17.6%;
 
-        --border: 214.3 31.8% 91.4%;
-        --input: 214.3 31.8% 91.4%;
+        --border: 19.3 46.7% 88.2%; /* --couleur-trait */
+        --input: 12.9 11.9% 53.7%; /* --couleur-contour */
 
-        --primary: 222.2 47.4% 11.2%;
-        --primary-foreground: 210 40% 98%;
+        --primary: 345 13.3% 17.6%;
+        --primary-foreground: 22.1 65.5% 94.3%;
 
-        --secondary: 210 40% 96.1%;
-        --secondary-foreground: 222.2 47.4% 11.2%;
+        --secondary: 20 50% 90.6%;
+        --secondary-foreground: 345 13.3% 17.6%;
 
-        --accent: 210 40% 96.1%;
-        --accent-foreground: 222.2 47.4% 11.2%;
+        --accent: 20 50% 90.6%;
+        --accent-foreground: 345 13.3% 17.6%;
 
-        --destructive: 0 84.2% 60.2%;
-        --destructive-foreground: 210 40% 98%;
+        --destructive: 4.2 76.5% 40%; /* --couleur-danger */
+        --destructive-foreground: 0 0% 100%;
 
-        --ring: 222.2 84% 4.9%;
+        --ring: 344.6 53.1% 41.8%; /* --couleur-lien */
 
         --radius: 0.5rem;
 
@@ -92,7 +93,7 @@
 
 @layer utilities {
     .bg {
-        background-color: var(--background);
+        background-color: var(--couleur-fond);
     }
     .bg-clearer {
         background-color: var(--background-clearer);
@@ -112,7 +113,7 @@
     }
     .slider-ring {
         border-color: var(--headline);
-        background: var(--background);
+        background: var(--couleur-fond);
         
     }
     .text-headline {
@@ -140,18 +141,19 @@
 }
 
 
+/* Anciens noms, conservés pour le code existant : ils pointent vers les tokens (assets/tokens.css). */
 :root {
-    --background: #faeee7;
-    --background-clearer: #f7e7e0;
-    --headline: #33272a;
-    --paragraph: #594a4e;
-    --button: #ff8ba7;
-    --button-rgb: 255 139 167; /* même couleur que --button, en composantes pour les opacités Tailwind */
-    --form-input: white;
-    --form-button-text: #3c2a36;
-    --form-placeholder: #7a6774;
-    --highlight: #ff8ba7;
-    --button-text: #33272a;
+    --background-clearer: var(--couleur-surface-2);
+    --headline: var(--couleur-texte);
+    --paragraph: var(--couleur-texte-2);
+    --button: var(--couleur-accent);
+    --button-rgb: var(--couleur-accent-rgb);
+    --form-input: #ffffff;
+    --form-button-text: var(--couleur-texte);
+    --form-placeholder: var(--couleur-texte-3);
+    /* Texte mis en avant (liens) : le rose de l'accent n'est pas lisible en texte (1.9:1). */
+    --highlight: var(--couleur-lien);
+    --button-text: var(--couleur-sur-accent);
     --font-title: "Poppins", Arial, Helvetica, sans-serif;
     --font-text: "Poppins", Arial, Helvetica, sans-serif;
 }
@@ -166,7 +168,7 @@ select {
 input::placeholder,
 textarea::placeholder {
     color: var(--form-placeholder);
-    opacity: 0.7;
+    opacity: 1;
 }
 
 /* Style global de la scrollbar */
@@ -176,7 +178,7 @@ textarea::placeholder {
 
 /* Track de la scrollbar */
 ::-webkit-scrollbar-track {
-    background: var(--background); 
+    background: var(--couleur-fond); 
     border-radius: 10px; 
 }
 
@@ -213,7 +215,7 @@ html {
 
 body {
     margin-bottom: 60px;
-    background: var(--background);
+    background: var(--couleur-fond);
 }
 
 h1, h2, h3, h4, h5, h6 {
@@ -240,10 +242,6 @@ ul {
     list-style-type: none;
     padding: 0;
     text-align: center;
-}
-
-.material-symbols-outlined {
-    width: fit-content;
 }
 
 .container {
@@ -422,7 +420,7 @@ td, th {
     left: 0;
     width: 200px;
     overflow-y: auto;
-    background-color: var(--background);
+    background-color: var(--couleur-fond);
     color: #202124;
     display: flex;
     flex-direction: column;
@@ -464,6 +462,7 @@ td, th {
         .material-symbols-outlined {
             color: var(--headline);
             font-size: 1.2rem;
+            box-sizing: border-box;
             width: 70px;
             height: 44px;
             align-items: center;

@@ -11,7 +11,7 @@ const emit = defineEmits<{
 </script>
 
 <template>
-  <div class="flex flex-col justify-center items-center text-center h-40 px-4 rounded-xl border border-dashed border-gray-300 bg-white/50">
+  <div class="flex flex-col justify-center items-center text-center h-40 px-4 rounded-xl border border-dashed border-contour bg-surface">
     <p class="text-lg text-headline font-medium">{{ title }}</p>
     <p v-if="description" class="text-sm text-muted-foreground mt-1">{{ description }}</p>
     <button

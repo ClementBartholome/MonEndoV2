@@ -30,7 +30,7 @@ const onJour = (event: Event) => {
 </script>
 
 <template>
-  <div class="flex flex-col gap-3 rounded-xl border border-gray-100 bg-white p-3">
+  <div class="flex flex-col gap-3 rounded-xl border border-trait bg-surface p-3">
     <label class="flex items-center justify-between gap-4 min-h-11">
       <span class="flex items-center gap-2 text-headline font-medium">
         <i class="material-symbols-outlined text-button">{{ presentation.icone }}</i>

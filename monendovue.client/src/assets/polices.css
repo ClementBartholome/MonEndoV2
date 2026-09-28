@@ -35,4 +35,14 @@
     direction: ltr;
     font-feature-settings: 'liga';
     -webkit-font-smoothing: antialiased;
+    /*
+     * Taille fixe de 1em : tant que la police charge, le nom de l'icône (menstrual_health…) occuperait sa largeur en
+     * texte invisible et pourrait créer un défilement horizontal. content-box : un padding (p-2) s'ajoute autour.
+     * Un conteneur qui impose sa propre taille à l'icône repasse en border-box (navigation, index.css).
+     */
+    width: 1em;
+    height: 1em;
+    overflow: hidden;
+    flex-shrink: 0;
+    box-sizing: content-box;
 }

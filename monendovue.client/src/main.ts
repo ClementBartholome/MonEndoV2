@@ -1,3 +1,4 @@
+import './assets/tokens.css'
 import './assets/polices.css'
 import './assets/index.css'
 

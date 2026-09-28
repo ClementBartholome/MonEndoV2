@@ -29,6 +29,17 @@ module.exports = {
             backgroundColor: { button: "rgb(var(--button-rgb) / <alpha-value>)" },
             ringColor: { button: "rgb(var(--button-rgb) / <alpha-value>)" },
             colors: {
+                // Tokens MonEndo (src/assets/tokens.css) : bg-surface, text-texte-3, border-trait, bg-teinte-douleur-fond,
+                // text-teinte-douleur, bg-intensite-6… Préférer ces classes aux couleurs Tailwind brutes (blue-100…).
+                fond: "var(--couleur-fond)",
+                surface: { DEFAULT: "var(--couleur-surface)", 2: "var(--couleur-surface-2)" },
+                trait: "var(--couleur-trait)",
+                texte: { DEFAULT: "var(--couleur-texte)", 2: "var(--couleur-texte-2)", 3: "var(--couleur-texte-3)" },
+                lien: { DEFAULT: "var(--couleur-lien)", survol: "var(--couleur-lien-survol)" },
+                contour: "var(--couleur-contour)",
+                danger: "var(--couleur-danger)",
+                teinte: {"bilan":{"DEFAULT":"var(--teinte-bilan)","fond":"var(--teinte-bilan-fond)"},"douleur":{"DEFAULT":"var(--teinte-douleur)","fond":"var(--teinte-douleur-fond)"},"regles":{"DEFAULT":"var(--teinte-regles)","fond":"var(--teinte-regles-fond)"},"symptome":{"DEFAULT":"var(--teinte-symptome)","fond":"var(--teinte-symptome-fond)"},"traitement":{"DEFAULT":"var(--teinte-traitement)","fond":"var(--teinte-traitement-fond)"},"neutre":{"DEFAULT":"var(--teinte-neutre)","fond":"var(--teinte-neutre-fond)"}},
+                intensite: {"0":"var(--intensite-0)","1":"var(--intensite-1)","2":"var(--intensite-2)","3":"var(--intensite-3)","4":"var(--intensite-4)","5":"var(--intensite-5)","6":"var(--intensite-6)","7":"var(--intensite-7)","8":"var(--intensite-8)","9":"var(--intensite-9)","10":"var(--intensite-10)"},
                 border: "hsl(var(--border))",
                 input: "hsl(var(--input))",
                 ring: "hsl(var(--ring))",
@@ -69,6 +80,13 @@ module.exports = {
                 md: "calc(var(--radius) - 2px)",
                 sm: "calc(var(--radius) - 4px)",
                 'card': '32px',
+                petit: 'var(--rayon-petit)',
+                moyen: 'var(--rayon)',
+                grand: 'var(--rayon-grand)',
+            },
+            boxShadow: {
+                // Une seule élévation dans toute l'application.
+                elevation: "var(--elevation)",
             },
             keyframes: {
                 "accordion-down": {
