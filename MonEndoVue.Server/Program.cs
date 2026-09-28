@@ -21,6 +21,7 @@ using MonEndoVue.Server.Services.Consentement;
 using MonEndoVue.Server.Services.Export;
 using MonEndoVue.Server.Services.Photos;
 using MonEndoVue.Server.Services.SuppressionCompte;
+using MonEndoVue.Server.Services.Traitements;
 using Serilog;
 using Serilog.Events;
 using System.Threading.RateLimiting;
@@ -119,6 +120,7 @@ namespace MonEndoVue.Server
             builder.Services.AddScoped<SuppressionCompteService>();
             builder.Services.AddScoped<ComptesInactifsService>();
             builder.Services.AddScoped<AccueilService>();
+            builder.Services.AddScoped<TraitementsService>();
 
             builder.Services.Configure<FormOptions>(options =>
             {

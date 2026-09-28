@@ -36,6 +36,24 @@ public class CarnetSanteServiceExportTests : IDisposable
     }
 
     [Fact]
+    public async Task ExportPdf_PriseIgnoree_NApparaitPasCommeUnePrise()
+    {
+        var traitement = new Medicament { CarnetSanteId = CarnetDeTest.CarnetSanteId, Nom = "Diénogest", Type = TypeTraitement.Medicamenteux };
+        _carnet.Context.Medicaments.Add(traitement);
+        await _carnet.Context.SaveChangesAsync();
+        _carnet.Context.DonneesMedicaments.AddRange(
+            new DonneesMedicament { CarnetSanteId = CarnetDeTest.CarnetSanteId, MedicamentId = traitement.Id, NombreComprimes = 1, Date = new DateTime(2026, 9, 26, 8, 0, 0) },
+            new DonneesMedicament { CarnetSanteId = CarnetDeTest.CarnetSanteId, MedicamentId = traitement.Id, Statut = StatutPrise.Ignore, Date = new DateTime(2026, 9, 27, 8, 0, 0) });
+        await _carnet.Context.SaveChangesAsync();
+        _carnet.Context.ChangeTracker.Clear();
+
+        var export = await _carnet.CarnetSanteService.GetDonneesCarnetSanteByMonthForPdf(
+            CarnetDeTest.CarnetSanteId, 9, 2026, CarnetDeTest.UserId);
+
+        Assert.Single(export.DonneesMedicament);
+    }
+
+    [Fact]
     public async Task ExportPdf_BilanSansTransit_LaisseLesChampsNonRenseignes()
     {
         _carnet.Context.BilansQuotidiens.Add(new BilanQuotidien

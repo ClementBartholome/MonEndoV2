@@ -137,13 +137,17 @@ public class ExportDonneesService(
                 m.Nom,
                 m.Type,
                 m.Posologie,
+                m.Frequence,
+                joursSemaine = m.JoursSemaine.ToString(),
+                m.IntervalleJours,
+                horaires = m.Horaires.Select(h => h.Heure.ToString("HH:mm")),
                 enCours = m.TraitementEnCours,
                 debut = m.DateDebutTraitement,
                 fin = m.DateFinTraitement,
             }),
             prisesDeTraitement = (await context.DonneesMedicaments.AsNoTracking().Where(p => p.CarnetSanteId == carnetId)
                     .OrderBy(p => p.Date).ToListAsync(ct))
-                .Select(p => new { p.Date, traitement = nomTraitement.GetValueOrDefault(p.MedicamentId), p.NombreComprimes, p.Commentaire }),
+                .Select(p => new { p.Date, traitement = nomTraitement.GetValueOrDefault(p.MedicamentId), p.Statut, p.HeurePrevue, p.NombreComprimes, p.Commentaire }),
             seancesDeTraitement = (await context.DonneesTraitementNonMedicamenteux.AsNoTracking()
                     .Where(t => t.CarnetSanteId == carnetId).OrderBy(t => t.Date).ToListAsync(ct))
                 .Select(t => new { t.Date, traitement = nomTraitement.GetValueOrDefault(t.MedicamentId), dureeMinutes = t.Duree, t.Commentaire }),

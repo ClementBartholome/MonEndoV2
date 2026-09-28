@@ -66,7 +66,8 @@ public class CarnetSanteService(AppDbContext context, ILogger<CarnetSanteService
             .Include(c => c.DonneesDouleurs.OrderBy(d => d.Date))
             .Include(c => c.DonneesActivitePhysique.OrderBy(d => d.Date))
             .Include(c => c.Medicaments)
-            .Include(c => c.DonneesMedicaments.OrderBy(d => d.Date))
+            // Prises faites seulement : une prise ignorée (1.3.0) n'est pas une prise.
+            .Include(c => c.DonneesMedicaments.Where(d => d.Statut == StatutPrise.Pris).OrderBy(d => d.Date))
             .Include(c => c.DonneesTransit.OrderBy(d => d.Date))
             .Include(c => c.JourRegles.OrderBy(d => d.Date))
             .Where(c => c.Id == carnetSanteId && c.UserId == userId) // Double vérification dans la requête
@@ -125,6 +126,7 @@ public class CarnetSanteService(AppDbContext context, ILogger<CarnetSanteService
                     })
                     .FirstOrDefault(),
                 DonneesMedicament = c.DonneesMedicaments
+                    .Where(m => m.Statut == StatutPrise.Pris)
                     .OrderByDescending(m => m.Date)
                     .Select(m => new DonneesMedicamentHomepageViewModel
                     {
@@ -179,6 +181,7 @@ public class CarnetSanteService(AppDbContext context, ILogger<CarnetSanteService
                     })
                     .FirstOrDefault(),
                 DonneesMedicament = c.DonneesMedicaments
+                    .Where(m => m.Statut == StatutPrise.Pris)
                     .OrderByDescending(m => m.Date)
                     .Select(m => new DonneesMedicamentHomepageViewModel
                     {
@@ -221,7 +224,7 @@ public class CarnetSanteService(AppDbContext context, ILogger<CarnetSanteService
         var carnetSante = await context.CarnetSantes
             .Include(c => c.User)
             .Include(c => c.Medicaments)
-            .Include(c => c.DonneesMedicaments.Where(d => d.Date.Month == month && d.Date.Year == year))
+            .Include(c => c.DonneesMedicaments.Where(d => d.Statut == StatutPrise.Pris && d.Date.Month == month && d.Date.Year == year))
             .Include(c => c.DonneesDouleurs.Where(d => d.Date.Month == month && d.Date.Year == year))
             .Include(c => c.DonneesActivitePhysique.Where(d => d.Date.Month == month && d.Date.Year == year))
             .Include(c => c.DonneesTransit.Where(d => d.Date.Month == month && d.Date.Year == year))
@@ -239,7 +242,7 @@ public class CarnetSanteService(AppDbContext context, ILogger<CarnetSanteService
                 Id = m.Id,
                 Nom = m.Nom
             }).ToList(),
-            DonneesMedicament = carnetSante.DonneesMedicaments.Select(dm => new DonneesMedicamentExportViewModel
+            DonneesMedicament = carnetSante.DonneesMedicaments.Where(dm => dm.Statut == StatutPrise.Pris).Select(dm => new DonneesMedicamentExportViewModel
             {
                 Id = dm.Id,
                 MedicamentId = dm.MedicamentId,

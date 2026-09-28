@@ -8,7 +8,10 @@ public class AujourdhuiViewModel
     public required CycleAujourdhuiViewModel Cycle { get; init; }
     /// <summary>Null tant que le bilan du jour n'est pas rempli.</summary>
     public BilanAujourdhuiViewModel? Bilan { get; init; }
-    public required IReadOnlyList<TraitementAujourdhuiViewModel> Traitements { get; init; }
+    /// <summary>Prises prévues aujourd'hui, dans l'ordre des horaires (voir <see cref="TraitementsDuJourViewModel"/>).</summary>
+    public required IReadOnlyList<PrisePrevueViewModel> PrisesPrevues { get; init; }
+    /// <summary>Traitements « au besoin » en cours.</summary>
+    public required IReadOnlyList<TraitementAuBesoinViewModel> AuBesoin { get; init; }
     public required SemaineViewModel Semaine { get; init; }
 }
 
@@ -25,16 +28,6 @@ public class BilanAujourdhuiViewModel
     /// <summary>Codes de l'enum <see cref="Emotion"/> (libellés côté client, config/emotions.ts).</summary>
     public required IReadOnlyList<string> Emotions { get; init; }
     public int? Fatigue { get; init; }
-}
-
-/// <summary>Traitement médicamenteux en cours, avec les prises notées ce jour-là.</summary>
-public class TraitementAujourdhuiViewModel
-{
-    public int Id { get; init; }
-    public required string Nom { get; init; }
-    public string? Posologie { get; init; }
-    public int PrisesDuJour { get; init; }
-    public DateTime? DernierePrise { get; init; }
 }
 
 /// <summary>Faits des 7 derniers jours (jour compris), descriptifs : aucune interprétation.</summary>

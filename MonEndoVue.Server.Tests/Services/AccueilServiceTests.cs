@@ -3,6 +3,7 @@ using MonEndoVue.Server.Controllers;
 using MonEndoVue.Server.Models;
 using MonEndoVue.Server.Services;
 using MonEndoVue.Server.Services.Accueil;
+using MonEndoVue.Server.Services.Traitements;
 using MonEndoVue.Server.Tests.Support;
 using MonEndoVue.Server.ViewModels;
 
@@ -30,13 +31,18 @@ public sealed class AccueilServiceTests : IDisposable
         ctx.DonneesDouleurs.AddRange(
             new DonneesDouleur { CarnetSanteId = c, TypeDouleur = "Douleur pelvienne", Intensite = 6, Date = A(-1) },
             new DonneesDouleur { CarnetSanteId = c, TypeDouleur = "Douleur lombaire", Intensite = 3, Date = A(-3) });
-        var enCours = new Medicament { CarnetSanteId = c, Nom = "Diénogest", Type = TypeTraitement.Medicamenteux, TraitementEnCours = true, Posologie = "1 le matin" };
+        var enCours = new Medicament
+        {
+            CarnetSanteId = c, Nom = "Diénogest", Type = TypeTraitement.Medicamenteux, TraitementEnCours = true, Posologie = "1 comprimé",
+            DateDebutTraitement = A(-30), Frequence = FrequencePrise.ChaqueJour, Horaires = [new HorairePrise { Heure = new TimeOnly(8, 0) }],
+        };
         ctx.Medicaments.AddRange(enCours,
+            new Medicament { CarnetSanteId = c, Nom = "Ibuprofène", Type = TypeTraitement.Medicamenteux, TraitementEnCours = true, DateDebutTraitement = A(-30) },
             new Medicament { CarnetSanteId = c, Nom = "Ancien", Type = TypeTraitement.Medicamenteux, TraitementEnCours = false },
             new Medicament { CarnetSanteId = c, Nom = "Yoga", Type = TypeTraitement.NonMedicamenteux, TraitementEnCours = true });
         await ctx.SaveChangesAsync();
         ctx.DonneesMedicaments.AddRange(
-            new DonneesMedicament { CarnetSanteId = c, MedicamentId = enCours.Id, NombreComprimes = 1, Date = A(0, 8) },
+            new DonneesMedicament { CarnetSanteId = c, MedicamentId = enCours.Id, NombreComprimes = 1, Date = A(0, 8), HeurePrevue = new TimeOnly(8, 0) },
             new DonneesMedicament { CarnetSanteId = c, MedicamentId = enCours.Id, NombreComprimes = 1, Date = A(-1, 8) });
         await ctx.SaveChangesAsync();
 
@@ -46,10 +52,11 @@ public sealed class AccueilServiceTests : IDisposable
         Assert.Equal(2, aujourdhui.Cycle.JourDeRegles);
         Assert.Equal(4, aujourdhui.Bilan!.DouleurMoyenne);
         Assert.Equal(["Calme"], aujourdhui.Bilan.Emotions);
-        var traitement = Assert.Single(aujourdhui.Traitements);
-        Assert.Equal("Diénogest", traitement.Nom);
-        Assert.Equal(1, traitement.PrisesDuJour);
-        Assert.Equal(A(0, 8), traitement.DernierePrise);
+        var prise = Assert.Single(aujourdhui.PrisesPrevues);
+        Assert.Equal("Diénogest", prise.Nom);
+        Assert.Equal("08:00", prise.HeurePrevue);
+        Assert.Equal("Pris", prise.Reponse!.Statut);
+        Assert.Equal("Ibuprofène", Assert.Single(aujourdhui.AuBesoin).Nom);
         // Douleur notée : J-3 (lombaire), J-1 (pelvienne, en règles), J0 (bilan à 4, en règles).
         Assert.Equal(3, aujourdhui.Semaine.JoursAvecDouleur);
         Assert.Equal(2, aujourdhui.Semaine.JoursAvecDouleurPendantRegles);
@@ -63,7 +70,8 @@ public sealed class AccueilServiceTests : IDisposable
         var aujourdhui = await Obtenir();
 
         Assert.Null(aujourdhui.Bilan);
-        Assert.Empty(aujourdhui.Traitements);
+        Assert.Empty(aujourdhui.PrisesPrevues);
+        Assert.Empty(aujourdhui.AuBesoin);
         Assert.False(aujourdhui.Cycle.EnRegles);
         Assert.Null(aujourdhui.Cycle.JourDuCycle);
         Assert.Equal(0, aujourdhui.Semaine.JoursAvecDouleur);
@@ -83,7 +91,8 @@ public sealed class AccueilServiceTests : IDisposable
 
         Assert.Null(aujourdhui.Bilan);
         Assert.False(aujourdhui.Cycle.EnRegles);
-        Assert.Empty(aujourdhui.Traitements);
+        Assert.Empty(aujourdhui.PrisesPrevues);
+        Assert.Empty(aujourdhui.AuBesoin);
     }
 
     [Theory]
@@ -114,7 +123,8 @@ public sealed class AccueilServiceTests : IDisposable
         Assert.IsType<AujourdhuiViewModel>(Assert.IsType<OkObjectResult>(resultat).Value);
     }
 
-    private AccueilService Service() => new(_carnet.Context, new HorlogeFixe(Maintenant));
+    private AccueilService Service() => new(_carnet.Context, new HorlogeFixe(Maintenant),
+        new TraitementsService(_carnet.Context, _carnet.CarnetSanteService, new HorlogeFixe(Maintenant)));
 
     private async Task<AujourdhuiViewModel> Obtenir()
     {

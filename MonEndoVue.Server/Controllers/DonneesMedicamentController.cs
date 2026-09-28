@@ -41,7 +41,7 @@ namespace MonEndoVue.Server.Controllers
             
             var donneesMedicaments = await context.DonneesMedicaments
                 .Include(dm => dm.Medicament)
-                .Where(d => d.Date.Month == month && d.Date.Year == year && d.CarnetSanteId == carnetSanteId)
+                .Where(d => d.Date.Month == month && d.Date.Year == year && d.CarnetSanteId == carnetSanteId && d.Statut == StatutPrise.Pris)
                 .ToArrayAsync();
 
             var donneesMedicamentViewModel = donneesMedicaments.Select(dm => new DonneesMedicamentViewModel
