@@ -1,5 +1,5 @@
 import { test, expect } from './fixtures';
-import { simulerAccueil, traitement } from './mocks/accueil';
+import { prisePrevue, simulerAccueil } from './mocks/accueil';
 
 test.describe('Accueil « Aujourd\'hui »', () => {
   test('sans données : le bilan est à faire, rien d\'autre ne s\'affiche à vide', async ({ accueilPage, page }) => {
@@ -28,17 +28,27 @@ test.describe('Accueil « Aujourd\'hui »', () => {
     await expect(accueilPage.semaine).toContainText('Fatigue moyenne plus basse que la semaine précédente.');
   });
 
-  test('une prise de traitement se note en un geste, à l\'heure locale', async ({ accueilPage, serveur, page }) => {
-    simulerAccueil(serveur, { traitements: [traitement({ id: 7, nom: 'Diénogest 2 mg' })] });
+  test('seules les prises prévues aujourd\'hui s\'affichent ; une prise se note en un geste', async ({ accueilPage, serveur, page }) => {
+    simulerAccueil(serveur, {
+      prisesPrevues: [
+        prisePrevue({ traitementId: 7, nom: 'Diénogest 2 mg', heurePrevue: '08:00' }),
+        prisePrevue({ traitementId: 8, nom: 'Vitamine D', heurePrevue: '20:00', reponse: { priseId: 3, statut: 'Ignore', date: '2026-09-15T09:00:00' } }),
+      ],
+      auBesoin: [{ id: 9, nom: 'Ibuprofène', dose: '400 mg', dernierePrise: null }],
+    });
     await accueilPage.ouvrir();
 
-    await accueilPage.boutonPrise('Diénogest 2 mg').click();
+    await expect(accueilPage.traitements).toContainText('0 sur 2');
+    await expect(accueilPage.traitements).toContainText('Ignorée');
+    await expect(accueilPage.traitements).toContainText('Au besoin : Ibuprofène');
+    await accueilPage.boutonPrise('Diénogest 2 mg', '8 h 00').click();
 
     await expect(accueilPage.traitements).toContainText('Pris à 10 h 00');
+    await expect(accueilPage.traitements).toContainText('1 sur 2');
     await expect(page.getByText('Diénogest 2 mg à 10 h 00', { exact: true })).toBeVisible();
-    expect(serveur.appelsVers('POST', /^DonneesMedicament$/)[0].corps).toMatchObject({
-      medicamentId: 7,
-      nombreComprimes: 1,
+    expect(serveur.appelsVers('POST', /^Traitements\/7\/prises$/)[0].corps).toEqual({
+      statut: 'Pris',
+      heurePrevue: '08:00:00',
       date: '2026-09-15T10:00:00',
     });
   });

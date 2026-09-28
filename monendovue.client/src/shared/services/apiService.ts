@@ -9,7 +9,11 @@ import type { AbonnementPush, Rappel, ReglageRappel, TypeRappel } from '@/featur
 import type { BilanQuotidien, BilanQuotidienSaisie, EmotionBilan } from '@/features/bilan-quotidien/types/bilan-quotidien';
 import type { HistoriqueBilans } from '@/features/bilan-quotidien/types/historique';
 import type { EvenementAgenda } from '@/features/schedule/types/agenda';
-import type { Aujourdhui, BilanAujourdhui, TraitementAujourdhui } from '@/features/accueil/types/aujourdhui';
+import type { Aujourdhui, BilanAujourdhui } from '@/features/accueil/types/aujourdhui';
+import type { PrisePrevue, PriseSaisie, SeanceSaisie, Soin, Traitement, TraitementAuBesoin, TraitementsDuJour, TraitementSaisie } from '@/features/medicament/types/traitements';
+
+/** Liste C# sérialisée avec ReferenceHandler.Preserve. */
+type Liste<T> = T[] | { $values: T[] };
 import { enTableau } from '@/shared/utils/json';
 import type { ReponseConsentement } from '@/features/auth/types/user';
 
@@ -114,14 +118,6 @@ class ApiService {
         return this.request('GET', `DonneesActivitePhysique/${carnetSanteId}/${month}/${year}`);
     }
 
-    async getDonneesMedicamentByMonth(carnetSanteId: number, month: number, year: number): Promise<any> {
-        return this.request('GET', `DonneesMedicament/${carnetSanteId}/${month}/${year}`);
-    }
-
-    async getDonneesTraitementNonMedicamenteuxByMonth(carnetSanteId: number, month: number, year: number): Promise<any> {
-        return this.request('GET', `DonneesTraitementNonMedicamenteux/${carnetSanteId}/${month}/${year}`);
-    }
-
     async getDonneesTransitByMonth(carnetSanteId: number, month: number, year: number): Promise<any> {
         return this.request('GET', `DonneesTransit/${carnetSanteId}/${month}/${year}`);
     }
@@ -138,9 +134,6 @@ class ApiService {
         };
     }
 
-    async getAllMedicaments(carnetSanteId: number, ): Promise<any> {
-        return this.request('GET', `Medicament/by-carnet-sante/${carnetSanteId}`);
-    }
     
     async getJoursReglesByMonth(carnetSanteId: number, month: number, year: number): Promise<any> {
         return this.request('GET', `JourRegle/ByMonth/${carnetSanteId}/${month}/${year}`);
@@ -167,18 +160,6 @@ class ApiService {
         return this.request('PUT', `BilanQuotidien/${bilanQuotidien.id}`, bilanQuotidien);
     }
 
-    async postMedicament(donneesMedicament: any): Promise<any> {
-        return this.request('POST', 'Medicament', donneesMedicament);
-    }
-
-    async postDonneesPriseMedicament(donneesPriseMedicament: any): Promise<any> {
-        return this.request('POST', 'DonneesMedicament', donneesPriseMedicament);
-    }
-
-    async postDonneesTraitementNonMedicamenteux(donneesTraitement: any): Promise<any> {
-        return this.request('POST', 'DonneesTraitementNonMedicamenteux', donneesTraitement);
-    }
-
     async postDonneesTransit(donneesTransit: any): Promise<any> {
         return this.request('POST', 'DonneesTransit', donneesTransit);
     }
@@ -202,14 +183,6 @@ class ApiService {
         return this.request('DELETE', `DonneesDouleurs/${donneesDouleursId}`);
     }
 
-    async deleteDonneesMedicament(donneesMedicamentId: number): Promise<any> {
-        return this.request('DELETE', `DonneesMedicament/${donneesMedicamentId}`);
-    }
-
-    async deleteDonneesTraitementNonMedicamenteux(donneesTraitementId: number): Promise<any> {
-        return this.request('DELETE', `DonneesTraitementNonMedicamenteux/${donneesTraitementId}`);
-    }
-
     async deleteDonneesTransit(donneesTransitId: number): Promise<any> {
         return this.request('DELETE', `DonneesTransit/${donneesTransitId}`);
     }
@@ -222,15 +195,8 @@ class ApiService {
         return this.request('DELETE', `JourRegle/${jourRegleId}`);
     }
 
-    async deleteMedicament(medicamentId: number): Promise<any> {
-        return this.request('DELETE', `Medicament/${medicamentId}`);
-    }
-
     // PUT
 
-    async putDonneesMedicament(medicamentId: number, donneesMedicament: any): Promise<any> {
-        return this.request('PUT', `Medicament/${medicamentId}`, donneesMedicament);
-    }
     
     async editDonneesDouleurs(donneesDouleursId: number, donneesDouleurs: DonneesDouleurModification): Promise<void> {
         return this.request('PUT', `DonneesDouleurs/${donneesDouleursId}`, donneesDouleurs);
@@ -294,21 +260,65 @@ class ApiService {
         return this.agendaOuNull(`Agenda/evenements?${periode}`);
     }
 
-    /** Trois prochains rendez-vous à heure fixe, ou null si l'utilisatrice n'a pas d'agenda (404). */
     /** Accueil « Aujourd'hui » : le jour local est envoyé (le serveur ne connaît pas le fuseau de l'utilisatrice). */
     async getAujourdhui(jour: string): Promise<Aujourdhui> {
-        type Brut = Omit<Aujourdhui, 'traitements' | 'bilan'> & {
-            traitements: TraitementAujourdhui[] | { $values: TraitementAujourdhui[] };
-            bilan: (Omit<BilanAujourdhui, 'emotions'> & { emotions: BilanAujourdhui['emotions'] | { $values: BilanAujourdhui['emotions'] } }) | null;
+        type Brut = Omit<Aujourdhui, 'prisesPrevues' | 'auBesoin' | 'bilan'> & {
+            prisesPrevues: Liste<PrisePrevue>;
+            auBesoin: Liste<TraitementAuBesoin>;
+            bilan: (Omit<BilanAujourdhui, 'emotions'> & { emotions: Liste<BilanAujourdhui['emotions'][number]> }) | null;
         };
         const brut = await this.request<Brut>('GET', `Accueil/aujourdhui?jour=${jour}`);
         return {
             ...brut,
-            traitements: enTableau(brut.traitements),
+            prisesPrevues: enTableau(brut.prisesPrevues),
+            auBesoin: enTableau(brut.auBesoin),
             bilan: brut.bilan ? { ...brut.bilan, emotions: enTableau(brut.bilan.emotions) } : null,
         };
     }
 
+    /** Planning du jour local et liste des traitements (carnet de la session). */
+    async getTraitementsDuJour(jour: string): Promise<TraitementsDuJour> {
+        type TraitementBrut = Omit<Traitement, 'joursSemaine' | 'horaires'> & { joursSemaine: Liste<Traitement['joursSemaine'][number]>; horaires: Liste<string> };
+        type Brut = {
+            prisesPrevues: Liste<PrisePrevue>; auBesoin: Liste<TraitementAuBesoin>; soins: Liste<Soin>;
+            enCours: Liste<TraitementBrut>; termines: Liste<TraitementBrut>;
+        };
+        const brut = await this.request<Brut>('GET', `Traitements/jour?jour=${jour}`);
+        const traitement = (t: TraitementBrut): Traitement => ({ ...t, joursSemaine: enTableau(t.joursSemaine), horaires: enTableau(t.horaires) });
+        return {
+            prisesPrevues: enTableau(brut.prisesPrevues),
+            auBesoin: enTableau(brut.auBesoin),
+            soins: enTableau(brut.soins),
+            enCours: enTableau(brut.enCours).map(traitement),
+            termines: enTableau(brut.termines).map(traitement),
+        };
+    }
+
+    async postTraitement(saisie: TraitementSaisie): Promise<{ id: number }> {
+        return this.request('POST', 'Traitements', saisie);
+    }
+
+    async putTraitement(id: number, saisie: TraitementSaisie): Promise<void> {
+        await this.request('PUT', `Traitements/${id}`, saisie);
+    }
+
+    async postArretTraitement(id: number, jour: string): Promise<void> {
+        await this.request('POST', `Traitements/${id}/arret?jour=${jour}`);
+    }
+
+    async postPrise(traitementId: number, saisie: PriseSaisie): Promise<{ id: number }> {
+        return this.request('POST', `Traitements/${traitementId}/prises`, saisie);
+    }
+
+    async deletePrise(priseId: number): Promise<void> {
+        await this.request('DELETE', `Traitements/prises/${priseId}`);
+    }
+
+    async postSeance(traitementId: number, saisie: SeanceSaisie): Promise<{ id: number }> {
+        return this.request('POST', `Traitements/${traitementId}/seances`, saisie);
+    }
+
+    /** Trois prochains rendez-vous à heure fixe, ou null si l'utilisatrice n'a pas d'agenda (404). */
     async getProchainsRendezVous(): Promise<EvenementAgenda[] | null> {
         return this.agendaOuNull('Agenda/prochains');
     }

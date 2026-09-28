@@ -28,9 +28,9 @@
     <template v-else-if="aujourdhui">
       <CarteBilanDuJour :bilan="aujourdhui.bilan"/>
       <TuilesAjout/>
-      <CarteTraitementsDuJour v-if="aujourdhui.traitements.length"
-                              :traitements="aujourdhui.traitements" :prise-en-cours="priseEnCours"
-                              @prendre="noterPrise"/>
+      <CarteTraitementsDuJour v-if="aujourdhui.prisesPrevues.length || aujourdhui.auBesoin.length"
+                              :prises="aujourdhui.prisesPrevues" :au-besoin="aujourdhui.auBesoin"
+                              :prise-en-cours="priseEnCours" @prendre="noterPrise"/>
       <CarteRendezVous v-if="prochainRendezVous" :evenement="prochainRendezVous"/>
       <CarteSemaine v-if="phrases.length" :phrases="phrases"/>
     </template>
@@ -45,28 +45,24 @@ import { Button } from '@/shared/components/ui/button';
 import { Skeleton } from '@/shared/components/ui/skeleton';
 import { useToast } from '@/shared/components/ui/toast';
 import { materialSymbols } from '@/shared/config/materialSymbols';
-import { useAuthStore } from '@/features/auth/store/auth';
+import type { PrisePrevue } from '@/features/medicament/types/traitements';
+import { heureAffichee } from '@/features/medicament/utils/prises';
 import CarteBilanDuJour from '../components/CarteBilanDuJour.vue';
 import CarteTraitementsDuJour from '../components/CarteTraitementsDuJour.vue';
 import TuilesAjout from '../components/TuilesAjout.vue';
 import CarteRendezVous from '../components/CarteRendezVous.vue';
 import CarteSemaine from '../components/CarteSemaine.vue';
 import { useAujourdhui } from '../composables/useAujourdhui';
-import type { TraitementAujourdhui } from '../types/aujourdhui';
-
-const auth = useAuthStore();
 const { toast } = useToast();
-const { aujourdhui, prochainRendezVous, chargement, erreur, priseEnCours, phrases, charger, prendre } =
-    useAujourdhui({ carnetSanteId: () => auth.user?.carnetSanteId });
+const { aujourdhui, prochainRendezVous, chargement, erreur, priseEnCours, phrases, charger, prendre } = useAujourdhui();
 
 const jour = format(new Date(), 'EEEE d MMMM', { locale: fr });
 const date = jour.charAt(0).toUpperCase() + jour.slice(1);
 
 /** Retour immédiat : message avec le traitement et l'heure notée (la carte se met à jour en même temps). */
-async function noterPrise(traitement: TraitementAujourdhui) {
-  if (await prendre(traitement)) {
-    const [heures, minutes] = traitement.dernierePrise!.slice(11, 16).split(':');
-    toast({ title: 'Prise notée', description: `${traitement.nom} à ${Number(heures)} h ${minutes}`, variant: 'custom' });
+async function noterPrise(prise: PrisePrevue) {
+  if (await prendre(prise)) {
+    toast({ title: 'Prise notée', description: `${prise.nom} à ${heureAffichee(prise.reponse!.date)}`, variant: 'custom' });
   } else {
     toast({ title: 'Prise non enregistrée', description: 'Réessaie dans un instant.', variant: 'destructive' });
   }

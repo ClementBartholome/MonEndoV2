@@ -5,7 +5,7 @@ import LoginPage from "@/features/auth/pages/LoginPage.vue";
 import {useAuthStore} from "@/features/auth/store/auth";
 import PainPage from "@/features/douleurs/pages/DouleursPage.vue";
 import ActivitePage from "@/features/activite/pages/ActivitePage.vue";
-import MedicamentPage from "@/features/medicament/pages/MedicamentPage.vue";
+import TraitementsPage from "@/features/medicament/pages/TraitementsPage.vue";
 import TransitPage from "@/features/transit/pages/TransitPage.vue";
 import ExportPdfPage from "@/features/export/pages/ExportPdfPage.vue";
 import BilanQuotidienPage from "@/features/bilan-quotidien/pages/BilanQuotidienPage.vue";
@@ -42,7 +42,7 @@ const router = createRouter({
         {
             path: '/medicaments',
             name: 'medicaments',
-            component: MedicamentPage,
+            component: TraitementsPage,
         },
         {
             path: '/agenda',
