@@ -17,9 +17,12 @@
     --couleur-lien: #a3324f;
     --couleur-lien-survol: #7d2440;
 
-    /* Accent : en FOND uniquement, avec du texte foncé (6.5:1) ; jamais de texte blanc dessus (2.2:1). */
-    --couleur-accent: #ff8ba7;
-    --couleur-accent-rgb: 255 139 167;
+    /*
+     * Accent : rose poudré (adouci au test de la 1.3.0, l'ancien #ff8ba7 tranchait trop), en FOND uniquement, avec du
+     * texte foncé (8.2:1) ; jamais de texte blanc dessus ni de texte rose.
+     */
+    --couleur-accent: #f2b3c2;
+    --couleur-accent-rgb: 242 179 194;
     --couleur-sur-accent: #33272a;
 
     /* Contour des champs et contrôles (≥ 3:1 sur fond et surface) */
