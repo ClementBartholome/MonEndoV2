@@ -3,7 +3,6 @@ import { computed, onMounted, ref } from 'vue';
 import { useRoute } from 'vue-router';
 import { format, isAfter, isToday, startOfDay, subDays } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import BackButton from '@/shared/components/BackButton.vue';
 import { Button } from '@/shared/components/ui/button';
 import { Card, CardContent } from '@/shared/components/ui/card';
 import { Skeleton } from '@/shared/components/ui/skeleton';
@@ -86,10 +85,6 @@ const tendances = computed(() => calculerTendances(model.value.jours, model.valu
 
 <template>
   <div class="flex-column-container !gap-1">
-    <div class="flex items-center justify-between w-full">
-      <BackButton class="!w-1/4"/>
-    </div>
-
     <div v-if="isLoading" class="flex flex-col space-y-3 p-6 pt-0">
       <Skeleton class="h-[300px] w-full mt-4 rounded-xl"/>
     </div>

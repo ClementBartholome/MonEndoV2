@@ -1,6 +1,5 @@
 <template>
   <div class="flex-column-container">
-    <BackButton/>
     <section class="container !mt-0  mx-auto py-8 w-full bg-clearer rounded-3xl shadow-xl ml-auto">
       <div class="flex justify-between items-center mb-4 transit-header">
         <h2 class="text-2xl flex gap-2 ml-2"><i class="material-symbols-outlined text-3xl ml-auto">gastroenterology</i>
@@ -197,7 +196,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Skeleton } from "@/shared/components/ui/skeleton"
 import Datatable from "@/shared/components/Datatable.vue"
 import GenericCardList from "@/shared/components/GenericCardList.vue"
-import BackButton from "@/shared/components/BackButton.vue"
 import SelectMonth from "@/shared/components/SelectMonth.vue"
 import SectionKpiHeader from "@/shared/components/SectionKpiHeader.vue"
 

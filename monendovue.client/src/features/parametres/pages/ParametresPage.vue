@@ -1,6 +1,5 @@
 ﻿<template>
   <div class="flex-column-container">
-    <BackButton/>
     <h2 class="text-2xl mr-auto ml-4">Paramètres</h2>
     <section
         class="container !mt-0  mx-auto py-8 w-full bg-clearer rounded-3xl shadow-xl ml-auto">
@@ -75,7 +74,6 @@
 <script setup lang="ts">
 import LiensLegaux from '@/features/legal/components/LiensLegaux.vue';
 
-import BackButton from "@/shared/components/BackButton.vue";
 import NotificationSettings from "@/features/parametres/components/NotificationSettings.vue";
 import MesDonnees from "@/features/parametres/components/MesDonnees.vue";
 import ChangePassword from "@/features/auth/components/ChangePassword.vue";

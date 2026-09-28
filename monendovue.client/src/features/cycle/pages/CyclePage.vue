@@ -1,6 +1,5 @@
 <template>
   <div class="flex-column-container">
-    <BackButton/>
     <div class="flex flex-col self-baseline w-full">
       <h2 class="text-2xl flex gap-2"><i class="material-symbols-outlined text-3xl">menstrual_health</i>Cycle menstruel
       </h2>
@@ -426,7 +425,6 @@ import * as z from 'zod'
 import { Slider } from "@/shared/components/ui/slider"
 import { Skeleton } from "@/shared/components/ui/skeleton"
 import Datatable from "@/shared/components/Datatable.vue"
-import BackButton from "@/shared/components/BackButton.vue"
 import SelectMonth from "@/shared/components/SelectMonth.vue"
 
 import apiService from "@/shared/services/apiService"

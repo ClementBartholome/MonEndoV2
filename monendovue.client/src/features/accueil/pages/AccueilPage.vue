@@ -1,5 +1,5 @@
 <template>
-  <main class="mx-auto flex w-full max-w-xl flex-col gap-3.5 px-5 pb-28 pt-20 lg:pt-10">
+  <main class="mx-auto flex w-full max-w-xl flex-col gap-3.5 px-5 pb-28 pt-24 lg:pt-10">
     <header class="flex flex-col gap-2">
       <h1 class="m-0 text-[22px] font-semibold tracking-normal text-texte">{{ date }}</h1>
       <div v-if="aujourdhui" class="flex flex-wrap gap-2">
@@ -62,8 +62,12 @@ const { aujourdhui, prochainRendezVous, chargement, erreur, priseEnCours, phrase
 const jour = format(new Date(), 'EEEE d MMMM', { locale: fr });
 const date = jour.charAt(0).toUpperCase() + jour.slice(1);
 
+/** Retour immédiat : message avec le traitement et l'heure notée (la carte se met à jour en même temps). */
 async function noterPrise(traitement: TraitementAujourdhui) {
-  if (!await prendre(traitement)) {
+  if (await prendre(traitement)) {
+    const [heures, minutes] = traitement.dernierePrise!.slice(11, 16).split(':');
+    toast({ title: 'Prise notée', description: `${traitement.nom} à ${Number(heures)} h ${minutes}`, variant: 'custom' });
+  } else {
     toast({ title: 'Prise non enregistrée', description: 'Réessaie dans un instant.', variant: 'destructive' });
   }
 }
