@@ -5,7 +5,7 @@
         <legend class="mb-2.5 p-0 text-sm font-semibold text-texte">Type</legend>
         <div class="grid grid-cols-2 gap-2">
           <button v-for="t in types" :key="t.valeur" type="button"
-                  class="min-h-11 rounded-xl text-sm"
+                  class="min-h-11 rounded-controle text-sm"
                   :class="form.type.value === t.valeur ? 'border-[1.5px] border-texte bg-texte font-medium text-fond' : 'border-[1.5px] border-trait bg-surface text-texte'"
                   :aria-pressed="form.type.value === t.valeur"
                   @click="choisirType(t.valeur)">{{ t.libelle }}</button>
@@ -16,21 +16,21 @@
         Nom
         <input v-model="form.nom.value" type="text" required maxlength="100"
                :placeholder="medicament ? 'Dienogest, ibuprofène…' : 'Kiné, ostéopathie, TENS…'"
-               class="min-h-11 rounded-xl border-[1.5px] border-contour bg-white px-3 text-[15px] font-normal text-texte">
+               class="min-h-11 rounded-controle border-[1.5px] border-contour bg-white px-3 text-[15px] font-normal text-texte">
       </label>
 
       <template v-if="medicament">
         <label class="flex flex-col gap-1.5 text-sm font-semibold text-texte">
           <span>Dose <span class="font-normal text-texte-3">(facultatif)</span></span>
           <input v-model="form.dose.value" type="text" maxlength="100" placeholder="1 comprimé, 400 mg…"
-                 class="min-h-11 rounded-xl border-[1.5px] border-contour bg-white px-3 text-[15px] font-normal text-texte">
+                 class="min-h-11 rounded-controle border-[1.5px] border-contour bg-white px-3 text-[15px] font-normal text-texte">
         </label>
 
         <fieldset class="m-0 border-0 p-0">
           <legend class="mb-2.5 p-0 text-sm font-semibold text-texte">Fréquence</legend>
           <div class="grid grid-cols-2 gap-2">
             <button v-for="f in frequences" :key="f.valeur" type="button"
-                    class="min-h-11 rounded-xl px-2 text-sm"
+                    class="min-h-11 rounded-controle px-2 text-sm"
                     :class="form.frequence.value === f.valeur ? 'border-[1.5px] border-texte bg-texte font-medium text-fond' : 'border-[1.5px] border-trait bg-surface text-texte'"
                     :aria-pressed="form.frequence.value === f.valeur"
                     @click="form.frequence.value = f.valeur">{{ f.libelle }}</button>
@@ -48,7 +48,7 @@
           <label v-if="form.frequence.value === 'TousLesNJours'" class="mt-3 flex items-center gap-2 text-[15px] text-texte">
             Tous les
             <input v-model.number="form.intervalleJours.value" type="number" min="2" max="30" required
-                   class="min-h-11 w-20 rounded-xl border-[1.5px] border-contour bg-white px-3 text-center text-[15px] text-texte">
+                   class="min-h-11 w-20 rounded-controle border-[1.5px] border-contour bg-white px-3 text-center text-[15px] text-texte">
             jours, à partir du début
           </label>
         </fieldset>
@@ -58,7 +58,7 @@
           <div class="flex flex-col gap-2">
             <div v-for="(_, index) in form.horaires.value" :key="index" class="flex items-center gap-2">
               <input v-model="form.horaires.value[index]" type="time" required :aria-label="`Horaire ${index + 1}`"
-                     class="min-h-11 grow rounded-xl border-[1.5px] border-contour bg-white px-3 text-[15px] text-texte">
+                     class="min-h-11 grow rounded-controle border-[1.5px] border-contour bg-white px-3 text-[15px] text-texte">
               <button v-if="form.horaires.value.length > 1" type="button"
                       class="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-texte-3 hover:bg-surface-2"
                       :aria-label="`Retirer l'horaire ${index + 1}`" @click="form.retirerHoraire(index)">
@@ -77,23 +77,23 @@
       <div class="grid grid-cols-2 gap-2">
         <label class="flex flex-col gap-1 text-[13px] text-texte-2">Début
           <input v-model="form.dateDebut.value" type="date" required
-                 class="min-h-11 rounded-xl border-[1.5px] border-contour bg-white px-3 text-[15px] text-texte">
+                 class="min-h-11 rounded-controle border-[1.5px] border-contour bg-white px-3 text-[15px] text-texte">
         </label>
         <label class="flex flex-col gap-1 text-[13px] text-texte-2"><span>Fin <span class="text-texte-3">(facultatif)</span></span>
           <input v-model="form.dateFin.value" type="date" :min="form.dateDebut.value"
-                 class="min-h-11 rounded-xl border-[1.5px] border-contour bg-white px-3 text-[15px] text-texte">
+                 class="min-h-11 rounded-controle border-[1.5px] border-contour bg-white px-3 text-[15px] text-texte">
         </label>
       </div>
 
       <p v-if="erreur" role="alert" class="m-0 text-sm text-danger">{{ erreur }}</p>
 
       <button type="submit" :disabled="!form.complete.value || envoi"
-              class="min-h-[52px] rounded-[14px] bg-button text-base font-semibold text-texte disabled:opacity-50">
+              class="min-h-[52px] rounded-controle bg-button text-base font-semibold text-texte disabled:opacity-50">
         {{ envoi ? 'Enregistrement…' : 'Enregistrer' }}
       </button>
 
       <button v-if="form.enModification.value && !props.traitement?.dateFin" type="button"
-              class="min-h-11 rounded-[14px] text-sm font-medium text-danger"
+              class="min-h-11 rounded-controle text-sm font-medium text-danger"
               :class="{ 'border-[1.5px] border-danger': confirmerArret }"
               @click="arreter">
         {{ confirmerArret ? 'Confirmer l\'arrêt aujourd\'hui' : 'Arrêter ce traitement' }}

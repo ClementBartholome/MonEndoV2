@@ -1,5 +1,5 @@
 <template>
-  <section aria-label="Ce mois-ci" class="grid grid-cols-3 rounded-grand bg-surface shadow-elevation">
+  <section aria-label="Ce mois-ci" class="grid grid-cols-3 rounded-carte bg-surface shadow-elevation">
     <div class="flex flex-col gap-0.5 px-3 py-3.5">
       <span class="text-2xl font-semibold leading-tight text-texte">{{ chiffres.joursAvecDouleur }}</span>
       <span class="text-xs leading-snug text-texte-3">{{ chiffres.joursAvecDouleur > 1 ? 'jours avec douleur' : 'jour avec douleur' }}</span>

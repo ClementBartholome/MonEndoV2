@@ -1,21 +1,21 @@
 <template>
   <main class="mx-auto flex w-full max-w-xl flex-col gap-5 px-5 pb-40 pt-24 lg:pb-12 lg:pt-10">
     <header class="flex items-center gap-3">
-      <i class="material-symbols-outlined rounded-xl bg-teinte-traitement-fond p-2 text-[26px] text-teinte-traitement" aria-hidden="true">pill</i>
+      <i class="material-symbols-outlined rounded-controle bg-teinte-traitement-fond p-2 text-[26px] text-teinte-traitement" aria-hidden="true">pill</i>
       <h1 class="m-0 grow text-[26px] font-semibold tracking-normal text-texte">Traitements</h1>
-      <button type="button" class="hidden min-h-11 items-center gap-2 rounded-[14px] bg-button px-4 font-semibold text-texte lg:inline-flex"
+      <button type="button" class="hidden min-h-11 items-center gap-2 rounded-controle bg-button px-4 font-semibold text-texte lg:inline-flex"
               @click="ouvrirAjout">
         <i class="material-symbols-outlined" aria-hidden="true">add</i>Ajouter un traitement
       </button>
     </header>
 
     <div v-if="chargement" class="flex flex-col gap-3.5" aria-busy="true" aria-label="Chargement des traitements">
-      <Skeleton class="h-32 rounded-moyen"/>
-      <Skeleton class="h-24 rounded-moyen"/>
-      <Skeleton class="h-40 rounded-moyen"/>
+      <Skeleton class="h-32 rounded-carte"/>
+      <Skeleton class="h-24 rounded-carte"/>
+      <Skeleton class="h-40 rounded-carte"/>
     </div>
 
-    <section v-else-if="erreur" role="alert" class="flex flex-col items-start gap-3 rounded-grand bg-surface p-5 shadow-elevation">
+    <section v-else-if="erreur" role="alert" class="flex flex-col items-start gap-3 rounded-carte bg-surface p-5 shadow-elevation">
       <p class="m-0 text-texte">Les traitements n'ont pas pu être chargés.</p>
       <Button variant="custom" class="min-h-11" @click="charger">Réessayer</Button>
     </section>
@@ -34,7 +34,7 @@
     </template>
 
     <button type="button"
-            class="fixed bottom-[calc(4.25rem+16px)] right-5 z-30 inline-flex min-h-14 items-center gap-2 rounded-[18px] bg-button pl-4 pr-5 text-[15px] font-semibold text-texte shadow-elevation lg:hidden"
+            class="fixed bottom-[calc(4.25rem+16px)] right-5 z-30 inline-flex min-h-14 items-center gap-2 rounded-controle bg-button pl-4 pr-5 text-[15px] font-semibold text-texte shadow-elevation lg:hidden"
             @click="ouvrirAjout">
       <i class="material-symbols-outlined" aria-hidden="true">add</i>Ajouter un traitement
     </button>

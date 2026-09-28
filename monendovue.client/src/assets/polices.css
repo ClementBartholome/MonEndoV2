@@ -51,3 +51,8 @@
     flex-shrink: 0;
     box-sizing: content-box;
 }
+
+/* Icône pleine : onglet actif et icône d'un état (prise faite, ignorée), jamais sur un bouton d'action. */
+.icone-pleine {
+    font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+}

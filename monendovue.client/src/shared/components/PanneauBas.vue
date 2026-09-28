@@ -3,7 +3,7 @@
     <DialogPortal>
       <DialogOverlay class="panneau-voile fixed inset-0 z-50 bg-voile"/>
       <DialogContent
-          class="panneau fixed inset-x-0 bottom-0 z-50 mx-auto flex max-h-[90dvh] w-full max-w-lg flex-col gap-4 overflow-y-auto rounded-t-3xl bg-fond px-5 pb-6 pt-2 shadow-elevation focus:outline-none"
+          class="panneau fixed inset-x-0 bottom-0 z-50 mx-auto flex max-h-[90dvh] w-full max-w-lg flex-col gap-4 overflow-y-auto rounded-t-panneau bg-fond px-5 pb-6 pt-2 shadow-elevation focus:outline-none"
           :aria-describedby="undefined">
         <div aria-hidden="true" class="mx-auto h-1 w-10 shrink-0 rounded-full bg-trait"></div>
         <div class="flex items-center justify-between">
