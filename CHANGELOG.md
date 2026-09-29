@@ -44,6 +44,9 @@ versions en [SemVer](https://semver.org/lang/fr/) (voir la section Déploiement 
   sur ordinateur, toutes les rubriques dans la barre latérale.
 - Couleurs harmonisées et plus lisibles : une teinte par rubrique, textes et liens plus contrastés, champs de
   formulaire mieux délimités, intensité de la douleur sur une seule teinte (plus foncé = plus fort).
+- Activité : page repensée pour le téléphone, avec les séances du mois par jour et une saisie en quelques touches
+  (type, durée, intensité douce, modérée ou soutenue, et l'effet sur la douleur). Les anciennes intensités de 1 à 10 sont
+  reprises sur trois niveaux.
 - Formes et états harmonisés : mêmes arrondis pour tous les boutons et champs, pour toutes les cartes ; ce qui est fait
   (prise notée, bilan rempli) s'affiche en texte avec une coche verte et ne ressemble plus à un bouton, et le bouton de
   prise dit « Je l'ai pris ».
