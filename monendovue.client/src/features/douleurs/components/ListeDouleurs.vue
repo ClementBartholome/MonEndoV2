@@ -19,9 +19,10 @@
 
 <script setup lang="ts">
 import type { DonneesDouleur } from '../types/donnees-douleur';
-import { commentaireAffiche, heure, libelleCourt, type GroupeDuJour } from '../utils/douleurs';
+import { heure, type GroupeDuJour } from '@/shared/utils/jours';
+import { commentaireAffiche, libelleCourt } from '../utils/douleurs';
 
-defineProps<{ groupes: GroupeDuJour[] }>();
+defineProps<{ groupes: GroupeDuJour<DonneesDouleur>[] }>();
 const emit = defineEmits<{ modifier: [entree: DonneesDouleur] }>();
 
 function pastille(intensite: number) {

@@ -3,7 +3,8 @@ import { addMonths, startOfMonth } from 'date-fns';
 import apiService from '@/shared/services/apiService';
 import { enTableau } from '@/shared/utils/json';
 import type { DonneesDouleur, DonneesDouleurModification } from '../types/donnees-douleur';
-import { chiffresDuMois, cleJour, estMoisCourant, grouperParJour, joursDuMois } from '../utils/douleurs';
+import { cleJour, estMoisCourant, grouperParJour } from '@/shared/utils/jours';
+import { chiffresDuMois, joursDuMois } from '../utils/douleurs';
 
 interface Options {
     carnetSanteId: () => number | undefined;
