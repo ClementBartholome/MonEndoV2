@@ -71,6 +71,10 @@ namespace MonEndoVue.Server.Controllers
             var securityCheck = await this.ValidateCarnetAccess(carnetSanteService, symptomeCycle.CarnetSanteId);
             if (securityCheck != null) return securityCheck;
 
+            // L'identifiant et l'adresse de la photo viennent toujours du serveur, jamais du formulaire.
+            symptomeCycle.Id = 0;
+            symptomeCycle.PhotoUrl = null;
+
             if (photo != null)
             {
                 if (!IsPhotoValid(photo, out var validationError))
