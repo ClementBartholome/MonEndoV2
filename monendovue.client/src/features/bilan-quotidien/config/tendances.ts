@@ -15,7 +15,7 @@ export interface ConfigIndicateur {
   seuilStable: number;
 }
 
-/** Indicateurs suivis dans « Analyse & Tendances », dans l'ordre d'affichage. */
+/** Indicateurs suivis dans « Tendances », dans l'ordre d'affichage. */
 export const indicateursTendances: ConfigIndicateur[] = [
   { cle: 'douleur', libelle: 'Douleur moyenne', icone: 'sick', valeur: (b) => b.douleurMoyenne, unite: '/10', decimales: 1, seuilStable: 0.5 },
   { cle: 'fatigue', libelle: 'Fatigue moyenne', icone: 'bedtime', valeur: (b) => b.fatigue, unite: '/5', decimales: 1, seuilStable: 0.3 },

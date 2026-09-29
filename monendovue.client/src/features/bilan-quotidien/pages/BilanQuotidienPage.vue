@@ -78,7 +78,7 @@ const jourAVenir = computed(() => isAfter(jourSelectionne.value, startOfDay(new 
 
 const ONGLETS = [
   { valeur: 'historique', libelle: 'Historique' },
-  { valeur: 'analyse', libelle: 'Analyse & Tendances' },
+  { valeur: 'analyse', libelle: 'Tendances' },
 ];
 
 // --- Analyse ---

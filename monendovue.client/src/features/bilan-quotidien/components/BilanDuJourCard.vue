@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { teinteDe } from '@/features/bilan-quotidien/config/teintes';
 import { computed } from 'vue';
 import { Button } from '@/shared/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/card';
@@ -32,11 +33,11 @@ const tuiles = computed(() => {
   const b = props.bilan;
   if (!b) return [];
   return [
-    { icone: 'sick', libelle: 'Douleur', valeur: avecUnite(b.douleurMoyenne, '/10') },
-    { icone: 'bedtime', libelle: 'Fatigue', valeur: avecUnite(b.fatigue, '/5') },
-    { icone: 'psychology', libelle: 'Stress moyen', valeur: avecUnite(stressDuBilan(b), '/5', 1) },
-    { icone: 'footprint', libelle: 'Pas', valeur: avecUnite(b.pas, '') },
-    { icone: 'water_drop', libelle: 'Hydratation', valeur: avecUnite(b.hydratation, ' L', 1) },
+    { cle: 'douleur', icone: 'sick', libelle: 'Douleur', valeur: avecUnite(b.douleurMoyenne, '/10') },
+    { cle: 'fatigue', icone: 'bedtime', libelle: 'Fatigue', valeur: avecUnite(b.fatigue, '/5') },
+    { cle: 'stress', icone: 'psychology', libelle: 'Stress moyen', valeur: avecUnite(stressDuBilan(b), '/5', 1) },
+    { cle: 'pas', icone: 'footprint', libelle: 'Pas', valeur: avecUnite(b.pas, '') },
+    { cle: 'hydratation', icone: 'water_drop', libelle: 'Hydratation', valeur: avecUnite(b.hydratation, ' L', 1) },
   ];
 });
 
@@ -47,7 +48,7 @@ const consommations = computed(() => consommationsAlimentaires.filter((c) => pro
   <Card class="flex w-full flex-col rounded-carte border-0 bg-surface shadow-elevation">
     <CardHeader class="flex flex-row items-center justify-between gap-3 space-y-0 p-4 md:p-6">
       <CardTitle class="m-0 text-left text-[17px] font-semibold leading-tight tracking-normal text-texte first-letter:uppercase">{{ titre }}</CardTitle>
-      <Button v-if="bilan" type="button" variant="outline" class="h-11 gap-2 shrink-0" @click="emit('modifier')">
+      <Button v-if="bilan" type="button" variant="outline" class="h-11 shrink-0 gap-2" @click="emit('modifier')">
         <i class="material-symbols-outlined text-lg" aria-hidden="true">edit</i>Modifier
       </Button>
     </CardHeader>
@@ -55,8 +56,8 @@ const consommations = computed(() => consommationsAlimentaires.filter((c) => pro
       <div v-if="bilan" class="text-left">
         <div class="grid grid-cols-2 md:grid-cols-3 gap-2 mb-3">
           <HumeurResume :bilan="bilan" class="col-span-2 md:col-span-3"/>
-          <div v-for="tuile in tuiles" :key="tuile.libelle" class="rounded-controle bg-fond p-3">
-            <p class="text-xs text-texte-3 flex items-center gap-1">
+          <div v-for="tuile in tuiles" :key="tuile.libelle" class="rounded-controle p-3" :class="teinteDe(tuile.cle).fond">
+            <p class="m-0 flex items-center gap-1 text-xs font-medium" :class="teinteDe(tuile.cle).texte">
               <i class="material-symbols-outlined text-base" aria-hidden="true">{{ tuile.icone }}</i>
               {{ tuile.libelle }}
             </p>
@@ -73,7 +74,7 @@ const consommations = computed(() => consommationsAlimentaires.filter((c) => pro
             <li
                 v-for="item in consommations"
                 :key="item.cle"
-                class="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-orange-100 text-orange-700 text-xs"
+                class="inline-flex items-center gap-1 rounded-controle bg-surface px-2 py-1 text-xs text-texte"
             >
               <i class="material-symbols-outlined text-sm" aria-hidden="true">{{ item.icone }}</i>{{ item.libelle }}
             </li>
@@ -98,7 +99,6 @@ const consommations = computed(() => consommationsAlimentaires.filter((c) => pro
           {{ aVenir ? "Ce jour n'est pas encore arrivé" : 'Aucun bilan pour ce jour' }}
         </p>
         <Button v-if="!aVenir" type="button" variant="custom" size="lg" class="gap-2" @click="emit('remplir')">
-          <i class="material-symbols-outlined" aria-hidden="true">add_circle</i>
           Remplir le bilan de ce jour
         </Button>
       </div>

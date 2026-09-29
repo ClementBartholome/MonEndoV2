@@ -8,7 +8,7 @@
         <h3 class="text-headline text-2xl">Repères personnels</h3>
       </div>
       <p class="text-sm text-muted-foreground mb-4">
-        Des repères que tu choisis : « Analyse & Tendances » du bilan quotidien indique combien de jours tu les atteins,
+        Des repères que tu choisis : « Tendances » du bilan quotidien indique combien de jours tu les atteins,
         sans note ni jugement.
       </p>
       <hr class="mb-4 border-trait">
@@ -96,7 +96,7 @@ const saveGoals = () => {
   saveWellbeingGoals(goals.value);
   toast({
     title: 'Repères enregistrés',
-    description: 'Ils sont utilisés dans Analyse & Tendances du bilan quotidien.',
+    description: 'Ils sont utilisés dans les Tendances du bilan quotidien.',
     variant: 'custom'
   });
 };
