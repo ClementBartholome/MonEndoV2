@@ -171,7 +171,7 @@ Regles:
 - [ ] SOLID serveur : abstraction du stockage des photos (`AzureBlobStorageService`) pour tester l'upload sans Azure (pas d'interface pour `TokenService` : KISS) — lecture faite (`IStockagePhotos`, export 1.3.0)
 - [ ] SOLID serveur : `TimeProvider` a la place de `DateTime.Now` (authentification)
 - [ ] SOLID client : `authService` / `tokenService` via l'instance axios de `apiService`, methodes `apiService` typees
-- [ ] SOLID client : decoupage de `CyclePage`, `MedicamentPage` (pattern model/actions) ; `BilanQuotidienPage` fait (1.1.0)
+- [ ] SOLID client : decoupage de `CyclePage` (pattern model/actions) ; `BilanQuotidienPage` fait (1.1.0), `MedicamentPage` remplacee par `TraitementsPage` (1.3.0)
 
 ### Lot D - Security baseline
 - [x] Rate limiting endpoint-level (politique `auth` reellement appliquee aux endpoints d'authentification, 2026-09)

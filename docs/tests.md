@@ -72,7 +72,9 @@ Chaque test tourne deux fois : **mobile 375px** et **desktop**.
   - Bilan quotidien : saisie (minimale, trois émotions, « Comme hier », confirmation de sortie, refus du serveur),
     modification du jour et d'un jour passé, bilan oublié, jours à venir, historique (mois, semaine, période précédente,
     description des jours), analyse (moyennes sans les valeurs non renseignées, comparaison, douleur et règles).
-- Parcours restants : issue #23 (connexion, douleurs, cycle, traitements, paramètres, export).
+  - Traitements : prises du jour (prendre, ignorer, annuler), prise au besoin, séance de soin, ajout avec fréquence et
+    horaires, modification, arrêt ; carte de l'accueil (seules les prises prévues du jour).
+- Parcours restants : issue #23 (connexion, cycle, paramètres, export).
 
 ## Contrôles manuels (Definition of Done)
 
@@ -83,7 +85,7 @@ Chaque test tourne deux fois : **mobile 375px** et **desktop**.
 
 ## Limites connues et suites
 
-- Parcours E2E encore à écrire : issue #23 (connexion, douleurs, cycle, traitements, paramètres, export).
+- Parcours E2E encore à écrire : issue #23 (connexion, cycle, paramètres, export).
 - Aucun test ne fait dialoguer la vraie interface avec le vrai serveur : le contrat entre les deux repose sur les types
   TypeScript alignés à la main et sur le test local de bout en bout avant une livraison.
 - Pas de tests d'intégration HTTP (`WebApplicationFactory`) : le routage, `[Authorize]` et les codes de refus réels ne

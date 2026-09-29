@@ -2,23 +2,24 @@ import { computed, ref } from 'vue';
 import { format } from 'date-fns';
 import apiService from '@/shared/services/apiService';
 import type { EvenementAgenda } from '@/features/schedule/types/agenda';
-import type { Aujourdhui, TraitementAujourdhui } from '../types/aujourdhui';
+import type { PrisePrevue } from '@/features/medicament/types/traitements';
+import { reponse } from '@/features/medicament/utils/prises';
+import type { Aujourdhui } from '../types/aujourdhui';
 import { phrasesSemaine } from '../utils/semaine';
 
 interface Options {
-    /** Carnet de la session, pour enregistrer une prise. */
-    carnetSanteId: () => number | undefined;
     /** Heure locale (injectée pour les tests). */
     maintenant?: () => Date;
 }
 
-/** Données de l'accueil « Aujourd'hui » et prise d'un traitement en un geste. */
-export function useAujourdhui({ carnetSanteId, maintenant = () => new Date() }: Options) {
+/** Données de l'accueil « Aujourd'hui » et prise prévue notée en un geste. */
+export function useAujourdhui({ maintenant = () => new Date() }: Options = {}) {
     const aujourdhui = ref<Aujourdhui | null>(null);
     const prochainRendezVous = ref<EvenementAgenda | null>(null);
     const chargement = ref(true);
     const erreur = ref(false);
-    const priseEnCours = ref<number | null>(null);
+    /** Clé « traitementId-heure » de la prise en cours d'envoi. */
+    const priseEnCours = ref<string | null>(null);
 
     const phrases = computed(() => (aujourdhui.value ? phrasesSemaine(aujourdhui.value.semaine) : []));
 
@@ -40,22 +41,14 @@ export function useAujourdhui({ carnetSanteId, maintenant = () => new Date() }: 
         }
     }
 
-    /** Note une prise maintenant (heure locale, comme les autres saisies) et met la carte à jour sans recharger. */
-    async function prendre(traitement: TraitementAujourdhui) {
-        const carnet = carnetSanteId();
-        if (!carnet || priseEnCours.value !== null) return false;
-        priseEnCours.value = traitement.id;
-        const date = format(maintenant(), "yyyy-MM-dd'T'HH:mm:ss");
+    /** Note la prise prévue comme faite maintenant et met la carte à jour sans recharger. */
+    async function prendre(prise: PrisePrevue) {
+        if (priseEnCours.value !== null) return false;
+        priseEnCours.value = `${prise.traitementId}-${prise.heurePrevue}`;
+        const saisie = reponse('Pris', prise.heurePrevue, maintenant());
         try {
-            await apiService.postDonneesPriseMedicament({
-                carnetSanteId: carnet,
-                medicamentId: traitement.id,
-                nombreComprimes: 1,
-                date,
-                commentaire: null,
-            });
-            traitement.prisesDuJour += 1;
-            traitement.dernierePrise = date;
+            const { id } = await apiService.postPrise(prise.traitementId, saisie);
+            prise.reponse = { priseId: id, statut: 'Pris', date: saisie.date };
             return true;
         } catch {
             return false;

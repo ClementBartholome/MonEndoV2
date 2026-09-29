@@ -25,7 +25,7 @@ export class AccueilPage {
     return this.page.getByText(texte);
   }
 
-  boutonPrise(nom: string) {
-    return this.traitements.getByRole('button', { name: `Noter une prise de ${nom}` });
+  boutonPrise(nom: string, heure: string) {
+    return this.traitements.getByRole('button', { name: `Noter la prise de ${nom} de ${heure}` });
   }
 }

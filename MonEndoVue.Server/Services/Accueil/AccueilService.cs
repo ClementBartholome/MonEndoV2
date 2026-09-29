@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using MonEndoVue.Server.Data;
 using MonEndoVue.Server.Models;
+using MonEndoVue.Server.Services.Traitements;
 using MonEndoVue.Server.ViewModels;
 
 namespace MonEndoVue.Server.Services.Accueil;
@@ -9,7 +10,7 @@ namespace MonEndoVue.Server.Services.Accueil;
 /// Accueil « Aujourd'hui » de l'utilisatrice connectée (carnet déduit de la session). Le jour vient du client : les dates
 /// sont enregistrées sans fuseau, au jour calendaire local, et le serveur ne connaît pas le fuseau de l'utilisatrice.
 /// </summary>
-public class AccueilService(AppDbContext context, TimeProvider horloge)
+public class AccueilService(AppDbContext context, TimeProvider horloge, TraitementsService traitements)
 {
     /// <summary>Écart toléré entre le jour demandé et la date du serveur (fuseaux horaires).</summary>
     private const int EcartMaximalJours = 2;
@@ -47,6 +48,7 @@ public class AccueilService(AppDbContext context, TimeProvider horloge)
                 .ToListAsync(ct))
             .Select(DateOnly.FromDateTime);
 
+        var planning = await traitements.DuJourAsync(id, jour, ct);
         var cycle = CycleDuJour.Calculer(joursDeRegles, jour);
         var bilanDuJour = bilans.FirstOrDefault(b => DateOnly.FromDateTime(b.Date) == jour);
 
@@ -59,38 +61,10 @@ public class AccueilService(AppDbContext context, TimeProvider horloge)
                 Emotions = bilanDuJour.Emotions.Select(e => e.Emotion.ToString()).ToList(),
                 Fatigue = bilanDuJour.Fatigue,
             },
-            Traitements = await TraitementsDuJourAsync(id, jour, ct),
+            PrisesPrevues = planning.PrisesPrevues,
+            AuBesoin = planning.AuBesoin,
             Semaine = Semaine(jour, bilans, joursDouleursNotees, joursDeRegles),
         });
-    }
-
-    private async Task<IReadOnlyList<TraitementAujourdhuiViewModel>> TraitementsDuJourAsync(int carnetId, DateOnly jour, CancellationToken ct)
-    {
-        var debut = jour.ToDateTime(TimeOnly.MinValue);
-        var fin = jour.AddDays(1).ToDateTime(TimeOnly.MinValue);
-
-        var traitements = await context.Medicaments.AsNoTracking()
-            .Where(m => m.CarnetSanteId == carnetId && m.TraitementEnCours && m.Type == TypeTraitement.Medicamenteux)
-            .OrderBy(m => m.Nom)
-            .Select(m => new { m.Id, m.Nom, m.Posologie })
-            .ToListAsync(ct);
-        var prises = await context.DonneesMedicaments.AsNoTracking()
-            .Where(p => p.CarnetSanteId == carnetId && p.Date >= debut && p.Date < fin)
-            .Select(p => new { p.MedicamentId, p.Date })
-            .ToListAsync(ct);
-
-        return traitements.Select(t =>
-        {
-            var sesPrises = prises.Where(p => p.MedicamentId == t.Id).Select(p => p.Date).ToList();
-            return new TraitementAujourdhuiViewModel
-            {
-                Id = t.Id,
-                Nom = t.Nom,
-                Posologie = t.Posologie,
-                PrisesDuJour = sesPrises.Count,
-                DernierePrise = sesPrises.Count == 0 ? null : sesPrises.Max(),
-            };
-        }).ToList();
     }
 
     /// <summary>

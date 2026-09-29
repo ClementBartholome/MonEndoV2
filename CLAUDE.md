@@ -51,8 +51,13 @@ dotnet ef migrations add NomEnPascalCase --project MonEndoVue.Server
 - **`DonneesDouleur`** (type, intensité 0-10, date, commentaire) — page `/douleurs`.
 - **`SymptomeCycle`** (type, intensité, date, commentaire, photo optionnelle) dont l'**acné** avec suivi photo ;
   **`JourRegle`** (jours de règles) — page `/cycle` (onglets symptômes, acné, cycles).
-- **`Medicament`** (traitement, `TypeTraitement` médicamenteux ou non, en cours ou passé), **`DonneesMedicament`** (prises),
-  **`DonneesTraitementNonMedicamenteux`** (séances) — page `/medicaments`.
+- **`Medicament`** (traitement, `TypeTraitement` médicamenteux ou non, en cours ou passé, avec une **fréquence** à la
+  manière de l'app Santé d'Apple : `AuBesoin`, `ChaqueJour`, `CertainsJours` + jours de la semaine, `TousLesNJours`
+  depuis la date de début, et jusqu'à 6 **`HorairePrise`**), **`DonneesMedicament`** (réponses aux prises : `Statut`
+  `Pris` ou `Ignore`, `HeurePrevue` pour une prise planifiée, absente pour une prise au besoin),
+  **`DonneesTraitementNonMedicamenteux`** (séances) — page `/medicaments` (`TraitementsController`, `GET Traitements/jour`).
+  Le planning d'un jour est calculé par `PlanningTraitement` ; une prise **ignorée** est stockée dans la même table :
+  toute lecture qui compte des prises (PDF, historique, accueil) filtre `Statut == Pris`.
 - **`DonneesTransit`** — `/transit` (ancien suivi par événements ; le suivi quotidien passe désormais par le bilan) ; **`DonneesActivitePhysique`** — `/activite`.
 - **`BilanQuotidien`** (émotions, stress, fatigue, pas, douleur moyenne, hydratation, alimentation, notes, et une catégorie
   **transit** facultative : selles avec type de Bristol 1-7, crampes d'estomac et ballonnements avec intensité) — `/bilan-quotidien`,
@@ -66,8 +71,8 @@ dotnet ef migrations add NomEnPascalCase --project MonEndoVue.Server
   Les bilans antérieurs gardent leur ancienne humeur `Mood` (`Heureuse`/`Neutre`/`Triste`) : tout calcul d'humeur passe
   par `features/bilan-quotidien/utils/humeur.ts`, qui prend en compte les deux.
 - Accueil `/` « Aujourd'hui » (`GET Accueil/aujourdhui?jour=AAAA-MM-JJ`, jour local envoyé par le client, carnet de la
-  session : cycle déduit des jours de règles sans prédiction, bilan du jour, traitements en cours et prises du jour, faits
-  descriptifs des 7 derniers jours ; prise notée en un geste par `POST DonneesMedicament`), agenda `/agenda` (Google Calendar en lecture via le serveur, seulement pour une utilisatrice associée à un calendrier dans la configuration `Agenda`), export PDF `/export`.
+  session : cycle déduit des jours de règles sans prédiction, bilan du jour, prises prévues ce jour-là (heure et réponse) et
+  traitements au besoin, faits descriptifs des 7 derniers jours ; prise notée en un geste par `POST Traitements/{id}/prises`), agenda `/agenda` (Google Calendar en lecture via le serveur, seulement pour une utilisatrice associée à un calendrier dans la configuration `Agenda`), export PDF `/export`.
 - Pages publiques (sans compte, `meta: { public: true }` dans le routeur) : connexion, inscription, politique de
   confidentialité `/confidentialite` et mentions légales `/mentions-legales` (`features/legal/`). **Consentement explicite**
   aux données de santé (`ApplicationUser.ConsentementDonneesSanteLe`, version de la politique acceptée) : case à l'inscription,

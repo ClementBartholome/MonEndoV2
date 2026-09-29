@@ -27,7 +27,7 @@ Nouveau composant shadcn : `npx shadcn-vue add <nom>` (alias configurés vers `@
 - Props typées : `defineProps<{ … }>()` (+ `withDefaults` si besoin) ; emits : `defineEmits<{ 'edit-entry': [id: number] }>()`, événements en kebab-case.
 - `import type` obligatoire pour les imports de types (`verbatimModuleSyntax`).
 - Taille : au-delà d'environ 150-200 lignes pour un bloc UI métier, extraire un composant dédié. `CyclePage.vue`
-  et `MedicamentPage.vue` sont trop gros : les découper quand on y travaille (skill `fonctionnalite-front`).
+  est trop gros : les découper quand on y travaille (skill `fonctionnalite-front`).
 - Réutiliser l'existant avant de créer : `GenericCardList` (cartes mobiles, callbacks `onEdit`/`onDelete`/`onPhotoClick`),
   `SectionKpiHeader`, `EmptyStateAction`, `Datatable`, `SelectMonth`, composants `ui/`.
 
@@ -71,7 +71,7 @@ plus de DataTables.
 - **Dette connue** (lot C de la roadmap) :
   - `authService` / `tokenService` appellent axios directement ;
   - `apiService` renvoie des `Promise<any>` ;
-  - `CyclePage` et `MedicamentPage` mélangent orchestration, logique et rendu.
+  - `CyclePage` mélange orchestration, logique et rendu.
 
 ## Typage
 - **Aucun nouveau `any`** : typer avec les interfaces de `features/*/types`, sinon `unknown` + rétrécissement.
@@ -103,7 +103,7 @@ plus de DataTables.
   - Pas de bouton « Revenir en arrière » dans les pages : la navigation est toujours visible. L'en-tête (logo, compte) est
     posé sur la page en `pointer-events-none` : la première carte peut passer dessous sans perdre ses clics.
   - Intensité 0-10 : `var(--intensite-N)` (texte foncé jusqu'à 5, blanc à partir de 6).
-  - Les pages pas encore refaites (Cycle, Traitements, accueil…) gardent des couleurs brutes : les migrer quand on les touche.
+  - Les pages pas encore refaites (Cycle, Activité, Export…) gardent des couleurs brutes : les migrer quand on les touche.
 - Polices servies par l'app (`src/assets/polices.css`, paquets `@fontsource`), **jamais Google Fonts** (IP envoyée à Google, RGPD) :
   Poppins 400/400 italique/500/600/700 en latin ; une graisse ou un axe d'icône en plus s'ajoute dans ce fichier.
 - Icônes Material Symbols (`<i class="material-symbols-outlined">nom</i>`, axe FILL seul, graisse 400) ; les correspondances type → icône vont dans
