@@ -1,4 +1,4 @@
-import { endOfMonth, format } from 'date-fns';
+import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 
 /** Jour calendaire local (AAAA-MM-JJ) d'une date reçue de l'API (sans fuseau) ou d'une Date locale. */
@@ -11,10 +11,6 @@ export function heure(date: string | Date): string {
     const texte = typeof date === 'string' ? date.slice(11, 16) : format(date, 'HH:mm');
     const [heures, minutes] = texte.split(':');
     return `${Number(heures)} h ${minutes}`;
-}
-
-export function estMoisCourant(mois: Date, maintenant: Date): boolean {
-    return endOfMonth(mois) >= maintenant && mois <= maintenant;
 }
 
 /** « Mardi 15 septembre » à partir d'une clé AAAA-MM-JJ. */

@@ -9,17 +9,8 @@
       </button>
     </header>
 
-    <nav aria-label="Mois affiché" class="-mx-3 flex items-center justify-between">
-      <button type="button" aria-label="Mois précédent" class="flex h-11 w-11 items-center justify-center rounded-full text-texte hover:bg-surface-2"
-              @click="changerDeMois(-1)">
-        <i class="material-symbols-outlined" aria-hidden="true">chevron_left</i>
-      </button>
-      <span class="text-base font-semibold text-texte" aria-live="polite">{{ titreMois }}</span>
-      <button type="button" aria-label="Mois suivant" :disabled="!moisSuivantPossible"
-              class="flex h-11 w-11 items-center justify-center rounded-full text-texte hover:bg-surface-2 disabled:text-trait"
-              @click="changerDeMois(1)">
-        <i class="material-symbols-outlined" aria-hidden="true">chevron_right</i>
-      </button>
+    <nav aria-label="Mois affiché" class="-mx-3">
+      <SelecteurMois :mois="mois" @changer="allerAuMois"/>
     </nav>
 
     <div v-if="chargement" class="flex flex-col gap-3.5" aria-busy="true" aria-label="Chargement des douleurs">
@@ -53,14 +44,13 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue';
+import { onMounted, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { format } from 'date-fns';
-import { fr } from 'date-fns/locale';
 import { Button } from '@/shared/components/ui/button';
 import { Skeleton } from '@/shared/components/ui/skeleton';
 import { useToast } from '@/shared/components/ui/toast';
 import EmptyStateAction from '@/shared/components/EmptyStateAction.vue';
+import SelecteurMois from '@/shared/components/SelecteurMois.vue';
 import { useAuthStore } from '@/features/auth/store/auth';
 import ChiffresDuMois from '../components/ChiffresDuMois.vue';
 import GraphiqueDouleursMois from '../components/GraphiqueDouleursMois.vue';
@@ -73,16 +63,11 @@ const auth = useAuthStore();
 const route = useRoute();
 const router = useRouter();
 const { toast } = useToast();
-const { mois, chargement, erreur, chiffres, graphique, groupes, moisSuivantPossible, charger, changerDeMois, enregistrer, supprimer } =
+const { mois, chargement, erreur, chiffres, graphique, groupes, charger, allerAuMois, enregistrer, supprimer } =
     useDouleurs({ carnetSanteId: () => auth.user?.carnetSanteId });
 
 const saisieOuverte = ref(false);
 const entreeModifiee = ref<DonneesDouleur | null>(null);
-
-const titreMois = computed(() => {
-  const texte = format(mois.value, 'MMMM yyyy', { locale: fr });
-  return texte.charAt(0).toUpperCase() + texte.slice(1);
-});
 
 const actions: ActionsSaisieDouleur = {
   enregistrer: async (saisie, id) => {

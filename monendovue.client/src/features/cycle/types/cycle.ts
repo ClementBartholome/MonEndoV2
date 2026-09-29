@@ -3,8 +3,10 @@ export interface CycleDuMois {
     joursDeRegles: string[];
     enCours: CycleEnCours | null;
     cycles: CycleTermine[];
-    /** Null avant deux cycles terminés. */
+    /** Moyenne des 6 derniers cycles ; null avant deux cycles terminés. */
     dureeMoyenne: number | null;
+    /** Cycles plus anciens que ceux listés (« Voir plus »). */
+    cyclesPlusAnciens: number;
 }
 
 export interface CycleEnCours {

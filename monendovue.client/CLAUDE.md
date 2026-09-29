@@ -114,6 +114,11 @@ plus de DataTables.
     - intensité 1-10 : composant partagé `ChoixIntensite` (choisie = pleine dans sa couleur, bordure de la même
       couleur, jamais de bordure noire ; les autres gardent un trait de leur couleur pour lire l'échelle) ;
     - la teinte d'une rubrique identifie (tuile d'icône, calendrier), elle ne change pas avec l'état.
+  - **Volume et historique** (retour utilisateur du 2026-09-29 : « et quand on aura des centaines de cycles ? ») : aucune
+    liste ne grandit sans limite avec les années. Soit elle est bornée par une période (mois affiché, avec
+    `SelecteurMois` pour sauter loin en arrière), soit elle affiche les N plus récents et demande la suite au serveur
+    (« Voir plus », paramètre de nombre ou de fenêtre plafonné côté serveur : `Cycle?cycles=`, `Acne?mois=`). Les images
+    d'une liste se chargent en `loading="lazy"`. Une moyenne ne dépend jamais du nombre d'éléments affichés.
   - `index.css` centre le texte de toute `ul` (règle héritée, gardée tant que les anciennes pages en dépendent) : une
     liste refaite porte `text-left` sur ses lignes, sinon libellés et détails se centrent.
   - Icônes : `polices.css` force `line-height: 1` (les classes `text-lg`… décalaient le glyphe) ; ne pas le surcharger.

@@ -2,8 +2,10 @@
 export interface Acne {
     /** Du plus récent au plus ancien ; le premier est en cours si sa fin est nulle. */
     episodes: EpisodeAcne[];
-    /** Points de suivi avec photo, du plus récent au plus ancien. */
+    /** Points de suivi avec photo de la fenêtre demandée, du plus récent au plus ancien. */
     suivis: SuiviAcne[];
+    /** Photos plus anciennes que la fenêtre (« Voir les photos plus anciennes »). */
+    suivisPlusAnciens: number;
 }
 
 export interface EpisodeAcne {

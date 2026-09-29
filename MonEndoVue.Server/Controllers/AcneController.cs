@@ -16,10 +16,13 @@ namespace MonEndoVue.Server.Controllers;
 [Authorize]
 public class AcneController(AcneService service) : ControllerBase
 {
-    /// <summary>Épisodes et suivis photo, durée de l'épisode en cours comptée au jour local (<c>?jour=2026-09-15</c>).</summary>
+    /// <summary>
+    /// Épisodes et suivis photo des <c>mois</c> derniers mois (7 par défaut), durée de l'épisode en cours comptée au jour
+    /// local (<c>?jour=2026-09-15</c>).
+    /// </summary>
     [HttpGet]
-    public async Task<IActionResult> Get([FromQuery] DateOnly jour, CancellationToken ct) =>
-        this.VersReponse(await service.GetAsync(User.GetCurrentUserId(), jour, ct), vue => Ok(vue));
+    public async Task<IActionResult> Get([FromQuery] DateOnly jour, CancellationToken ct, [FromQuery] int mois = AcneService.MoisDePhotos) =>
+        this.VersReponse(await service.GetAsync(User.GetCurrentUserId(), jour, ct, mois), vue => Ok(vue));
 
     [HttpPost("episodes")]
     public async Task<IActionResult> Creer(EpisodeAcneDto dto, CancellationToken ct) =>

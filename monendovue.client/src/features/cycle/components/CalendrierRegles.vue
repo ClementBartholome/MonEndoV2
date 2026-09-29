@@ -1,17 +1,7 @@
 <template>
   <section aria-labelledby="titre-calendrier" class="flex flex-col gap-2 rounded-carte bg-surface px-3.5 pb-4 pt-3 shadow-elevation">
-    <div class="flex items-center justify-between">
-      <button type="button" aria-label="Mois précédent" class="flex h-11 w-11 items-center justify-center rounded-full text-texte hover:bg-surface-2"
-              @click="emit('changer', -1)">
-        <i class="material-symbols-outlined" aria-hidden="true">chevron_left</i>
-      </button>
-      <h2 id="titre-calendrier" class="m-0 text-base font-semibold tracking-normal text-texte" aria-live="polite">{{ titreMois }}</h2>
-      <button type="button" aria-label="Mois suivant" :disabled="!moisSuivantPossible"
-              class="flex h-11 w-11 items-center justify-center rounded-full text-texte hover:bg-surface-2 disabled:text-trait"
-              @click="emit('changer', 1)">
-        <i class="material-symbols-outlined" aria-hidden="true">chevron_right</i>
-      </button>
-    </div>
+    <h2 id="titre-calendrier" class="sr-only">Calendrier des règles, {{ titreMois }}</h2>
+    <SelecteurMois :mois="mois" @changer="(choisi) => emit('changer', choisi)"/>
 
     <div class="grid grid-cols-7 gap-1 text-center text-xs text-texte-3" aria-hidden="true">
       <span v-for="(initiale, index) in INITIALES" :key="index">{{ initiale }}</span>
@@ -33,16 +23,21 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue';
+import { format } from 'date-fns';
+import { fr } from 'date-fns/locale';
+import SelecteurMois from '@/shared/components/SelecteurMois.vue';
 import type { CaseCalendrier } from '../utils/cycle';
 import { jourEnToutesLettres } from '../utils/cycle';
 
-defineProps<{
-  titreMois: string;
+const props = defineProps<{
+  mois: Date;
   calendrier: { decalage: number; cases: CaseCalendrier[] };
-  moisSuivantPossible: boolean;
   enCoursDEnvoi: Set<string>;
 }>();
-const emit = defineEmits<{ basculer: [jour: CaseCalendrier]; changer: [decalage: number] }>();
+const emit = defineEmits<{ basculer: [jour: CaseCalendrier]; changer: [mois: Date] }>();
+
+const titreMois = computed(() => format(props.mois, 'MMMM yyyy', { locale: fr }));
 
 const INITIALES = ['L', 'M', 'M', 'J', 'V', 'S', 'D'];
 

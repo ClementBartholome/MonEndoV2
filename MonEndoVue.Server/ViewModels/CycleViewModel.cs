@@ -12,8 +12,11 @@ public class CycleViewModel
     /// <summary>Derniers cycles terminés, du plus récent au plus ancien.</summary>
     public List<CycleTermineViewModel> Cycles { get; set; } = [];
 
-    /// <summary>Durée moyenne des cycles listés ; null avant deux cycles.</summary>
+    /// <summary>Durée moyenne des 6 derniers cycles ; null avant deux cycles.</summary>
     public int? DureeMoyenne { get; set; }
+
+    /// <summary>Cycles terminés plus anciens que ceux listés, à demander avec <c>cycles=</c> (« Voir plus »).</summary>
+    public int CyclesPlusAnciens { get; set; }
 }
 
 public class CycleEnCoursViewModel

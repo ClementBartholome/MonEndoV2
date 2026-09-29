@@ -1,7 +1,7 @@
 import { computed, ref } from 'vue';
-import { addMonths, startOfMonth } from 'date-fns';
+import { startOfMonth } from 'date-fns';
 import apiService from '@/shared/services/apiService';
-import { estMoisCourant, grouperParJour } from '@/shared/utils/jours';
+import { grouperParJour } from '@/shared/utils/jours';
 import type { SymptomeCycle, SymptomeSaisie } from '../types/symptome-cycle';
 import { ACNE, chiffresDuMois } from '../utils/symptomes';
 
@@ -19,7 +19,6 @@ export function useSymptomes({ carnetSanteId, maintenant = () => new Date() }: O
 
     const chiffres = computed(() => chiffresDuMois(entrees.value));
     const groupes = computed(() => grouperParJour(entrees.value));
-    const moisSuivantPossible = computed(() => !estMoisCourant(mois.value, maintenant()));
 
     async function charger() {
         const carnet = carnetSanteId();
@@ -36,9 +35,11 @@ export function useSymptomes({ carnetSanteId, maintenant = () => new Date() }: O
         }
     }
 
-    async function changerDeMois(decalage: number) {
-        if (decalage > 0 && !moisSuivantPossible.value) return;
-        mois.value = addMonths(mois.value, decalage);
+    /** Mois choisi (flèches ou choix direct) ; jamais après le mois en cours. */
+    async function allerAuMois(choisi: Date) {
+        const debut = startOfMonth(choisi);
+        if (debut > startOfMonth(maintenant())) return;
+        mois.value = debut;
         entrees.value = [];
         await charger();
     }
@@ -57,5 +58,5 @@ export function useSymptomes({ carnetSanteId, maintenant = () => new Date() }: O
         entrees.value = entrees.value.filter((e) => e.id !== id);
     }
 
-    return { mois, entrees, chargement, erreur, chiffres, groupes, moisSuivantPossible, charger, changerDeMois, enregistrer, supprimer };
+    return { mois, entrees, chargement, erreur, chiffres, groupes, charger, allerAuMois, enregistrer, supprimer };
 }

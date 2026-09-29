@@ -19,7 +19,13 @@ public class AcneService(AppDbContext context, CarnetSanteService carnetSanteSer
     /// <summary>Écart toléré entre le jour local envoyé par le client et la date du serveur (fuseaux horaires).</summary>
     private const int EcartMaximalJours = 2;
 
-    public async Task<ResultatOperation<AcneViewModel>> GetAsync(string userId, DateOnly jour, CancellationToken ct)
+    /// <summary>Photos renvoyées par défaut : de quoi comparer à 6 mois, sans charger des années de photos.</summary>
+    public const int MoisDePhotos = 7;
+
+    /// <summary>Plafond d'une demande (« Voir les photos plus anciennes »).</summary>
+    public const int MoisDePhotosMaximum = 120;
+
+    public async Task<ResultatOperation<AcneViewModel>> GetAsync(string userId, DateOnly jour, CancellationToken ct, int moisDePhotos = MoisDePhotos)
     {
         if (await CarnetDeAsync(userId, ct) is not { } carnetId) return ResultatOperation<AcneViewModel>.Echec(StatutOperation.NonAuthentifie);
         if (Math.Abs(jour.DayNumber - AujourdhuiServeur().DayNumber) > EcartMaximalJours)
@@ -29,10 +35,11 @@ public class AcneService(AppDbContext context, CarnetSanteService carnetSanteSer
             .Where(e => e.CarnetSanteId == carnetId)
             .OrderByDescending(e => e.Debut)
             .ToListAsync(ct);
-        var suivis = await context.SymptomesCycles.AsNoTracking()
-            .Where(s => s.CarnetSanteId == carnetId && s.TypeSymptome == TypeAcne && s.PhotoUrl != null && s.PhotoUrl != "")
-            .OrderByDescending(s => s.Date)
-            .ToListAsync(ct);
+        var depuis = jour.AddMonths(-Math.Clamp(moisDePhotos, 1, MoisDePhotosMaximum)).ToDateTime(TimeOnly.MinValue);
+        var avecPhoto = context.SymptomesCycles.AsNoTracking()
+            .Where(s => s.CarnetSanteId == carnetId && s.TypeSymptome == TypeAcne && s.PhotoUrl != null && s.PhotoUrl != "");
+        var suivis = await avecPhoto.Where(s => s.Date >= depuis).OrderByDescending(s => s.Date).ToListAsync(ct);
+        var plusAnciens = await avecPhoto.CountAsync(s => s.Date < depuis, ct);
 
         return ResultatOperation<AcneViewModel>.Succes(new AcneViewModel
         {
@@ -51,6 +58,7 @@ public class AcneService(AppDbContext context, CarnetSanteService carnetSanteSer
                 Commentaire = s.Commentaire,
                 PhotoUrl = s.PhotoUrl!,
             }).ToList(),
+            SuivisPlusAnciens = plusAnciens,
         });
     }
 

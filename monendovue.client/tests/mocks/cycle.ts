@@ -18,7 +18,9 @@ export function simulerRegles(serveur: FauxServeur, initiaux: string[] = [], vue
           enCours: null,
           dureeMoyenne: null,
           ...vue,
-          cycles: liste(vue.cycles ?? []),
+          // Comme le serveur : les N derniers cycles demandés (6 par défaut) et le nombre de plus anciens.
+          cycles: liste((vue.cycles ?? []).slice(0, Number(url.searchParams.get('cycles') ?? 6))),
+          cyclesPlusAnciens: Math.max(0, (vue.cycles ?? []).length - Number(url.searchParams.get('cycles') ?? 6)),
           joursDeRegles: liste([...jours].filter((j) => j.startsWith(mois)).sort((a, b) => a.localeCompare(b))),
         },
       };
@@ -101,7 +103,7 @@ export function simulerAcne(serveur: FauxServeur, initiaux: { debut: string; fin
 
   serveur
     .on('GET', /^Acne$/, () => ({
-      body: { episodes: liste([...episodes].sort((a, b) => b.debut.localeCompare(a.debut))), suivis: liste(suivis) },
+      body: { episodes: liste([...episodes].sort((a, b) => b.debut.localeCompare(a.debut))), suivis: liste(suivis), suivisPlusAnciens: 0 },
     }))
     .on('POST', /^Acne\/episodes$/, ({ corps }) => {
       const id = prochainId++;

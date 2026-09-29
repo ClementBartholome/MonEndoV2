@@ -49,6 +49,26 @@ public sealed class AcneServiceTests : IDisposable
     }
 
     [Fact]
+    public async Task Get_PhotosDesSeptDerniersMois_LesAutresSurDemande()
+    {
+        _carnet.Context.SymptomesCycles.AddRange(Enumerable.Range(0, 60).Select(i => new SymptomeCycle
+        {
+            CarnetSanteId = CarnetDeTest.CarnetSanteId, TypeSymptome = "Acné", Intensite = 3,
+            Date = new DateTime(2026, 9, 13).AddDays(-7 * i), PhotoUrl = $"https://stockage.test/{i}.jpg",
+        }));
+        await _carnet.Context.SaveChangesAsync();
+
+        var parDefaut = (await Service().GetAsync(CarnetDeTest.UserId, Jour, CancellationToken.None)).Valeur!;
+        var tout = (await Service().GetAsync(CarnetDeTest.UserId, Jour, CancellationToken.None, 24)).Valeur!;
+
+        // Du 15 février au 13 septembre 2026 : 31 photos hebdomadaires.
+        Assert.Equal(31, parDefaut.Suivis.Count);
+        Assert.Equal(29, parDefaut.SuivisPlusAnciens);
+        Assert.Equal(60, tout.Suivis.Count);
+        Assert.Equal(0, tout.SuivisPlusAnciens);
+    }
+
+    [Fact]
     public async Task Terminer_PuisNouvelEpisode()
     {
         var id = await Creer(new DateOnly(2026, 8, 2));

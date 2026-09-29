@@ -45,6 +45,36 @@ test.describe('Cycle · règles', () => {
     expect(serveur.appelsVers('PUT', /^Cycle\/regles\/2026-09-15$/)).toHaveLength(1);
   });
 
+  test('l\'historique se charge par six cycles, la moyenne reste celle des six derniers', async ({ cyclePage, serveur, page }) => {
+    const cycles = Array.from({ length: 14 }, (_, i) => ({
+      debut: `2026-${String(8 - (i % 8)).padStart(2, '0')}-0${(i % 9) + 1}`, joursDeRegles: 5, duree: 28 + (i % 3),
+    }));
+    simulerRegles(serveur, [], { cycles, dureeMoyenne: 29 });
+    await cyclePage.ouvrir();
+
+    await expect(cyclePage.mesCycles.getByRole('listitem')).toHaveCount(6);
+    await page.getByRole('button', { name: 'Voir les cycles précédents (8)' }).click();
+
+    await expect(cyclePage.mesCycles.getByRole('listitem')).toHaveCount(12);
+    await expect(page.getByRole('button', { name: 'Voir les cycles précédents (2)' })).toBeVisible();
+    expect(serveur.appelsVers('GET', /^Cycle$/).at(-1)!.parametres.get('cycles')).toBe('12');
+    await expect(cyclePage.mesCycles).toContainText('en moyenne 29 jours');
+  });
+
+  test('le titre du mois permet de revenir loin en arrière d\'un coup', async ({ cyclePage, serveur, page }) => {
+    simulerRegles(serveur, ['2025-03-10']);
+    await cyclePage.ouvrir();
+
+    await page.getByRole('button', { name: /Septembre 2026, choisir un autre mois/ }).click();
+    await cyclePage.panneau.getByRole('button', { name: 'Année précédente' }).click();
+    await expect(cyclePage.panneau.getByRole('button', { name: 'oct.' })).toBeEnabled();
+    await cyclePage.panneau.getByRole('button', { name: 'mars' }).click();
+
+    await expect(page.getByRole('button', { name: /Mars 2025, choisir un autre mois/ })).toBeVisible();
+    await expect(cyclePage.jour('Lundi 10 mars')).toHaveAttribute('aria-pressed', 'true');
+    expect(serveur.appelsVers('GET', /^Cycle$/).at(-1)!.parametres.get('mois')).toBe('2025-03-01');
+  });
+
   test('un échec d\'enregistrement remet le jour dans son état', async ({ cyclePage, serveur, page }) => {
     simulerRegles(serveur);
     serveur.on('PUT', /^Cycle\/regles\//, () => ({ status: 500 }));
