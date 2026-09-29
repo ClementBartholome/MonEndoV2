@@ -38,15 +38,15 @@ const aucunBilan = computed(() => props.jours.every((jour) => !jour.bilan));
 </script>
 
 <template>
-  <Card class="container !mx-0 mt-4 w-full bg-clearer rounded-3xl shadow-xl flex flex-col">
+  <Card class="flex w-full flex-col rounded-carte border-0 bg-surface shadow-elevation">
     <CardHeader class="p-4 md:p-6">
-      <CardTitle class="m-0 text-lg leading-tight flex items-center gap-2">
+      <CardTitle class="m-0 flex items-center gap-2 text-[17px] font-semibold leading-tight tracking-normal text-texte">
         <i class="material-symbols-outlined" aria-hidden="true">show_chart</i>
         Évolution {{ mode === 'mois' ? 'du mois' : 'de la semaine' }}
       </CardTitle>
     </CardHeader>
     <CardContent class="px-4 pb-4 md:px-6 md:pb-6 flex flex-col gap-4">
-      <p v-if="aucunBilan" class="text-paragraph text-left">Aucun bilan sur cette période.</p>
+      <p v-if="aucunBilan" class="text-texte-2 text-left">Aucun bilan sur cette période.</p>
       <template v-else>
         <GraphiqueLignes
             v-for="graphique in graphiques"
@@ -60,11 +60,11 @@ const aucunBilan = computed(() => props.jours.every((jour) => !jour.bilan));
             :selection="selection"
             @selectionner="(index) => emit('selectionner', jours[index].date)"
         />
-        <p v-if="aDesRegles" class="flex items-center gap-2 text-xs text-paragraph text-left">
-          <span class="w-4 h-3 rounded-sm bg-rose-200/70" aria-hidden="true"/>
+        <p v-if="aDesRegles" class="flex items-center gap-2 text-xs text-texte-2 text-left">
+          <span class="w-4 h-3 rounded-sm bg-teinte-regles-fond" aria-hidden="true"/>
           Jours de règles
         </p>
-        <p class="text-xs text-muted-foreground text-left">
+        <p class="text-xs text-texte-3 text-left">
           Les jours sans valeur ne sont pas tracés : une mesure non renseignée ne compte jamais pour zéro.
         </p>
       </template>

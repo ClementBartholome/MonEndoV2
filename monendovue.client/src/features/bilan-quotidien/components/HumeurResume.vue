@@ -12,8 +12,8 @@ const ancienne = computed(() => (props.bilan.mood ? anciennesHumeurs[props.bilan
 </script>
 
 <template>
-  <div class="bg-white rounded-xl border border-gray-100 p-3">
-    <p class="text-xs text-muted-foreground flex items-center gap-1">
+  <div class="rounded-controle bg-fond p-3">
+    <p class="flex items-center gap-1 text-xs text-texte-3">
       <i class="material-symbols-outlined text-2xl leading-6">{{ !emotions.length && ancienne ? ancienne.icone : 'mood' }}</i>
       {{ emotions.length ? 'Émotions' : 'Humeur' }}
     </p>
@@ -21,11 +21,11 @@ const ancienne = computed(() => (props.bilan.mood ? anciennesHumeurs[props.bilan
       <li
           v-for="emotion in emotions"
           :key="emotion.code"
-          class="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-pink-100 text-pink-700 text-xs"
+          class="inline-flex items-center gap-1 rounded-controle bg-surface px-2 py-1 text-xs text-texte"
       >
         <span aria-hidden="true">{{ emotion.emoji }}</span>{{ emotion.libelle }}
       </li>
     </ul>
-    <p v-else class="text-base font-semibold text-headline mt-1">{{ ancienne?.libelle ?? '-' }}</p>
+    <p v-else class="text-base font-semibold text-texte mt-1">{{ ancienne?.libelle ?? '-' }}</p>
   </div>
 </template>

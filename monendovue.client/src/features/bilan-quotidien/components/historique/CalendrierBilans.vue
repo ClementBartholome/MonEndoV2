@@ -28,8 +28,8 @@ const valeurDu = (jour: JourHistorique) => (jour.bilan ? echelle.value.valeur(jo
 const classesPastille = (jour: JourHistorique) => {
   const valeur = valeurDu(jour);
   if (valeur !== null) return echelle.value.classes[echelle.value.niveau(valeur)];
-  if (jour.bilan) return 'bg-white border border-gray-300 text-headline';
-  return 'border border-dashed border-gray-300 text-muted-foreground';
+  if (jour.bilan) return 'bg-surface border border-trait text-texte';
+  return 'border border-dashed border-contour text-texte-3';
 };
 
 const libelleJour = (jour: JourHistorique) => {
@@ -48,13 +48,13 @@ const libelleJour = (jour: JourHistorique) => {
   <div class="w-full flex flex-col gap-3">
     <div>
       <p id="calendrier-indicateur" class="sr-only">Couleur des jours selon</p>
-      <div class="grid grid-cols-2 gap-2" role="group" aria-labelledby="calendrier-indicateur">
+      <div class="grid grid-cols-2 gap-1 rounded-controle bg-surface-2 p-1" role="group" aria-labelledby="calendrier-indicateur">
         <button
             v-for="(config, cle) in echellesCalendrier"
             :key="cle"
             type="button"
-            class="min-h-[44px] px-3 rounded-full text-sm border transition-colors"
-            :class="indicateur === cle ? 'bg-button text-white border-button' : 'bg-white text-headline border-gray-200'"
+            class="min-h-10 rounded-controle px-3 text-sm"
+            :class="indicateur === cle ? 'bg-surface font-semibold text-texte shadow-elevation' : 'text-texte-2'"
             :aria-pressed="indicateur === cle"
             @click="indicateur = cle"
         >
@@ -67,7 +67,7 @@ const libelleJour = (jour: JourHistorique) => {
       <div
           v-for="(initiale, index) in JOURS_SEMAINE"
           :key="`entete-${index}`"
-          class="text-xs font-medium text-muted-foreground text-center"
+          class="text-center text-xs font-medium text-texte-3"
           aria-hidden="true"
       >
         {{ initiale }}
@@ -80,7 +80,7 @@ const libelleJour = (jour: JourHistorique) => {
           class="jour relative mx-auto w-full max-w-12 aspect-square rounded-full flex items-center justify-center text-sm transition-transform disabled:opacity-40"
           :class="[
             classesPastille(jour),
-            isSameDay(jour.date, jourSelectionne) ? 'ring-2 ring-offset-2 ring-button' : '',
+            isSameDay(jour.date, jourSelectionne) ? 'ring-2 ring-texte ring-offset-2 ring-offset-surface' : '',
             isToday(jour.date) ? 'font-bold underline underline-offset-2' : 'font-medium',
           ]"
           :disabled="jour.aVenir"
@@ -91,17 +91,17 @@ const libelleJour = (jour: JourHistorique) => {
         {{ jour.date.getDate() }}
         <span
             v-if="jour.regles"
-            class="absolute -top-0.5 -right-0.5 w-4 h-4 rounded-full bg-white flex items-center justify-center shadow-sm"
+            class="absolute -right-0.5 -top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-surface"
             aria-hidden="true"
         >
-          <i class="material-symbols-outlined regles text-rose-500">water_drop</i>
+          <i class="material-symbols-outlined regles text-teinte-regles">water_drop</i>
         </span>
       </button>
     </div>
 
-    <ul class="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-xs text-paragraph" aria-label="Légende">
+    <ul class="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-xs text-texte-2" aria-label="Légende">
       <li class="flex items-center gap-1">
-        <span class="text-muted-foreground">{{ echelle.libelle }}</span>
+        <span class="text-texte-3">{{ echelle.libelle }}</span>
         <span class="flex items-center gap-0.5">
           <span v-for="(classes, niveau) in echelle.classes" :key="niveau" class="w-4 h-4 rounded-full" :class="classes"/>
         </span>
@@ -109,10 +109,10 @@ const libelleJour = (jour: JourHistorique) => {
         <span aria-hidden="true">{{ echelle.bornes[0] }} → {{ echelle.bornes[1] }}</span>
       </li>
       <li class="flex items-center gap-1">
-        <i class="material-symbols-outlined regles text-rose-500" aria-hidden="true">water_drop</i>Règles
+        <i class="material-symbols-outlined regles text-teinte-regles" aria-hidden="true">water_drop</i>Règles
       </li>
       <li class="flex items-center gap-1">
-        <span class="w-4 h-4 rounded-full border border-dashed border-gray-400" aria-hidden="true"/>Sans bilan
+        <span class="w-4 h-4 rounded-full border border-dashed border-contour" aria-hidden="true"/>Sans bilan
       </li>
     </ul>
   </div>

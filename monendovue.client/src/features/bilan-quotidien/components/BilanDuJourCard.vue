@@ -44,9 +44,9 @@ const consommations = computed(() => consommationsAlimentaires.filter((c) => pro
 </script>
 
 <template>
-  <Card class="container mt-4 mx-auto w-full bg-clearer rounded-3xl shadow-xl flex flex-col">
+  <Card class="flex w-full flex-col rounded-carte border-0 bg-surface shadow-elevation">
     <CardHeader class="flex flex-row items-center justify-between gap-3 space-y-0 p-4 md:p-6">
-      <CardTitle class="m-0 text-lg text-left leading-tight first-letter:uppercase">{{ titre }}</CardTitle>
+      <CardTitle class="m-0 text-left text-[17px] font-semibold leading-tight tracking-normal text-texte first-letter:uppercase">{{ titre }}</CardTitle>
       <Button v-if="bilan" type="button" variant="outline" class="h-11 gap-2 shrink-0" @click="emit('modifier')">
         <i class="material-symbols-outlined text-lg" aria-hidden="true">edit</i>Modifier
       </Button>
@@ -55,17 +55,17 @@ const consommations = computed(() => consommationsAlimentaires.filter((c) => pro
       <div v-if="bilan" class="text-left">
         <div class="grid grid-cols-2 md:grid-cols-3 gap-2 mb-3">
           <HumeurResume :bilan="bilan" class="col-span-2 md:col-span-3"/>
-          <div v-for="tuile in tuiles" :key="tuile.libelle" class="bg-white rounded-xl border border-gray-100 p-3">
-            <p class="text-xs text-muted-foreground flex items-center gap-1">
+          <div v-for="tuile in tuiles" :key="tuile.libelle" class="rounded-controle bg-fond p-3">
+            <p class="text-xs text-texte-3 flex items-center gap-1">
               <i class="material-symbols-outlined text-base" aria-hidden="true">{{ tuile.icone }}</i>
               {{ tuile.libelle }}
             </p>
-            <p class="text-base font-semibold text-headline mt-1">{{ tuile.valeur }}</p>
+            <p class="text-base font-semibold text-texte mt-1">{{ tuile.valeur }}</p>
           </div>
         </div>
 
-        <div class="bg-white rounded-xl border border-gray-100 p-3 mb-3">
-          <p class="text-xs text-muted-foreground flex items-center gap-1 mb-2">
+        <div class="rounded-controle bg-fond p-3 mb-3">
+          <p class="text-xs text-texte-3 flex items-center gap-1 mb-2">
             <i class="material-symbols-outlined text-base" aria-hidden="true">restaurant</i>
             Alimentation
           </p>
@@ -78,23 +78,23 @@ const consommations = computed(() => consommationsAlimentaires.filter((c) => pro
               <i class="material-symbols-outlined text-sm" aria-hidden="true">{{ item.icone }}</i>{{ item.libelle }}
             </li>
           </ul>
-          <p v-else class="text-gray-500 italic text-sm">Aucune consommation signalée</p>
+          <p v-else class="m-0 text-sm italic text-texte-3">Aucune consommation signalée</p>
         </div>
 
         <TransitRecap :bilan="bilan"/>
 
-        <div v-if="bilan.commentaire" class="bg-white rounded-xl border border-gray-100 p-3">
-          <p class="text-xs text-muted-foreground flex items-center gap-1 mb-1">
+        <div v-if="bilan.commentaire" class="rounded-controle bg-fond p-3">
+          <p class="text-xs text-texte-3 flex items-center gap-1 mb-1">
             <i class="material-symbols-outlined text-base" aria-hidden="true">comment</i>
             Notes
           </p>
-          <p class="text-sm text-paragraph whitespace-pre-line break-words">{{ bilan.commentaire }}</p>
+          <p class="text-sm text-texte-2 whitespace-pre-line break-words">{{ bilan.commentaire }}</p>
         </div>
       </div>
 
       <div v-else class="flex flex-col items-center gap-4 text-center py-6">
-        <i class="material-symbols-outlined text-6xl text-gray-300" aria-hidden="true">event_busy</i>
-        <p class="text-lg font-semibold text-headline">
+        <i class="material-symbols-outlined text-6xl text-trait" aria-hidden="true">event_busy</i>
+        <p class="text-lg font-semibold text-texte">
           {{ aVenir ? "Ce jour n'est pas encore arrivé" : 'Aucun bilan pour ce jour' }}
         </p>
         <Button v-if="!aVenir" type="button" variant="custom" size="lg" class="gap-2" @click="emit('remplir')">

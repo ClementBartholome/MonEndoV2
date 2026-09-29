@@ -33,8 +33,8 @@ const basculer = (cle: ConsommationAlimentaire) => modifier({ [cle]: !corps.valu
   <TransitSaisie v-model="transit"/>
 
   <div class="flex flex-col gap-2">
-    <p id="libelle-alimentation" class="font-semibold text-headline flex items-center gap-2">
-      <i class="material-symbols-outlined text-button" aria-hidden="true">restaurant</i>Alimentation
+    <p id="libelle-alimentation" class="font-semibold text-texte flex items-center gap-2">
+      <i class="material-symbols-outlined text-teinte-bilan" aria-hidden="true">restaurant</i>Alimentation
     </p>
     <div class="grid grid-cols-3 gap-2" role="group" aria-labelledby="libelle-alimentation">
       <Button

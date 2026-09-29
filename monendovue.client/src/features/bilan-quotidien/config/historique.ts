@@ -29,12 +29,13 @@ export const echellesCalendrier: Record<IndicateurCalendrier, EchelleCalendrier>
     niveau: niveauDouleur,
     description: (valeur) => `douleur ${valeur} sur 10`,
     nonRenseigne: 'douleur non renseignée',
+    // Même échelle que la page Douleurs (tokens --intensite-N) : texte foncé jusqu'à 5, blanc au-delà.
     classes: [
-      'bg-violet-100 text-violet-950',
-      'bg-violet-200 text-violet-950',
-      'bg-violet-300 text-violet-950',
-      'bg-violet-500 text-white',
-      'bg-violet-700 text-white',
+      'bg-intensite-1 text-texte',
+      'bg-intensite-3 text-texte',
+      'bg-intensite-5 text-texte',
+      'bg-intensite-7 text-white',
+      'bg-intensite-9 text-white',
     ],
     bornes: ['0', '10'],
   },

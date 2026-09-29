@@ -24,17 +24,17 @@ const lignes = computed(() => {
 </script>
 
 <template>
-  <div class="bg-white rounded-xl border border-gray-100 p-3 mb-3">
-    <p class="text-xs text-muted-foreground flex items-center gap-1 mb-2">
+  <div class="mb-3 rounded-controle bg-fond p-3">
+    <p class="mb-2 flex items-center gap-1 text-xs text-texte-3">
       <i class="material-symbols-outlined text-2xl leading-6">gastroenterology</i>
       Transit
     </p>
     <ul v-if="lignes.length" class="flex flex-col gap-1">
       <li v-for="ligne in lignes" :key="ligne.libelle" class="flex flex-wrap items-center gap-x-2 text-sm">
-        <span class="text-paragraph">{{ ligne.libelle }} :</span>
-        <span class="font-semibold text-headline">{{ ligne.valeur }}</span>
+        <span class="text-texte-2">{{ ligne.libelle }} :</span>
+        <span class="font-semibold text-texte">{{ ligne.valeur }}</span>
       </li>
     </ul>
-    <p v-else class="text-gray-500 italic text-sm">Non renseigné</p>
+    <p v-else class="m-0 text-sm italic text-texte-3">Non renseigné</p>
   </div>
 </template>
