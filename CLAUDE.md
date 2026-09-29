@@ -264,3 +264,6 @@ Procédure validée (sans jamais lire les fichiers de secrets) :
    puis `npx vite --port 5173 --strictPort` (5173 est l'origine autorisée par CORS).
 4. Attendre `https://localhost:7206/health` = `Healthy`, ouvrir `https://localhost:5173/login` : **l'utilisateur se connecte
    lui-même** avec son compte local, puis on teste à 375px et en desktop.
+5. **Tester avec un volume réaliste**, jamais trois entrées : si le compte local est peu rempli, y ajouter environ un an
+   de données génériques avec `tools/donnees-demo/generer.mjs` (mode d'emploi en tête du fichier ; ajoute sans rien
+   effacer). Un écran lisible avec quelques données peut devenir illisible avec un mois complet (cas des graphiques du bilan).
