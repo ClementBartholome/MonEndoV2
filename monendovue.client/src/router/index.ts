@@ -6,6 +6,7 @@ import {useAuthStore} from "@/features/auth/store/auth";
 import PainPage from "@/features/douleurs/pages/DouleursPage.vue";
 import ActivitePage from "@/features/activite/pages/ActivitePage.vue";
 import TraitementsPage from "@/features/medicament/pages/TraitementsPage.vue";
+import HistoriqueTraitementPage from "@/features/medicament/pages/HistoriqueTraitementPage.vue";
 import TransitPage from "@/features/transit/pages/TransitPage.vue";
 import ExportPdfPage from "@/features/export/pages/ExportPdfPage.vue";
 import BilanQuotidienPage from "@/features/bilan-quotidien/pages/BilanQuotidienPage.vue";
@@ -43,6 +44,11 @@ const router = createRouter({
             path: '/medicaments',
             name: 'medicaments',
             component: TraitementsPage,
+        },
+        {
+            path: '/medicaments/:id(\\d+)',
+            name: 'historique-traitement',
+            component: HistoriqueTraitementPage,
         },
         {
             path: '/agenda',

@@ -93,5 +93,45 @@ export function simulerTraitements(serveur: FauxServeur, initiaux: Partial<Trait
       return { body: { id: prochainId++ } };
     });
 
+  // Historique d'un mois (planning simplifié comme plus haut : un traitement quotidien, chaque horaire chaque jour).
+  serveur
+    .on('GET', /^Traitements\/(\d+)\/historique$/, ({ params: [id], url }) => {
+      const traitement = traitements.find((t) => t.id === Number(id));
+      if (!traitement) return { status: 404 };
+      const mois = (url.searchParams.get('mois') ?? '').slice(0, 7);
+      const jour = url.searchParams.get('jour') ?? '';
+      const moisPrecedent = (() => {
+        const d = new Date(`${mois}-01T12:00:00`);
+        d.setMonth(d.getMonth() - 1);
+        return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+      })();
+      const entrees = traitement.type === 'NonMedicamenteux'
+        ? seances.filter((s) => s.traitementId === traitement.id).map((s, i) => ({ id: 1000 + i, nature: 'Seance', date: s.date, heurePrevue: null }))
+        : prises.filter((p) => p.traitementId === traitement.id)
+          .map((p) => ({ id: p.id, nature: p.statut, date: p.date, heurePrevue: p.heurePrevue?.slice(0, 5) ?? null }));
+      const duMois = entrees.filter((e) => e.date.startsWith(mois));
+      const planifie = traitement.type === 'Medicamenteux' && traitement.frequence !== 'AuBesoin';
+      const jours = [...new Set(duMois.map((e) => e.date.slice(0, 10)))].sort((a, b) => b.localeCompare(a));
+      return {
+        body: {
+          traitement: { ...traitement, joursSemaine: liste(traitement.joursSemaine), horaires: liste(traitement.horaires) },
+          prevues: planifie && jour.startsWith(mois) ? Number(jour.slice(8, 10)) * traitement.horaires.length : 0,
+          faites: duMois.filter((e) => e.nature !== 'Ignore').length,
+          ignorees: duMois.filter((e) => e.nature === 'Ignore').length,
+          faitesMoisPrecedent: entrees.filter((e) => e.date.startsWith(moisPrecedent) && e.nature !== 'Ignore').length,
+          jours: liste(jours.map((j) => ({
+            jour: j,
+            entrees: liste(duMois.filter((e) => e.date.startsWith(j)).sort((a, b) => b.date.localeCompare(a.date))),
+          }))),
+        },
+      };
+    })
+    .on('DELETE', /^Traitements\/seances\/(\d+)$/, ({ params: [id] }) => {
+      const index = Number(id) - 1000;
+      if (index < 0 || index >= seances.length) return { status: 404 };
+      seances.splice(index, 1);
+      return { status: 204 };
+    });
+
   return { traitements, prises, seances };
 }

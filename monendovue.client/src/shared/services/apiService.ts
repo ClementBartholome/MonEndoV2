@@ -10,7 +10,7 @@ import type { BilanQuotidien, BilanQuotidienSaisie, EmotionBilan } from '@/featu
 import type { HistoriqueBilans } from '@/features/bilan-quotidien/types/historique';
 import type { EvenementAgenda } from '@/features/schedule/types/agenda';
 import type { Aujourdhui, BilanAujourdhui } from '@/features/accueil/types/aujourdhui';
-import type { PrisePrevue, PriseSaisie, SeanceSaisie, Soin, Traitement, TraitementAuBesoin, TraitementsDuJour, TraitementSaisie } from '@/features/medicament/types/traitements';
+import type { EntreeHistoriqueTraitement, HistoriqueTraitement, JourHistoriqueTraitement, PrisePrevue, PriseSaisie, SeanceSaisie, Soin, Traitement, TraitementAuBesoin, TraitementsDuJour, TraitementSaisie } from '@/features/medicament/types/traitements';
 
 /** Liste C# sérialisée avec ReferenceHandler.Preserve. */
 type Liste<T> = T[] | { $values: T[] };
@@ -39,7 +39,7 @@ function formulaireSymptome(carnetSanteId: number, saisie: SymptomeSaisie): Form
 const CONSENTEMENT_REQUIS = 'consentement-requis';
 
 const API_URL = import.meta.env.VITE_DOCKER === 'true'
-    ? '' 
+    ? '/' // Même serveur : chemins absolus, justes quelle que soit la page (ex. /medicaments/12)
     : (import.meta.env.MODE === 'production' ? import.meta.env.VITE_API_URL_PROD : import.meta.env.VITE_API_URL);
 
 class ApiService {
@@ -374,6 +374,23 @@ class ApiService {
 
     async postSeance(traitementId: number, saisie: SeanceSaisie): Promise<{ id: number }> {
         return this.request('POST', `Traitements/${traitementId}/seances`, saisie);
+    }
+
+    async deleteSeance(seanceId: number): Promise<void> {
+        await this.request('DELETE', `Traitements/seances/${seanceId}`);
+    }
+
+    /** Un traitement sur un mois (1er du mois) ; prises prévues comptées jusqu'au jour local. */
+    async getHistoriqueTraitement(id: number, mois: string, jour: string): Promise<HistoriqueTraitement> {
+        type TraitementBrut = Omit<Traitement, 'joursSemaine' | 'horaires'> & { joursSemaine: Liste<Traitement['joursSemaine'][number]>; horaires: Liste<string> };
+        type JourBrut = Omit<JourHistoriqueTraitement, 'entrees'> & { entrees: Liste<EntreeHistoriqueTraitement> };
+        type Brut = Omit<HistoriqueTraitement, 'traitement' | 'jours'> & { traitement: TraitementBrut; jours: Liste<JourBrut> };
+        const brut = await this.request<Brut>('GET', `Traitements/${id}/historique?mois=${mois}&jour=${jour}`);
+        return {
+            ...brut,
+            traitement: { ...brut.traitement, joursSemaine: enTableau(brut.traitement.joursSemaine), horaires: enTableau(brut.traitement.horaires) },
+            jours: enTableau(brut.jours).map((j) => ({ ...j, entrees: enTableau(j.entrees) })),
+        };
     }
 
     /** Trois prochains rendez-vous à heure fixe, ou null si l'utilisatrice n'a pas d'agenda (404). */

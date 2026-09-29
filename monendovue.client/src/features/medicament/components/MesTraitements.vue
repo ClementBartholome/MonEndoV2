@@ -3,7 +3,7 @@
     <h2 id="titre-mes-traitements" class="m-0 text-[17px] font-semibold tracking-normal text-texte">Mes traitements</h2>
     <ul v-if="enCours.length" class="m-0 flex list-none flex-col rounded-carte bg-surface p-0 shadow-elevation">
       <li v-for="(traitement, index) in enCours" :key="traitement.id" :class="{ 'border-t border-trait': index > 0 }">
-        <button type="button" class="flex min-h-[62px] w-full items-center gap-3 px-3.5 text-left" @click="emit('modifier', traitement)">
+        <button type="button" class="flex min-h-[62px] w-full items-center gap-3 px-3.5 text-left" @click="emit('ouvrir', traitement)">
           <span class="flex min-w-0 grow flex-col">
             <span class="text-[15px] font-medium text-texte">{{ traitement.nom }}</span>
             <span class="truncate text-[13px] text-texte-3">{{ detail(traitement) }}</span>
@@ -19,7 +19,7 @@
     </button>
     <ul v-if="voirTermines" class="m-0 flex list-none flex-col rounded-carte bg-surface-2 p-0">
       <li v-for="(traitement, index) in termines" :key="traitement.id" :class="{ 'border-t border-trait': index > 0 }">
-        <button type="button" class="flex min-h-14 w-full items-center gap-3 px-3.5 text-left" @click="emit('modifier', traitement)">
+        <button type="button" class="flex min-h-14 w-full items-center gap-3 px-3.5 text-left" @click="emit('ouvrir', traitement)">
           <span class="flex min-w-0 grow flex-col">
             <span class="text-[15px] text-texte">{{ traitement.nom }}</span>
             <span class="text-[13px] text-texte-3">{{ periode(traitement) }}</span>
@@ -39,7 +39,7 @@ import type { Traitement } from '../types/traitements';
 import { resumeFrequence } from '../utils/prises';
 
 defineProps<{ enCours: Traitement[]; termines: Traitement[] }>();
-const emit = defineEmits<{ modifier: [traitement: Traitement] }>();
+const emit = defineEmits<{ ouvrir: [traitement: Traitement] }>();
 
 const voirTermines = ref(false);
 
