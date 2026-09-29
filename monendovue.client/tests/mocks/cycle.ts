@@ -19,7 +19,7 @@ export function simulerRegles(serveur: FauxServeur, initiaux: string[] = [], vue
           dureeMoyenne: null,
           ...vue,
           cycles: liste(vue.cycles ?? []),
-          joursDeRegles: liste([...jours].filter((j) => j.startsWith(mois)).sort()),
+          joursDeRegles: liste([...jours].filter((j) => j.startsWith(mois)).sort((a, b) => a.localeCompare(b))),
         },
       };
     })
