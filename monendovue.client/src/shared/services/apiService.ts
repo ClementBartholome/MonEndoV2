@@ -16,6 +16,22 @@ import type { PrisePrevue, PriseSaisie, SeanceSaisie, Soin, Traitement, Traiteme
 type Liste<T> = T[] | { $values: T[] };
 import { enTableau } from '@/shared/utils/json';
 import type { ReponseConsentement } from '@/features/auth/types/user';
+import type { CycleDuMois, CycleTermine } from '@/features/cycle/types/cycle';
+import type { SymptomeCycle, SymptomeSaisie } from '@/features/cycle/types/symptome-cycle';
+import { nomDeFichierPhoto } from '@/features/cycle/utils/photo';
+
+/** Formulaire multipart d'un symptôme (le carnet est vérifié par le serveur ; l'adresse de la photo n'est jamais envoyée). */
+function formulaireSymptome(carnetSanteId: number, saisie: SymptomeSaisie): FormData {
+    const formulaire = new FormData();
+    formulaire.append('typeSymptome', saisie.typeSymptome);
+    formulaire.append('carnetSanteId', String(carnetSanteId));
+    formulaire.append('date', saisie.date);
+    formulaire.append('intensite', String(saisie.intensite));
+    formulaire.append('commentaire', saisie.commentaire ?? '');
+    if (saisie.photo) formulaire.append('photo', saisie.photo, nomDeFichierPhoto(saisie.photo));
+    if (saisie.photoSource) formulaire.append('photoSource', saisie.photoSource);
+    return formulaire;
+}
 
 /** Code du 403 renvoyé par l'API quand le consentement aux données de santé manque (ExigeConsentementFilter). */
 const CONSENTEMENT_REQUIS = 'consentement-requis';
@@ -142,6 +158,37 @@ class ApiService {
     async getSymptomesByMonth(carnetSanteId: number, month: number, year: number): Promise<any> {
         return this.request('GET', `SymptomesCycle/${carnetSanteId}/${month}/${year}`);
     }
+
+    /** Symptômes d'un mois (1-12) du carnet, dates locales sans fuseau. */
+    async getSymptomesDuMois(carnetSanteId: number, mois: number, annee: number): Promise<SymptomeCycle[]> {
+        return enTableau(await this.request<Liste<SymptomeCycle>>('GET', `SymptomesCycle/${carnetSanteId}/${mois}/${annee}`));
+    }
+
+    async postSymptome(carnetSanteId: number, saisie: SymptomeSaisie): Promise<void> {
+        await this.request('POST', 'SymptomesCycle', formulaireSymptome(carnetSanteId, saisie));
+    }
+
+    async putSymptome(id: number, carnetSanteId: number, saisie: SymptomeSaisie): Promise<void> {
+        const formulaire = formulaireSymptome(carnetSanteId, saisie);
+        formulaire.append('id', String(id));
+        await this.request('PUT', `SymptomesCycle/${id}`, formulaire);
+    }
+
+    /** Onglet Règles : jours de règles du mois (1er du mois), cycle en cours au jour local et historique des cycles. */
+    async getCycle(jour: string, mois: string): Promise<CycleDuMois> {
+        type CycleRecu = Omit<CycleDuMois, 'joursDeRegles' | 'cycles'> & { joursDeRegles: Liste<string>; cycles: Liste<CycleTermine> };
+        const recu = await this.request<CycleRecu>('GET', `Cycle?jour=${jour}&mois=${mois}`);
+        return { ...recu, joursDeRegles: enTableau(recu.joursDeRegles), cycles: enTableau(recu.cycles) };
+    }
+
+    /** Note un jour de règles (AAAA-MM-JJ) ; sans effet s'il l'est déjà. */
+    async putJourDeRegles(jour: string): Promise<void> {
+        await this.request('PUT', `Cycle/regles/${jour}`);
+    }
+
+    async deleteJourDeRegles(jour: string): Promise<void> {
+        await this.request('DELETE', `Cycle/regles/${jour}`);
+    }
     
     // POST
     async postDonneesDouleurs(donneesDouleurs: any): Promise<any> {
@@ -164,9 +211,6 @@ class ApiService {
         return this.request('POST', 'DonneesTransit', donneesTransit);
     }
 
-    async postJourRegle(jourRegle: any): Promise<any> {
-        return this.request('POST', 'JourRegle', jourRegle);
-    }
     
     async postDonneesSymptomesCycle(symptomesCycle: any): Promise<any> {
         return this.request('POST', 'SymptomesCycle', symptomesCycle);
@@ -191,10 +235,6 @@ class ApiService {
         return this.request('DELETE', `SymptomesCycle/${symptomeId}`);
     }
 
-    async deleteJourRegle(jourRegleId: number): Promise<any> {
-        return this.request('DELETE', `JourRegle/${jourRegleId}`);
-    }
-
     // PUT
 
     
@@ -204,10 +244,6 @@ class ApiService {
 
     async editDonneesActivitePhysique(donneesActivitePhysiqueId: number, donneesActivitePhysique: any): Promise<any> {
         return this.request('PUT', `DonneesActivitePhysique/${donneesActivitePhysiqueId}`, donneesActivitePhysique);
-    }
-
-    async editSymptomeCycle(symptomeCycleId: number, symptomeCycle: any): Promise<any> {
-        return this.request('PUT', `SymptomesCycle/${symptomeCycleId}`, symptomeCycle);
     }
 
     // NOTIFICATIONS WEB PUSH

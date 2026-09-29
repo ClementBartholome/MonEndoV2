@@ -18,6 +18,6 @@ import { materialSymbols } from '@/shared/config/materialSymbols';
 const tuiles = [
   { libelle: 'Douleur', icone: 'sick', vers: '/douleurs?ajouter', teinte: 'bg-teinte-douleur-fond text-teinte-douleur' },
   { libelle: 'Règles', icone: materialSymbols.cycle, vers: '/cycle?onglet=cycles', teinte: 'bg-teinte-regles-fond text-teinte-regles' },
-  { libelle: 'Symptôme', icone: materialSymbols.symptoms, vers: '/cycle?onglet=symptomes', teinte: 'bg-teinte-symptome-fond text-teinte-symptome' },
+  { libelle: 'Symptôme', icone: materialSymbols.symptoms, vers: '/cycle?onglet=symptomes&ajouter', teinte: 'bg-teinte-symptome-fond text-teinte-symptome' },
 ];
 </script>
