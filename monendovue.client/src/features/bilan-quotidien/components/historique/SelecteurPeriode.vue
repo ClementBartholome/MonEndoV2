@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { Button } from '@/shared/components/ui/button';
 import type { ModePeriode, PeriodeHistorique } from '@/features/bilan-quotidien/types/historique';
 
 defineProps<{ periode: PeriodeHistorique }>();
@@ -18,50 +17,51 @@ const modes: { valeur: ModePeriode; libelle: string }[] = [
 </script>
 
 <template>
-  <div class="flex flex-col gap-3 w-full">
-    <div class="grid grid-cols-2 gap-2" role="group" aria-label="Période affichée">
-      <Button
+  <div class="flex w-full flex-col gap-3">
+    <!-- Bascule de vue : même segment que les onglets de la page Cycle. -->
+    <div class="grid grid-cols-2 gap-1 rounded-controle bg-surface-2 p-1" role="group" aria-label="Période affichée">
+      <button
           v-for="mode in modes"
           :key="mode.valeur"
           type="button"
-          class="h-11"
-          :variant="periode.mode === mode.valeur ? 'selected' : 'outline'"
+          class="min-h-10 rounded-controle text-sm"
+          :class="periode.mode === mode.valeur ? 'bg-surface font-semibold text-texte shadow-elevation' : 'text-texte-2'"
           :aria-pressed="periode.mode === mode.valeur"
           @click="emit('changer-mode', mode.valeur)"
       >
         {{ mode.libelle }}
-      </Button>
+      </button>
     </div>
 
-    <div class="flex items-start justify-between gap-2">
-      <Button
-          type="button" variant="outline" size="sm" class="h-11 w-11 p-0 shrink-0"
+    <div class="-mx-3 flex items-start justify-between gap-2">
+      <button
+          type="button" class="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-texte hover:bg-surface-2"
           :aria-label="periode.mode === 'mois' ? 'Mois précédent' : 'Semaine précédente'"
           @click="emit('precedente')"
       >
-        <i class="material-symbols-outlined text-lg" aria-hidden="true">chevron_left</i>
-      </Button>
-      <div class="flex flex-1 flex-col items-center justify-center min-w-0 min-h-11">
-        <h2 class="m-0 w-full text-center text-base font-semibold text-headline first-letter:uppercase truncate" aria-live="polite">
+        <i class="material-symbols-outlined" aria-hidden="true">chevron_left</i>
+      </button>
+      <div class="flex min-h-11 min-w-0 flex-1 flex-col items-center justify-center">
+        <h2 class="m-0 w-full truncate text-center text-base font-semibold tracking-normal text-texte first-letter:uppercase" aria-live="polite">
           {{ periode.libelle }}
         </h2>
         <button
             v-if="!periode.contientAujourdhui"
             type="button"
-            class="text-sm text-paragraph underline min-h-[44px] px-2"
+            class="min-h-11 px-2 text-sm font-medium text-lien"
             @click="emit('aujourdhui')"
         >
           Revenir à aujourd'hui
         </button>
       </div>
-      <Button
-          type="button" variant="outline" size="sm" class="h-11 w-11 p-0 shrink-0"
+      <button
+          type="button" class="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-texte hover:bg-surface-2 disabled:text-trait"
           :disabled="!periode.suivantePossible"
           :aria-label="periode.mode === 'mois' ? 'Mois suivant' : 'Semaine suivante'"
           @click="emit('suivante')"
       >
-        <i class="material-symbols-outlined text-lg" aria-hidden="true">chevron_right</i>
-      </Button>
+        <i class="material-symbols-outlined" aria-hidden="true">chevron_right</i>
+      </button>
     </div>
   </div>
 </template>

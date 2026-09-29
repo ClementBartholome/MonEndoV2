@@ -14,20 +14,7 @@
         </div>
       </fieldset>
 
-      <fieldset class="m-0 border-0 p-0">
-        <legend class="mb-2.5 p-0 text-sm font-semibold text-texte">
-          Intensité<span v-if="form.intensite.value !== null" class="font-medium text-texte-2"> : {{ form.intensite.value }}/10</span>
-        </legend>
-        <div class="grid grid-cols-10 gap-[3px]">
-          <button v-for="n in 10" :key="n" type="button"
-                  class="min-h-12 rounded-controle p-0 text-sm font-semibold"
-                  :class="form.intensite.value === n ? 'border-2 border-texte' : 'border-[1.5px] border-trait bg-surface text-texte-2'"
-                  :style="form.intensite.value === n ? pastille(n) : undefined"
-                  :aria-label="`Intensité ${n} sur 10`" :aria-pressed="form.intensite.value === n"
-                  @click="form.intensite.value = n">{{ n }}</button>
-        </div>
-        <div class="mt-1.5 flex justify-between text-xs text-texte-3"><span>léger</span><span>très fort</span></div>
-      </fieldset>
+      <ChoixIntensite v-model="form.intensite.value" minimum="léger" maximum="très fort"/>
 
       <fieldset class="m-0 border-0 p-0">
         <legend class="mb-2.5 p-0 text-sm font-semibold text-texte">Quand ?</legend>
@@ -103,6 +90,7 @@
 import { computed, ref, watch } from 'vue';
 import { format } from 'date-fns';
 import PanneauBas from '@/shared/components/PanneauBas.vue';
+import ChoixIntensite from '@/shared/components/ChoixIntensite.vue';
 import type { SymptomeCycle, SymptomeSaisie } from '../types/symptome-cycle';
 import { ACNE, TYPES_SYMPTOME } from '../utils/symptomes';
 import { useSaisieSymptome, type Moment } from '../composables/useSaisieSymptome';
@@ -144,10 +132,6 @@ watch(ouvert, (estOuvert) => {
   if (props.entree) form.preparerModification(props.entree);
   else form.preparerAjout(props.acne ? ACNE : null);
 }, { immediate: true });
-
-function pastille(intensite: number) {
-  return { background: `var(--intensite-${intensite})`, color: intensite >= 6 ? '#ffffff' : 'var(--couleur-texte)' };
-}
 
 async function choisirPhoto(evenement: Event, source: SourcePhoto) {
   const champ = evenement.target as HTMLInputElement;

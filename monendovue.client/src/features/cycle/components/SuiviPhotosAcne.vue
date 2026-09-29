@@ -19,7 +19,7 @@
       <div role="radiogroup" aria-label="Écart entre les photos" class="flex gap-1 rounded-controle bg-surface-2 p-1">
         <button v-for="valeur in ECARTS" :key="valeur" type="button" role="radio" :aria-checked="ecart === valeur"
                 class="min-h-9 rounded-controle px-2.5 text-[13px]"
-                :class="ecart === valeur ? 'bg-texte font-medium text-fond' : 'text-texte-2'"
+                :class="ecart === valeur ? 'bg-surface font-semibold text-texte shadow-elevation' : 'text-texte-2'"
                 @click="ecart = valeur">{{ valeur }} mois</button>
       </div>
     </div>

@@ -12,20 +12,7 @@
         </div>
       </fieldset>
 
-      <fieldset class="m-0 border-0 p-0">
-        <legend class="mb-2.5 p-0 text-sm font-semibold text-texte">
-          Intensité<span v-if="form.intensite.value !== null" class="font-medium text-texte-2"> : {{ form.intensite.value }}/10</span>
-        </legend>
-        <div class="grid grid-cols-10 gap-[3px]">
-          <button v-for="n in 10" :key="n" type="button"
-                  class="min-h-12 rounded-controle p-0 text-sm font-semibold"
-                  :class="form.intensite.value === n ? 'border-2 border-texte' : 'border-[1.5px] border-trait bg-surface text-texte-2'"
-                  :style="form.intensite.value === n ? pastille(n) : undefined"
-                  :aria-label="`Intensité ${n} sur 10`" :aria-pressed="form.intensite.value === n"
-                  @click="form.intensite.value = n">{{ n }}</button>
-        </div>
-        <div class="mt-1.5 flex justify-between text-xs text-texte-3"><span>légère</span><span>la pire imaginable</span></div>
-      </fieldset>
+      <ChoixIntensite v-model="form.intensite.value" minimum="légère" maximum="la pire imaginable"/>
 
       <fieldset class="m-0 border-0 p-0">
         <legend class="mb-2.5 p-0 text-sm font-semibold text-texte">Quand ?</legend>
@@ -76,6 +63,7 @@
 import { ref, watch } from 'vue';
 import { format } from 'date-fns';
 import PanneauBas from '@/shared/components/PanneauBas.vue';
+import ChoixIntensite from '@/shared/components/ChoixIntensite.vue';
 import type { DonneesDouleur, DonneesDouleurModification } from '../types/donnees-douleur';
 import { TYPES_DOULEUR } from '../utils/douleurs';
 import { useSaisieDouleur, type Moment } from '../composables/useSaisieDouleur';
@@ -108,10 +96,6 @@ watch(ouvert, (estOuvert) => {
   if (props.entree) form.preparerModification(props.entree);
   else form.preparerAjout();
 }, { immediate: true });
-
-function pastille(intensite: number) {
-  return { background: `var(--intensite-${intensite})`, color: intensite >= 6 ? '#ffffff' : 'var(--couleur-texte)' };
-}
 
 /** Lance l'action ; ferme le panneau si elle réussit, affiche le message sinon. */
 async function executer(action: () => Promise<void>, message: string) {
