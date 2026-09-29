@@ -37,7 +37,9 @@ public class CycleService(AppDbContext context, CarnetSanteService carnetSanteSe
 
         var tous = HistoriqueCycles.Cycles(HistoriqueCycles.Regrouper(jours), int.MaxValue);
         var cycles = tous.Take(Math.Clamp(nombreCycles, 1, CyclesMaximum)).ToList();
+        var recents = tous.Take(CyclesDeLaMoyenne).ToList();
         var enCours = CycleDuJour.Calculer(jours, jour);
+        var douleursFortes = await DouleursFortesAsync(carnetId, cycles, ct);
 
         return ResultatOperation<CycleViewModel>.Succes(new CycleViewModel
         {
@@ -54,10 +56,43 @@ public class CycleService(AppDbContext context, CarnetSanteService carnetSanteSe
                     JourDeRegles = enCours.JourDeRegles,
                 }
                 : null,
-            Cycles = cycles.Select(c => new CycleTermineViewModel { Debut = Texte(c.Debut), JoursDeRegles = c.JoursDeRegles, Duree = c.Duree }).ToList(),
-            DureeMoyenne = HistoriqueCycles.DureeMoyenne(tous.Take(CyclesDeLaMoyenne).ToList()),
+            Cycles = cycles.Select(c => new CycleTermineViewModel
+            {
+                Debut = Texte(c.Debut),
+                JoursDeRegles = c.JoursDeRegles,
+                Duree = c.Duree,
+                JoursDouleurForte = Enumerable.Range(0, c.Duree).Where(i => douleursFortes.Contains(c.Debut.AddDays(i))).Select(i => i + 1).ToList(),
+            }).ToList(),
+            DureeMoyenne = HistoriqueCycles.DureeMoyenne(recents),
+            ReglesMoyenne = HistoriqueCycles.ReglesMoyenne(recents),
+            DureeMinimale = recents.Count < 2 ? null : recents.Min(c => c.Duree),
+            DureeMaximale = recents.Count < 2 ? null : recents.Max(c => c.Duree),
             CyclesPlusAnciens = tous.Count - cycles.Count,
         });
+    }
+
+    /// <summary>Même seuil que les observations de l'onglet Tendances du bilan.</summary>
+    public const int SeuilDouleurForte = 6;
+
+    /// <summary>
+    /// Jours de douleur forte sur la période des cycles listés : une douleur notée (page Douleurs) ou une douleur moyenne
+    /// du bilan quotidien de 6/10 ou plus. Deux lectures bornées à la période, quelle que soit l'ancienneté du carnet.
+    /// </summary>
+    private async Task<HashSet<DateOnly>> DouleursFortesAsync(int carnetId, IReadOnlyList<CycleTermine> cycles, CancellationToken ct)
+    {
+        if (cycles.Count == 0) return [];
+        var debut = cycles[^1].Debut.ToDateTime(TimeOnly.MinValue);
+        var fin = cycles[0].Debut.AddDays(cycles[0].Duree).ToDateTime(TimeOnly.MinValue);
+
+        var douleurs = await context.DonneesDouleurs.AsNoTracking()
+            .Where(d => d.CarnetSanteId == carnetId && d.Intensite >= SeuilDouleurForte && d.Date >= debut && d.Date < fin)
+            .Select(d => d.Date)
+            .ToListAsync(ct);
+        var bilans = await context.BilansQuotidiens.AsNoTracking()
+            .Where(b => b.CarnetSanteId == carnetId && b.DouleurMoyenne >= SeuilDouleurForte && b.Date >= debut && b.Date < fin)
+            .Select(b => b.Date)
+            .ToListAsync(ct);
+        return douleurs.Concat(bilans).Select(DateOnly.FromDateTime).ToHashSet();
     }
 
     /// <summary>Note un jour de règles (sans effet s'il l'est déjà) ; jamais un jour à venir.</summary>

@@ -71,6 +71,29 @@ public sealed class CycleServiceTests : IDisposable
     }
 
     [Fact]
+    public async Task Get_ResumeEtJoursDeDouleurForteParCycle()
+    {
+        await Noter(CarnetDeTest.CarnetSanteId,
+            new DateTime(2026, 7, 14), new DateTime(2026, 7, 15),
+            new DateTime(2026, 8, 14), new DateTime(2026, 8, 15), new DateTime(2026, 8, 16), new DateTime(2026, 8, 17),
+            new DateTime(2026, 9, 14));
+        _carnet.Context.DonneesDouleurs.AddRange(
+            new DonneesDouleur { CarnetSanteId = CarnetDeTest.CarnetSanteId, TypeDouleur = "Pelvienne", Intensite = 7, Date = new DateTime(2026, 8, 15, 9, 0, 0) },
+            new DonneesDouleur { CarnetSanteId = CarnetDeTest.CarnetSanteId, TypeDouleur = "Pelvienne", Intensite = 4, Date = new DateTime(2026, 8, 20) },
+            new DonneesDouleur { CarnetSanteId = CarnetDeTest.AutreCarnetSanteId, TypeDouleur = "Pelvienne", Intensite = 9, Date = new DateTime(2026, 8, 25) });
+        _carnet.Context.BilansQuotidiens.Add(new BilanQuotidien { CarnetSanteId = CarnetDeTest.CarnetSanteId, Date = new DateTime(2026, 7, 14), DouleurMoyenne = 6 });
+        await _carnet.Context.SaveChangesAsync();
+
+        var vue = (await Service().GetAsync(CarnetDeTest.UserId, Jour, Septembre, CancellationToken.None)).Valeur!;
+
+        // Cycles du 14 août (31 j, règles 4 j) et du 14 juillet (31 j, règles 2 j).
+        Assert.Equal([2], vue.Cycles[0].JoursDouleurForte);
+        Assert.Equal([1], vue.Cycles[1].JoursDouleurForte);
+        Assert.Equal(3, vue.ReglesMoyenne);
+        Assert.Equal((31, 31), (vue.DureeMinimale, vue.DureeMaximale));
+    }
+
+    [Fact]
     public async Task Get_SansRegles_NiCycleEnCoursNiMoyenne()
     {
         var vue = (await Service().GetAsync(CarnetDeTest.UserId, Jour, Septembre, CancellationToken.None)).Valeur!;
