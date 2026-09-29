@@ -70,7 +70,8 @@
       <p>MonEndo s'appuie sur quelques prestataires techniques, qui n'utilisent pas tes données pour leur propre compte :</p>
       <ul>
         <li><strong>OVH</strong> (France) : héberge le serveur et la base de données, en France ;</li>
-        <li><strong>Microsoft Azure</strong> : stocke les photos de suivi, dans un centre de données en Europe ;</li>
+        <li><strong>Microsoft Azure</strong> : stocke les photos de suivi et les sauvegardes chiffrées de la base, dans un
+          centre de données en Europe ;</li>
         <li><strong>le service de notifications de ton navigateur</strong> (Apple, Google ou Mozilla selon ton appareil),
           si tu actives les rappels : il achemine des notifications chiffrées, qui ne contiennent aucune donnée de santé ;</li>
         <li><strong>Google Agenda</strong>, uniquement si ton compte est relié à un agenda : MonEndo y lit tes prochains
@@ -90,14 +91,16 @@
         <li>un compte sans aucune connexion pendant <strong>2 ans</strong> est supprimé automatiquement, avec toutes ses
           données ;</li>
         <li>l'abonnement aux notifications : jusqu'à ce que tu désactives les rappels sur cet appareil ;</li>
-        <li>les journaux techniques : <strong>30 jours</strong>, puis ils sont supprimés automatiquement.</li>
+        <li>les journaux techniques : <strong>30 jours</strong>, puis ils sont supprimés automatiquement ;</li>
+        <li>les sauvegardes de la base, faites chaque nuit pour pouvoir la restaurer en cas de panne : <strong>30 jours</strong>.
+          Une donnée que tu effaces, ou un compte supprimé, disparaît donc aussi des sauvegardes en 30 jours au plus.</li>
       </ul>
     </section>
 
     <section>
       <h2>Comment sont-elles protégées ?</h2>
       <p>
-        Les échanges sont chiffrés (HTTPS), les mots de passe ne sont jamais conservés en clair, la session repose sur des
+        Les échanges et les sauvegardes sont chiffrés, les mots de passe ne sont jamais conservés en clair, la session repose sur des
         cookies inaccessibles aux scripts de la page, un compte est verrouillé après plusieurs mots de passe erronés et
         chaque accès aux données vérifie qu'elles appartiennent bien au compte connecté. En cas de violation de données
         présentant un risque pour toi, tu en seras informée, ainsi que la CNIL dans les 72 heures.
