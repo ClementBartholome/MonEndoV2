@@ -55,6 +55,11 @@ dotnet ef migrations add NomEnPascalCase --project MonEndoVue.Server
   6 derniers cycles et moyenne dès deux cycles) et `PUT`/`DELETE Cycle/regles/{jour}` (un jour à la fois, jamais à venir).
   Règles = jours notés consécutifs, un oubli d'un jour toléré ; un écart de plus de 60 jours n'est ni listé ni compté
   (`HistoriqueCycles`, même seuils que `CycleDuJour`). **Aucune prédiction** de prochaines règles.
+  Acné : **`EpisodeAcne`** (début, fin vide = en cours ; un seul en cours, sans chevauchement) via `AcneController`
+  (`GET Acne?jour=`, `POST/PUT/DELETE Acne/episodes`, `POST Acne/episodes/{id}/fin`) : rien à noter chaque jour
+  tant qu'il dure. Le point de suivi hebdomadaire (photo, intensité) reste un `SymptomeCycle` « Acné » avec photo.
+  Les anciens jours d'acné (une entrée par jour) ont été regroupés en épisodes par la migration `AjouteEpisodesAcne`
+  et sont conservés tels quels.
 - **`Medicament`** (traitement, `TypeTraitement` médicamenteux ou non, en cours ou passé, avec une **fréquence** à la
   manière de l'app Santé d'Apple : `AuBesoin`, `ChaqueJour`, `CertainsJours` + jours de la semaine, `TousLesNJours`
   depuis la date de début, et jusqu'à 6 **`HorairePrise`**), **`DonneesMedicament`** (réponses aux prises : `Statut`
