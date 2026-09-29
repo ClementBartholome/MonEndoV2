@@ -70,7 +70,7 @@ dotnet ef migrations add NomEnPascalCase --project MonEndoVue.Server
 - **`DonneesTransit`** — `/transit` (ancien suivi par événements ; le suivi quotidien passe désormais par le bilan) ; **`DonneesActivitePhysique`** — `/activite`.
 - **`BilanQuotidien`** (émotions, stress, fatigue, pas, douleur moyenne, hydratation, alimentation, notes, et une catégorie
   **transit** facultative : selles avec type de Bristol 1-7, crampes d'estomac et ballonnements avec intensité) — `/bilan-quotidien`,
-  avec des repères personnels réglables dans `/parametres` (stockés en `localStorage`). L'onglet « Analyse & Tendances »
+  avec des repères personnels réglables dans `/parametres` (stockés en `localStorage`). L'onglet « Tendances »
   ne donne ni score ni note : moyennes, évolution vs période précédente, repères atteints, observations factuelles
   douleur / règles (`utils/tendances.ts`). Historique par semaine ou par mois (`GET BilanQuotidien/periode`,
   bilans + jours de règles, carnet déduit de la session) : une seule période pilote calendrier, détail, courbes et analyse. Émotions : 1 à 3 **`EmotionBilan`** par bilan (table

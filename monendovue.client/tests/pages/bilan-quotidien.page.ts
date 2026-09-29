@@ -2,7 +2,7 @@ import type { Locator, Page } from '@playwright/test';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 
-type Onglet = 'Historique' | 'Analyse & Tendances';
+type Onglet = 'Historique' | 'Tendances';
 
 /**
  * Page « Bilan quotidien » (/bilan-quotidien) : saisie d'un bilan, historique (calendrier, détail du jour) et analyse.
@@ -116,7 +116,7 @@ export class BilanQuotidienPage {
     return this.page.getByRole('heading', { name: titre, exact: true });
   }
 
-  // --- Analyse & Tendances ---
+  // --- Tendances ---
 
   /** Tuile d'un indicateur (« Douleur moyenne », « Fatigue moyenne »…), avec sa moyenne et son évolution. */
   indicateur(libelle: string) {

@@ -3,6 +3,7 @@ import { computed } from 'vue';
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/card';
 import type { ModePeriode } from '@/features/bilan-quotidien/types/historique';
 import type { Evolution, Tendances } from '@/features/bilan-quotidien/types/tendances';
+import { TEINTE_BLOC, teinteDe } from '@/features/bilan-quotidien/config/teintes';
 
 // Tendances neutres d'une période : moyennes, évolutions sans jugement, repères personnels, observations factuelles.
 const props = defineProps<{
@@ -46,9 +47,9 @@ const couverture = computed(() => {
         <CardHeader class="p-4 md:p-6">
           <div class="flex flex-col gap-1">
             <CardTitle class="m-0 flex items-center gap-2 text-[17px] font-semibold leading-tight tracking-normal text-texte">
-              <i class="material-symbols-outlined" aria-hidden="true">insights</i>Tendances
+              <i class="material-symbols-outlined rounded-controle p-1.5 text-[22px]" :class="[TEINTE_BLOC.tendances.fond, TEINTE_BLOC.tendances.texte]" aria-hidden="true">insights</i>Moyennes
             </CardTitle>
-            <p class="text-sm text-texte-3 text-left">
+            <p class="m-0 text-left text-sm tracking-normal text-texte-3">
               <template v-if="sansComparaison">Moyennes de la période ({{ periodePrecedente.sansBilan }} pour comparer).</template>
               <template v-else>Moyennes de la période, comparées {{ periodePrecedente.comparee }}.</template>
             </p>
@@ -59,9 +60,10 @@ const couverture = computed(() => {
             <li
                 v-for="indicateur in tendances.indicateurs"
                 :key="indicateur.cle"
-                class="rounded-controle bg-fond p-3 text-left"
+                class="rounded-controle p-3 text-left"
+                :class="teinteDe(indicateur.cle).fond"
             >
-              <p class="text-xs text-texte-3 flex items-center gap-1">
+              <p class="m-0 flex items-center gap-1 text-xs font-medium" :class="teinteDe(indicateur.cle).texte">
                 <i class="material-symbols-outlined text-base" aria-hidden="true">{{ indicateur.icone }}</i>
                 {{ indicateur.libelle }}
               </p>
@@ -86,9 +88,9 @@ const couverture = computed(() => {
         <CardHeader class="p-4 md:p-6">
           <div class="flex flex-col gap-1">
             <CardTitle class="m-0 flex items-center gap-2 text-[17px] font-semibold leading-tight tracking-normal text-texte">
-              <i class="material-symbols-outlined" aria-hidden="true">flag</i>Repères personnels
+              <i class="material-symbols-outlined rounded-controle p-1.5 text-[22px]" :class="[TEINTE_BLOC.reperes.fond, TEINTE_BLOC.reperes.texte]" aria-hidden="true">flag</i>Repères personnels
             </CardTitle>
-            <p class="text-sm text-texte-3 text-left">
+            <p class="m-0 text-left text-sm tracking-normal text-texte-3">
               Tes repères se règlent dans
               <router-link to="/parametres" class="underline">Paramètres</router-link>.
             </p>
@@ -101,7 +103,7 @@ const couverture = computed(() => {
                 :key="repere.cle"
                 class="rounded-controle bg-fond p-3 flex items-center gap-3 text-left"
             >
-              <i class="material-symbols-outlined text-xl text-texte shrink-0" aria-hidden="true">{{ repere.icone }}</i>
+              <i class="material-symbols-outlined shrink-0 rounded-controle p-1.5 text-xl" :class="[teinteDe(repere.cle).fond, teinteDe(repere.cle).texte]" aria-hidden="true">{{ repere.icone }}</i>
               <div class="min-w-0 flex-1">
                 <p class="text-sm font-semibold text-texte">{{ repere.libelle }}</p>
                 <p class="text-xs text-texte-3">{{ repere.repere }}</p>
@@ -118,7 +120,7 @@ const couverture = computed(() => {
       <Card class="flex w-full flex-col rounded-carte border-0 bg-surface shadow-elevation">
         <CardHeader class="p-4 md:p-6">
           <CardTitle class="m-0 flex items-center gap-2 text-[17px] font-semibold leading-tight tracking-normal text-texte">
-            <i class="material-symbols-outlined" aria-hidden="true">menstrual_health</i>Douleur et cycle
+            <i class="material-symbols-outlined rounded-controle p-1.5 text-[22px]" :class="[TEINTE_BLOC.cycle.fond, TEINTE_BLOC.cycle.texte]" aria-hidden="true">menstrual_health</i>Douleur et cycle
           </CardTitle>
         </CardHeader>
         <CardContent class="px-4 pb-4 md:px-6 md:pb-6 text-left flex flex-col gap-2">
@@ -136,7 +138,7 @@ const couverture = computed(() => {
                 :key="observation.cle"
                 class="rounded-controle bg-fond p-3 flex items-start gap-3"
             >
-              <i class="material-symbols-outlined text-xl text-texte shrink-0" aria-hidden="true">{{ observation.icone }}</i>
+              <i class="material-symbols-outlined shrink-0 text-xl text-teinte-regles" aria-hidden="true">{{ observation.icone }}</i>
               <div class="text-left">
                 <p class="text-sm text-texte">{{ observation.texte }}</p>
                 <p class="text-xs text-texte-3 mt-1">{{ observation.detail }}</p>
