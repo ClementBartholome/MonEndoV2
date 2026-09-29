@@ -2,48 +2,64 @@
 import { computed } from 'vue';
 import { useId } from 'radix-vue';
 
-// Échelle de 0 à max en pastilles : un tap choisit, un second tap sur la même pastille efface (non renseigné).
+/**
+ * Échelle de 0 à max : un tap choisit, un second tap sur la même valeur efface (non renseigné).
+ * `couleurs` (douleur) : la valeur choisie prend sa couleur d'intensité, comme dans la saisie d'une douleur ;
+ * sinon (fatigue, stress), le fond foncé commun à tous les choix de formulaire.
+ */
 const props = defineProps<{
   libelle: string;
   icone: string;
   max: number;
   repereMin: string;
   repereMax: string;
+  couleurs?: boolean;
 }>();
 
 const valeur = defineModel<number | null>({ required: true });
 
 const idLibelle = useId(undefined, 'echelle');
-const pastilles = computed(() => Array.from({ length: props.max + 1 }, (_, i) => i));
+const niveaux = computed(() => Array.from({ length: props.max + 1 }, (_, i) => i));
 
 const choisir = (niveau: number) => {
   valeur.value = valeur.value === niveau ? null : niveau;
 };
+
+function style(niveau: number) {
+  if (valeur.value !== niveau || !props.couleurs) return undefined;
+  const couleur = `var(--intensite-${niveau})`;
+  return { background: couleur, borderColor: couleur, color: niveau >= 6 ? '#ffffff' : 'var(--couleur-texte)' };
+}
+
+function classes(niveau: number): string {
+  if (valeur.value !== niveau) return 'border-trait bg-surface text-texte-2';
+  return props.couleurs ? 'font-semibold' : 'border-texte bg-texte font-semibold text-fond';
+}
 </script>
 
 <template>
   <div class="flex flex-col gap-2">
     <div class="flex items-center justify-between gap-2">
-      <p :id="idLibelle" class="font-semibold text-headline flex items-center gap-2">
-        <i class="material-symbols-outlined text-button" aria-hidden="true">{{ icone }}</i>{{ libelle }}
+      <p :id="idLibelle" class="m-0 flex items-center gap-2 text-[15px] font-semibold text-texte">
+        <i class="material-symbols-outlined text-teinte-bilan" aria-hidden="true">{{ icone }}</i>{{ libelle }}
       </p>
-      <span class="text-sm text-paragraph" aria-hidden="true">
+      <span class="text-sm text-texte-2" aria-hidden="true">
         {{ valeur === null ? '—' : `${valeur}/${max}` }}
       </span>
     </div>
     <div
         role="group"
         :aria-labelledby="idLibelle"
-        class="pastilles"
-        :class="max > 5 ? 'pastilles--longue' : ''"
-        :style="{ '--colonnes': max + 1 }"
+        class="grid gap-1.5"
+        :class="max > 5 ? 'grid-cols-6 sm:grid-cols-11' : 'grid-cols-6'"
     >
       <button
-          v-for="niveau in pastilles"
+          v-for="niveau in niveaux"
           :key="niveau"
           type="button"
-          class="pastille"
-          :class="valeur === niveau ? 'pastille--choisie' : ''"
+          class="min-h-11 rounded-controle border-[1.5px] text-[15px]"
+          :class="classes(niveau)"
+          :style="style(niveau)"
           :aria-pressed="valeur === niveau"
           :aria-label="`${libelle} ${niveau} sur ${max}`"
           @click="choisir(niveau)"
@@ -51,53 +67,9 @@ const choisir = (niveau: number) => {
         {{ niveau }}
       </button>
     </div>
-    <div class="flex justify-between text-xs text-paragraph" aria-hidden="true">
+    <div class="flex justify-between text-xs text-texte-3" aria-hidden="true">
       <span>{{ repereMin }}</span>
       <span>{{ repereMax }}</span>
     </div>
   </div>
 </template>
-
-<style scoped>
-.pastilles {
-  display: grid;
-  grid-template-columns: repeat(var(--colonnes), minmax(0, 1fr));
-  gap: 0.375rem;
-}
-
-/* 11 pastilles ne tiennent pas en 44px sur 375px : deux rangées (0-5, 6-10) sur petit écran. */
-@media (max-width: 639px) {
-  .pastilles--longue {
-    grid-template-columns: repeat(6, minmax(0, 1fr));
-  }
-}
-
-.pastille {
-  min-height: 44px;
-  border-radius: 9999px;
-  border: 2px solid rgb(229 231 235);
-  background: white;
-  color: var(--headline);
-  font-weight: 600;
-  transition: background-color 0.15s, border-color 0.15s, transform 0.1s;
-}
-
-.pastille:hover {
-  border-color: var(--button);
-}
-
-.pastille:focus-visible {
-  outline: 2px solid var(--button);
-  outline-offset: 2px;
-}
-
-.pastille:active {
-  transform: scale(0.95);
-}
-
-.pastille--choisie {
-  background: var(--button);
-  border-color: var(--button);
-  color: var(--button-text);
-}
-</style>

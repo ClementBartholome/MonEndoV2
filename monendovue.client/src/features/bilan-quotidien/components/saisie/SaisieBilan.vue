@@ -87,6 +87,7 @@ const annuler = () => confirmation.demanderSiNecessaire(() => emit('annule'));
       <div class="flex flex-col gap-5">
         <EchellePastilles
             v-model="formulaire.douleurMoyenne"
+            couleurs
             libelle="Douleur"
             icone="sick"
             :max="DOULEUR_MAX"

@@ -108,7 +108,11 @@ plus de DataTables.
       pleine (`icone-pleine`), sans fond, sans bordure (`EtatPrise` comme modèle). Le ✓ `check_circle` est réservé à « fait »,
       en `text-etat-fait` ; « ignorée » en `text-texte-3` ;
     - une action se nomme par un verbe, sans icône de validation : « Je l'ai pris », pas « ✓ Pris » ;
-    - un choix sélectionné (type, moment, fréquence) = fond `bg-texte` et texte `text-fond`, partout ;
+    - un choix sélectionné dans un formulaire (type, moment, fréquence) = fond `bg-texte` et texte `text-fond`, partout ;
+    - une bascule de vue (onglets, semaine / mois, écart de comparaison) = segment `bg-surface-2 p-1`, élément choisi
+      `bg-surface font-semibold shadow-elevation` : jamais de rose ni de fond foncé (retour utilisateur du 2026-09-29) ;
+    - intensité 1-10 : composant partagé `ChoixIntensite` (choisie = pleine dans sa couleur, bordure de la même
+      couleur, jamais de bordure noire ; les autres gardent un trait de leur couleur pour lire l'échelle) ;
     - la teinte d'une rubrique identifie (tuile d'icône, calendrier), elle ne change pas avec l'état.
   - `index.css` centre le texte de toute `ul` (règle héritée, gardée tant que les anciennes pages en dépendent) : une
     liste refaite porte `text-left` sur ses lignes, sinon libellés et détails se centrent.
