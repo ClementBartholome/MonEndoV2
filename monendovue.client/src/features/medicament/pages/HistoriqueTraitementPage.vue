@@ -9,10 +9,10 @@
         <h1 class="m-0 truncate text-[22px] font-semibold tracking-normal text-texte">{{ donnees?.traitement.nom ?? 'Traitement' }}</h1>
         <span v-if="donnees" class="truncate text-[13px] text-texte-3">{{ detail }}</span>
       </div>
-      <button v-if="donnees" type="button"
-              class="inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-controle border-[1.5px] border-contour px-3 text-sm font-medium text-texte"
+      <button v-if="donnees" type="button" aria-label="Modifier le traitement"
+              class="-mr-2 flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-texte hover:bg-surface-2"
               @click="saisieOuverte = true">
-        <i class="material-symbols-outlined text-lg" aria-hidden="true">edit</i>Modifier
+        <i class="material-symbols-outlined" aria-hidden="true">edit</i>
       </button>
     </header>
 
@@ -34,7 +34,9 @@
       </div>
       <template v-else-if="donnees">
         <ResumeHistoriqueTraitement :historique="donnees"/>
-        <JoursHistoriqueTraitement v-if="donnees.jours.length" :jours="donnees.jours" :envoi="envoi" @retirer="retirer"/>
+        <JoursHistoriqueTraitement v-if="donnees.jours.length" :jours="donnees.jours" :envoi="envoi"
+                                   :titre="donnees.traitement.type === 'NonMedicamenteux' ? 'Séances' : 'Prises'"
+                                   :plusieurs-horaires="donnees.traitement.horaires.length > 1" @retirer="retirer"/>
         <p v-else class="m-0 rounded-carte bg-surface-2 px-4 py-3 text-sm text-texte-2">
           {{ donnees.traitement.type === 'NonMedicamenteux' ? 'Aucune séance notée ce mois-ci.' : 'Aucune prise notée ce mois-ci.' }}
         </p>

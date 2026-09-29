@@ -82,13 +82,13 @@ test.describe('Traitements', () => {
 
     await traitementsPage.mesTraitements.getByRole('button', { name: /Diénogest 2 mg/ }).click();
     await expect(page).toHaveURL(/\/medicaments\/1$/);
-    await page.getByRole('button', { name: 'Modifier' }).click();
+    await page.getByRole('button', { name: 'Modifier le traitement' }).click();
     await traitementsPage.panneau.getByRole('textbox', { name: /Dose/ }).fill('2 comprimés');
     await traitementsPage.enregistrer();
     await expect(traitementsPage.panneau).toBeHidden();
     expect(traitements[0].dose).toBe('2 comprimés');
 
-    await page.getByRole('button', { name: 'Modifier' }).click();
+    await page.getByRole('button', { name: 'Modifier le traitement' }).click();
     await traitementsPage.panneau.getByRole('button', { name: 'Arrêter ce traitement' }).click();
     await traitementsPage.panneau.getByRole('button', { name: 'Confirmer l\'arrêt aujourd\'hui' }).click();
     await expect(traitementsPage.panneau).toBeHidden();
@@ -112,18 +112,18 @@ test.describe('Traitements', () => {
     await expect(resume).toContainText('1/15prises sur les prévues');
     await expect(resume).toContainText('1ignorée');
     await expect(resume).toContainText('1le mois précédent');
-    await expect(page.getByRole('heading', { name: 'Lundi 14 septembre' })).toBeVisible();
-    await expect(page.getByText('Pris à 8 h 12 (prévue 8 h 00)')).toBeVisible();
-    await expect(page.getByText('Prise de 8 h 00 ignorée')).toBeVisible();
+    await expect(page.getByText('lun. 14', { exact: true })).toBeVisible();
+    await expect(page.getByText('Pris à 8 h 12', { exact: true })).toBeVisible();
+    await expect(page.getByText('Ignorée', { exact: true })).toBeVisible();
 
     await page.getByRole('button', { name: /Retirer : Pris à 8 h 12/ }).click();
     await page.getByRole('button', { name: 'Confirmer' }).click();
-    await expect(page.getByText('Pris à 8 h 12 (prévue 8 h 00)')).toHaveCount(0);
+    await expect(page.getByText('Pris à 8 h 12', { exact: true })).toHaveCount(0);
     expect(prises.map((p) => p.id)).toEqual([51, 52]);
 
     await page.getByRole('button', { name: /Septembre 2026, choisir un autre mois/ }).click();
     await page.getByRole('dialog').getByRole('button', { name: 'août' }).click();
-    await expect(page.getByText('Pris à 8 h 05 (prévue 8 h 00)')).toBeVisible();
+    await expect(page.getByText('Pris à 8 h 05', { exact: true })).toBeVisible();
   });
 
   test('ouvre la saisie depuis un lien profond', async ({ traitementsPage, serveur }) => {
