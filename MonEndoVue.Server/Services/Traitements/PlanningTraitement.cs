@@ -6,9 +6,16 @@ namespace MonEndoVue.Server.Services.Traitements;
 public static class PlanningTraitement
 {
     /// <summary>Le traitement est-il à prendre ce jour-là (en cours, dans ses dates, jour correspondant à sa fréquence) ?</summary>
-    public static bool EstPrevu(Medicament traitement, DateOnly jour)
+    public static bool EstPrevu(Medicament traitement, DateOnly jour) =>
+        traitement.TraitementEnCours && EstPrevuDansSesDates(traitement, jour);
+
+    /// <summary>
+    /// Même règle sans la condition « en cours » : pour l'historique, un traitement arrêté depuis garde ses prises prévues
+    /// jusqu'à sa date de fin. Les horaires et la fréquence sont ceux d'aujourd'hui (leurs versions passées ne sont pas gardées).
+    /// </summary>
+    public static bool EstPrevuDansSesDates(Medicament traitement, DateOnly jour)
     {
-        if (!traitement.TraitementEnCours || traitement.Type != TypeTraitement.Medicamenteux) return false;
+        if (traitement.Type != TypeTraitement.Medicamenteux) return false;
 
         var debut = DateOnly.FromDateTime(traitement.DateDebutTraitement);
         if (jour < debut) return false;
