@@ -77,7 +77,7 @@ const resume = computed(() => {
 
 <template>
   <figure class="w-full m-0">
-    <figcaption class="text-sm font-medium text-headline text-left mb-1">{{ titre }}</figcaption>
+    <figcaption class="text-sm font-medium text-texte text-left mb-1">{{ titre }}</figcaption>
     <div ref="conteneur" class="w-full" :style="{ height: `${HAUTEUR}px` }">
       <svg
           v-if="largeur > 0"
@@ -85,7 +85,7 @@ const resume = computed(() => {
           :height="HAUTEUR"
           role="img"
           :aria-label="resume"
-          class="block text-muted-foreground"
+          class="block text-texte-3"
       >
         <rect
             :x="MARGE.gauche" :y="MARGE.haut"
@@ -100,7 +100,7 @@ const resume = computed(() => {
             :y="MARGE.haut"
             :width="colonne"
             :height="basTrace - MARGE.haut"
-            class="fill-rose-200/70"
+            class="fill-teinte-regles-fond"
         />
         <rect
             v-if="selection >= 0"
@@ -108,13 +108,13 @@ const resume = computed(() => {
             :y="MARGE.haut"
             :width="colonne"
             :height="basTrace - MARGE.haut"
-            class="fill-gray-300/60"
+            class="fill-surface-2"
         />
 
         <g v-for="graduation in graduations" :key="`graduation-${graduation}`">
           <line
               :x1="MARGE.gauche" :x2="largeur - MARGE.droite" :y1="y(graduation)" :y2="y(graduation)"
-              class="stroke-gray-200" stroke-dasharray="3 3"
+              class="stroke-trait" stroke-dasharray="3 3"
           />
           <text :x="MARGE.gauche - 6" :y="y(graduation)" dy="0.32em" text-anchor="end" font-size="10" fill="currentColor">
             {{ graduation.toLocaleString('fr-FR') }}
@@ -165,7 +165,7 @@ const resume = computed(() => {
         />
       </svg>
     </div>
-    <ul v-if="series.length > 1" class="flex flex-wrap gap-x-4 gap-y-1 text-xs text-paragraph mt-1" aria-hidden="true">
+    <ul v-if="series.length > 1" class="flex flex-wrap gap-x-4 gap-y-1 text-xs text-texte-2 mt-1" aria-hidden="true">
       <li v-for="serie in series" :key="serie.cle" class="flex items-center gap-1">
         <span class="w-3 h-3 rounded-full" :class="serie.pastille"/>{{ serie.libelle }}
       </li>

@@ -41,13 +41,13 @@ const choisirIntensite = (champ: ChampIntensite, intensite: IntensiteTransit) =>
 
 <template>
   <div class="flex flex-col gap-4">
-    <p class="font-semibold text-headline flex items-center gap-2">
-      <i class="material-symbols-outlined text-button" aria-hidden="true">gastroenterology</i>Transit
+    <p class="font-semibold text-texte flex items-center gap-2">
+      <i class="material-symbols-outlined text-teinte-bilan" aria-hidden="true">gastroenterology</i>Transit
     </p>
 
     <!-- Selles -->
     <section class="flex flex-col gap-2">
-      <h3 class="text-sm font-medium text-headline">Des selles ?</h3>
+      <h3 class="text-sm font-medium text-texte">Des selles ?</h3>
       <div class="grid grid-cols-2 gap-2">
         <Button
             v-for="reponse in reponses"
@@ -63,7 +63,7 @@ const choisirIntensite = (champ: ChampIntensite, intensite: IntensiteTransit) =>
       </div>
 
       <div v-if="transit.selles" class="flex flex-col gap-1.5">
-        <p class="text-sm font-medium text-headline">Quel aspect ? <span class="font-normal text-paragraph">(échelle de Bristol)</span></p>
+        <p class="text-sm font-medium text-texte">Quel aspect ? <span class="font-normal text-texte-2">(échelle de Bristol)</span></p>
         <!-- Lignes compactes : la description n'apparaît que pour le type choisi. -->
         <button
             v-for="bristol in echelleBristol"
@@ -71,35 +71,35 @@ const choisirIntensite = (champ: ChampIntensite, intensite: IntensiteTransit) =>
             type="button"
             :aria-pressed="transit.typeBristol === bristol.type"
             :class="[
-              'flex items-start gap-2.5 min-h-[44px] px-2.5 py-2 rounded-xl border text-left transition-colors',
+              'flex items-start gap-2.5 min-h-[44px] px-2.5 py-2 rounded-controle border-[1.5px] text-left transition-colors',
               transit.typeBristol === bristol.type
-                ? 'border-button bg-button/15'
-                : 'border-gray-200 bg-white hover:border-button/50'
+                ? 'border-texte bg-surface-2'
+                : 'border-trait bg-surface hover:border-contour'
             ]"
             @click="choisirBristol(bristol.type)"
         >
           <span
               :class="[
-                'shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-sm font-bold',
-                transit.typeBristol === bristol.type ? 'bg-button text-white' : 'bg-gray-100 text-headline'
+                'shrink-0 w-7 h-7 rounded-controle flex items-center justify-center text-sm font-semibold',
+                transit.typeBristol === bristol.type ? 'bg-texte text-fond' : 'bg-surface-2 text-texte'
               ]"
           >
             {{ bristol.type }}
           </span>
           <span class="flex flex-col min-w-0 flex-1 pt-0.5">
             <span class="flex flex-col">
-              <span class="text-sm font-semibold text-headline">{{ bristol.titre }}</span>
-              <span class="text-xs text-paragraph/80 italic">{{ bristol.tendance }}</span>
+              <span class="text-sm font-semibold text-texte">{{ bristol.titre }}</span>
+              <span class="text-xs text-texte-3 italic">{{ bristol.tendance }}</span>
             </span>
-            <span v-if="transit.typeBristol === bristol.type" class="text-xs text-paragraph mt-0.5">{{ bristol.description }}</span>
+            <span v-if="transit.typeBristol === bristol.type" class="text-xs text-texte-2 mt-0.5">{{ bristol.description }}</span>
           </span>
         </button>
         <button
             type="button"
             :aria-pressed="transit.typeBristol === null"
             :class="[
-              'min-h-[44px] px-3 rounded-xl border text-sm transition-colors',
-              transit.typeBristol === null ? 'border-button bg-button/15' : 'border-gray-200 bg-white hover:border-button/50'
+              'min-h-[44px] px-3 rounded-controle border-[1.5px] text-sm transition-colors',
+              transit.typeBristol === null ? 'border-texte bg-texte font-medium text-fond' : 'border-trait bg-surface text-texte hover:border-contour'
             ]"
             @click="choisirBristol(null)"
         >
@@ -110,8 +110,8 @@ const choisirIntensite = (champ: ChampIntensite, intensite: IntensiteTransit) =>
 
     <!-- Crampes et ballonnements -->
     <section v-for="symptome in symptomes" :key="symptome.cle" class="flex flex-col gap-2">
-      <h3 class="text-sm font-medium text-headline flex items-center gap-2">
-        <i class="material-symbols-outlined text-button text-xl" aria-hidden="true">{{ symptome.icone }}</i>{{ symptome.question }}
+      <h3 class="text-sm font-medium text-texte flex items-center gap-2">
+        <i class="material-symbols-outlined text-teinte-bilan text-xl" aria-hidden="true">{{ symptome.icone }}</i>{{ symptome.question }}
       </h3>
       <div class="grid grid-cols-2 gap-2">
         <Button
@@ -127,7 +127,7 @@ const choisirIntensite = (champ: ChampIntensite, intensite: IntensiteTransit) =>
         </Button>
       </div>
       <div v-if="transit[symptome.cle]" class="flex flex-col gap-2">
-        <p class="text-sm font-medium text-headline">Intensité</p>
+        <p class="text-sm font-medium text-texte">Intensité</p>
         <div class="grid grid-cols-3 gap-2">
           <Button
               v-for="intensite in intensitesTransit"
@@ -141,7 +141,7 @@ const choisirIntensite = (champ: ChampIntensite, intensite: IntensiteTransit) =>
             {{ intensite }}
           </Button>
         </div>
-        <p v-if="!transit[symptome.intensite]" class="text-xs text-paragraph italic">
+        <p v-if="!transit[symptome.intensite]" class="text-xs text-texte-2 italic">
           Choisis une intensité pour pouvoir enregistrer.
         </p>
       </div>

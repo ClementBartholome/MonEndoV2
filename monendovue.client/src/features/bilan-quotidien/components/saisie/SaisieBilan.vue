@@ -2,7 +2,6 @@
 import { computed, ref, toRef } from 'vue';
 import { format, isToday } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { Button } from '@/shared/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/shared/components/ui/dialog';
 import EchellePastilles from '@/features/bilan-quotidien/components/saisie/EchellePastilles.vue';
 import EmotionsChoix from '@/features/bilan-quotidien/components/saisie/EmotionsChoix.vue';
@@ -76,11 +75,11 @@ const annuler = () => confirmation.demanderSiNecessaire(() => emit('annule'));
 </script>
 
 <template>
-  <section class="w-full max-w-2xl mx-auto bg-clearer rounded-3xl shadow-xl flex flex-col" aria-labelledby="titre-saisie-bilan">
-    <div class="px-4 pt-5 pb-6 md:p-6 flex flex-col gap-6">
+  <section class="flex w-full flex-col rounded-carte bg-surface shadow-elevation" aria-labelledby="titre-saisie-bilan">
+    <div class="flex flex-col gap-6 px-4 pb-6 pt-5 md:p-6">
       <header class="flex flex-col gap-1">
-        <h2 id="titre-saisie-bilan" class="text-xl font-bold text-headline">{{ titre }}</h2>
-        <p class="text-sm text-paragraph">Seules la douleur et les émotions sont nécessaires, le reste est facultatif.</p>
+        <h2 id="titre-saisie-bilan" class="m-0 text-xl font-semibold tracking-normal text-texte">{{ titre }}</h2>
+        <p class="m-0 text-sm text-texte-2">Seules la douleur et les émotions sont nécessaires, le reste est facultatif.</p>
       </header>
 
       <!-- Essentiel -->
@@ -97,7 +96,7 @@ const annuler = () => confirmation.demanderSiNecessaire(() => emit('annule'));
 
         <div class="flex flex-col gap-2">
           <EmotionsChoix v-model="formulaire.emotions"/>
-          <p v-if="ancienneHumeur && !formulaire.emotions.length" class="text-xs text-paragraph">
+          <p v-if="ancienneHumeur && !formulaire.emotions.length" class="m-0 text-xs text-texte-2">
             Humeur enregistrée à l'époque : {{ ancienneHumeur.libelle }}. Tu peux la préciser avec des émotions, sans obligation.
           </p>
         </div>
@@ -129,10 +128,10 @@ const annuler = () => confirmation.demanderSiNecessaire(() => emit('annule'));
       </div>
 
       <div v-if="veilleDisponible" class="flex flex-wrap items-center gap-2">
-        <Button type="button" variant="outline" class="h-11 gap-2" @click="reprendreHier">
+        <button type="button" class="inline-flex min-h-11 items-center justify-center gap-2 rounded-controle border-[1.5px] border-contour px-3.5 text-sm font-medium text-texte" @click="reprendreHier">
           <i class="material-symbols-outlined text-lg" aria-hidden="true">content_copy</i>Comme hier
-        </Button>
-        <span class="text-xs text-paragraph">Reprend le transit, l'alimentation, les pas et l'hydratation de la veille.</span>
+        </button>
+        <span class="text-xs text-texte-2">Reprend le transit, l'alimentation, les pas et l'hydratation de la veille.</span>
       </div>
 
       <BlocRepliable v-model:ouvert="corpsOuvert" titre="Corps" icone="accessibility_new" :resume="resumeCorps(corps)">
@@ -150,42 +149,40 @@ const annuler = () => confirmation.demanderSiNecessaire(() => emit('annule'));
             id="notes-bilan"
             v-model="formulaire.commentaire"
             placeholder="Un événement, un ressenti, un repas…"
-            class="w-full p-3 rounded-xl border-2 border-gray-200 focus:border-button focus:outline-none resize-y min-h-[120px] bg-form-input text-paragraph"
+            class="min-h-[120px] w-full resize-y rounded-controle border-[1.5px] border-contour bg-white p-3 text-[15px] text-texte"
             :maxlength="COMMENTAIRE_MAX"
         ></textarea>
-        <p class="text-xs text-paragraph text-right -mt-4">{{ formulaire.commentaire.length }}/{{ COMMENTAIRE_MAX }}</p>
+        <p class="-mt-4 text-right text-xs text-texte-3">{{ formulaire.commentaire.length }}/{{ COMMENTAIRE_MAX }}</p>
       </BlocRepliable>
     </div>
 
     <!-- Barre d'enregistrement toujours visible -->
-    <div class="barre-enregistrement sticky z-10 px-4 py-3 md:px-6 rounded-b-3xl border-t border-gray-200 flex flex-col gap-2">
-      <p v-if="aide" class="text-sm text-paragraph truncate" aria-live="polite">{{ aide }}</p>
+    <div class="barre-enregistrement sticky z-10 flex flex-col gap-2 rounded-b-carte border-t border-trait px-4 py-3 md:px-6">
+      <p v-if="aide" class="m-0 truncate text-sm text-texte-2" aria-live="polite">{{ aide }}</p>
       <div class="flex gap-2">
-        <Button v-if="annulable" type="button" variant="outline" class="h-12 flex-1 px-3" @click="annuler">
+        <button v-if="annulable" type="button" class="inline-flex min-h-11 items-center justify-center gap-2 rounded-controle border-[1.5px] border-contour px-3.5 text-sm font-medium text-texte min-h-12 flex-1" @click="annuler">
           Annuler
-        </Button>
-        <Button
+        </button>
+        <button
             type="button"
-            variant="custom"
-            class="h-12 flex-[2] gap-2 text-base"
+            class="inline-flex min-h-12 items-center justify-center gap-2 rounded-controle bg-button px-4 text-base font-semibold text-texte disabled:opacity-50 flex-[2]"
             :disabled="!estEnregistrable"
             @click="saisie.enregistrer"
         >
-          <i class="material-symbols-outlined" aria-hidden="true">check_circle</i>
           {{ enregistrement ? 'Enregistrement…' : 'Enregistrer' }}
-        </Button>
+        </button>
       </div>
     </div>
 
     <Dialog :open="confirmation.demandeOuverte.value" @update:open="(ouvert) => !ouvert && confirmation.rester()">
-      <DialogContent class="max-w-[calc(100vw-2rem)] sm:max-w-md rounded-2xl">
+      <DialogContent class="max-w-[calc(100vw-2rem)] rounded-carte sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Quitter sans enregistrer ?</DialogTitle>
           <DialogDescription>Les réponses de ce bilan qui ne sont pas enregistrées seront perdues.</DialogDescription>
         </DialogHeader>
         <DialogFooter class="flex flex-col-reverse gap-2 sm:flex-row">
-          <Button type="button" variant="outline" class="h-11" @click="confirmation.quitter">Quitter sans enregistrer</Button>
-          <Button type="button" variant="custom" class="h-11" @click="confirmation.rester">Continuer la saisie</Button>
+          <button type="button" class="inline-flex min-h-11 items-center justify-center gap-2 rounded-controle border-[1.5px] border-contour px-3.5 text-sm font-medium text-texte" @click="confirmation.quitter">Quitter sans enregistrer</button>
+          <button type="button" class="inline-flex min-h-11 items-center justify-center rounded-controle bg-button px-4 text-sm font-semibold text-texte" @click="confirmation.rester">Continuer la saisie</button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
@@ -195,8 +192,8 @@ const annuler = () => confirmation.demanderSiNecessaire(() => emit('annule'));
 <style scoped>
 .barre-enregistrement {
   bottom: 0;
-  background: var(--couleur-fond);
-  box-shadow: 0 -4px 8px -6px rgba(0, 0, 0, 0.15);
+  background: var(--couleur-surface);
+  box-shadow: 0 -4px 8px -6px rgb(51 39 42 / 0.15);
 }
 
 /* Sous 1024px, la navigation est fixée en bas de l'écran (BarreNavigation.vue, 4.25rem) : la barre se pose au-dessus. */
