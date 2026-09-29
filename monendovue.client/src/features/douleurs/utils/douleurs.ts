@@ -1,5 +1,5 @@
-import { endOfMonth, format, getDaysInMonth } from 'date-fns';
-import { fr } from 'date-fns/locale';
+import { format, getDaysInMonth } from 'date-fns';
+import { cleJour } from '@/shared/utils/jours';
 import type { DonneesDouleur } from '../types/donnees-douleur';
 
 /** Types de douleur proposés (valeurs enregistrées) et leur libellé court à l'écran. */
@@ -24,11 +24,6 @@ export function libelleCourt(type: string): string {
 export function commentaireAffiche(commentaire?: string | null): string | null {
     const texte = commentaire?.trim();
     return texte && texte !== COMMENTAIRE_VIDE ? texte : null;
-}
-
-/** Jour calendaire local (AAAA-MM-JJ) d'une date reçue de l'API (sans fuseau) ou d'une Date locale. */
-export function cleJour(date: string | Date): string {
-    return typeof date === 'string' ? date.slice(0, 10) : format(date, 'yyyy-MM-dd');
 }
 
 export interface ChiffresDuMois {
@@ -73,37 +68,4 @@ export function joursDuMois(mois: Date, entrees: DonneesDouleur[], joursDeRegles
             regles: reglesDuMois.has(cle),
         };
     });
-}
-
-export interface GroupeDuJour {
-    cle: string;
-    /** « Mardi 15 septembre » */
-    titre: string;
-    entrees: DonneesDouleur[];
-}
-
-/** Entrées regroupées par jour, du plus récent au plus ancien, et par heure décroissante dans la journée. */
-export function grouperParJour(entrees: DonneesDouleur[]): GroupeDuJour[] {
-    const groupes = new Map<string, DonneesDouleur[]>();
-    [...entrees]
-        .sort((a, b) => String(b.date).localeCompare(String(a.date)))
-        .forEach((e) => {
-            const cle = cleJour(e.date);
-            groupes.set(cle, [...(groupes.get(cle) ?? []), e]);
-        });
-    return [...groupes.entries()].map(([cle, duJour]) => {
-        const titre = format(new Date(`${cle}T12:00:00`), 'EEEE d MMMM', { locale: fr });
-        return { cle, titre: titre.charAt(0).toUpperCase() + titre.slice(1), entrees: duJour };
-    });
-}
-
-/** « 8 h 40 » à partir d'une date locale sans fuseau. */
-export function heure(date: string | Date): string {
-    const texte = typeof date === 'string' ? date.slice(11, 16) : format(date, 'HH:mm');
-    const [heures, minutes] = texte.split(':');
-    return `${Number(heures)} h ${minutes}`;
-}
-
-export function estMoisCourant(mois: Date, maintenant: Date): boolean {
-    return endOfMonth(mois) >= maintenant && mois <= maintenant;
 }
