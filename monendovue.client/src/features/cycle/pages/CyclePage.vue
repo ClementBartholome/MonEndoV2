@@ -33,7 +33,7 @@
                              @noter-aujourdhui="noter(regles.noterAujourdhui)"/>
           <CalendrierRegles :mois="regles.mois.value" :calendrier="regles.calendrier.value" :en-cours-d-envoi="regles.enCoursDEnvoi.value"
                             @basculer="(jour) => noter(() => regles.basculer(jour))" @changer="regles.allerAuMois"/>
-          <ListeCycles :cycles="regles.donnees.value.cycles" :duree-moyenne="regles.donnees.value.dureeMoyenne"
+          <ListeCycles :cycles="regles.donnees.value.cycles" :resume="regles.donnees.value"
                        :plus-anciens="regles.donnees.value.cyclesPlusAnciens" @voir-plus="regles.voirPlusDeCycles"/>
         </template>
       </TabsContent>

@@ -5,8 +5,12 @@ test.describe('Cycle · règles', () => {
   test('affiche le cycle en cours, le mois et l\'historique', async ({ cyclePage, serveur }) => {
     simulerRegles(serveur, ['2026-09-14', '2026-09-15'], {
       enCours: { debut: '2026-09-14', jourDuCycle: 2, jourDeRegles: 2 },
-      cycles: [{ debut: '2026-08-14', joursDeRegles: 5, duree: 31 }, { debut: '2026-07-14', joursDeRegles: 4, duree: 31 }],
-      dureeMoyenne: 31,
+      cycles: [
+        { debut: '2026-08-14', joursDeRegles: 5, duree: 31, joursDouleurForte: [1, 2, 16] },
+        { debut: '2026-07-14', joursDeRegles: 4, duree: 31, joursDouleurForte: [] },
+        { debut: '2025-12-18', joursDeRegles: 5, duree: 27, joursDouleurForte: [2] },
+      ],
+      dureeMoyenne: 30, reglesMoyenne: 5, dureeMinimale: 27, dureeMaximale: 31,
     });
     await cyclePage.ouvrir();
 
@@ -16,9 +20,14 @@ test.describe('Cycle · règles', () => {
     await expect(cyclePage.jour('Lundi 14 septembre')).toHaveAttribute('aria-pressed', 'true');
     await expect(cyclePage.jour('Mardi 15 septembre')).toHaveAccessibleName('Mardi 15 septembre, aujourd\'hui, règles');
     await expect(cyclePage.jour('Mercredi 16 septembre')).toBeDisabled();
-    await expect(cyclePage.mesCycles).toContainText('en moyenne 31 jours');
-    await expect(cyclePage.mesCycles).toContainText('Début le 14 août');
-    await expect(cyclePage.mesCycles).toContainText('Règles 5 jours');
+    await expect(cyclePage.mesCycles).toContainText('Cycle30 j');
+    await expect(cyclePage.mesCycles).toContainText('Règles5 j');
+    await expect(cyclePage.mesCycles).toContainText('Écart27–31 j');
+    await expect(cyclePage.mesCycles.getByRole('heading', { name: '2026' })).toBeVisible();
+    await expect(cyclePage.mesCycles.getByRole('heading', { name: '2025' })).toBeVisible();
+    await expect(cyclePage.mesCycles).toContainText('14 août – 13 sept.');
+    await expect(cyclePage.mesCycles.getByRole('img', { name: 'Cycle de 31 jours, règles 5 jours, douleur forte 3 jours (jours 1, 2, 16)' })).toBeVisible();
+    await expect(cyclePage.mesCycles.getByRole('img', { name: 'Cycle de 31 jours, règles 4 jours' })).toBeVisible();
   });
 
   test('ajoute puis retire un jour de règles d\'un geste', async ({ cyclePage, serveur }) => {
@@ -47,18 +56,18 @@ test.describe('Cycle · règles', () => {
 
   test('l\'historique se charge par six cycles, la moyenne reste celle des six derniers', async ({ cyclePage, serveur, page }) => {
     const cycles = Array.from({ length: 14 }, (_, i) => ({
-      debut: `2026-${String(8 - (i % 8)).padStart(2, '0')}-0${(i % 9) + 1}`, joursDeRegles: 5, duree: 28 + (i % 3),
+      debut: `2026-${String(8 - (i % 8)).padStart(2, '0')}-0${(i % 9) + 1}`, joursDeRegles: 5, duree: 28 + (i % 3), joursDouleurForte: [],
     }));
-    simulerRegles(serveur, [], { cycles, dureeMoyenne: 29 });
+    simulerRegles(serveur, [], { cycles, dureeMoyenne: 29, reglesMoyenne: 5, dureeMinimale: 28, dureeMaximale: 30 });
     await cyclePage.ouvrir();
 
-    await expect(cyclePage.mesCycles.getByRole('listitem')).toHaveCount(6);
+    await expect(cyclePage.mesCycles.getByRole('img', { name: /^Cycle de/ })).toHaveCount(6);
     await page.getByRole('button', { name: 'Voir les cycles précédents (8)' }).click();
 
-    await expect(cyclePage.mesCycles.getByRole('listitem')).toHaveCount(12);
+    await expect(cyclePage.mesCycles.getByRole('img', { name: /^Cycle de/ })).toHaveCount(12);
     await expect(page.getByRole('button', { name: 'Voir les cycles précédents (2)' })).toBeVisible();
     expect(serveur.appelsVers('GET', /^Cycle$/).at(-1)!.parametres.get('cycles')).toBe('12');
-    await expect(cyclePage.mesCycles).toContainText('en moyenne 29 jours');
+    await expect(cyclePage.mesCycles).toContainText('Cycle29 j');
   });
 
   test('le titre du mois permet de revenir loin en arrière d\'un coup', async ({ cyclePage, serveur, page }) => {
