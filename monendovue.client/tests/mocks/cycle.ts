@@ -1,5 +1,6 @@
 import type { CycleDuMois } from '../../src/features/cycle/types/cycle';
 import type { SymptomeCycle } from '../../src/features/cycle/types/symptome-cycle';
+import type { EpisodeAcne, SuiviAcne } from '../../src/features/cycle/types/acne';
 import { CARNET_ID } from './session';
 import { liste, type FauxServeur } from './faux-serveur';
 
@@ -79,4 +80,46 @@ export function simulerSymptomes(serveur: FauxServeur, initiaux: Partial<Symptom
       return { status: 204 };
     });
   return symptomes;
+}
+
+/**
+ * Routes simulées de `AcneController` avec les épisodes comme état du test (durées calculées au 15 septembre 2026,
+ * jour de l'horloge des tests). Les suivis photo sont fournis tels quels.
+ */
+export function simulerAcne(serveur: FauxServeur, initiaux: { debut: string; fin?: string | null }[] = [], suivis: SuiviAcne[] = []) {
+  let prochainId = 1;
+  const episodes: EpisodeAcne[] = [];
+  const duree = (debut: string, fin: string | null) =>
+    Math.round((new Date(`${fin ?? '2026-09-15'}T12:00:00`).getTime() - new Date(`${debut}T12:00:00`).getTime()) / 86_400_000) + 1;
+  const enregistrer = (id: number, debut: string, fin: string | null) => {
+    const index = episodes.findIndex((e) => e.id === id);
+    const episode = { id, debut, fin, jours: duree(debut, fin) };
+    if (index < 0) episodes.push(episode);
+    else episodes[index] = episode;
+  };
+  initiaux.forEach((e) => enregistrer(prochainId++, e.debut, e.fin ?? null));
+
+  serveur
+    .on('GET', /^Acne$/, () => ({
+      body: { episodes: liste([...episodes].sort((a, b) => b.debut.localeCompare(a.debut))), suivis: liste(suivis) },
+    }))
+    .on('POST', /^Acne\/episodes$/, ({ corps }) => {
+      const id = prochainId++;
+      enregistrer(id, corps.debut, corps.fin ?? null);
+      return { body: { id } };
+    })
+    .on('PUT', /^Acne\/episodes\/(\d+)$/, ({ params: [id], corps }) => {
+      enregistrer(Number(id), corps.debut, corps.fin ?? null);
+      return { status: 204 };
+    })
+    .on('POST', /^Acne\/episodes\/(\d+)\/fin$/, ({ params: [id], corps }) => {
+      const episode = episodes.find((e) => e.id === Number(id))!;
+      enregistrer(episode.id, episode.debut, corps.fin);
+      return { status: 204 };
+    })
+    .on('DELETE', /^Acne\/episodes\/(\d+)$/, ({ params: [id] }) => {
+      episodes.splice(episodes.findIndex((e) => e.id === Number(id)), 1);
+      return { status: 204 };
+    });
+  return episodes;
 }

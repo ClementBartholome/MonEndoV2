@@ -1,5 +1,5 @@
 import { test, expect } from './fixtures';
-import { champs, simulerRegles, simulerSymptomes } from './mocks/cycle';
+import { champs, simulerAcne, simulerRegles, simulerSymptomes } from './mocks/cycle';
 
 test.describe('Cycle · règles', () => {
   test('affiche le cycle en cours, le mois et l\'historique', async ({ cyclePage, serveur }) => {
@@ -119,12 +119,61 @@ test.describe('Cycle · symptômes', () => {
 });
 
 test.describe('Cycle · acné', () => {
-  test('le suivi de l\'acné s\'ouvre sur son onglet et note avec photo', async ({ cyclePage, serveur }) => {
-    simulerSymptomes(serveur);
+  const photo = (id: number, date: string) => ({
+    id, date, intensite: 4, commentaire: null,
+    // Image vide servie par le navigateur de test : pas d'appel réseau.
+    photoUrl: 'data:image/gif;base64,R0lGODlhAQABAAAAACw=',
+  });
+
+  test('épisode en cours, point de la semaine, avant / après et historique', async ({ cyclePage, serveur, page }) => {
+    simulerAcne(serveur, [{ debut: '2026-06-03', fin: '2026-07-20' }, { debut: '2026-08-02' }],
+      [photo(3, '2026-09-10T20:00:00'), photo(2, '2026-06-12T20:00:00'), photo(1, '2026-05-01T20:00:00')]);
     await cyclePage.ouvrir('?onglet=acne');
 
     await expect(cyclePage.onglet('Acné')).toHaveAttribute('aria-selected', 'true');
-    await cyclePage.page.getByRole('button', { name: 'Bilan acné' }).click();
+    const episode = page.getByRole('region', { name: 'En ce moment' });
+    await expect(episode).toContainText('Depuis le 2 août · 45 jours');
+    await expect(page.getByRole('region', { name: 'Point de la semaine' })).toContainText('Dernière photo il y a 5 jours');
+    // Trois mois avant le 10 septembre : la photo du 12 juin, la plus proche.
+    await expect(page.getByRole('img', { name: 'Photo du 12 juin 2026' })).toBeVisible();
+    await page.getByRole('radio', { name: '6 mois' }).click();
+    await expect(page.getByRole('img', { name: 'Photo du 1 mai 2026' })).toBeVisible();
+    await expect(page.getByRole('region', { name: 'Épisodes' })).toContainText('3 juin → 20 juillet');
+  });
+
+  test('« Ça s\'est calmé » termine l\'épisode, « L\'acné revient » en ouvre un autre', async ({ cyclePage, serveur, page }) => {
+    const episodes = simulerAcne(serveur, [{ debut: '2026-08-02' }]);
+    await cyclePage.ouvrir('?onglet=acne');
+
+    await page.getByRole('button', { name: 'Ça s\'est calmé' }).click();
+    await expect(cyclePage.panneau.getByLabel('Dernier jour')).toHaveValue('2026-09-15');
+    await cyclePage.panneau.getByRole('button', { name: 'Enregistrer' }).click();
+    await expect(page.getByRole('region', { name: 'Pas en ce moment' })).toContainText('Dernier épisode terminé le 15 septembre');
+    expect(episodes[0].fin).toBe('2026-09-15');
+
+    await page.getByRole('button', { name: 'L\'acné revient' }).click();
+    await cyclePage.panneau.getByRole('button', { name: 'Enregistrer' }).click();
+    await expect(page.getByRole('region', { name: 'En ce moment' })).toBeVisible();
+    expect(serveur.appelsVers('POST', /^Acne\/episodes$/)[0].corps).toEqual({ debut: '2026-09-15', fin: null });
+  });
+
+  test('un refus du serveur s\'affiche dans la saisie', async ({ cyclePage, serveur, page }) => {
+    simulerAcne(serveur, [{ debut: '2026-08-02', fin: '2026-08-20' }]);
+    serveur.on('PUT', /^Acne\/episodes\/\d+$/, () => ({ status: 400, body: { message: 'Ces dates chevauchent un autre épisode.' } }));
+    await cyclePage.ouvrir('?onglet=acne');
+
+    await page.getByRole('region', { name: 'Épisodes' }).getByRole('button', { name: /2 août/ }).click();
+    await cyclePage.panneau.getByRole('button', { name: 'Enregistrer' }).click();
+
+    await expect(cyclePage.panneau.getByRole('alert')).toHaveText('Ces dates chevauchent un autre épisode.');
+  });
+
+  test('ajouter une photo ouvre la saisie de l\'acné, avec photo et sans type', async ({ cyclePage, serveur, page }) => {
+    simulerAcne(serveur);
+    await cyclePage.ouvrir('?onglet=acne');
+
+    await expect(page.getByRole('region', { name: 'Point de la semaine' })).toContainText('Aucune photo pour l\'instant');
+    await page.getByRole('button', { name: 'Ajouter une photo' }).click();
 
     await expect(cyclePage.panneau.getByRole('heading', { name: 'Noter mon acné' })).toBeVisible();
     await expect(cyclePage.panneau.getByRole('button', { name: 'Fatigue' })).toHaveCount(0);

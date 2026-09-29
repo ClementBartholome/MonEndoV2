@@ -67,11 +67,25 @@
                           action-label="Noter un symptôme" @action="ouvrirAjout(false)"/>
       </TabsContent>
 
-      <TabsContent value="acne" class="focus:outline-none">
-        <AcneTabSection v-if="auth.user" :carnet-sante-id="auth.user.carnetSanteId" :refresh-key="rafraichirAcne"
-                        @open-add="ouvrirAjout(true)"
-                        @edit-entry="(entree) => ouvrirModification(depuisEntreeAcne(entree), true)"
-                        @photo-click="(url) => (photoAgrandie = url)"/>
+      <TabsContent value="acne" class="flex flex-col gap-3.5 focus:outline-none">
+        <div v-if="acne.chargement.value" class="flex flex-col gap-3.5" aria-busy="true" aria-label="Chargement du suivi de l'acné">
+          <Skeleton class="h-24 rounded-carte"/>
+          <Skeleton class="h-36 rounded-carte"/>
+        </div>
+        <section v-else-if="acne.erreur.value" role="alert" class="flex flex-col items-start gap-3 rounded-carte bg-surface p-5 shadow-elevation">
+          <p class="m-0 text-texte">Le suivi de l'acné n'a pas pu être chargé.</p>
+          <button type="button" class="min-h-11 rounded-controle border-[1.5px] border-contour px-4 text-sm font-medium text-texte"
+                  @click="acne.charger">Réessayer</button>
+        </section>
+        <template v-else-if="acne.donnees.value">
+          <CarteEpisodeAcne :en-cours="acne.enCours.value" :dernier="acne.donnees.value.episodes[0] ?? null"
+                            @commencer="ouvrirEpisode('commencer', null)" @terminer="ouvrirEpisode('terminer', acne.enCours.value)"/>
+          <SuiviPhotosAcne v-model:ecart="acne.ecart.value" :suivis="acne.donnees.value.suivis" :comparaison="acne.comparaison.value"
+                           :maintenant="new Date()"
+                           @ajouter="ouvrirAjout(true)" @modifier="(suivi) => ouvrirModification(enSymptome(suivi), true)"
+                           @agrandir="(url) => (photoAgrandie = url)"/>
+          <ListeEpisodesAcne :episodes="acne.donnees.value.episodes" @modifier="(episode) => ouvrirEpisode('modifier', episode)"/>
+        </template>
       </TabsContent>
     </TabsRoot>
 
@@ -82,6 +96,7 @@
     </button>
 
     <SaisieSymptome v-model:open="saisieOuverte" :entree="entreeModifiee" :acne="saisieAcne" :actions="actions"/>
+    <SaisieEpisodeAcne v-model:open="episodeOuvert" :mode="modeEpisode" :episode="episodeModifie" :actions="actionsEpisode"/>
 
     <PanneauBas :open="photoAgrandie !== null" titre="Photo" @update:open="(o) => { if (!o) photoAgrandie = null; }">
       <img v-if="photoAgrandie" :src="photoAgrandie" alt="Photo de suivi" class="max-h-[70dvh] w-full rounded-carte object-contain">
@@ -100,7 +115,10 @@ import { useToast } from '@/shared/components/ui/toast';
 import EmptyStateAction from '@/shared/components/EmptyStateAction.vue';
 import PanneauBas from '@/shared/components/PanneauBas.vue';
 import { useAuthStore } from '@/features/auth/store/auth';
-import AcneTabSection from '../components/AcneTabSection.vue';
+import CarteEpisodeAcne from '../components/CarteEpisodeAcne.vue';
+import ListeEpisodesAcne from '../components/ListeEpisodesAcne.vue';
+import SaisieEpisodeAcne, { type ActionsEpisodeAcne, type ModeEpisode } from '../components/SaisieEpisodeAcne.vue';
+import SuiviPhotosAcne from '../components/SuiviPhotosAcne.vue';
 import CalendrierRegles from '../components/CalendrierRegles.vue';
 import CarteCycleEnCours from '../components/CarteCycleEnCours.vue';
 import ListeCycles from '../components/ListeCycles.vue';
@@ -109,7 +127,10 @@ import SaisieSymptome, { type ActionsSaisieSymptome } from '../components/Saisie
 import { useRegles } from '../composables/useRegles';
 import { useSymptomes } from '../composables/useSymptomes';
 import type { SymptomeCycle } from '../types/symptome-cycle';
-import { ACNE, depuisEntreeAcne } from '../utils/symptomes';
+import { useAcne } from '../composables/useAcne';
+import type { EpisodeAcne } from '../types/acne';
+import { enSymptome } from '../utils/acne';
+import { ACNE } from '../utils/symptomes';
 
 type Onglet = 'cycles' | 'symptomes' | 'acne';
 /** Les valeurs restent celles des liens existants (accueil, bilan, rappel de photo d'acné : `/cycle?onglet=acne`). */
@@ -125,13 +146,16 @@ const router = useRouter();
 const { toast } = useToast();
 const regles = useRegles();
 const symptomes = useSymptomes({ carnetSanteId: () => auth.user?.carnetSanteId });
+const acne = useAcne();
 
 const demande = route.query.onglet as Onglet | undefined;
 const onglet = ref<Onglet>(ONGLETS.some((o) => o.valeur === demande) ? demande! : 'cycles');
 const saisieOuverte = ref(false);
 const saisieAcne = ref(false);
 const entreeModifiee = ref<SymptomeCycle | null>(null);
-const rafraichirAcne = ref(0);
+const episodeOuvert = ref(false);
+const modeEpisode = ref<ModeEpisode>('commencer');
+const episodeModifie = ref<EpisodeAcne | null>(null);
 const photoAgrandie = ref<string | null>(null);
 const charges = new Set<Onglet>();
 
@@ -143,12 +167,12 @@ const titreMois = (mois: Date) => {
 const actions: ActionsSaisieSymptome = {
   enregistrer: async (saisie, id) => {
     await symptomes.enregistrer(saisie, id);
-    if (saisie.typeSymptome === ACNE) rafraichirAcne.value++;
+    if (saisie.typeSymptome === ACNE) await acne.charger();
     toast({ title: id === null ? 'Symptôme noté' : 'Symptôme modifié', variant: 'custom' });
   },
   supprimer: async (id) => {
     await symptomes.supprimer(id);
-    rafraichirAcne.value++;
+    if (onglet.value === 'acne') await acne.charger();
     toast({ title: 'Symptôme supprimé', variant: 'custom' });
   },
 };
@@ -162,19 +186,44 @@ async function noter(action: () => Promise<void>) {
   }
 }
 
-function ouvrirAjout(acne: boolean) {
+const actionsEpisode: ActionsEpisodeAcne = {
+  commencer: async (debut) => {
+    await acne.commencer(debut);
+    toast({ title: 'Épisode noté', variant: 'custom' });
+  },
+  terminer: async (id, fin) => {
+    await acne.terminer(id, fin);
+    toast({ title: 'Épisode terminé', variant: 'custom' });
+  },
+  modifier: async (id, saisie) => {
+    await acne.modifier(id, saisie);
+    toast({ title: 'Épisode modifié', variant: 'custom' });
+  },
+  supprimer: async (id) => {
+    await acne.supprimer(id);
+    toast({ title: 'Épisode supprimé', variant: 'custom' });
+  },
+};
+
+function ouvrirEpisode(mode: ModeEpisode, episode: EpisodeAcne | null) {
+  modeEpisode.value = mode;
+  episodeModifie.value = episode;
+  episodeOuvert.value = true;
+}
+
+function ouvrirAjout(pourAcne: boolean) {
   entreeModifiee.value = null;
-  saisieAcne.value = acne;
+  saisieAcne.value = pourAcne;
   saisieOuverte.value = true;
 }
 
-function ouvrirModification(entree: SymptomeCycle, acne: boolean) {
+function ouvrirModification(entree: SymptomeCycle, pourAcne: boolean) {
   entreeModifiee.value = entree;
-  saisieAcne.value = acne;
+  saisieAcne.value = pourAcne;
   saisieOuverte.value = true;
 }
 
-/** Chaque onglet charge ses données à sa première ouverture (l'onglet Acné se charge seul). */
+/** Chaque onglet charge ses données à sa première ouverture. */
 async function changerOnglet(valeur: string | number) {
   const choisi = valeur as Onglet;
   await router.replace({ query: { ...route.query, onglet: choisi } });
@@ -182,6 +231,7 @@ async function changerOnglet(valeur: string | number) {
   charges.add(choisi);
   if (choisi === 'cycles') await regles.charger();
   if (choisi === 'symptomes') await symptomes.charger();
+  if (choisi === 'acne') await acne.charger();
 }
 
 onMounted(async () => {

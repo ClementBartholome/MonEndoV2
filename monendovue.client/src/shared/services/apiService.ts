@@ -17,6 +17,7 @@ type Liste<T> = T[] | { $values: T[] };
 import { enTableau } from '@/shared/utils/json';
 import type { ReponseConsentement } from '@/features/auth/types/user';
 import type { CycleDuMois, CycleTermine } from '@/features/cycle/types/cycle';
+import type { Acne, EpisodeAcne, EpisodeAcneSaisie, SuiviAcne } from '@/features/cycle/types/acne';
 import type { SymptomeCycle, SymptomeSaisie } from '@/features/cycle/types/symptome-cycle';
 import { nomDeFichierPhoto } from '@/features/cycle/utils/photo';
 
@@ -155,9 +156,6 @@ class ApiService {
         return this.request('GET', `JourRegle/ByMonth/${carnetSanteId}/${month}/${year}`);
     }
     
-    async getSymptomesByMonth(carnetSanteId: number, month: number, year: number): Promise<any> {
-        return this.request('GET', `SymptomesCycle/${carnetSanteId}/${month}/${year}`);
-    }
 
     /** Symptômes d'un mois (1-12) du carnet, dates locales sans fuseau. */
     async getSymptomesDuMois(carnetSanteId: number, mois: number, annee: number): Promise<SymptomeCycle[]> {
@@ -179,6 +177,29 @@ class ApiService {
         type CycleRecu = Omit<CycleDuMois, 'joursDeRegles' | 'cycles'> & { joursDeRegles: Liste<string>; cycles: Liste<CycleTermine> };
         const recu = await this.request<CycleRecu>('GET', `Cycle?jour=${jour}&mois=${mois}`);
         return { ...recu, joursDeRegles: enTableau(recu.joursDeRegles), cycles: enTableau(recu.cycles) };
+    }
+
+    /** Onglet Acné : épisodes et suivis photo, durée de l'épisode en cours comptée au jour local. */
+    async getAcne(jour: string): Promise<Acne> {
+        const recu = await this.request<{ episodes: Liste<EpisodeAcne>; suivis: Liste<SuiviAcne> }>('GET', `Acne?jour=${jour}`);
+        return { episodes: enTableau(recu.episodes), suivis: enTableau(recu.suivis) };
+    }
+
+    async postEpisodeAcne(saisie: EpisodeAcneSaisie): Promise<{ id: number }> {
+        return this.request('POST', 'Acne/episodes', saisie);
+    }
+
+    async putEpisodeAcne(id: number, saisie: EpisodeAcneSaisie): Promise<void> {
+        await this.request('PUT', `Acne/episodes/${id}`, saisie);
+    }
+
+    /** « Ça s'est calmé » : dernier jour (AAAA-MM-JJ) de l'épisode en cours. */
+    async postFinEpisodeAcne(id: number, fin: string): Promise<void> {
+        await this.request('POST', `Acne/episodes/${id}/fin`, { fin });
+    }
+
+    async deleteEpisodeAcne(id: number): Promise<void> {
+        await this.request('DELETE', `Acne/episodes/${id}`);
     }
 
     /** Note un jour de règles (AAAA-MM-JJ) ; sans effet s'il l'est déjà. */
@@ -212,9 +233,6 @@ class ApiService {
     }
 
     
-    async postDonneesSymptomesCycle(symptomesCycle: any): Promise<any> {
-        return this.request('POST', 'SymptomesCycle', symptomesCycle);
-    }
 
     
     // DELETE
