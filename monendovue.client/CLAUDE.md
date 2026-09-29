@@ -110,6 +110,8 @@ plus de DataTables.
     - une action se nomme par un verbe, sans icône de validation : « Je l'ai pris », pas « ✓ Pris » ;
     - un choix sélectionné (type, moment, fréquence) = fond `bg-texte` et texte `text-fond`, partout ;
     - la teinte d'une rubrique identifie (tuile d'icône, calendrier), elle ne change pas avec l'état.
+  - `index.css` centre le texte de toute `ul` (règle héritée, gardée tant que les anciennes pages en dépendent) : une
+    liste refaite porte `text-left` sur ses lignes, sinon libellés et détails se centrent.
   - Icônes : `polices.css` force `line-height: 1` (les classes `text-lg`… décalaient le glyphe) ; ne pas le surcharger.
   - Pas de bouton « Revenir en arrière » dans les pages : la navigation est toujours visible. L'en-tête (logo, compte) est
     posé sur la page en `pointer-events-none` : la première carte peut passer dessous sans perdre ses clics.

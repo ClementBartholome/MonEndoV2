@@ -23,6 +23,10 @@ versions en [SemVer](https://semver.org/lang/fr/) (voir la section Déploiement 
   besoin et les soins (kiné, ostéo…) se notent en un geste ; les traitements terminés restent consultables.
 
 ### Modifié
+- Cycle : page repensée pour le téléphone. Onglet Règles : le cycle en cours, un calendrier où un toucher ajoute ou
+  retire un jour de règles, et l'historique des derniers cycles avec leur durée moyenne (sans aucune prédiction).
+  Onglet Symptômes : les symptômes du mois regroupés par jour et une saisie rapide depuis le bas de l'écran, aussi
+  depuis la tuile « Symptôme » de l'accueil. Le suivi de l'acné utilise la même saisie, avec sa photo.
 - Douleurs : page repensée pour le téléphone, avec les chiffres du mois, un graphique jour par jour qui montre les
   règles, les douleurs regroupées par jour et une saisie rapide (type, intensité, moment) qui s'ouvre depuis le bas de
   l'écran, aussi depuis la tuile « Douleur » de l'accueil ; modification et suppression depuis la même fenêtre.
