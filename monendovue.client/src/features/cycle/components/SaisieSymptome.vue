@@ -23,6 +23,7 @@
                   class="min-h-11 rounded-controle border-[1.5px] text-sm"
                   :class="form.moment.value === m.valeur ? 'border-texte bg-texte font-medium text-fond' : 'border-trait bg-surface text-texte'"
                   :aria-pressed="form.moment.value === m.valeur"
+                  :aria-label="m.valeur === 'autre' ? 'Autre moment' : undefined"
                   @click="form.moment.value = m.valeur">{{ m.libelle }}</button>
         </div>
         <div v-if="form.moment.value === 'autre'" class="mt-3 grid grid-cols-2 gap-2">

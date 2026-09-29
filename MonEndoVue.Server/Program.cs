@@ -21,6 +21,7 @@ using MonEndoVue.Server.Services.Consentement;
 using MonEndoVue.Server.Services.Export;
 using MonEndoVue.Server.Services.Photos;
 using MonEndoVue.Server.Services.SuppressionCompte;
+using MonEndoVue.Server.Services.Activite;
 using MonEndoVue.Server.Services.Cycle;
 using MonEndoVue.Server.Services.Traitements;
 using Serilog;
@@ -124,6 +125,7 @@ namespace MonEndoVue.Server
             builder.Services.AddScoped<TraitementsService>();
             builder.Services.AddScoped<CycleService>();
             builder.Services.AddScoped<AcneService>();
+            builder.Services.AddScoped<ActiviteService>();
 
             builder.Services.Configure<FormOptions>(options =>
             {

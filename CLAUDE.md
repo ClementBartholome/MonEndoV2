@@ -67,7 +67,10 @@ dotnet ef migrations add NomEnPascalCase --project MonEndoVue.Server
   **`DonneesTraitementNonMedicamenteux`** (séances) — page `/medicaments` (`TraitementsController`, `GET Traitements/jour`).
   Le planning d'un jour est calculé par `PlanningTraitement` ; une prise **ignorée** est stockée dans la même table :
   toute lecture qui compte des prises (PDF, historique, accueil) filtre `Statut == Pris`.
-- **`DonneesTransit`** — `/transit` (ancien suivi par événements ; le suivi quotidien passe désormais par le bilan) ; **`DonneesActivitePhysique`** — `/activite`.
+- **`DonneesTransit`** — `/transit` (ancien suivi par événements ; le suivi quotidien passe désormais par le bilan) .
+- **`DonneesActivitePhysique`** — `/activite` via `ActiviteController` (carnet de la session) : intensité ressentie sur 3 niveaux
+  (`NiveauIntensite` : douce, modérée, soutenue ; l'ancienne `Intensite` 1-10 reste écrite, 2 / 5 / 8, pour un retour
+  arrière et le PDF) et effet sur la douleur (`EffetDouleur` : 0 non renseigné, soulagée, inchangée, plus forte).
 - **`BilanQuotidien`** (émotions, stress, fatigue, pas, douleur moyenne, hydratation, alimentation, notes, et une catégorie
   **transit** facultative : selles avec type de Bristol 1-7, crampes d'estomac et ballonnements avec intensité) — `/bilan-quotidien`,
   avec des repères personnels réglables dans `/parametres` (stockés en `localStorage`). L'onglet « Tendances »
