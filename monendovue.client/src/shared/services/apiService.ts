@@ -173,16 +173,18 @@ class ApiService {
     }
 
     /** Onglet Règles : jours de règles du mois (1er du mois), cycle en cours au jour local et historique des cycles. */
-    async getCycle(jour: string, mois: string): Promise<CycleDuMois> {
+    async getCycle(jour: string, mois: string, cycles = 6): Promise<CycleDuMois> {
         type CycleRecu = Omit<CycleDuMois, 'joursDeRegles' | 'cycles'> & { joursDeRegles: Liste<string>; cycles: Liste<CycleTermine> };
-        const recu = await this.request<CycleRecu>('GET', `Cycle?jour=${jour}&mois=${mois}`);
+        const recu = await this.request<CycleRecu>('GET', `Cycle?jour=${jour}&mois=${mois}&cycles=${cycles}`);
         return { ...recu, joursDeRegles: enTableau(recu.joursDeRegles), cycles: enTableau(recu.cycles) };
     }
 
     /** Onglet Acné : épisodes et suivis photo, durée de l'épisode en cours comptée au jour local. */
-    async getAcne(jour: string): Promise<Acne> {
-        const recu = await this.request<{ episodes: Liste<EpisodeAcne>; suivis: Liste<SuiviAcne> }>('GET', `Acne?jour=${jour}`);
-        return { episodes: enTableau(recu.episodes), suivis: enTableau(recu.suivis) };
+    /** `mois` : fenêtre des photos de suivi renvoyées (7 derniers mois par défaut). */
+    async getAcne(jour: string, mois = 7): Promise<Acne> {
+        const recu = await this.request<{ episodes: Liste<EpisodeAcne>; suivis: Liste<SuiviAcne>; suivisPlusAnciens: number }>(
+            'GET', `Acne?jour=${jour}&mois=${mois}`);
+        return { episodes: enTableau(recu.episodes), suivis: enTableau(recu.suivis), suivisPlusAnciens: recu.suivisPlusAnciens };
     }
 
     async postEpisodeAcne(saisie: EpisodeAcneSaisie): Promise<{ id: number }> {

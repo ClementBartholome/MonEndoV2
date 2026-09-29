@@ -14,10 +14,13 @@ namespace MonEndoVue.Server.Controllers;
 [Authorize]
 public class CycleController(CycleService service) : ControllerBase
 {
-    /// <summary>Jours de règles d'un mois (<c>?mois=2026-09-01</c>), cycle en cours au jour local (<c>&amp;jour=2026-09-15</c>) et historique.</summary>
+    /// <summary>
+    /// Jours de règles d'un mois (<c>?mois=2026-09-01</c>), cycle en cours au jour local (<c>&amp;jour=2026-09-15</c>) et
+    /// les <c>cycles</c> derniers cycles terminés (6 par défaut, 120 au plus).
+    /// </summary>
     [HttpGet]
-    public async Task<IActionResult> Get([FromQuery] DateOnly jour, [FromQuery] DateOnly mois, CancellationToken ct) =>
-        this.VersReponse(await service.GetAsync(User.GetCurrentUserId(), jour, mois, ct), vue => Ok(vue));
+    public async Task<IActionResult> Get([FromQuery] DateOnly jour, [FromQuery] DateOnly mois, CancellationToken ct, [FromQuery] int cycles = CycleService.CyclesDeLaMoyenne) =>
+        this.VersReponse(await service.GetAsync(User.GetCurrentUserId(), jour, mois, ct, cycles), vue => Ok(vue));
 
     [HttpPut("regles/{jour}")]
     public async Task<IActionResult> AjouterJour(DateOnly jour, CancellationToken ct) =>

@@ -31,25 +31,16 @@
         <template v-else-if="regles.donnees.value">
           <CarteCycleEnCours :en-cours="regles.donnees.value.enCours" :envoi="regles.enCoursDEnvoi.value.size > 0"
                              @noter-aujourdhui="noter(regles.noterAujourdhui)"/>
-          <CalendrierRegles :titre-mois="titreMois(regles.mois.value)" :calendrier="regles.calendrier.value"
-                            :mois-suivant-possible="regles.moisSuivantPossible.value" :en-cours-d-envoi="regles.enCoursDEnvoi.value"
-                            @basculer="(jour) => noter(() => regles.basculer(jour))" @changer="regles.changerDeMois"/>
-          <ListeCycles :cycles="regles.donnees.value.cycles" :duree-moyenne="regles.donnees.value.dureeMoyenne"/>
+          <CalendrierRegles :mois="regles.mois.value" :calendrier="regles.calendrier.value" :en-cours-d-envoi="regles.enCoursDEnvoi.value"
+                            @basculer="(jour) => noter(() => regles.basculer(jour))" @changer="regles.allerAuMois"/>
+          <ListeCycles :cycles="regles.donnees.value.cycles" :duree-moyenne="regles.donnees.value.dureeMoyenne"
+                       :plus-anciens="regles.donnees.value.cyclesPlusAnciens" @voir-plus="regles.voirPlusDeCycles"/>
         </template>
       </TabsContent>
 
       <TabsContent value="symptomes" class="flex flex-col gap-3.5 focus:outline-none">
-        <nav aria-label="Mois affiché" class="-mx-3 flex items-center justify-between">
-          <button type="button" aria-label="Mois précédent" class="flex h-11 w-11 items-center justify-center rounded-full text-texte hover:bg-surface-2"
-                  @click="symptomes.changerDeMois(-1)">
-            <i class="material-symbols-outlined" aria-hidden="true">chevron_left</i>
-          </button>
-          <span class="text-base font-semibold text-texte" aria-live="polite">{{ titreMois(symptomes.mois.value) }}</span>
-          <button type="button" aria-label="Mois suivant" :disabled="!symptomes.moisSuivantPossible.value"
-                  class="flex h-11 w-11 items-center justify-center rounded-full text-texte hover:bg-surface-2 disabled:text-trait"
-                  @click="symptomes.changerDeMois(1)">
-            <i class="material-symbols-outlined" aria-hidden="true">chevron_right</i>
-          </button>
+        <nav aria-label="Mois affiché" class="-mx-3">
+          <SelecteurMois :mois="symptomes.mois.value" @changer="symptomes.allerAuMois"/>
         </nav>
         <div v-if="symptomes.chargement.value" class="flex flex-col gap-3.5" aria-busy="true" aria-label="Chargement des symptômes">
           <Skeleton class="h-20 rounded-carte"/>
@@ -80,9 +71,10 @@
         <template v-else-if="acne.donnees.value">
           <CarteEpisodeAcne :en-cours="acne.enCours.value" :dernier="acne.donnees.value.episodes[0] ?? null"
                             @commencer="ouvrirEpisode('commencer', null)" @terminer="ouvrirEpisode('terminer', acne.enCours.value)"/>
-          <SuiviPhotosAcne v-model:ecart="acne.ecart.value" :suivis="acne.donnees.value.suivis" :comparaison="acne.comparaison.value"
+          <SuiviPhotosAcne v-model:ecart="acne.ecart.value" :suivis="acne.donnees.value.suivis" :plus-anciennes="acne.donnees.value.suivisPlusAnciens"
+                           :comparaison="acne.comparaison.value"
                            :maintenant="new Date()"
-                           @ajouter="ouvrirAjout(true)" @modifier="(suivi) => ouvrirModification(enSymptome(suivi), true)"
+                           @ajouter="ouvrirAjout(true)" @modifier="(suivi) => ouvrirModification(enSymptome(suivi), true)" @voir-plus="acne.voirPlusDePhotos"
                            @agrandir="(url) => (photoAgrandie = url)"/>
           <ListeEpisodesAcne :episodes="acne.donnees.value.episodes" @modifier="(episode) => ouvrirEpisode('modifier', episode)"/>
         </template>
@@ -107,13 +99,12 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { format } from 'date-fns';
-import { fr } from 'date-fns/locale';
 import { TabsContent, TabsList, TabsRoot, TabsTrigger } from 'radix-vue';
 import { Skeleton } from '@/shared/components/ui/skeleton';
 import { useToast } from '@/shared/components/ui/toast';
 import EmptyStateAction from '@/shared/components/EmptyStateAction.vue';
 import PanneauBas from '@/shared/components/PanneauBas.vue';
+import SelecteurMois from '@/shared/components/SelecteurMois.vue';
 import { useAuthStore } from '@/features/auth/store/auth';
 import CarteEpisodeAcne from '../components/CarteEpisodeAcne.vue';
 import ListeEpisodesAcne from '../components/ListeEpisodesAcne.vue';
@@ -158,11 +149,6 @@ const modeEpisode = ref<ModeEpisode>('commencer');
 const episodeModifie = ref<EpisodeAcne | null>(null);
 const photoAgrandie = ref<string | null>(null);
 const charges = new Set<Onglet>();
-
-const titreMois = (mois: Date) => {
-  const texte = format(mois, 'MMMM yyyy', { locale: fr });
-  return texte.charAt(0).toUpperCase() + texte.slice(1);
-};
 
 const actions: ActionsSaisieSymptome = {
   enregistrer: async (saisie, id) => {

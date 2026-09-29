@@ -5,8 +5,11 @@ public class AcneViewModel
 {
     public List<EpisodeAcneViewModel> Episodes { get; set; } = [];
 
-    /// <summary>Points de suivi avec photo, du plus récent au plus ancien.</summary>
+    /// <summary>Points de suivi avec photo de la fenêtre demandée, du plus récent au plus ancien.</summary>
     public List<SuiviAcneViewModel> Suivis { get; set; } = [];
+
+    /// <summary>Photos plus anciennes que la fenêtre, à demander avec <c>mois=</c>.</summary>
+    public int SuivisPlusAnciens { get; set; }
 }
 
 public class EpisodeAcneViewModel

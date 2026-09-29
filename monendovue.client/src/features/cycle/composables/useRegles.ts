@@ -1,7 +1,6 @@
 import { computed, ref } from 'vue';
-import { addMonths, format, startOfMonth } from 'date-fns';
+import { format, startOfMonth } from 'date-fns';
 import apiService from '@/shared/services/apiService';
-import { estMoisCourant } from '@/shared/utils/jours';
 import type { CycleDuMois } from '../types/cycle';
 import { calendrierDuMois, type CaseCalendrier } from '../utils/cycle';
 
@@ -13,9 +12,10 @@ export function useRegles({ maintenant = () => new Date() }: { maintenant?: () =
     const erreur = ref(false);
     /** Jours (AAAA-MM-JJ) dont l'ajout ou le retrait est en cours d'envoi. */
     const enCoursDEnvoi = ref(new Set<string>());
+    /** Cycles demandés au serveur : 6, puis 6 de plus à chaque « Voir plus » (jamais tout l'historique d'un coup). */
+    const nombreCycles = ref(6);
 
     const calendrier = computed(() => calendrierDuMois(mois.value, donnees.value?.joursDeRegles ?? [], maintenant()));
-    const moisSuivantPossible = computed(() => !estMoisCourant(mois.value, maintenant()));
     const aujourdhui = () => format(maintenant(), 'yyyy-MM-dd');
     const aujourdhuiNote = computed(() => donnees.value?.enCours?.jourDeRegles != null);
 
@@ -23,7 +23,7 @@ export function useRegles({ maintenant = () => new Date() }: { maintenant?: () =
         chargement.value = donnees.value === null;
         erreur.value = false;
         try {
-            donnees.value = await apiService.getCycle(aujourdhui(), format(mois.value, 'yyyy-MM-dd'));
+            donnees.value = await apiService.getCycle(aujourdhui(), format(mois.value, 'yyyy-MM-dd'), nombreCycles.value);
         } catch {
             erreur.value = true;
         } finally {
@@ -31,9 +31,11 @@ export function useRegles({ maintenant = () => new Date() }: { maintenant?: () =
         }
     }
 
-    async function changerDeMois(decalage: number) {
-        if (decalage > 0 && !moisSuivantPossible.value) return;
-        mois.value = addMonths(mois.value, decalage);
+    /** Mois choisi (flèches ou choix direct) ; jamais après le mois en cours. */
+    async function allerAuMois(choisi: Date) {
+        const debut = startOfMonth(choisi);
+        if (debut > startOfMonth(maintenant())) return;
+        mois.value = debut;
         await charger();
     }
 
@@ -58,8 +60,13 @@ export function useRegles({ maintenant = () => new Date() }: { maintenant?: () =
         }
     }
 
+    async function voirPlusDeCycles() {
+        nombreCycles.value += 6;
+        await charger();
+    }
+
     /** « Règles aujourd'hui » depuis la carte du cycle en cours, quel que soit le mois affiché. */
     const noterAujourdhui = () => basculer({ cle: aujourdhui(), regles: false, futur: false });
 
-    return { mois, donnees, chargement, erreur, enCoursDEnvoi, calendrier, moisSuivantPossible, aujourdhuiNote, charger, changerDeMois, basculer, noterAujourdhui };
+    return { mois, donnees, chargement, erreur, enCoursDEnvoi, calendrier, aujourdhuiNote, charger, allerAuMois, basculer, noterAujourdhui, voirPlusDeCycles };
 }

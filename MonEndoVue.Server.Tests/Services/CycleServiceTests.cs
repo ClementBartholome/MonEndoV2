@@ -48,6 +48,29 @@ public sealed class CycleServiceTests : IDisposable
     }
 
     [Fact]
+    public async Task Get_HistoriqueLong_ListeLimiteeEtMoyenneSurLesSixDerniers()
+    {
+        // 20 débuts de règles tous les 28 jours, puis un dernier cycle de 40 jours : 20 cycles terminés.
+        var debuts = Enumerable.Range(0, 20).Select(i => new DateTime(2025, 1, 1).AddDays(i * 28)).ToList();
+        debuts.Add(debuts[^1].AddDays(40));
+        await Noter(CarnetDeTest.CarnetSanteId, debuts.ToArray());
+        var jour = DateOnly.FromDateTime(debuts[^1]);
+        var service = new CycleService(_carnet.Context, _carnet.CarnetSanteService,
+            new HorlogeFixe(new DateTimeOffset(debuts[^1].AddHours(10), TimeSpan.Zero)));
+
+        var parDefaut = (await service.GetAsync(CarnetDeTest.UserId, jour, jour, CancellationToken.None)).Valeur!;
+        var plus = (await service.GetAsync(CarnetDeTest.UserId, jour, jour, CancellationToken.None, 12)).Valeur!;
+
+        Assert.Equal(6, parDefaut.Cycles.Count);
+        Assert.Equal(14, parDefaut.CyclesPlusAnciens);
+        Assert.Equal(30, parDefaut.DureeMoyenne);
+        Assert.Equal(12, plus.Cycles.Count);
+        Assert.Equal(8, plus.CyclesPlusAnciens);
+        // La moyenne ne dépend pas du nombre de cycles affichés.
+        Assert.Equal(parDefaut.DureeMoyenne, plus.DureeMoyenne);
+    }
+
+    [Fact]
     public async Task Get_SansRegles_NiCycleEnCoursNiMoyenne()
     {
         var vue = (await Service().GetAsync(CarnetDeTest.UserId, Jour, Septembre, CancellationToken.None)).Valeur!;

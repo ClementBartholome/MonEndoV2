@@ -1,9 +1,9 @@
 import { computed, ref } from 'vue';
-import { addMonths, startOfMonth } from 'date-fns';
+import { startOfMonth } from 'date-fns';
 import apiService from '@/shared/services/apiService';
 import { enTableau } from '@/shared/utils/json';
 import type { DonneesDouleur, DonneesDouleurModification } from '../types/donnees-douleur';
-import { cleJour, estMoisCourant, grouperParJour } from '@/shared/utils/jours';
+import { cleJour, grouperParJour } from '@/shared/utils/jours';
 import { chiffresDuMois, joursDuMois } from '../utils/douleurs';
 
 interface Options {
@@ -22,7 +22,6 @@ export function useDouleurs({ carnetSanteId, maintenant = () => new Date() }: Op
     const chiffres = computed(() => chiffresDuMois(entrees.value));
     const graphique = computed(() => joursDuMois(mois.value, entrees.value, joursDeRegles.value));
     const groupes = computed(() => grouperParJour(entrees.value));
-    const moisSuivantPossible = computed(() => !estMoisCourant(mois.value, maintenant()));
 
     async function charger() {
         const carnet = carnetSanteId();
@@ -46,9 +45,11 @@ export function useDouleurs({ carnetSanteId, maintenant = () => new Date() }: Op
         }
     }
 
-    async function changerDeMois(decalage: number) {
-        if (decalage > 0 && !moisSuivantPossible.value) return;
-        mois.value = addMonths(mois.value, decalage);
+    /** Mois choisi (flèches ou choix direct) ; jamais après le mois en cours. */
+    async function allerAuMois(choisi: Date) {
+        const debut = startOfMonth(choisi);
+        if (debut > startOfMonth(maintenant())) return;
+        mois.value = debut;
         await charger();
     }
 
@@ -70,7 +71,7 @@ export function useDouleurs({ carnetSanteId, maintenant = () => new Date() }: Op
     }
 
     return {
-        mois, entrees, chargement, erreur, chiffres, graphique, groupes, moisSuivantPossible,
-        charger, changerDeMois, enregistrer, supprimer,
+        mois, entrees, chargement, erreur, chiffres, graphique, groupes,
+        charger, allerAuMois, enregistrer, supprimer,
     };
 }

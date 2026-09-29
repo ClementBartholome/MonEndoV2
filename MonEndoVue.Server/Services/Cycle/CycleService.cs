@@ -15,10 +15,13 @@ public class CycleService(AppDbContext context, CarnetSanteService carnetSanteSe
     /// <summary>Écart toléré entre le jour local envoyé par le client et la date du serveur (fuseaux horaires).</summary>
     private const int EcartMaximalJours = 2;
 
-    /// <summary>Nombre de cycles terminés listés (et comptés dans la moyenne).</summary>
-    private const int NombreDeCycles = 6;
+    /// <summary>Cycles comptés dans la moyenne : les plus récents, pour refléter la période actuelle.</summary>
+    public const int CyclesDeLaMoyenne = 6;
 
-    public async Task<ResultatOperation<CycleViewModel>> GetAsync(string userId, DateOnly jour, DateOnly mois, CancellationToken ct)
+    /// <summary>Plafond d'une demande d'historique (« Voir plus ») : la réponse reste légère quelle que soit l'ancienneté.</summary>
+    public const int CyclesMaximum = 120;
+
+    public async Task<ResultatOperation<CycleViewModel>> GetAsync(string userId, DateOnly jour, DateOnly mois, CancellationToken ct, int nombreCycles = CyclesDeLaMoyenne)
     {
         if (await CarnetDeAsync(userId, ct) is not { } carnetId) return ResultatOperation<CycleViewModel>.Echec(StatutOperation.NonAuthentifie);
         if (!EstAujourdhui(jour)) return ResultatOperation<CycleViewModel>.Echec(StatutOperation.Invalide, "Le jour demandé doit être aujourd'hui.");
@@ -32,7 +35,8 @@ public class CycleService(AppDbContext context, CarnetSanteService carnetSanteSe
             .Distinct()
             .ToList();
 
-        var cycles = HistoriqueCycles.Cycles(HistoriqueCycles.Regrouper(jours), NombreDeCycles);
+        var tous = HistoriqueCycles.Cycles(HistoriqueCycles.Regrouper(jours), int.MaxValue);
+        var cycles = tous.Take(Math.Clamp(nombreCycles, 1, CyclesMaximum)).ToList();
         var enCours = CycleDuJour.Calculer(jours, jour);
 
         return ResultatOperation<CycleViewModel>.Succes(new CycleViewModel
@@ -51,7 +55,8 @@ public class CycleService(AppDbContext context, CarnetSanteService carnetSanteSe
                 }
                 : null,
             Cycles = cycles.Select(c => new CycleTermineViewModel { Debut = Texte(c.Debut), JoursDeRegles = c.JoursDeRegles, Duree = c.Duree }).ToList(),
-            DureeMoyenne = HistoriqueCycles.DureeMoyenne(cycles),
+            DureeMoyenne = HistoriqueCycles.DureeMoyenne(tous.Take(CyclesDeLaMoyenne).ToList()),
+            CyclesPlusAnciens = tous.Count - cycles.Count,
         });
     }
 
