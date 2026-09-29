@@ -2,8 +2,7 @@
   <section aria-labelledby="titre-episode-acne" class="flex items-center gap-3.5 rounded-carte bg-surface px-[18px] py-4 shadow-elevation">
     <div class="flex min-w-0 grow flex-col">
       <span class="text-[13px] text-texte-3">Acné</span>
-      <h2 id="titre-episode-acne" class="m-0 text-lg font-semibold tracking-normal"
-          :class="enCours ? 'text-teinte-symptome' : 'text-texte'">{{ enCours ? 'En ce moment' : 'Pas en ce moment' }}</h2>
+      <h2 id="titre-episode-acne" class="m-0 text-lg font-semibold tracking-normal text-texte">{{ enCours ? 'En ce moment' : 'Pas en ce moment' }}</h2>
       <span class="text-[13px] text-texte-2">{{ detail }}</span>
     </div>
     <button type="button"
