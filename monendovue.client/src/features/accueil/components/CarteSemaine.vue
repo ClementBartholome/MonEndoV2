@@ -1,5 +1,5 @@
 <template>
-  <section class="flex flex-col gap-1.5 rounded-grand bg-surface-2 px-[18px] py-4" aria-labelledby="titre-semaine">
+  <section class="flex flex-col gap-1.5 rounded-carte bg-surface-2 px-[18px] py-4" aria-labelledby="titre-semaine">
     <h2 id="titre-semaine" class="m-0 inline-flex items-center gap-1.5 text-[13px] font-medium tracking-normal text-texte-2">
       <i class="material-symbols-outlined text-lg" aria-hidden="true">insights</i>Ta semaine
     </h2>

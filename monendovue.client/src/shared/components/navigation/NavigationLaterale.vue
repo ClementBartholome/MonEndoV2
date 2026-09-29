@@ -8,7 +8,7 @@
         v-for="entree in entrees"
         :key="entree.vers"
         :to="entree.vers"
-        class="flex min-h-11 items-center gap-3 rounded-petit px-3 text-sm"
+        class="flex min-h-11 items-center gap-3 rounded-controle px-3 text-sm"
         :class="estActive(entree, route.path) ? 'bg-button font-semibold text-texte' : 'text-texte-2 hover:bg-surface-2'"
         :aria-current="estActive(entree, route.path) ? 'page' : undefined">
       <i class="material-symbols-outlined text-[20px]" :class="{ remplie: estActive(entree, route.path) }" aria-hidden="true">{{ entree.icone }}</i>

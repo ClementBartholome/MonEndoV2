@@ -1,6 +1,6 @@
 <template>
   <PanneauBas v-model:open="ouvert" titre="Plus">
-    <nav aria-label="Autres rubriques" class="flex flex-col rounded-moyen bg-surface shadow-elevation">
+    <nav aria-label="Autres rubriques" class="flex flex-col rounded-carte bg-surface shadow-elevation">
       <router-link
           v-for="(entree, index) in navigationSecondaire"
           :key="entree.vers"
@@ -8,7 +8,7 @@
           class="flex min-h-16 items-center gap-3 px-4 text-texte"
           :class="{ 'border-b border-trait': index < navigationSecondaire.length - 1 }"
           @click="ouvert = false">
-        <i class="material-symbols-outlined rounded-petit p-1.5 text-[22px]" :class="teintesRubrique[entree.teinte ?? 'neutre']" aria-hidden="true">{{ entree.icone }}</i>
+        <i class="material-symbols-outlined rounded-controle p-1.5 text-[22px]" :class="teintesRubrique[entree.teinte ?? 'neutre']" aria-hidden="true">{{ entree.icone }}</i>
         <span class="flex grow flex-col">
           <span class="text-[15px] font-medium">{{ entree.libelle }}</span>
           <span class="text-[13px] text-texte-3">{{ entree.detail }}</span>
@@ -17,7 +17,7 @@
       </router-link>
     </nav>
 
-    <nav aria-label="Compte" class="flex flex-col rounded-moyen bg-surface shadow-elevation">
+    <nav aria-label="Compte" class="flex flex-col rounded-carte bg-surface shadow-elevation">
       <router-link :to="navigationCompte.vers" class="flex min-h-14 items-center gap-3 border-b border-trait px-4 text-texte" @click="ouvert = false">
         <i class="material-symbols-outlined p-1.5 text-[22px]" aria-hidden="true">{{ navigationCompte.icone }}</i>
         <span class="grow text-[15px]">{{ navigationCompte.libelle }}</span>

@@ -45,6 +45,9 @@
     --teinte-neutre-fond: #f3e3db;
     --teinte-neutre: #6b4f3a;
 
+    /* État « fait » (prise notée, bilan rempli) : texte et icône pleine, jamais un fond de bouton. 6,1:1 sur la surface. */
+    --etat-fait: #3d6b48;
+
     /* Intensité 0-10 (une seule teinte, plus foncé = plus fort) : texte foncé jusqu'à 5, blanc à partir de 6. */
     --intensite-0: #f9d3dc;
     --intensite-1: #f5c2ce;
@@ -58,9 +61,11 @@
     --intensite-9: #69263e;
     --intensite-10: #521d30;
 
-    /* Formes : trois rayons et une seule élévation */
-    --rayon-petit: 10px;
-    --rayon: 16px;
-    --rayon-grand: 20px;
+    /* Formes : un rayon par rôle (voir monendovue.client/CLAUDE.md, « Formes et états ») et une seule élévation.
+       Contrôles = boutons, champs, choix, onglets ; cartes = cartes et listes ; panneau = panneau du bas.
+       Rond complet (rounded-full) seulement pour les boutons icône seule et les jours d'un calendrier. */
+    --rayon-controle: 12px;
+    --rayon-carte: 16px;
+    --rayon-panneau: 24px;
     --elevation: 0 1px 2px rgba(51, 39, 42, 0.06), 0 6px 18px rgba(51, 39, 42, 0.05);
 }

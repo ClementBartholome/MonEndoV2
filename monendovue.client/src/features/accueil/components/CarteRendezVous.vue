@@ -1,6 +1,6 @@
 <template>
-  <section class="flex items-center gap-3.5 rounded-grand bg-surface px-[18px] py-4 shadow-elevation" aria-labelledby="titre-rendez-vous">
-    <i class="material-symbols-outlined rounded-[14px] bg-teinte-neutre-fond p-2.5 text-[26px] text-teinte-neutre" aria-hidden="true">event</i>
+  <section class="flex items-center gap-3.5 rounded-carte bg-surface px-[18px] py-4 shadow-elevation" aria-labelledby="titre-rendez-vous">
+    <i class="material-symbols-outlined rounded-controle bg-teinte-neutre-fond p-2.5 text-[26px] text-teinte-neutre" aria-hidden="true">event</i>
     <div class="flex min-w-0 grow flex-col gap-px">
       <h2 id="titre-rendez-vous" class="m-0 text-[13px] font-normal tracking-normal text-texte-3">Prochain rendez-vous</h2>
       <span class="text-[15px] font-medium text-texte">{{ evenement.titre }}</span>

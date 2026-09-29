@@ -1,7 +1,7 @@
 <template>
   <section class="flex flex-col gap-2" aria-labelledby="titre-mes-traitements">
     <h2 id="titre-mes-traitements" class="m-0 text-[17px] font-semibold tracking-normal text-texte">Mes traitements</h2>
-    <ul v-if="enCours.length" class="m-0 flex list-none flex-col rounded-moyen bg-surface p-0 shadow-elevation">
+    <ul v-if="enCours.length" class="m-0 flex list-none flex-col rounded-carte bg-surface p-0 shadow-elevation">
       <li v-for="(traitement, index) in enCours" :key="traitement.id" :class="{ 'border-t border-trait': index > 0 }">
         <button type="button" class="flex min-h-[62px] w-full items-center gap-3 px-3.5 text-left" @click="emit('modifier', traitement)">
           <span class="flex min-w-0 grow flex-col">
@@ -17,7 +17,7 @@
             :aria-expanded="voirTermines" @click="voirTermines = !voirTermines">
       <i class="material-symbols-outlined text-lg" aria-hidden="true">history</i>Traitements terminés ({{ termines.length }})
     </button>
-    <ul v-if="voirTermines" class="m-0 flex list-none flex-col rounded-moyen bg-surface-2 p-0">
+    <ul v-if="voirTermines" class="m-0 flex list-none flex-col rounded-carte bg-surface-2 p-0">
       <li v-for="(traitement, index) in termines" :key="traitement.id" :class="{ 'border-t border-trait': index > 0 }">
         <button type="button" class="flex min-h-14 w-full items-center gap-3 px-3.5 text-left" @click="emit('modifier', traitement)">
           <span class="flex min-w-0 grow flex-col">

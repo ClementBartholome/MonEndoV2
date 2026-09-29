@@ -21,7 +21,7 @@ test.describe('Accueil « Aujourd\'hui »', () => {
     await accueilPage.ouvrir();
 
     await expect(accueilPage.pastilleCycle('Règles · jour 2')).toBeVisible();
-    await expect(accueilPage.bilan).toContainText('Bilan du jour fait');
+    await expect(accueilPage.bilan).toContainText('Fait');
     await expect(accueilPage.bilan).toContainText('4/10');
     await expect(accueilPage.bilan).toContainText('Calme');
     await expect(accueilPage.semaine).toContainText('Douleur notée 4 jours sur 7, dont 2 pendant les règles.');

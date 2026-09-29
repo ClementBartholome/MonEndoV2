@@ -1,5 +1,5 @@
 <template>
-  <section class="flex flex-col gap-2.5 rounded-grand bg-surface px-4 pb-3 pt-4 shadow-elevation" aria-labelledby="titre-graphique-douleurs">
+  <section class="flex flex-col gap-2.5 rounded-carte bg-surface px-4 pb-3 pt-4 shadow-elevation" aria-labelledby="titre-graphique-douleurs">
     <h2 id="titre-graphique-douleurs" class="m-0 text-[15px] font-semibold tracking-normal text-texte">Intensité la plus forte, jour par jour</h2>
     <div class="flex h-[120px] items-end gap-[3px]" role="img" :aria-label="description">
       <div v-for="jour in jours" :key="jour.jour" class="flex h-full grow flex-col justify-end rounded-[3px]"

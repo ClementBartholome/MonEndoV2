@@ -1,5 +1,5 @@
 <template>
-  <section class="flex flex-col rounded-grand bg-surface px-[18px] pb-1.5 pt-2 shadow-elevation" aria-labelledby="titre-traitements-du-jour">
+  <section class="flex flex-col rounded-carte bg-surface px-[18px] pb-1.5 pt-2 shadow-elevation" aria-labelledby="titre-traitements-du-jour">
     <div class="flex items-center justify-between">
       <h2 id="titre-traitements-du-jour" class="m-0 flex items-center gap-2 text-base font-semibold tracking-normal text-texte">
         <i class="material-symbols-outlined text-[22px] text-teinte-traitement" aria-hidden="true">pill</i>Traitements du jour
@@ -16,21 +16,13 @@
         <span class="text-[15px] font-medium text-texte">{{ prise.nom }}</span>
         <span v-if="prise.dose" class="truncate text-[13px] text-texte-3">{{ prise.dose }}</span>
       </div>
-      <span v-if="prise.reponse?.statut === 'Pris'"
-            class="inline-flex min-h-11 shrink-0 items-center gap-1 rounded-full bg-teinte-traitement-fond px-3 text-sm font-medium text-teinte-traitement">
-        <i class="material-symbols-outlined text-lg" aria-hidden="true">check</i>
-        <span aria-hidden="true">{{ heureAffichee(prise.reponse.date) }}</span>
-        <span class="sr-only">Pris à {{ heureAffichee(prise.reponse.date) }}</span>
-      </span>
-      <span v-else-if="prise.reponse?.statut === 'Ignore'" class="shrink-0 text-sm text-texte-3">Ignorée</span>
+      <EtatPrise v-if="prise.reponse" :reponse="prise.reponse"/>
       <button v-else type="button"
-              class="inline-flex min-h-11 shrink-0 items-center gap-1 rounded-full bg-button px-3.5 text-sm font-semibold text-texte disabled:opacity-60"
+              class="inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-controle bg-button px-3.5 text-sm font-semibold text-texte disabled:opacity-60"
               :disabled="priseEnCours !== null"
               :aria-label="`Noter la prise de ${prise.nom} de ${heureAffichee(prise.heurePrevue)}`"
               @click="emit('prendre', prise)">
-        <i class="material-symbols-outlined text-lg" :class="{ 'animate-spin': enCours(prise) }" aria-hidden="true">
-          {{ enCours(prise) ? 'progress_activity' : 'check' }}
-        </i>Pris
+        <i v-if="enCours(prise)" class="material-symbols-outlined animate-spin text-lg" aria-hidden="true">progress_activity</i>Je l'ai pris
       </button>
     </div>
 
@@ -47,6 +39,7 @@
 import { computed } from 'vue';
 import type { PrisePrevue, TraitementAuBesoin } from '@/features/medicament/types/traitements';
 import { heureAffichee } from '@/features/medicament/utils/prises';
+import EtatPrise from '@/features/medicament/components/EtatPrise.vue';
 
 const props = defineProps<{ prises: PrisePrevue[]; auBesoin: TraitementAuBesoin[]; priseEnCours: string | null }>();
 const emit = defineEmits<{ prendre: [prise: PrisePrevue] }>();

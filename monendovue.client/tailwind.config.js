@@ -39,6 +39,7 @@ module.exports = {
                 contour: "var(--couleur-contour)",
                 danger: "var(--couleur-danger)",
                 voile: "var(--couleur-voile)",
+                "etat-fait": "var(--etat-fait)",
                 teinte: {"bilan":{"DEFAULT":"var(--teinte-bilan)","fond":"var(--teinte-bilan-fond)"},"douleur":{"DEFAULT":"var(--teinte-douleur)","fond":"var(--teinte-douleur-fond)"},"regles":{"DEFAULT":"var(--teinte-regles)","fond":"var(--teinte-regles-fond)"},"symptome":{"DEFAULT":"var(--teinte-symptome)","fond":"var(--teinte-symptome-fond)"},"traitement":{"DEFAULT":"var(--teinte-traitement)","fond":"var(--teinte-traitement-fond)"},"neutre":{"DEFAULT":"var(--teinte-neutre)","fond":"var(--teinte-neutre-fond)"}},
                 intensite: {"0":"var(--intensite-0)","1":"var(--intensite-1)","2":"var(--intensite-2)","3":"var(--intensite-3)","4":"var(--intensite-4)","5":"var(--intensite-5)","6":"var(--intensite-6)","7":"var(--intensite-7)","8":"var(--intensite-8)","9":"var(--intensite-9)","10":"var(--intensite-10)"},
                 border: "hsl(var(--border))",
@@ -81,9 +82,9 @@ module.exports = {
                 md: "calc(var(--radius) - 2px)",
                 sm: "calc(var(--radius) - 4px)",
                 'card': '32px',
-                petit: 'var(--rayon-petit)',
-                moyen: 'var(--rayon)',
-                grand: 'var(--rayon-grand)',
+                controle: 'var(--rayon-controle)',
+                carte: 'var(--rayon-carte)',
+                panneau: 'var(--rayon-panneau)',
             },
             boxShadow: {
                 // Une seule élévation dans toute l'application.

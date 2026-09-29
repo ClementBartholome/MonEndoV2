@@ -34,6 +34,9 @@ versions en [SemVer](https://semver.org/lang/fr/) (voir la section Déploiement 
   sur ordinateur, toutes les rubriques dans la barre latérale.
 - Couleurs harmonisées et plus lisibles : une teinte par rubrique, textes et liens plus contrastés, champs de
   formulaire mieux délimités, intensité de la douleur sur une seule teinte (plus foncé = plus fort).
+- Formes et états harmonisés : mêmes arrondis pour tous les boutons et champs, pour toutes les cartes ; ce qui est fait
+  (prise notée, bilan rempli) s'affiche en texte avec une coche verte et ne ressemble plus à un bouton, et le bouton de
+  prise dit « Je l'ai pris ».
 - Les icônes gardent leur taille pendant le chargement de la page (plus de décalage ni de défilement horizontal).
 
 ### Sécurité

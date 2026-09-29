@@ -92,13 +92,24 @@ plus de DataTables.
   dans le `<style scoped>` ou la classe `.hide-xsm`. Tester à 375px.
 - **Tokens de design** (`src/assets/tokens.css`, palette validée en 1.3.0, contrastes WCAG AA vérifiés) exposés à Tailwind :
   `bg-fond`, `bg-surface`, `bg-surface-2`, `border-trait`, `text-texte` / `-2` / `-3`, `text-lien`, `border-contour` (champs,
-  3:1), `text-danger`, `rounded-petit` / `moyen` / `grand`, `shadow-elevation` (la seule ombre). **Aucune couleur en dur ni
+  3:1), `text-danger`, `text-etat-fait`, `rounded-controle` / `carte` / `panneau`, `shadow-elevation` (la seule ombre). **Aucune couleur en dur ni
   couleur Tailwind brute** (`blue-100`, `gray-300`…) dans le code nouveau ou modifié. Les anciens noms (`--headline`,
   `--button`, `.text-headline`, `Button variant="custom"`) et les variables shadcn pointent vers ces tokens.
   - Une **rubrique = une teinte**, partout (tuile + icône) : `bg-teinte-<r>-fond` + `text-teinte-<r>` avec <r> = `bilan`,
     `douleur`, `regles`, `symptome`, `traitement`, `neutre`. Les types d'une rubrique se distinguent par icône et libellé.
   - Le rose poudré `--couleur-accent` (`bg-button`, `#f2b3c2`) est un **fond** avec texte foncé (8.2:1) ; jamais de texte blanc
     dessus ni de texte rose. L'ancien `#ff8ba7`, trop saturé, tranchait avec le reste.
+  - **Formes et états** (décision du 2026-09-28, l'utilisateur trouvait les arrondis et les états incohérents) :
+    - un rayon par rôle, jamais de valeur en crochets : `rounded-controle` (12 px : boutons, bouton flottant, champs,
+      choix, onglets, tuiles d'icône), `rounded-carte` (16 px : cartes, listes), `rounded-t-panneau` (24 px : panneau du bas).
+      `rounded-full` seulement pour un bouton icône seule (retour, fermer, annuler), un jour de calendrier ou de semaine ;
+    - **un bouton a l'air d'un bouton, un état jamais** : rose plein (`bg-button`) = l'action principale d'une zone, contour
+      (`border-contour`) = action secondaire ; un état (prise faite, bilan fait, jour de règles) = texte coloré et icône
+      pleine (`icone-pleine`), sans fond, sans bordure (`EtatPrise` comme modèle). Le ✓ `check_circle` est réservé à « fait »,
+      en `text-etat-fait` ; « ignorée » en `text-texte-3` ;
+    - une action se nomme par un verbe, sans icône de validation : « Je l'ai pris », pas « ✓ Pris » ;
+    - un choix sélectionné (type, moment, fréquence) = fond `bg-texte` et texte `text-fond`, partout ;
+    - la teinte d'une rubrique identifie (tuile d'icône, calendrier), elle ne change pas avec l'état.
   - Icônes : `polices.css` force `line-height: 1` (les classes `text-lg`… décalaient le glyphe) ; ne pas le surcharger.
   - Pas de bouton « Revenir en arrière » dans les pages : la navigation est toujours visible. L'en-tête (logo, compte) est
     posé sur la page en `pointer-events-none` : la première carte peut passer dessous sans perdre ses clics.
