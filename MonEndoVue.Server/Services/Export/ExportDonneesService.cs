@@ -155,7 +155,7 @@ public class ExportDonneesService(
                 .Select(t => new { t.Date, traitement = nomTraitement.GetValueOrDefault(t.MedicamentId), dureeMinutes = t.Duree, t.Commentaire }),
             activitePhysique = await context.DonneesActivitePhysique.AsNoTracking().Where(a => a.CarnetSanteId == carnetId)
                 .OrderBy(a => a.Date)
-                .Select(a => new { a.Date, type = a.TypeActivite, dureeMinutes = a.Duree, a.Intensite, a.EffetDouleur, a.Commentaire })
+                .Select(a => new { a.Date, type = a.TypeActivite, dureeMinutes = a.Duree, a.Intensite, niveauIntensite = a.NiveauIntensite, a.EffetDouleur, a.Commentaire })
                 .ToListAsync(ct),
             transit = await context.DonneesTransit.AsNoTracking().Where(t => t.CarnetSanteId == carnetId)
                 .OrderBy(t => t.Date)
