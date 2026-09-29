@@ -124,6 +124,8 @@ public class ExportDonneesService(
                 .ToListAsync(ct),
             joursDeRegles = await context.JourRegles.AsNoTracking().Where(j => j.CarnetSanteId == carnetId)
                 .OrderBy(j => j.Date).Select(j => j.Date).ToListAsync(ct),
+            episodesAcne = await context.EpisodesAcne.AsNoTracking().Where(e => e.CarnetSanteId == carnetId)
+                .OrderBy(e => e.Debut).Select(e => new { debut = e.Debut, fin = e.Fin }).ToListAsync(ct),
             symptomesDuCycle = symptomes.Select(s => new
             {
                 s.Date,

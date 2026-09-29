@@ -123,6 +123,7 @@ namespace MonEndoVue.Server
             builder.Services.AddScoped<AccueilService>();
             builder.Services.AddScoped<TraitementsService>();
             builder.Services.AddScoped<CycleService>();
+            builder.Services.AddScoped<AcneService>();
 
             builder.Services.Configure<FormOptions>(options =>
             {

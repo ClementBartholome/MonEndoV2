@@ -79,6 +79,7 @@ public class SuppressionCompteService(
         context.JourRegles.RemoveRange(await context.JourRegles.Where(e => e.CarnetSanteId == carnetId).ToListAsync(ct));
         context.BilansQuotidiens.RemoveRange(await context.BilansQuotidiens.Where(e => e.CarnetSanteId == carnetId).ToListAsync(ct));
         context.SymptomesCycles.RemoveRange(await context.SymptomesCycles.Where(e => e.CarnetSanteId == carnetId).ToListAsync(ct));
+        context.EpisodesAcne.RemoveRange(await context.EpisodesAcne.Where(e => e.CarnetSanteId == carnetId).ToListAsync(ct));
         context.Rappels.RemoveRange(await context.Rappels.Where(e => e.CarnetSanteId == carnetId).ToListAsync(ct));
         context.AbonnementsPush.RemoveRange(await context.AbonnementsPush.Where(e => e.CarnetSanteId == carnetId).ToListAsync(ct));
         context.CarnetSantes.RemoveRange(await context.CarnetSantes.Where(c => c.Id == carnetId).ToListAsync(ct));
