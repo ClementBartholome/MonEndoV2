@@ -17,6 +17,7 @@ type Liste<T> = T[] | { $values: T[] };
 import { enTableau } from '@/shared/utils/json';
 import type { ReponseConsentement } from '@/features/auth/types/user';
 import type { CycleDuMois, CycleTermine } from '@/features/cycle/types/cycle';
+import type { Activite, ActiviteSaisie } from '@/features/activite/types/activite';
 import type { Acne, EpisodeAcne, EpisodeAcneSaisie, SuiviAcne } from '@/features/cycle/types/acne';
 import type { SymptomeCycle, SymptomeSaisie } from '@/features/cycle/types/symptome-cycle';
 import { nomDeFichierPhoto } from '@/features/cycle/utils/photo';
@@ -131,10 +132,6 @@ class ApiService {
         return this.request('GET', `DonneesDouleurs/${carnetSanteId}/${month}/${year}`);
     }
 
-    async getDonneesActivitePhysiqueByMonth(carnetSanteId: number, month: number, year: number): Promise<any> {
-        return this.request('GET', `DonneesActivitePhysique/${carnetSanteId}/${month}/${year}`);
-    }
-
     async getDonneesTransitByMonth(carnetSanteId: number, month: number, year: number): Promise<any> {
         return this.request('GET', `DonneesTransit/${carnetSanteId}/${month}/${year}`);
     }
@@ -179,6 +176,23 @@ class ApiService {
         return { ...recu, joursDeRegles: enTableau(recu.joursDeRegles), cycles: enTableau(recu.cycles) };
     }
 
+    /** Activités d'un mois (1er du mois, AAAA-MM-JJ), carnet déduit de la session. */
+    async getActivites(mois: string): Promise<Activite[]> {
+        return enTableau(await this.request<Liste<Activite>>('GET', `Activite?mois=${mois}`));
+    }
+
+    async postActivite(saisie: ActiviteSaisie): Promise<{ id: number }> {
+        return this.request('POST', 'Activite', saisie);
+    }
+
+    async putActivite(id: number, saisie: ActiviteSaisie): Promise<void> {
+        await this.request('PUT', `Activite/${id}`, saisie);
+    }
+
+    async deleteActivite(id: number): Promise<void> {
+        await this.request('DELETE', `Activite/${id}`);
+    }
+
     /** Onglet Acné : épisodes et suivis photo, durée de l'épisode en cours comptée au jour local. */
     /** `mois` : fenêtre des photos de suivi renvoyées (7 derniers mois par défaut). */
     async getAcne(jour: string, mois = 7): Promise<Acne> {
@@ -218,10 +232,6 @@ class ApiService {
         return this.request('POST', 'DonneesDouleurs', donneesDouleurs);
     }
 
-    async postDonneesActivitePhysique(donneesActivitePhysique: any): Promise<any> {
-        return this.request('POST', 'DonneesActivitePhysique', donneesActivitePhysique);
-    }
-
     async postBilanQuotidien(bilanQuotidien: BilanQuotidienSaisie): Promise<{ id: number }> {
         return this.request('POST', 'BilanQuotidien', bilanQuotidien);
     }
@@ -238,10 +248,6 @@ class ApiService {
 
     
     // DELETE
-
-    async deleteDonneesActivitePhysique(donneesActivitePhysiqueId: number): Promise<any> {
-        return this.request('DELETE', `DonneesActivitePhysique/${donneesActivitePhysiqueId}`);
-    }
 
     async deleteDonneesDouleurs(donneesDouleursId: number): Promise<any> {
         return this.request('DELETE', `DonneesDouleurs/${donneesDouleursId}`);
@@ -260,10 +266,6 @@ class ApiService {
     
     async editDonneesDouleurs(donneesDouleursId: number, donneesDouleurs: DonneesDouleurModification): Promise<void> {
         return this.request('PUT', `DonneesDouleurs/${donneesDouleursId}`, donneesDouleurs);
-    }
-
-    async editDonneesActivitePhysique(donneesActivitePhysiqueId: number, donneesActivitePhysique: any): Promise<any> {
-        return this.request('PUT', `DonneesActivitePhysique/${donneesActivitePhysiqueId}`, donneesActivitePhysique);
     }
 
     // NOTIFICATIONS WEB PUSH
