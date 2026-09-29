@@ -36,6 +36,7 @@ public sealed class SuppressionCompteServiceTests : IDisposable
         Assert.False(await ctx.JourRegles.AnyAsync(e => e.CarnetSanteId == carnetId));
         Assert.False(await ctx.BilansQuotidiens.AnyAsync(e => e.CarnetSanteId == carnetId));
         Assert.False(await ctx.SymptomesCycles.AnyAsync(e => e.CarnetSanteId == carnetId));
+        Assert.False(await ctx.EpisodesAcne.AnyAsync(e => e.CarnetSanteId == carnetId));
         Assert.False(await ctx.Medicaments.AnyAsync(e => e.CarnetSanteId == carnetId));
         Assert.False(await ctx.DonneesMedicaments.AnyAsync(e => e.CarnetSanteId == carnetId));
         Assert.False(await ctx.DonneesTraitementNonMedicamenteux.AnyAsync(e => e.CarnetSanteId == carnetId));
@@ -150,6 +151,7 @@ public sealed class SuppressionCompteServiceTests : IDisposable
         ctx.JourRegles.Add(new JourRegle { CarnetSanteId = carnetId, Date = jour });
         ctx.BilansQuotidiens.Add(new BilanQuotidien { CarnetSanteId = carnetId, Date = jour, Emotions = [new EmotionBilan { Emotion = Emotion.Calme }] });
         ctx.SymptomesCycles.Add(new SymptomeCycle { CarnetSanteId = carnetId, TypeSymptome = "Acné", Date = jour, PhotoUrl = photo });
+        ctx.EpisodesAcne.Add(new EpisodeAcne { CarnetSanteId = carnetId, Debut = DateOnly.FromDateTime(jour) });
         ctx.Rappels.Add(new Rappel { CarnetSanteId = carnetId, Type = TypeRappel.BilanQuotidien });
         ctx.AbonnementsPush.Add(new AbonnementPush { CarnetSanteId = carnetId, Endpoint = $"https://push.test/{email}" });
         await ctx.SaveChangesAsync();

@@ -34,6 +34,7 @@ public sealed class ExportDonneesServiceTests : IDisposable
             CarnetSanteId = CarnetDeTest.CarnetSanteId, Date = new DateTime(2026, 9, 3), DouleurMoyenne = 3,
             Emotions = [new EmotionBilan { Emotion = Emotion.Calme }],
         });
+        _carnet.Context.EpisodesAcne.Add(new EpisodeAcne { CarnetSanteId = CarnetDeTest.CarnetSanteId, Debut = new DateOnly(2026, 8, 1), Fin = new DateOnly(2026, 8, 20) });
         await _carnet.Context.SaveChangesAsync();
         _carnet.Context.DonneesMedicaments.Add(new DonneesMedicament { CarnetSanteId = CarnetDeTest.CarnetSanteId, MedicamentId = traitement.Id, NombreComprimes = 1, Date = new DateTime(2026, 9, 4) });
         await _carnet.Context.SaveChangesAsync();
@@ -49,6 +50,7 @@ public sealed class ExportDonneesServiceTests : IDisposable
         Assert.Equal("Calme", donnees.GetProperty("bilansQuotidiens")[0].GetProperty("emotions")[0].GetString());
         Assert.Equal("photos/2026-09-02-10.png", donnees.GetProperty("symptomesDuCycle")[0].GetProperty("photo").GetString());
         Assert.Equal(3, zip.GetEntry("photos/2026-09-02-10.png")!.Length);
+        Assert.Equal("2026-08-20", donnees.GetProperty("episodesAcne")[0].GetProperty("fin").GetString());
         Assert.NotNull(zip.GetEntry("LISEZMOI.txt"));
     }
 
