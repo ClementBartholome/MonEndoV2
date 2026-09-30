@@ -14,7 +14,8 @@ import type { EntreeHistoriqueTraitement, HistoriqueTraitement, JourHistoriqueTr
 
 /** Liste C# sérialisée avec ReferenceHandler.Preserve. */
 type Liste<T> = T[] | { $values: T[] };
-import { enTableau } from '@/shared/utils/json';
+import { enTableau, sansReferences } from '@/shared/utils/json';
+import type { SyntheseRendezVous } from '@/features/export/types/synthese';
 import type { ReponseConsentement } from '@/features/auth/types/user';
 import type { CycleDuMois, CycleTermine } from '@/features/cycle/types/cycle';
 import type { Activite, ActiviteSaisie } from '@/features/activite/types/activite';
@@ -124,8 +125,9 @@ class ApiService {
         return this.request('GET', `CarnetSante/${carnetSanteId}`);
     }
 
-    async getDonneesCarnetSanteByMonth(carnetSanteId: number, month: number, year: number): Promise<any> {
-        return this.request('GET', `CarnetSante/${carnetSanteId}/${month}/${year}`);
+    /** Synthèse du suivi du `du` au `au` inclus (AAAA-MM-JJ, un an au plus), carnet déduit de la session. */
+    async getSyntheseRendezVous(du: string, au: string): Promise<SyntheseRendezVous> {
+        return sansReferences(await this.request('GET', `Synthese?du=${du}&au=${au}`));
     }
 
     async getDonneesDouleursByMonth(carnetSanteId: number, month: number, year: number): Promise<any> {
