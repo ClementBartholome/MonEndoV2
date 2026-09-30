@@ -1,12 +1,10 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
 import { format, isAfter, isToday, startOfDay, subDays } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import BackButton from '@/shared/components/BackButton.vue';
-import { Button } from '@/shared/components/ui/button';
-import { Card, CardContent } from '@/shared/components/ui/card';
 import { Skeleton } from '@/shared/components/ui/skeleton';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui/tabs';
+import { TabsContent, TabsList, TabsRoot, TabsTrigger } from 'radix-vue';
 import { useToast } from '@/shared/components/ui/toast';
 import { useAuthStore } from '@/features/auth/store/auth';
 import SaisieBilan from '@/features/bilan-quotidien/components/saisie/SaisieBilan.vue';
@@ -19,6 +17,11 @@ import SelecteurPeriode from '@/features/bilan-quotidien/components/historique/S
 import { useHistoriqueBilans } from '@/features/bilan-quotidien/composables/useHistoriqueBilans';
 import { calculerTendances } from '@/features/bilan-quotidien/utils/tendances';
 import { getWellbeingGoals } from '@/shared/services/wellbeingGoalsStorage';
+
+/** Lien profond vers un onglet (`/bilan-quotidien?onglet=analyse`, depuis l'accueil). */
+const route = useRoute();
+const router = useRouter();
+const ongletInitial = route.query.onglet === 'analyse' ? 'analyse' : 'historique';
 import type { BilanQuotidien } from '@/features/bilan-quotidien/types/bilan-quotidien';
 
 const carnetSanteId = useAuthStore().user!.carnetSanteId;
@@ -61,8 +64,12 @@ const apresEnregistrement = (bilan: BilanQuotidien) => {
 onMounted(async () => {
   const aujourdhui = startOfDay(new Date());
   await actions.recharger();
-  // Pas encore de bilan aujourd'hui : on ouvre directement la saisie (rappel du soir).
-  if (!model.value.erreur && !bilanDu(aujourdhui)) await ouvrirSaisie(aujourdhui);
+  // La saisie ne s'ouvre d'office que sur demande (`?ajouter` : « Faire mon bilan » de l'accueil, rappel du soir) :
+  // sinon la page montre l'historique, avec « Remplir le bilan de ce jour ».
+  if (route.query.ajouter !== undefined) {
+    await router.replace({ query: {} });
+    if (!model.value.erreur && !bilanDu(aujourdhui)) await ouvrirSaisie(aujourdhui);
+  }
   isLoading.value = false;
 });
 
@@ -75,19 +82,27 @@ const titreJour = computed(() =>
 
 const jourAVenir = computed(() => isAfter(jourSelectionne.value, startOfDay(new Date())));
 
+const ONGLETS = [
+  { valeur: 'historique', libelle: 'Historique' },
+  { valeur: 'analyse', libelle: 'Tendances' },
+];
+
 // --- Analyse ---
 const reperes = getWellbeingGoals();
 const tendances = computed(() => calculerTendances(model.value.jours, model.value.bilansPrecedents, reperes));
 </script>
 
 <template>
-  <div class="flex-column-container !gap-1">
-    <div class="flex items-center justify-between w-full">
-      <BackButton class="!w-1/4"/>
-    </div>
+  <main class="mx-auto flex w-full max-w-xl flex-col gap-3.5 px-5 pb-40 pt-24 lg:pb-12 lg:pt-10">
+    <!-- Pendant la saisie, le titre de page reste lu (sr-only) : la saisie a son propre titre visible. -->
+    <header class="flex items-center gap-3" :class="{ 'sr-only': saisie }">
+      <i class="material-symbols-outlined rounded-controle bg-teinte-bilan-fond p-2 text-titre-page text-teinte-bilan" aria-hidden="true">event_note</i>
+      <h1 class="m-0 grow text-titre-page font-semibold tracking-normal text-texte">Bilan</h1>
+    </header>
 
-    <div v-if="isLoading" class="flex flex-col space-y-3 p-6 pt-0">
-      <Skeleton class="h-[300px] w-full mt-4 rounded-xl"/>
+    <div v-if="isLoading" class="flex flex-col gap-3.5" aria-busy="true" aria-label="Chargement des bilans">
+      <Skeleton class="h-24 rounded-carte"/>
+      <Skeleton class="h-72 rounded-carte"/>
     </div>
 
     <SaisieBilan
@@ -102,39 +117,40 @@ const tendances = computed(() => calculerTendances(model.value.jours, model.valu
         @annule="saisie = null"
     />
 
-    <div v-else class="w-full">
+    <template v-else>
       <SelecteurPeriode
-          class="mt-2"
           :periode="model.periode"
           @changer-mode="actions.changerMode"
           @precedente="actions.precedente"
           @suivante="actions.suivante"
           @aujourdhui="actions.revenirAujourdhui"
+          @aller-au-mois="actions.allerAuMois"
       />
 
-      <div v-if="model.erreur" class="flex flex-col items-center gap-3 text-center py-6" role="alert">
-        <p class="text-paragraph">Les bilans de cette période n'ont pas pu être chargés.</p>
-        <Button type="button" variant="outline" class="h-11" @click="actions.recharger">Réessayer</Button>
-      </div>
+      <section v-if="model.erreur" role="alert" class="flex flex-col items-start gap-3 rounded-carte bg-surface p-5 shadow-elevation">
+        <p class="m-0 text-texte">Les bilans de cette période n'ont pas pu être chargés.</p>
+        <button type="button" class="min-h-11 rounded-controle border-[1.5px] border-contour px-4 text-sm font-medium text-texte"
+                @click="actions.recharger">Réessayer</button>
+      </section>
 
-      <Tabs v-else default-value="historique" class="w-full mt-4" :class="{ 'opacity-60': model.chargement }"
-            :aria-busy="model.chargement">
-        <TabsList class="bilan-tabs-list">
-          <TabsTrigger value="historique" class="bilan-tab-trigger">Historique</TabsTrigger>
-          <TabsTrigger value="analyse" class="bilan-tab-trigger">Analyse & Tendances</TabsTrigger>
+      <TabsRoot v-else :default-value="ongletInitial" class="flex flex-col gap-3.5" :class="{ 'opacity-60': model.chargement }"
+                :aria-busy="model.chargement">
+        <TabsList aria-label="Vues du bilan" class="grid grid-cols-2 gap-1 rounded-controle bg-surface-2 p-1">
+          <TabsTrigger v-for="o in ONGLETS" :key="o.valeur" :value="o.valeur"
+                       class="min-h-11 rounded-controle px-2 text-sm leading-tight text-texte-2 data-[state=active]:bg-surface data-[state=active]:font-semibold data-[state=active]:text-texte data-[state=active]:shadow-elevation">
+            {{ o.libelle }}
+          </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="historique">
-          <Card class="container mt-4 mx-auto w-full bg-clearer rounded-3xl shadow-xl flex flex-col">
-            <CardContent class="p-3 md:p-6">
-              <CalendrierBilans
-                  :jours="model.jours"
-                  :mode="model.periode.mode"
-                  :jour-selectionne="jourSelectionne"
-                  @selectionner="actions.selectionnerJour"
-              />
-            </CardContent>
-          </Card>
+        <TabsContent value="historique" class="flex flex-col gap-3.5">
+          <section aria-label="Calendrier des bilans" class="rounded-carte bg-surface p-3 shadow-elevation md:p-5">
+            <CalendrierBilans
+                :jours="model.jours"
+                :mode="model.periode.mode"
+                :jour-selectionne="jourSelectionne"
+                @selectionner="actions.selectionnerJour"
+            />
+          </section>
 
           <BilanDuJourCard
               :titre="titreJour"
@@ -157,30 +173,7 @@ const tendances = computed(() => calculerTendances(model.value.jours, model.valu
         <TabsContent value="analyse">
           <AnalyseTendances :tendances="tendances" :mode="model.periode.mode"/>
         </TabsContent>
-      </Tabs>
-    </div>
-  </div>
+      </TabsRoot>
+    </template>
+  </main>
 </template>
-
-<style scoped>
-.bilan-tabs-list {
-  width: 100%;
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 0.5rem;
-}
-
-.bilan-tab-trigger {
-  white-space: normal;
-  text-align: center;
-  line-height: 1.2;
-}
-
-@media (max-width: 425px) {
-  .bilan-tab-trigger {
-    font-size: 0.8rem;
-    padding-left: 0.5rem;
-    padding-right: 0.5rem;
-  }
-}
-</style>

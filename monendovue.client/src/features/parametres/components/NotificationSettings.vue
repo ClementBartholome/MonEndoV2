@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { onMounted } from 'vue';
-import { Button } from '@/shared/components/ui/button';
 import { Skeleton } from '@/shared/components/ui/skeleton';
 import { useToast } from '@/shared/components/ui/toast';
 import { usePushNotifications } from '@/features/parametres/composables/usePushNotifications';
@@ -63,55 +62,50 @@ const onTest = async () => {
 </script>
 
 <template>
-  <div class="flex gap-2 mb-4 items-center">
-    <i class="material-symbols-outlined">notifications</i>
-    <h3 class="text-headline text-2xl">Notifications</h3>
-  </div>
-  <hr class="mb-4 border-gray-300">
+  <div class="flex flex-col gap-4 pb-2 text-left">
+  <Skeleton v-if="etat === 'chargement'" class="h-16 w-full rounded-carte" />
 
-  <Skeleton v-if="etat === 'chargement'" class="h-16 w-full rounded-xl" />
-
-  <p v-else-if="etat === 'non-supporte'" class="text-paragraph">
+  <p v-else-if="etat === 'non-supporte'" class="text-sm text-texte-2">
     Ce navigateur ne permet pas de recevoir des notifications.
   </p>
 
-  <p v-else-if="etat === 'non-disponible'" class="text-paragraph">
+  <p v-else-if="etat === 'non-disponible'" class="text-sm text-texte-2">
     Les notifications ne sont pas disponibles pour le moment.
   </p>
 
   <div v-else-if="etat === 'ios-a-installer'" class="flex flex-col gap-3">
-    <p class="text-paragraph">
+    <p class="text-sm text-texte-2">
       Sur iPhone et iPad (iOS 16.4 ou plus récent), les notifications fonctionnent quand MonEndo est installée sur l'écran d'accueil :
     </p>
     <ol class="flex flex-col gap-2">
       <li class="flex items-start gap-2">
-        <span class="shrink-0 w-7 h-7 rounded-full bg-button/20 text-headline font-bold flex items-center justify-center">1</span>
-        <span class="text-paragraph">Dans Safari, touche le bouton Partager <i class="material-symbols-outlined align-middle text-base">ios_share</i>.</span>
+        <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-surface-2 font-bold text-texte">1</span>
+        <span class="text-sm text-texte-2">Dans Safari, touche le bouton Partager <i class="material-symbols-outlined align-middle text-base">ios_share</i>.</span>
       </li>
       <li class="flex items-start gap-2">
-        <span class="shrink-0 w-7 h-7 rounded-full bg-button/20 text-headline font-bold flex items-center justify-center">2</span>
-        <span class="text-paragraph">Choisis « Sur l'écran d'accueil », puis « Ajouter ».</span>
+        <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-surface-2 font-bold text-texte">2</span>
+        <span class="text-sm text-texte-2">Choisis « Sur l'écran d'accueil », puis « Ajouter ».</span>
       </li>
       <li class="flex items-start gap-2">
-        <span class="shrink-0 w-7 h-7 rounded-full bg-button/20 text-headline font-bold flex items-center justify-center">3</span>
-        <span class="text-paragraph">Ouvre MonEndo depuis la nouvelle icône et reviens dans Paramètres pour activer les notifications.</span>
+        <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-surface-2 font-bold text-texte">3</span>
+        <span class="text-sm text-texte-2">Ouvre MonEndo depuis la nouvelle icône et reviens dans Paramètres pour activer les notifications.</span>
       </li>
     </ol>
   </div>
 
-  <p v-else-if="etat === 'refuse'" class="text-paragraph">
+  <p v-else-if="etat === 'refuse'" class="text-sm text-texte-2">
     Les notifications sont bloquées pour MonEndo. Sur iPhone : Réglages › Notifications › MonEndo.
     Sur ordinateur : autorise les notifications dans les paramètres du site de ton navigateur, puis recharge la page.
   </p>
 
   <div v-else-if="etat === 'inactif'" class="flex flex-col gap-3">
-    <p class="text-paragraph">
+    <p class="text-sm text-texte-2">
       Reçois un rappel quand ton bilan quotidien n'est pas encore rempli, à l'heure de ton choix.
     </p>
-    <Button variant="custom" class="w-full sm:w-auto sm:self-start min-h-11" :disabled="enCours" @click="onActiver">
-      <i class="material-symbols-outlined mr-2">notifications_active</i>
+    <button type="button" class="inline-flex min-h-12 items-center justify-center gap-2 rounded-controle bg-button px-4 font-semibold text-texte disabled:opacity-60" :disabled="enCours" @click="onActiver">
+      <i class="material-symbols-outlined" aria-hidden="true">notifications_active</i>
       Activer les notifications sur cet appareil
-    </Button>
+    </button>
   </div>
 
   <div v-else class="flex flex-col gap-4">
@@ -124,15 +118,16 @@ const onTest = async () => {
         @modifier="(modifications) => onModifierRappel(rappel.type, modifications)"
     />
 
-    <div class="flex flex-col sm:flex-row gap-2">
-      <Button variant="outline" class="min-h-11" :disabled="enCours" @click="onTest">
-        <i class="material-symbols-outlined mr-2">send</i>
+    <div class="flex flex-col gap-2">
+      <button type="button" class="inline-flex min-h-11 items-center justify-center gap-2 rounded-controle border-[1.5px] border-contour px-4 text-sm font-medium text-texte disabled:opacity-60" :disabled="enCours" @click="onTest">
+        <i class="material-symbols-outlined" aria-hidden="true">send</i>
         Envoyer une notification de test
-      </Button>
-      <Button variant="outline" class="min-h-11" :disabled="enCours" @click="onDesactiver">
-        <i class="material-symbols-outlined mr-2">notifications_off</i>
+      </button>
+      <button type="button" class="inline-flex min-h-11 items-center justify-center gap-2 rounded-controle border-[1.5px] border-contour px-4 text-sm font-medium text-texte disabled:opacity-60" :disabled="enCours" @click="onDesactiver">
+        <i class="material-symbols-outlined" aria-hidden="true">notifications_off</i>
         Désactiver sur cet appareil
-      </Button>
+      </button>
     </div>
+  </div>
   </div>
 </template>

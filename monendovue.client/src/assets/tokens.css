@@ -1,0 +1,82 @@
+/*
+ * Tokens de design MonEndo (palette validée au lot 0 de la 1.3.0, contrastes vérifiés WCAG AA).
+ * Seule source des couleurs, rayons et élévation : les classes Tailwind (tailwind.config.js) et les anciens noms
+ * (--headline, --paragraph…) pointent ici. Ne pas écrire de couleur en dur ni de couleur Tailwind brute (blue-100…).
+ */
+:root {
+    /* Fonds et surfaces */
+    --couleur-fond: #faeee7;
+    --couleur-surface: #fffaf7;
+    --couleur-surface-2: #f3e3db;
+    --couleur-trait: #efdcd3;
+
+    /* Textes (sur fond ou surface : texte 12.6:1, texte-2 7.3:1, texte-3 ≥ 5.4:1) */
+    --couleur-texte: #33272a;
+    --couleur-texte-2: #594a4e;
+    --couleur-texte-3: #6b585d;
+    --couleur-lien: #a3324f;
+    --couleur-lien-survol: #7d2440;
+
+    /*
+     * Accent : rose poudré (adouci au test de la 1.3.0, l'ancien #ff8ba7 tranchait trop), en FOND uniquement, avec du
+     * texte foncé (8.2:1) ; jamais de texte blanc dessus ni de texte rose.
+     */
+    --couleur-accent: #f2b3c2;
+    --couleur-accent-rgb: 242 179 194;
+    --couleur-sur-accent: #33272a;
+
+    /* Contour des champs et contrôles (≥ 3:1 sur fond, surface et surface-2) */
+    --couleur-contour: #8f7872;
+    /* Fond des champs de saisie */
+    --couleur-champ: #ffffff;
+    --couleur-danger: #b42318;
+    /* Voile derrière une fenêtre ou un panneau modal */
+    --couleur-voile: rgb(51 39 42 / 0.45);
+
+    /* Couples tuile / icône par rubrique (icône ≥ 5:1 sur sa tuile). Une rubrique = une teinte, partout. */
+    --teinte-bilan-fond: #e0eef3;
+    --teinte-bilan: #1f5a70;
+    --teinte-douleur-fond: #fde6d8;
+    --teinte-douleur: #9a4a1f;
+    --teinte-regles-fond: #fde1e7;
+    --teinte-regles: #a3324f;
+    --teinte-symptome-fond: #ece6f5;
+    --teinte-symptome: #5b4a8a;
+    --teinte-traitement-fond: #e3eee4;
+    --teinte-traitement: #3d6b48;
+    --teinte-neutre-fond: #f3e3db;
+    --teinte-neutre: #6b4f3a;
+
+    /* État « fait » (prise notée, bilan rempli) : texte et icône pleine, jamais un fond de bouton. 6,1:1 sur la surface. */
+    --etat-fait: #3d6b48;
+
+    /* Intensité 0-10 (une seule teinte, plus foncé = plus fort) : texte foncé jusqu'à 5, blanc à partir de 6. */
+    --intensite-0: #f9d3dc;
+    --intensite-1: #f5c2ce;
+    --intensite-2: #f0b0c1;
+    --intensite-3: #ea9db2;
+    --intensite-4: #e38aa3;
+    --intensite-5: #db7794;
+    --intensite-6: #b0456a;
+    --intensite-7: #983a5a;
+    --intensite-8: #80304c;
+    --intensite-9: #69263e;
+    --intensite-10: #521d30;
+
+    /* Émotions du jour (teinte symptôme, plus foncé = plus difficile) : texte foncé jusqu'à 2 (≥ 6.8:1), blanc ensuite (≥ 4.8:1). */
+    --emotion-0: #ece6f5;
+    --emotion-1: #d9cfee;
+    --emotion-2: #bcabdf;
+    --emotion-3: #7a64b3;
+    --emotion-4: #4e3d80;
+    /* Texte posé sur une couleur foncée (intensité ≥ 6, émotions ≥ 3) */
+    --couleur-sur-fonce: #ffffff;
+
+    /* Formes : un rayon par rôle (voir monendovue.client/CLAUDE.md, « Formes et états ») et une seule élévation.
+       Contrôles = boutons, champs, choix, onglets ; cartes = cartes et listes ; panneau = panneau du bas.
+       Rond complet (rounded-full) seulement pour les boutons icône seule et les jours d'un calendrier. */
+    --rayon-controle: 12px;
+    --rayon-carte: 16px;
+    --rayon-panneau: 24px;
+    --elevation: 0 1px 2px rgba(51, 39, 42, 0.06), 0 6px 18px rgba(51, 39, 42, 0.05);
+}

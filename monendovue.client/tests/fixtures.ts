@@ -3,6 +3,16 @@ import { FauxServeur } from './mocks/faux-serveur';
 import { MAINTENANT, UTILISATRICE, CARNET_ID } from './mocks/session';
 import { ActivitePage } from './pages/activite.page';
 import { BilanQuotidienPage } from './pages/bilan-quotidien.page';
+import { DocumentsLegauxPage } from './pages/documents-legaux.page';
+import { ConsentementPage } from './pages/consentement.page';
+import { ParametresPage } from './pages/parametres.page';
+import { NavigationPage } from './pages/navigation.page';
+import { AccueilPage } from './pages/accueil.page';
+import { DouleursPage } from './pages/douleurs.page';
+import { TraitementsPage } from './pages/traitements.page';
+import { CyclePage } from './pages/cycle.page';
+import { RendezVousPage } from './pages/rendez-vous.page';
+import { ACCUEIL_VIDE } from './mocks/accueil';
 
 interface Options {
   /** Session ouverte au chargement de la page (faux utilisateur dans localStorage, comme après une connexion). */
@@ -14,6 +24,15 @@ interface Fixtures {
   serveur: FauxServeur;
   activitePage: ActivitePage;
   bilanQuotidienPage: BilanQuotidienPage;
+  documentsLegauxPage: DocumentsLegauxPage;
+  consentementPage: ConsentementPage;
+  parametresPage: ParametresPage;
+  navigationPage: NavigationPage;
+  accueilPage: AccueilPage;
+  douleursPage: DouleursPage;
+  traitementsPage: TraitementsPage;
+  cyclePage: CyclePage;
+  rendezVousPage: RendezVousPage;
 }
 
 /**
@@ -50,6 +69,42 @@ export const test = base.extend<Options & Fixtures>({
   bilanQuotidienPage: async ({ page }, use) => {
     await use(new BilanQuotidienPage(page));
   },
+
+  documentsLegauxPage: async ({ page }, use) => {
+    await use(new DocumentsLegauxPage(page));
+  },
+
+  consentementPage: async ({ page }, use) => {
+    await use(new ConsentementPage(page));
+  },
+
+  parametresPage: async ({ page }, use) => {
+    await use(new ParametresPage(page));
+  },
+
+  navigationPage: async ({ page }, use) => {
+    await use(new NavigationPage(page));
+  },
+
+  accueilPage: async ({ page }, use) => {
+    await use(new AccueilPage(page));
+  },
+
+  douleursPage: async ({ page }, use) => {
+    await use(new DouleursPage(page));
+  },
+
+  traitementsPage: async ({ page }, use) => {
+    await use(new TraitementsPage(page));
+  },
+
+  cyclePage: async ({ page }, use) => {
+    await use(new CyclePage(page));
+  },
+
+  rendezVousPage: async ({ page }, use) => {
+    await use(new RendezVousPage(page));
+  },
 });
 
 export { expect };
@@ -58,7 +113,8 @@ export { MAINTENANT, CARNET_ID };
 /** Réponses des appels faits sur toutes les pages (accueil, session, agenda). */
 function routesCommunes(serveur: FauxServeur) {
   serveur
-    .on('GET', /^CarnetSante\/last-entries\/\d+$/, () => ({ body: { carnetSanteId: CARNET_ID } }))
+    // Accueil vide par défaut (tests/mocks/accueil.ts pour un accueil rempli).
+    .on('GET', /^Accueil\/aujourdhui$/, () => ({ body: ACCUEIL_VIDE }))
     // Pas d'agenda associé au compte par défaut : pas de bloc « Prochains rendez-vous ».
     .on('GET', /^Agenda\//, () => ({ status: 404 }))
     .on('POST', /^Account\/logout$/, () => ({ status: 200 }));

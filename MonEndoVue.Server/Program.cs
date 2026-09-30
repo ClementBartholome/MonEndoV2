@@ -2,6 +2,8 @@ using System.Text;
 using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.DataProtection;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
@@ -16,6 +18,14 @@ using MonEndoVue.Server.Services.Agenda;
 using MonEndoVue.Server.Services.WebPush;
 using MonEndoVue.Server.Services.WebPush.Rappels;
 using Quartz;
+using MonEndoVue.Server.Services.Accueil;
+using MonEndoVue.Server.Services.Consentement;
+using MonEndoVue.Server.Services.Export;
+using MonEndoVue.Server.Services.Photos;
+using MonEndoVue.Server.Services.SuppressionCompte;
+using MonEndoVue.Server.Services.Activite;
+using MonEndoVue.Server.Services.Cycle;
+using MonEndoVue.Server.Services.Traitements;
 using Serilog;
 using Serilog.Events;
 using System.Threading.RateLimiting;
@@ -109,6 +119,17 @@ namespace MonEndoVue.Server
             });
 
             builder.Services.AddScoped<AzureBlobStorageService>();
+            builder.Services.AddScoped<IStockagePhotos>(sp => sp.GetRequiredService<AzureBlobStorageService>());
+            builder.Services.AddScoped<ExportDonneesService>();
+            builder.Services.AddScoped<SuppressionCompteService>();
+            builder.Services.AddScoped<ComptesInactifsService>();
+            builder.Services.AddScoped<AccueilService>();
+            builder.Services.AddScoped<TraitementsService>();
+            builder.Services.AddScoped<HistoriqueTraitementsService>();
+            builder.Services.AddScoped<CycleService>();
+            builder.Services.AddScoped<AcneService>();
+            builder.Services.AddScoped<ActiviteService>();
+            builder.Services.AddScoped<SyntheseRendezVousService>();
 
             builder.Services.Configure<FormOptions>(options =>
             {
@@ -118,7 +139,7 @@ namespace MonEndoVue.Server
 
 
 
-            builder.Services.AddControllers().AddJsonOptions(options =>
+            builder.Services.AddControllers(options => options.Filters.Add<ExigeConsentementFilter>()).AddJsonOptions(options =>
             {
                 options.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.Preserve;
             });
@@ -132,25 +153,23 @@ namespace MonEndoVue.Server
 
             builder.Services.AddAuthorization();
 
+            // nginx est le seul service exposé et ajoute l'adresse du client à X-Forwarded-For : on la lit pour limiter le débit
+            // par adresse. Seule la dernière entrée (celle de nginx) est retenue, une valeur envoyée par le client est ignorée.
+            builder.Services.Configure<ForwardedHeadersOptions>(options =>
+            {
+                options.ForwardedHeaders = ForwardedHeaders.XForwardedFor;
+                options.KnownNetworks.Clear();
+                options.KnownProxies.Clear();
+            });
+
             builder.Services.AddRateLimiter(options =>
             {
                 options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
 
-                options.AddFixedWindowLimiter("api", limiterOptions =>
-                {
-                    limiterOptions.PermitLimit = 120;
-                    limiterOptions.Window = TimeSpan.FromMinutes(1);
-                    limiterOptions.QueueLimit = 0;
-                    limiterOptions.AutoReplenishment = true;
-                });
-
-                options.AddFixedWindowLimiter("auth", limiterOptions =>
-                {
-                    limiterOptions.PermitLimit = 20;
-                    limiterOptions.Window = TimeSpan.FromMinutes(1);
-                    limiterOptions.QueueLimit = 0;
-                    limiterOptions.AutoReplenishment = true;
-                });
+                // Une fenêtre par utilisatrice connectée, ou par adresse pour un appel anonyme : une seule personne (ou un
+                // script) ne peut pas épuiser la limite de toutes les autres.
+                options.AddPolicy(PolitiquesDebit.Api, contexte => PolitiquesDebit.Partition(contexte, 120));
+                options.AddPolicy(PolitiquesDebit.Auth, contexte => PolitiquesDebit.Partition(contexte, 20));
             });
 
             builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -203,6 +222,14 @@ namespace MonEndoVue.Server
                     .ForJob(rappelBilanJobKey)
                     .WithIdentity("RappelBilan-trigger")
                     .WithCronSchedule(RappelBilanJob.Cron));
+
+                // Durée de conservation : suppression des comptes inactifs depuis 2 ans
+                var comptesInactifsJobKey = JobKey.Create("SuppressionComptesInactifs");
+                q.AddJob<SuppressionComptesInactifsJob>(opts => opts.WithIdentity(comptesInactifsJobKey));
+                q.AddTrigger(opts => opts
+                    .ForJob(comptesInactifsJobKey)
+                    .WithIdentity("SuppressionComptesInactifs-trigger")
+                    .WithCronSchedule(SuppressionComptesInactifsJob.Cron));
             });
 
             builder.Services.AddQuartzHostedService(opts => { opts.WaitForJobsToComplete = true; });
@@ -268,6 +295,7 @@ namespace MonEndoVue.Server
             }
 
 
+            app.UseForwardedHeaders();
             app.UseCors("CorsPolicy");
 
             app.Use(async (context, next) =>

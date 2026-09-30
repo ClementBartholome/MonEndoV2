@@ -1,102 +1,83 @@
-﻿<template>
-  <div class="flex-column-container">
-    <BackButton/>
-    <h2 class="text-2xl mr-auto ml-4">Paramètres</h2>
-    <section
-        class="container !mt-0  mx-auto py-8 w-full bg-clearer rounded-3xl shadow-xl ml-auto">
-      <div class="flex gap-2 mb-4 items-center">
-        <i class="material-symbols-outlined">flag</i>
-        <h3 class="text-headline text-2xl">Repères personnels</h3>
-      </div>
-      <p class="text-sm text-muted-foreground mb-4">
-        Des repères que tu choisis : « Analyse & Tendances » du bilan quotidien indique combien de jours tu les atteins,
-        sans note ni jugement.
-      </p>
-      <hr class="mb-4 border-gray-300">
+<template>
+  <main class="mx-auto flex w-full max-w-xl flex-col gap-5 px-5 pb-40 pt-24 lg:pb-12 lg:pt-10">
+    <h1 class="m-0 text-left text-titre-page font-semibold tracking-normal text-texte">Paramètres</h1>
 
-      <form class="grid grid-cols-1 md:grid-cols-2 gap-4" @submit.prevent="saveGoals">
-        <div>
-          <label for="repere-hydratation" class="text-sm font-medium text-headline">Hydratation (L par jour, au moins)</label>
-          <input id="repere-hydratation" v-model.number="goals.hydrationLitersGoal" type="number" min="0.5" max="5" step="0.1" class="mt-1 w-full rounded-md border border-input px-3 py-2" />
-        </div>
-        <div>
-          <label for="repere-pas" class="text-sm font-medium text-headline">Pas (par jour, au moins)</label>
-          <input id="repere-pas" v-model.number="goals.stepsGoal" type="number" min="1000" max="30000" step="500" class="mt-1 w-full rounded-md border border-input px-3 py-2" />
-        </div>
-        <div>
-          <label for="repere-stress" class="text-sm font-medium text-headline">Stress (sur 5, au plus)</label>
-          <input id="repere-stress" v-model.number="goals.stressMaxGoal" type="number" min="1" max="5" step="0.5" class="mt-1 w-full rounded-md border border-input px-3 py-2" />
-        </div>
-        <div>
-          <label for="repere-fatigue" class="text-sm font-medium text-headline">Fatigue (sur 5, au plus)</label>
-          <input id="repere-fatigue" v-model.number="goals.fatigueMaxGoal" type="number" min="1" max="5" step="0.5" class="mt-1 w-full rounded-md border border-input px-3 py-2" />
-        </div>
-        <div>
-          <label for="repere-douleur" class="text-sm font-medium text-headline">Douleur (sur 10, au plus)</label>
-          <input id="repere-douleur" v-model.number="goals.painMaxGoal" type="number" min="1" max="10" step="1" class="mt-1 w-full rounded-md border border-input px-3 py-2" />
-        </div>
+    <GroupeParametres titre="Rappels">
+      <LigneParametre titre="Notifications" detail="Bilan du jour · photo de l'acné" icone="notifications"
+                      teinte="bilan" @ouvrir="panneau = 'notifications'"/>
+    </GroupeParametres>
 
-        <div class="md:col-span-2 flex gap-2 justify-end mt-2">
-          <Button type="button" variant="outline" @click="resetGoals">Réinitialiser</Button>
-          <Button type="submit" variant="custom">Enregistrer</Button>
-        </div>
-      </form>
-    </section>
+    <GroupeParametres titre="Suivi">
+      <LigneParametre titre="Repères personnels" detail="Hydratation, pas, stress…" icone="flag"
+                      teinte="traitement" @ouvrir="panneau = 'reperes'"/>
+    </GroupeParametres>
 
-    <section
-        class="container !mt-0  mx-auto py-8 w-full bg-clearer rounded-3xl shadow-xl ml-auto">
-      <div>
-      </div>
+    <GroupeParametres titre="Compte">
+      <LigneParametre titre="Mot de passe" detail="Modifier mon mot de passe" icone="lock" @ouvrir="panneau = 'mot-de-passe'"/>
+      <LigneParametre titre="Se déconnecter" detail="De cet appareil" icone="logout" :chevron="false" @ouvrir="deconnecter"/>
+    </GroupeParametres>
+
+    <GroupeParametres titre="Mes données">
+      <LigneParametre :titre="exportEnCours ? 'Préparation de l\'export…' : 'Télécharger mes données'"
+                      detail="Tes données et tes photos (ZIP)" icone="download" :chevron="false"
+                      @ouvrir="telechargerMesDonnees"/>
+      <LigneParametre titre="Supprimer mon compte" detail="Définitivement, avec tes données" icone="delete_forever"
+                      teinte="regles" @ouvrir="panneau = 'suppression'"/>
+    </GroupeParametres>
+    <p v-if="erreurExport" role="alert" class="m-0 text-left text-sm text-danger">{{ erreurExport }}</p>
+
+    <div class="flex flex-col items-center">
+      <span class="text-xs text-texte-3">MonEndo v{{ version }}</span>
+      <LiensLegaux/>
+    </div>
+
+    <PanneauBas v-model:open="notificationsOuvertes" titre="Notifications">
       <NotificationSettings/>
-    </section>
-    <section
-        class="container !mt-0  mx-auto py-8 w-full bg-clearer rounded-3xl shadow-xl ml-auto">
-      <div class=" flex gap-2 mb-4 items-center">
-        <i class="material-symbols-outlined">person</i>
-        <h3 class="text-headline text-2xl">Compte utilisateur</h3>
-      </div>
-      <hr class="mb-4 border-gray-300">      
-      <ChangePassword/>
-    </section>
-    <p class="mt-6 text-center text-sm text-muted-foreground">MonEndo v{{ version }}</p>
-  </div>
+    </PanneauBas>
+    <PanneauBas v-model:open="reperesOuverts" titre="Repères personnels">
+      <ReperesPersonnels @enregistre="panneau = null"/>
+    </PanneauBas>
+    <PanneauBas v-model:open="motDePasseOuvert" titre="Mot de passe">
+      <MotDePasse @change="panneau = null"/>
+    </PanneauBas>
+    <SuppressionCompte v-model:open="suppressionOuverte"/>
+  </main>
 </template>
 
 <script setup lang="ts">
+import { computed, ref } from 'vue';
+import { useRouter } from 'vue-router';
+import LiensLegaux from '@/features/legal/components/LiensLegaux.vue';
+import { useAuthStore } from '@/features/auth/store/auth';
+import PanneauBas from '@/shared/components/PanneauBas.vue';
+import GroupeParametres from '../components/GroupeParametres.vue';
+import LigneParametre from '../components/LigneParametre.vue';
+import MotDePasse from '../components/MotDePasse.vue';
+import NotificationSettings from '../components/NotificationSettings.vue';
+import ReperesPersonnels from '../components/ReperesPersonnels.vue';
+import SuppressionCompte from '../components/SuppressionCompte.vue';
+import { useExportDonnees } from '../composables/useExportDonnees';
 
-import BackButton from "@/shared/components/BackButton.vue";
-import NotificationSettings from "@/features/parametres/components/NotificationSettings.vue";
-import ChangePassword from "@/features/auth/components/ChangePassword.vue";
-import { Button } from '@/shared/components/ui/button';
-import { ref } from 'vue';
+type Panneau = 'notifications' | 'reperes' | 'mot-de-passe' | 'suppression';
 
 const version = __APP_VERSION__;
-import { useToast } from '@/shared/components/ui/toast';
-import {
-  DEFAULT_WELLBEING_GOALS,
-  getWellbeingGoals,
-  saveWellbeingGoals,
-  type WellbeingGoals,
-} from '@/shared/services/wellbeingGoalsStorage';
+const router = useRouter();
+const auth = useAuthStore();
+const { exportEnCours, erreurExport, telechargerMesDonnees } = useExportDonnees();
 
-const { toast } = useToast();
-const goals = ref<WellbeingGoals>({ ...getWellbeingGoals() });
+/** Un seul panneau ouvert à la fois ; chaque contenu n'est monté (et ne charge ses données) qu'à l'ouverture. */
+const panneau = ref<Panneau | null>(null);
+const ouvertSi = (nom: Panneau) => computed({
+  get: () => panneau.value === nom,
+  set: (ouvert: boolean) => { panneau.value = ouvert ? nom : null; },
+});
+const notificationsOuvertes = ouvertSi('notifications');
+const reperesOuverts = ouvertSi('reperes');
+const motDePasseOuvert = ouvertSi('mot-de-passe');
+const suppressionOuverte = ouvertSi('suppression');
 
-const saveGoals = () => {
-  saveWellbeingGoals(goals.value);
-  toast({
-    title: 'Repères enregistrés',
-    description: 'Ils sont utilisés dans Analyse & Tendances du bilan quotidien.',
-    variant: 'custom'
-  });
-};
-
-const resetGoals = () => {
-  goals.value = { ...DEFAULT_WELLBEING_GOALS };
-};
-
+async function deconnecter() {
+  await auth.logout();
+  router.push('/login');
+}
 </script>
-
-<style scoped>
-
-</style>

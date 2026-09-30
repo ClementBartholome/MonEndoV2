@@ -208,6 +208,12 @@ namespace MonEndoVue.Server.Migrations
                         .IsConcurrencyToken()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<DateTime?>("ConsentementDonneesSanteLe")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("DerniereActiviteLe")
+                        .HasColumnType("datetime2");
+
                     b.Property<string>("Email")
                         .HasMaxLength(256)
                         .HasColumnType("nvarchar(256)");
@@ -254,6 +260,10 @@ namespace MonEndoVue.Server.Migrations
                     b.Property<string>("UserName")
                         .HasMaxLength(256)
                         .HasColumnType("nvarchar(256)");
+
+                    b.Property<string>("VersionPolitiqueAcceptee")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
 
                     b.HasKey("Id");
 
@@ -386,6 +396,9 @@ namespace MonEndoVue.Server.Migrations
                     b.Property<int>("Intensite")
                         .HasColumnType("int");
 
+                    b.Property<int?>("NiveauIntensite")
+                        .HasColumnType("int");
+
                     b.Property<string>("TypeActivite")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -445,11 +458,21 @@ namespace MonEndoVue.Server.Migrations
                     b.Property<DateTime>("Date")
                         .HasColumnType("datetime2");
 
+                    b.Property<TimeOnly?>("HeurePrevue")
+                        .HasColumnType("time");
+
                     b.Property<int>("MedicamentId")
                         .HasColumnType("int");
 
                     b.Property<int>("NombreComprimes")
                         .HasColumnType("int");
+
+                    b.Property<string>("Statut")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(10)
+                        .HasColumnType("nvarchar(10)")
+                        .HasDefaultValue("Pris");
 
                     b.HasKey("Id");
 
@@ -530,6 +553,30 @@ namespace MonEndoVue.Server.Migrations
                     b.ToTable("DonneesTransit");
                 });
 
+            modelBuilder.Entity("MonEndoVue.Server.Models.EpisodeAcne", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("CarnetSanteId")
+                        .HasColumnType("int");
+
+                    b.Property<DateOnly>("Debut")
+                        .HasColumnType("date");
+
+                    b.Property<DateOnly?>("Fin")
+                        .HasColumnType("date");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CarnetSanteId", "Debut");
+
+                    b.ToTable("EpisodesAcne", (string)null);
+                });
+
             modelBuilder.Entity("MonEndoVue.Server.Models.JourRegle", b =>
                 {
                     b.Property<int>("Id")
@@ -567,6 +614,19 @@ namespace MonEndoVue.Server.Migrations
 
                     b.Property<DateTime?>("DateFinTraitement")
                         .HasColumnType("datetime2");
+
+                    b.Property<string>("Frequence")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)")
+                        .HasDefaultValue("AuBesoin");
+
+                    b.Property<int?>("IntervalleJours")
+                        .HasColumnType("int");
+
+                    b.Property<int>("JoursSemaine")
+                        .HasColumnType("int");
 
                     b.Property<string>("Nom")
                         .IsRequired()
@@ -835,6 +895,15 @@ namespace MonEndoVue.Server.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("MonEndoVue.Server.Models.EpisodeAcne", b =>
+                {
+                    b.HasOne("MonEndoVue.Server.Models.CarnetSante", null)
+                        .WithMany()
+                        .HasForeignKey("CarnetSanteId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("MonEndoVue.Server.Models.JourRegle", b =>
                 {
                     b.HasOne("MonEndoVue.Server.Models.CarnetSante", null)
@@ -852,7 +921,34 @@ namespace MonEndoVue.Server.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.OwnsMany("MonEndoVue.Server.Models.HorairePrise", "Horaires", b1 =>
+                        {
+                            b1.Property<int>("Id")
+                                .ValueGeneratedOnAdd()
+                                .HasColumnType("int");
+
+                            SqlServerPropertyBuilderExtensions.UseIdentityColumn(b1.Property<int>("Id"));
+
+                            b1.Property<TimeOnly>("Heure")
+                                .HasColumnType("time");
+
+                            b1.Property<int>("MedicamentId")
+                                .HasColumnType("int");
+
+                            b1.HasKey("Id");
+
+                            b1.HasIndex("MedicamentId", "Heure")
+                                .IsUnique();
+
+                            b1.ToTable("HorairesPrise", (string)null);
+
+                            b1.WithOwner()
+                                .HasForeignKey("MedicamentId");
+                        });
+
                     b.Navigation("CarnetSante");
+
+                    b.Navigation("Horaires");
                 });
 
             modelBuilder.Entity("MonEndoVue.Server.Models.Rappel", b =>

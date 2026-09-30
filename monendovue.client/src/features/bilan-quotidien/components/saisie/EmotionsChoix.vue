@@ -20,17 +20,17 @@ const basculer = (code: CodeEmotion) => {
 <template>
   <div class="flex flex-col gap-2">
     <div class="flex items-center justify-between gap-2">
-      <p id="libelle-emotions" class="font-semibold text-headline flex items-center gap-2">
-        <i class="material-symbols-outlined text-button" aria-hidden="true">mood</i>Émotions du jour
+      <p id="libelle-emotions" class="font-semibold text-texte flex items-center gap-2">
+        <i class="material-symbols-outlined text-teinte-symptome" aria-hidden="true">mood</i>Émotions du jour
       </p>
-      <span class="text-sm text-paragraph" aria-live="polite">{{ selection.length }}/{{ EMOTIONS_MAX }}</span>
+      <span class="text-sm text-texte-2" aria-live="polite">{{ selection.length }}/{{ EMOTIONS_MAX }}</span>
     </div>
     <div class="grid grid-cols-2 sm:grid-cols-3 gap-2" role="group" aria-labelledby="libelle-emotions">
       <Button
           v-for="emotion in emotions"
           :key="emotion.code"
           type="button"
-          class="h-11 w-full justify-start gap-2 rounded-full px-3"
+          class="h-11 w-full justify-start gap-1.5 px-2.5"
           :variant="selection.includes(emotion.code) ? 'selected' : 'outline'"
           :aria-pressed="selection.includes(emotion.code)"
           :disabled="complet && !selection.includes(emotion.code)"

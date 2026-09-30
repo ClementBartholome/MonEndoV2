@@ -29,12 +29,13 @@ export const echellesCalendrier: Record<IndicateurCalendrier, EchelleCalendrier>
     niveau: niveauDouleur,
     description: (valeur) => `douleur ${valeur} sur 10`,
     nonRenseigne: 'douleur non renseignée',
+    // Même échelle que la page Douleurs (tokens --intensite-N) : texte foncé jusqu'à 5, blanc au-delà.
     classes: [
-      'bg-violet-100 text-violet-950',
-      'bg-violet-200 text-violet-950',
-      'bg-violet-300 text-violet-950',
-      'bg-violet-500 text-white',
-      'bg-violet-700 text-white',
+      'bg-intensite-1 text-texte',
+      'bg-intensite-3 text-texte',
+      'bg-intensite-5 text-texte',
+      'bg-intensite-7 text-sur-fonce',
+      'bg-intensite-9 text-sur-fonce',
     ],
     bornes: ['0', '10'],
   },
@@ -47,65 +48,40 @@ export const echellesCalendrier: Record<IndicateurCalendrier, EchelleCalendrier>
     description: (valeur) => `émotions ${LIBELLES_EMOTIONS[niveauHumeur(valeur)]}`,
     nonRenseigne: 'émotions non renseignées',
     classes: [
-      'bg-sky-100 text-sky-950',
-      'bg-sky-200 text-sky-950',
-      'bg-sky-300 text-sky-950',
-      'bg-sky-500 text-white',
-      'bg-sky-700 text-white',
+      'bg-emotion-0 text-texte',
+      'bg-emotion-1 text-texte',
+      'bg-emotion-2 text-texte',
+      'bg-emotion-3 text-sur-fonce',
+      'bg-emotion-4 text-sur-fonce',
     ],
     bornes: ['agréables', 'difficiles'],
   },
 };
 
-export interface SerieCourbe {
+/**
+ * Un graphique par indicateur (petits multiples), chacun sur sa propre échelle et dans la teinte de l'indicateur
+ * (`config/teintes.ts`) : plus la barre est haute, plus la journée a été lourde. Un jour non renseigné n'a pas de barre.
+ */
+export interface IndicateurGraphique {
   cle: string;
-  libelle: string;
-  valeur: (bilan: BilanQuotidien) => number | null;
-  /** Classes du trait et des points (SVG) et de la pastille de légende. */
-  trait: string;
-  point: string;
-  pastille: string;
-}
-
-export interface GraphiqueCourbes {
   titre: string;
   max: number;
-  graduations: number[];
-  series: SerieCourbe[];
+  /** « /10 », « /5 » : pour la moyenne affichée à côté du titre. */
+  unite: string;
+  /** Couleur des barres si elle n'est pas la teinte de l'indicateur : la douleur garde l'échelle rose partout. */
+  couleur?: string;
+  valeur: (bilan: BilanQuotidien) => number | null;
 }
 
-/** Deux graphiques, chacun sur sa propre échelle : douleur de 0 à 10, fatigue, stress et émotions de 0 à 5. */
-export const graphiquesCourbes: GraphiqueCourbes[] = [
+export const indicateursGraphiques: IndicateurGraphique[] = [
+  { cle: 'douleur', titre: 'Douleur', max: 10, unite: '/10', couleur: 'var(--intensite-7)', valeur: (b) => b.douleurMoyenne },
+  { cle: 'fatigue', titre: 'Fatigue', max: 5, unite: '/5', valeur: (b) => b.fatigue },
+  { cle: 'stress', titre: 'Stress', max: 5, unite: '/5', valeur: stressDuBilan },
   {
-    titre: 'Douleur (0 à 10)',
-    max: 10,
-    graduations: [0, 5, 10],
-    series: [{
-      cle: 'douleur', libelle: 'Douleur', valeur: (b) => b.douleurMoyenne,
-      trait: 'stroke-violet-600', point: 'fill-violet-600', pastille: 'bg-violet-600',
-    }],
-  },
-  {
-    titre: 'Fatigue, stress et émotions (0 à 5)',
-    max: 5,
-    graduations: [0, 2.5, 5],
-    series: [
-      {
-        cle: 'fatigue', libelle: 'Fatigue', valeur: (b) => b.fatigue,
-        trait: 'stroke-emerald-500', point: 'fill-emerald-500', pastille: 'bg-emerald-500',
-      },
-      {
-        cle: 'stress', libelle: 'Stress', valeur: stressDuBilan,
-        trait: 'stroke-amber-600', point: 'fill-amber-600', pastille: 'bg-amber-600',
-      },
-      {
-        // Tonalité des émotions (0 difficiles, 5 agréables) ; les anciens bilans comptent par leur humeur.
-        cle: 'emotions', libelle: 'Émotions', valeur: (b) => {
-          const score = scoreHumeur(b);
-          return score === null ? null : score * 5;
-        },
-        trait: 'stroke-blue-700', point: 'fill-blue-700', pastille: 'bg-blue-700',
-      },
-    ],
+    // Tonalité des émotions retournée (0 agréables, 5 difficiles) pour que « plus haut = plus lourd » vaille partout.
+    cle: 'emotions', titre: 'Émotions difficiles', max: 5, unite: '/5', valeur: (b) => {
+      const score = scoreHumeur(b);
+      return score === null ? null : Math.round((1 - score) * 50) / 10;
+    },
   },
 ];

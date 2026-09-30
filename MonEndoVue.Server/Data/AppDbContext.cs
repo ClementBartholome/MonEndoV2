@@ -18,6 +18,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : IdentityDbCo
     public DbSet<SymptomeCycle> SymptomesCycles { get; set; }
     public DbSet<AbonnementPush> AbonnementsPush { get; set; }
     public DbSet<Rappel> Rappels { get; set; }
+    public DbSet<EpisodeAcne> EpisodesAcne { get; set; }
     
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -55,6 +56,18 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : IdentityDbCo
             .OnDelete(DeleteBehavior.Cascade);
 
         // Les émotions n'existent qu'au sein de leur bilan : type possédé, chargé et supprimé avec lui.
+        modelBuilder.Entity<Medicament>().OwnsMany(m => m.Horaires, horaire =>
+        {
+            horaire.ToTable("HorairesPrise");
+            horaire.WithOwner().HasForeignKey("MedicamentId");
+            horaire.HasKey(h => h.Id);
+            horaire.HasIndex("MedicamentId", nameof(HorairePrise.Heure)).IsUnique();
+        });
+        modelBuilder.Entity<Medicament>().Property(m => m.Frequence).HasConversion<string>().HasMaxLength(20)
+            .HasDefaultValue(FrequencePrise.AuBesoin).HasSentinel((FrequencePrise)(-1));
+        modelBuilder.Entity<DonneesMedicament>().Property(p => p.Statut).HasConversion<string>().HasMaxLength(10)
+            .HasDefaultValue(StatutPrise.Pris).HasSentinel((StatutPrise)(-1));
+
         modelBuilder.Entity<BilanQuotidien>().OwnsMany(b => b.Emotions, emotion =>
         {
             emotion.ToTable("EmotionsBilan");
@@ -131,6 +144,16 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : IdentityDbCo
             entity.HasOne(r => r.CarnetSante)
                 .WithMany()
                 .HasForeignKey(r => r.CarnetSanteId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<EpisodeAcne>(entity =>
+        {
+            entity.ToTable("EpisodesAcne");
+            entity.HasIndex(e => new { e.CarnetSanteId, e.Debut });
+            entity.HasOne<CarnetSante>()
+                .WithMany()
+                .HasForeignKey(e => e.CarnetSanteId)
                 .OnDelete(DeleteBehavior.Cascade);
         });
     }

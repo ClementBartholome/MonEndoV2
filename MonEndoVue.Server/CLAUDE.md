@@ -9,7 +9,7 @@ Complète le [CLAUDE.md racine](../CLAUDE.md). S'applique à tout le code de `Mo
   stockage photos (`AzureBlobStorageService`), extensions (`ControllerSecurityExtensions`, `UserExtensions`).
 - `Models/` : entités EF. `Dto/` : entrées (`*Dto`). `ViewModels/` : sorties (`*ViewModel`).
 - `Data/AppDbContext.cs` : DbSets + relations en Fluent API. `Migrations/` : migrations EF (SQL Server uniquement).
-- `Jobs/` (Quartz : `RappelBilanJob` toutes les 15 min) et `Services/WebPush/` (envoi Web Push derrière `IEnvoiPush`,
+- `Jobs/` (Quartz : `RappelBilanJob` toutes les 15 min, `SuppressionComptesInactifsJob` chaque nuit à 3 h 30) et `Services/WebPush/` (envoi Web Push derrière `IEnvoiPush`,
   logique des endpoints dans `NotificationsService`, boucle d'envoi des rappels dans `NotificationsPushService`).
 - **Ajouter un type de rappel** : une valeur de `TypeRappel`, une classe `IRegleRappel` dans `Services/WebPush/Rappels/`
   (calendrier par défaut, message avec l'URL à ouvrir, « suivi déjà fait ? »), son `AddScoped<IRegleRappel, …>` dans
@@ -48,7 +48,14 @@ Complète le [CLAUDE.md racine](../CLAUDE.md). S'applique à tout le code de `Mo
 - **Dette connue** (lot C de la roadmap), à résorber quand on touche la zone :
   - les contrôleurs injectent `AppDbContext` et contiennent des requêtes (sauf `NotificationsController`, déjà conforme) ;
   - `CarnetSanteService` mélange lecture du carnet, page d'accueil, export PDF et cache ;
-  - `AzureBlobStorageService` (réseau) sans abstraction : en introduire une seulement pour tester l'upload sans Azure ;
+  - **Les photos ne sont jamais servies par leur adresse de stockage** : `GET Acne/photos/{id}` (`AcneService.PhotoAsync`) les
+    lit par `IStockagePhotos`, vérifie le carnet en base et déduit le type de l'extension ; les view models exposent ce chemin
+    (`AcneService.CheminPhoto`), jamais `PhotoUrl`. Le conteneur Azure doit rester **privé** (réglage à vérifier sur le portail) ;
+    la CSP n'autorise plus aucun domaine de stockage pour les images.
+  - Limites de débit (`PolitiquesDebit`) : une fenêtre **par utilisatrice** (ou par adresse pour un anonyme, lue dans
+    `X-Forwarded-For` de nginx), jamais une fenêtre commune à toute l'application.
+  - `AzureBlobStorageService` : lecture et suppression par URL passent par `IStockagePhotos` (`Services/Photos/`,
+    `Support/FauxStockagePhotos` en test) ; l'upload et la suppression d'une photo de symptôme l'appellent encore directement ;
   - `DateTime.Now` subsiste dans l'authentification.
 
 ## Style C#
@@ -76,6 +83,29 @@ modifiables, jamais `Entry(dto).State = Modified`, jamais de changement de `Carn
 - POST : vérifier le `CarnetSanteId` reçu **et** les clés étrangères (ex. `MedicamentId` doit appartenir au même carnet).
 - Refus d'accès : `Forbid()` **sans argument** (son paramètre est un nom de schéma d'authentification ; passer un message
   provoque une erreur 500).
+
+## Consentement aux données de santé
+- Filtre MVC global `ExigeConsentementFilter` : une utilisatrice connectée dont le jeton ne porte pas la version en
+  vigueur de la politique (claim `politique`, `Services/Consentement/PolitiqueConfidentialite.cs`) reçoit un 403
+  `{ code: "consentement-requis" }`, que le client traduit en redirection vers `/consentement`.
+- **Tout nouveau contrôleur est donc soumis au consentement.** Seuls l'authentification, le recueil du consentement et la
+  suppression du compte en sont exemptés par `[SansConsentement]` : retirer son accord ne doit jamais être bloqué.
+- Changer `PolitiqueConfidentialite.Version` (avec la date de `features/legal/config/editeur.ts`) redemande l'accord à toutes
+  les utilisatrices : seulement pour une évolution importante de la politique.
+
+## Droits sur les données (RGPD)
+- `DonneesPersonnellesController` (`[SansConsentement]`) : export complet par `ExportDonneesService` (ZIP en fichier temporaire
+  supprimé à la fermeture, `donnees.json` + `photos/` + `LISEZMOI.txt`, carnet déduit de la session) ;
+  `SuppressionCompteController` (même préfixe `DonneesPersonnelles/`, `[SansConsentement]`) : suppression du compte par
+  `SuppressionCompteService` (mot de passe exigé ; photos supprimées d'abord, abandon sans rien toucher si le
+  stockage est indisponible ; puis toutes les entités du carnet et le compte en un seul `SaveChanges`).
+- **Accueil** : `AccueilService` (`Services/Accueil/`) ; la position dans le cycle est calculée par `CycleDuJour` (classe pure,
+  testée) : un oubli d'un jour ne coupe pas les règles, rien au-delà de 60 jours, aucune prédiction.
+- **Comptes inactifs** : `ApplicationUser.DerniereActiviteLe` est mise à jour à chaque ouverture ou prolongation de session
+  (`OuvrirSessionAsync`) ; `ComptesInactifsService` supprime chaque nuit les comptes sans activité depuis 2 ans (durée
+  annoncée par la politique de confidentialité : la changer dans les deux). Une date nulle n'est jamais supprimée.
+- **Toute nouvelle entité ou donnée enregistrée s'ajoute à l'export** (`LireDonneesAsync`) **et à la suppression**
+  (`MarquerDonneesDuCarnetAsync`), avec leurs tests (`SuppressionCompteServiceTests.CreerCompteRempli`), dans la même PR.
 
 ## Erreurs et réponses
 - `BadRequest(new { message = "Message en français" })` : format lu par `useDialogForm.getErrorDescription` côté client.
@@ -161,4 +191,10 @@ Projet `MonEndoVue.Server.Tests` (xUnit, **net8.0** comme la CI et le Dockerfile
   jamais levée) compte comme ligne non couverte : l'écrire en une expression (`?? throw`) ou le supprimer plutôt
   que de chercher à le tester. Lignes non couvertes d'une PR : `https://sonarcloud.io/api/sources/lines?key=ClementBartholome_MonEndoV2:<chemin>&pullRequest=<n>`
   (`isNew` et `lineHits: 0`).
+- **GitGuardian** analyse chaque commit d'une PR : un littéral affecté à un champ de mot de passe (`Password = "Xyz1!…"`)
+  est signalé comme secret, et le reste tant que le commit est dans l'historique (faux positif à classer par l'utilisateur
+  dans le tableau de bord GitGuardian). Dériver les mots de passe de test de `IdentityDeTest.MotDePasseValide`
+  (`MotDePasseValide + "-erreur"` pour un mauvais mot de passe).
+- **Sonar, note de sécurité** (bloquante) : pas de `Path.GetTempFileName()` (S5445 : `GetTempPath()` + `GetRandomFileName()`
+  en `FileMode.CreateNew`) ; un cookie effacé reprend `HttpOnly`, `Secure` et `SameSite` (S2092, S3330).
 - Prochaine étape : tests d'intégration avec `WebApplicationFactory` (routage, `[Authorize]`, code HTTP réel des refus).

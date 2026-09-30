@@ -86,7 +86,7 @@ Patterns repris des apps de suivi sante/cycle et chronic care:
    - mettre en avant des signaux utiles avant/pendant un rendez-vous medical
 
 2. Parcours "Rendez-vous medecin"
-   - renforcer l'export PDF (synthese decisionnelle, timeline, points marquants)
+   - [x] renforcer l'export PDF : synthese en premiere page, detail jour par jour, "Mes questions" (1.3.0, `SyntheseRendezVousService`)
    - inclure une page de preparation consultation (questions, historique recent, red flags)
    - rendre l'export accessible en 1 tap depuis la homepage
 
@@ -168,10 +168,10 @@ Regles:
 - [ ] Tests E2E mobile des flux de saisie principaux
 - [ ] SOLID serveur : controleurs sans `AppDbContext` ni requetes (logique dans un service par domaine)
 - [ ] SOLID serveur : decouper `CarnetSanteService` (lecture carnet / page d'accueil / export PDF)
-- [ ] SOLID serveur : abstraction du stockage des photos (`AzureBlobStorageService`) pour tester l'upload sans Azure (pas d'interface pour `TokenService` : KISS)
+- [ ] SOLID serveur : abstraction du stockage des photos (`AzureBlobStorageService`) pour tester l'upload sans Azure (pas d'interface pour `TokenService` : KISS) — lecture faite (`IStockagePhotos`, export 1.3.0)
 - [ ] SOLID serveur : `TimeProvider` a la place de `DateTime.Now` (authentification)
 - [ ] SOLID client : `authService` / `tokenService` via l'instance axios de `apiService`, methodes `apiService` typees
-- [ ] SOLID client : decoupage de `CyclePage`, `MedicamentPage` (pattern model/actions) ; `BilanQuotidienPage` fait (1.1.0)
+- [ ] SOLID client : decoupage de `CyclePage` (pattern model/actions) ; `BilanQuotidienPage` fait (1.1.0), `MedicamentPage` remplacee par `TraitementsPage` (1.3.0)
 
 ### Lot D - Security baseline
 - [x] Rate limiting endpoint-level (politique `auth` reellement appliquee aux endpoints d'authentification, 2026-09)

@@ -1,25 +1,16 @@
-﻿<script setup lang="ts">
-
-import { materialSymbols } from '@/shared/config/materialSymbols'
-
+<script setup lang="ts">
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger
 } from "@/shared/components/ui/dropdown-menu";
-
+import NavigationLaterale from "@/shared/components/navigation/NavigationLaterale.vue";
+import BarreNavigation from "@/shared/components/navigation/BarreNavigation.vue";
 import {useAuthStore} from "@/features/auth/store/auth";
-import {onMounted} from "vue";
 import router from "@/router";
 
 const auth = useAuthStore();
-
-const user = auth.getUser();
-
-onMounted(() => {
-  auth.checkAuth();
-});
 
 const handleLogout = async () => {
   await auth.logout();
@@ -29,90 +20,25 @@ const handleLogout = async () => {
 
 <template>
   <header>
-    <nav class="navbar-side md:h-full flex items-center justify-between border-b shadow-lg mb-3">
-      <a href="/">
-        <img class="logo" src="@/images/MonEndo_transparent.png" alt="">
-      </a>
-      <div class="flex items-center justify-between mb-auto">
-        <ul class="flex-grow">
-          <li class="flex items-center" :class="{ active: $route.path === '/' }">
-            <router-link to="/" class="flex flex-col items-center text-dark w-full">
-              <span class="material-symbols-outlined">clinical_notes</span>
-              <span>Dashboard</span>
-            </router-link>
-          </li>
-          <li class="flex items-center" :class="{ active: $route.path === '/douleurs' }">
-            <router-link to="/douleurs" class="flex flex-col items-center text-dark w-full">
-              <span class="material-symbols-outlined">sick</span>
-              <span>Douleurs</span>
-            </router-link>
-          </li>
-          <li class="flex items-center" :class="{ active: $route.path === '/activite' }">
-            <router-link to="/activite" class="flex flex-col items-center text-dark w-full">
-              <span class="material-symbols-outlined">directions_run</span>
-              <span>Activité</span>
-            </router-link>
-          </li>
-          <li class="flex items-center" :class="{ active: $route.path === '/medicaments' }">
-            <router-link to="/medicaments" class="flex flex-col items-center text-dark w-full">
-              <span class="material-symbols-outlined">{{ materialSymbols.treatments }}</span>
-              <span>Traitements</span>
-            </router-link>
-          </li>
-          <li class="flex items-center" :class="{ active: $route.path === '/cycle' }">
-            <router-link to="/cycle" class="flex flex-col items-center text-dark w-full">
-              <span class="material-symbols-outlined">{{ materialSymbols.cycle }}</span>
-              <span>Cycle</span>
-            </router-link>
-          </li>
-          <li class="hidden md:flex items-center" :class="{ active: $route.path === '/export' }">
-            <router-link to="/export" class="flex flex-col items-center text-dark w-full">
-              <span class="material-symbols-outlined">picture_as_pdf</span>
-              <span>Export PDF</span>
-            </router-link>
-          </li>
-        </ul>
-      </div>
-    </nav>
+    <NavigationLaterale/>
+    <BarreNavigation @deconnexion="handleLogout"/>
 
-    <div class="user-navbar flex items-center justify-between w-full absolute top-0 right-0 py-5 px-8  gap-4">
-      <!--      <a href="#" class="flex items-center text-dark">-->
-      <!--        <span class="material-symbols-outlined">notifications</span>-->
-      <!--      </a>-->
-      <!--      <span class="material-symbols-outlined">account_circle</span>-->
-      <a href="/">
-        <img class="logo mobile" src="@/images/MonEndoTest.png" alt="Logo du site MonEndo">
-        <img class="hidden" src="@/images/MonEndoIconMobile.jpg" alt="Logo du site MonEndo">
-      </a>
-      <div class="relative flex justify-center text-left h-6">
-        <DropdownMenu>
-          <DropdownMenuTrigger>
-            <span class="material-symbols-outlined">
-            person
-            </span> 
-            <span class="material-symbols-outlined">arrow_drop_down</span>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent>
-            <!--            <DropdownMenuItem>-->
-            <!--              <a href="#">Profil</a>-->
-            <!--            </DropdownMenuItem>-->
-            <!--            <DropdownMenuItem>-->
-            <!--              <a href="#">Paramètres</a>-->
-            <!--            </DropdownMenuItem>-->
-            <!--            <DropdownMenuSeparator/>-->
-            <dropdown-menu-item>
-              <router-link to="/parametres">Paramètres</router-link>
-            </dropdown-menu-item>
-            <DropdownMenuItem>
-              <button @click="handleLogout">Déconnexion</button>
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </div>
+    <!-- Bande pleine largeur posée sur la page : elle ne capte que les clics sur le logo et le compte. -->
+    <div class="user-navbar pointer-events-none flex items-center justify-between w-full absolute top-0 right-0 py-3 px-4 lg:py-5 lg:px-8 gap-4">
+      <router-link to="/" aria-label="Accueil MonEndo" class="pointer-events-auto lg:invisible">
+        <img class="h-14 w-14 object-contain" src="@/images/MonEndo_transparent.png" alt="">
+      </router-link>
+      <DropdownMenu>
+        <DropdownMenuTrigger aria-label="Mon compte" class="pointer-events-auto flex h-11 w-11 items-center justify-center rounded-full">
+          <span class="material-symbols-outlined" aria-hidden="true">person</span>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          <DropdownMenuItem as-child>
+            <router-link to="/parametres">Paramètres</router-link>
+          </DropdownMenuItem>
+          <DropdownMenuItem @select="handleLogout">Se déconnecter</DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
     </div>
   </header>
 </template>
-
-<style scoped>
-
-</style>

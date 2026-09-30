@@ -13,7 +13,7 @@ test.describe('Bilan quotidien — analyse et tendances', () => {
     });
     await bilanPage.ouvrir();
 
-    await bilanPage.afficherOnglet('Analyse & Tendances');
+    await bilanPage.afficherOnglet('Tendances');
 
     await expect(bilanPage.indicateur('Douleur moyenne')).toContainText('4/10');
     // Fatigue : (2 + 4) / 2 = 3, et non (2 + 0 + 4) / 3 = 2 si le jour non renseigné comptait pour 0.
@@ -35,7 +35,7 @@ test.describe('Bilan quotidien — analyse et tendances', () => {
     });
     await bilanPage.ouvrir();
 
-    await bilanPage.afficherOnglet('Analyse & Tendances');
+    await bilanPage.afficherOnglet('Tendances');
 
     await expect(bilanPage.page.getByText('Moyennes de la période, comparées au mois précédent.')).toBeVisible();
     await expect(bilanPage.indicateur('Douleur moyenne')).toContainText('3/10');
@@ -54,7 +54,7 @@ test.describe('Bilan quotidien — analyse et tendances', () => {
     });
     await bilanPage.ouvrir();
 
-    await bilanPage.afficherOnglet('Analyse & Tendances');
+    await bilanPage.afficherOnglet('Tendances');
 
     await expect(bilanPage.page.getByText('Douleur moyenne pendant tes règles : 7/10, contre 2/10 les autres jours.'))
       .toBeVisible();

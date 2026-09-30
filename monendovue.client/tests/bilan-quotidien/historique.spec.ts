@@ -38,6 +38,18 @@ test.describe('Bilan quotidien — historique', () => {
     expect(periodes).toContain('du=2026-08-01&au=2026-08-31');
   });
 
+  test('saute directement à un mois plus ancien', async ({ bilanQuotidienPage: bilanPage, serveur }) => {
+    await bilanPage.ouvrir();
+
+    await bilanPage.choisirMois('mars');
+
+    await expect(bilanPage.titrePeriode(/mars 2026/i)).toBeVisible();
+    const periodes = serveur.appelsVers('GET', /^BilanQuotidien\/periode$/).map((a) => a.parametres.toString());
+    expect(periodes).toContain('du=2026-03-01&au=2026-03-31');
+    await bilanPage.page.getByRole('button', { name: "Revenir à aujourd'hui" }).click();
+    await expect(bilanPage.titrePeriode(/septembre 2026/i)).toBeVisible();
+  });
+
   test('affiche la semaine en cours', async ({ bilanQuotidienPage: bilanPage }) => {
     await bilanPage.ouvrir();
 

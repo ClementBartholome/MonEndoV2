@@ -30,10 +30,10 @@ const onJour = (event: Event) => {
 </script>
 
 <template>
-  <div class="flex flex-col gap-3 rounded-xl border border-gray-100 bg-white p-3">
+  <div class="flex flex-col gap-3 rounded-carte bg-surface p-3.5 shadow-elevation">
     <label class="flex items-center justify-between gap-4 min-h-11">
-      <span class="flex items-center gap-2 text-headline font-medium">
-        <i class="material-symbols-outlined text-button">{{ presentation.icone }}</i>
+      <span class="flex items-center gap-2 font-medium text-texte">
+        <i class="material-symbols-outlined text-texte-2" aria-hidden="true">{{ presentation.icone }}</i>
         {{ presentation.titre }}
       </span>
       <Switch
@@ -45,11 +45,11 @@ const onJour = (event: Event) => {
 
     <template v-if="rappel.actif">
       <label v-if="rappel.estHebdomadaire" class="flex items-center justify-between gap-4">
-        <span class="text-paragraph">Jour</span>
+        <span class="text-sm text-texte-2">Jour</span>
         <select
             :value="rappel.jourSemaine ?? 0"
             :disabled="desactive"
-            class="rounded-md border border-input bg-white px-3 py-2 min-h-11"
+            class="min-h-11 rounded-controle border-[1.5px] border-contour bg-champ px-3 text-texte"
             @change="onJour"
         >
           <option v-for="jour in joursSemaine" :key="jour.valeur" :value="jour.valeur">{{ jour.libelle }}</option>
@@ -57,18 +57,18 @@ const onJour = (event: Event) => {
       </label>
 
       <label class="flex items-center justify-between gap-4">
-        <span class="text-paragraph">Heure</span>
+        <span class="text-sm text-texte-2">Heure</span>
         <input
             v-model="heure"
             type="time"
             step="900"
             :disabled="desactive"
-            class="rounded-md border border-input px-3 py-2 min-h-11"
+            class="min-h-11 rounded-controle border-[1.5px] border-contour bg-champ px-3 text-texte"
             @change="onHeure"
         >
       </label>
     </template>
 
-    <p class="text-sm text-muted-foreground">{{ presentation.description }}</p>
+    <p class="m-0 text-left text-legende text-texte-3">{{ presentation.description }}</p>
   </div>
 </template>

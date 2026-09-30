@@ -5,6 +5,7 @@ using System.Text;
 using Microsoft.IdentityModel.Tokens;
 using MonEndoVue.Server.Data;
 using MonEndoVue.Server.Models;
+using MonEndoVue.Server.Services.Consentement;
 
 namespace MonEndoVue.Server.Services
 {
@@ -21,11 +22,7 @@ namespace MonEndoVue.Server.Services
                 .FirstOrDefault();
             var tokenDescriptor = new SecurityTokenDescriptor
             {
-                Subject = new ClaimsIdentity(new Claim[]
-                {
-                    new Claim(ClaimTypes.Name, user.UserName!),
-                    new Claim(ClaimTypes.NameIdentifier, user.Id)
-                }),
+                Subject = new ClaimsIdentity(ClaimsDe(user)),
                 Expires = DateTime.Now.AddMinutes(30),
                 Issuer = issuer,
                 Audience = audience,
@@ -36,31 +33,20 @@ namespace MonEndoVue.Server.Services
             return (tokenString, tokenDescriptor.Expires.Value);
         }
 
+        private static IEnumerable<Claim> ClaimsDe(ApplicationUser user)
+        {
+            yield return new Claim(ClaimTypes.Name, user.UserName!);
+            yield return new Claim(ClaimTypes.NameIdentifier, user.Id);
+            // Version de la politique acceptée : lue par ExigeConsentementFilter à chaque requête, sans accès à la base.
+            if (user.VersionPolitiqueAcceptee is { } version) yield return new Claim(PolitiqueConfidentialite.TypeClaim, version);
+        }
+
         public string GenerateRefreshToken()
         {
             var randomNumber = new byte[32];
             using var rng = RandomNumberGenerator.Create();
             rng.GetBytes(randomNumber);
             return Convert.ToBase64String(randomNumber);
-        }
-
-        public ClaimsPrincipal GetPrincipalFromExpiredToken(string token)
-        {
-            var tokenValidationParameters = new TokenValidationParameters
-            {
-                ValidateAudience = false,
-                ValidateIssuer = false,
-                ValidateIssuerSigningKey = true,
-                IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(configuration["Jwt:Key"] ?? string.Empty)),
-                ValidateLifetime = false
-            };
-
-            var tokenHandler = new JwtSecurityTokenHandler();
-            var principal = tokenHandler.ValidateToken(token, tokenValidationParameters, out SecurityToken securityToken);
-            if (securityToken is not JwtSecurityToken jwtSecurityToken || !jwtSecurityToken.Header.Alg.Equals(SecurityAlgorithms.HmacSha256, StringComparison.InvariantCultureIgnoreCase))
-                throw new SecurityTokenException("Invalid token");
-
-            return principal;
         }
     }
 }

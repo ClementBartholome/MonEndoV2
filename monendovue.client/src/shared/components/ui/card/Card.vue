@@ -11,7 +11,7 @@ const props = defineProps<{
   <article
     :class="
       cn(
-        'min-h-36 rounded-3xl border-0 bg-card text-card-foreground shadow-xl h-full transition-shadow duration-300 cursor-pointer hover:shadow-lg hover:shadow-gray-400',
+        'h-full rounded-carte border-0 bg-surface text-texte shadow-elevation',
         props.class,
       )
     "

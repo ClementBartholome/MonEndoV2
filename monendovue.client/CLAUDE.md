@@ -12,9 +12,9 @@ src/
     types/                   # contrats TS (kebab-case : donnees-douleur.ts), miroir des DTO C#
     services/ store/         # seulement si propre au domaine (ex. auth)
   shared/
-    components/              # composants transverses (GenericCardList, SectionKpiHeader, EmptyStateAction, Datatable…)
+    components/              # composants transverses (SelecteurMois, PanneauBas, ChoixIntensite, EmptyStateAction…)
     components/ui/           # composants shadcn-vue générés : les modifier le moins possible
-    composables/             # useMonthData, useCrudOperations, useDialogForm, useDateTimeFormat
+    composables/             # seulement ce que plusieurs features partagent réellement
     services/apiService.ts   # unique point d'accès à l'API
     config/materialSymbols.ts# icônes et configurations d'icônes par type
     types/card.ts            # contrats des cartes génériques
@@ -27,9 +27,23 @@ Nouveau composant shadcn : `npx shadcn-vue add <nom>` (alias configurés vers `@
 - Props typées : `defineProps<{ … }>()` (+ `withDefaults` si besoin) ; emits : `defineEmits<{ 'edit-entry': [id: number] }>()`, événements en kebab-case.
 - `import type` obligatoire pour les imports de types (`verbatimModuleSyntax`).
 - Taille : au-delà d'environ 150-200 lignes pour un bloc UI métier, extraire un composant dédié. `CyclePage.vue`
-  et `MedicamentPage.vue` sont trop gros : les découper quand on y travaille (skill `fonctionnalite-front`).
-- Réutiliser l'existant avant de créer : `GenericCardList` (cartes mobiles, callbacks `onEdit`/`onDelete`/`onPhotoClick`),
-  `SectionKpiHeader`, `EmptyStateAction`, `Datatable`, `SelectMonth`, composants `ui/`.
+  est trop gros : les découper quand on y travaille (skill `fonctionnalite-front`).
+- Réutiliser l'existant avant de créer : `SelecteurMois`, `PanneauBas`, `ChoixIntensite`, `EmptyStateAction`, composants `ui/`.
+  Les anciens `GenericCardList`, `SectionKpiHeader`, `Datatable`, `SelectMonth`, `useMonthData`, `useCrudOperations`,
+  `useDialogForm` et `useDateTimeFormat` (et la dépendance DataTables) sont supprimés : plus aucune page n'en dépend.
+
+## Page de suivi refondue (1.3.0) : modèle à suivre
+`features/douleurs/` est le modèle des pages du lot 3 : `utils/` (calculs purs : chiffres, graphique, regroupement par jour),
+composable de page (`useDouleurs` : chargement, mois, enregistrement), composable de formulaire (`useSaisieDouleur`),
+composants de présentation (`ChiffresDuMois`, `GraphiqueDouleursMois`, `ListeDouleurs`) et saisie dans `PanneauBas` avec des
+**actions en props** (`ActionsSaisieDouleur`) plutôt que des événements. Choix en boutons (`aria-pressed`), dates envoyées en
+AAAA-MM-JJTHH:mm:ss, lien profond `?ajouter`, bouton flottant au-dessus de la barre (mobile) et bouton d'en-tête (desktop),
+plus de DataTables.
+
+**Paramètres** : réglages en lignes groupées (`GroupeParametres` + `LigneParametre`), chaque ligne ouvre un `PanneauBas`
+(notifications, repères, mot de passe, suppression du compte) ou lance une action (se déconnecter, télécharger mes
+données) ; le contenu d'un panneau n'est monté, et ne charge ses données, qu'à son ouverture. **Transit** : ancien suivi en
+lecture seule (liste par jour, `SelecteurMois`, suppression en deux temps), plus de saisie.
 
 ## Deux patterns de référence
 1. **Page CRUD par mois** — modèle : `features/douleurs/pages/DouleursPage.vue`.
@@ -63,7 +77,7 @@ Nouveau composant shadcn : `npx shadcn-vue add <nom>` (alias configurés vers `@
 - **Dette connue** (lot C de la roadmap) :
   - `authService` / `tokenService` appellent axios directement ;
   - `apiService` renvoie des `Promise<any>` ;
-  - `CyclePage` et `MedicamentPage` mélangent orchestration, logique et rendu.
+  - `CyclePage` mélange orchestration, logique et rendu.
 
 ## Typage
 - **Aucun nouveau `any`** : typer avec les interfaces de `features/*/types`, sinon `unknown` + rétrécissement.
@@ -78,13 +92,75 @@ Nouveau composant shadcn : `npx shadcn-vue add <nom>` (alias configurés vers `@
 - Les listes renvoyées par l'API sont sous `$values` (sérialisation .NET `ReferenceHandler.Preserve`).
 - Retours utilisateur par `useToast()` : variante `custom` (succès/erreur) ou `destructive` ; messages en français.
 - Aucun secret dans `import.meta.env` : toute variable `VITE_*` est publique.
+- URL de base de l'API : `/` dans l'image Docker (`VITE_DOCKER=true`), jamais `''` ; sinon les appels sont relatifs à la
+  page (depuis `/medicaments/12`, `Traitements/…` part vers `/medicaments/Traitements/…`). Trois endroits la construisent :
+  `apiService`, `authService`, `tokenService`.
 
 ## Style et UX
 - **Mobile d'abord** : styles de base = mobile, `md:` = desktop ; ajustements ≤ 425px via `@media (max-width: 425px)`
   dans le `<style scoped>` ou la classe `.hide-xsm`. Tester à 375px.
-- Tokens de marque (`src/assets/index.css`) : `var(--button)`, `var(--headline)`, classes `.bg-clearer`, `.text-headline`,
-  `.text-paragraph`, `Button variant="custom"` / `"selected"`. Pas de couleurs en dur.
-- Icônes Material Symbols (`<i class="material-symbols-outlined">nom</i>`) ; les correspondances type → icône vont dans
+- **Tokens de design** (`src/assets/tokens.css`, palette validée en 1.3.0, contrastes WCAG AA vérifiés) exposés à Tailwind :
+  `bg-fond`, `bg-surface`, `bg-surface-2`, `border-trait`, `text-texte` / `-2` / `-3`, `text-lien`, `border-contour` (champs,
+  3:1), `text-danger`, `text-etat-fait`, `rounded-controle` / `carte` / `panneau`, `shadow-elevation` (la seule ombre). **Aucune couleur en dur ni
+  couleur Tailwind brute** (`blue-100`, `gray-300`…) dans le code nouveau ou modifié. Les anciens noms (`--headline`,
+  `--button`, `.text-headline`, `Button variant="custom"`) et les variables shadcn pointent vers ces tokens.
+  - Une **rubrique = une teinte**, partout (tuile + icône) : `bg-teinte-<r>-fond` + `text-teinte-<r>` avec <r> = `bilan`,
+    `douleur`, `regles`, `symptome`, `traitement`, `neutre`. Les types d'une rubrique se distinguent par icône et libellé.
+  - Le rose poudré `--couleur-accent` (`bg-button`, `#f2b3c2`) est un **fond** avec texte foncé (8.2:1) ; jamais de texte blanc
+    dessus ni de texte rose. L'ancien `#ff8ba7`, trop saturé, tranchait avec le reste.
+  - **Formes et états** (décision du 2026-09-28, l'utilisateur trouvait les arrondis et les états incohérents) :
+    - un rayon par rôle, jamais de valeur en crochets : `rounded-controle` (12 px : boutons, bouton flottant, champs,
+      choix, onglets, tuiles d'icône), `rounded-carte` (16 px : cartes, listes), `rounded-t-panneau` (24 px : panneau du bas).
+      `rounded-full` seulement pour un bouton icône seule (retour, fermer, annuler), un jour de calendrier ou de semaine ;
+    - **un bouton a l'air d'un bouton, un état jamais** : rose plein (`bg-button`) = l'action principale d'une zone, contour
+      (`border-contour`) = action secondaire ; un état (prise faite, bilan fait, jour de règles) = texte coloré et icône
+      pleine (`icone-pleine`), sans fond, sans bordure (`EtatPrise` comme modèle). Le ✓ `check_circle` est réservé à « fait »,
+      en `text-etat-fait` ; « ignorée » en `text-texte-3` ;
+    - une action se nomme par un verbe, sans icône de validation : « Je l'ai pris », pas « ✓ Pris » ;
+    - un choix sélectionné dans un formulaire (type, moment, fréquence) = fond `bg-texte` et texte `text-fond`, partout ;
+      non sélectionné = `border-contour bg-surface` (jamais `border-trait`, invisible à 1,3:1 : `trait` sépare, il ne
+      délimite pas un contrôle) ; un champ de saisie = `border-contour bg-champ` ;
+    - une bascule de vue (onglets, semaine / mois, écart de comparaison) = segment `bg-surface-2 p-1`, élément choisi
+      `bg-surface font-semibold shadow-elevation` : jamais de rose ni de fond foncé (retour utilisateur du 2026-09-29) ;
+    - intensité 1-10 : composant partagé `ChoixIntensite` (choisie = pleine dans sa couleur, bordure de la même
+      couleur, jamais de bordure noire ; les autres gardent un trait de leur couleur pour lire l'échelle) ;
+    - la teinte d'une rubrique identifie (tuile d'icône, calendrier), elle ne change pas avec l'état ;
+    - la rubrique active de la navigation (barre du bas, barre latérale) = pilule `surface-2`, icône pleine et libellé
+      en gras : le rose reste réservé aux actions (décision du 2026-09-30).
+  - **Tailles de texte** (décision du 2026-09-30) : la racine passe de 16 à 20 px dès 768 px (`index.css`), donc toute
+    taille est en rem pour grandir avec elle : `text-legende` (13), `text-corps` (15), `text-titre-carte` (17),
+    `text-titre-2` (22), `text-titre-page` (26), en plus de `text-xs` / `text-sm` / `text-base` / `text-xl`. **Jamais de
+    `text-[Npx]`** : figé, il devenait plus petit que le texte secondaire sur ordinateur. Une nouvelle taille nommée
+    s'ajoute dans `tailwind.config.js` **et** dans `lib/utils.ts` (tailwind-merge la prendrait sinon pour une couleur).
+  - **Volume et historique** (retour utilisateur du 2026-09-29 : « et quand on aura des centaines de cycles ? ») : aucune
+    liste ne grandit sans limite avec les années. Soit elle est bornée par une période (mois affiché, avec
+    `SelecteurMois` pour sauter loin en arrière), soit elle affiche les N plus récents et demande la suite au serveur
+    (« Voir plus », paramètre de nombre ou de fenêtre plafonné côté serveur : `Cycle?cycles=`, `Acne?mois=`). Les images
+    d'une liste se chargent en `loading="lazy"`. Une moyenne ne dépend jamais du nombre d'éléments affichés.
+  - `index.css` centre le texte de toute `ul` (règle héritée, gardée tant que les anciennes pages en dépendent) : une
+    liste refaite porte `text-left` sur ses lignes, sinon libellés et détails se centrent.
+  - Icônes : `polices.css` force `line-height: 1` (les classes `text-lg`… décalaient le glyphe) ; ne pas le surcharger.
+  - Pas de bouton « Revenir en arrière » dans les pages : la navigation est toujours visible. Seule exception : une
+    **sous-page** qui n'a pas d'entrée dans la navigation (`/medicaments/:id`) garde un lien de retour vers sa page mère.
+  - **Une mesure garde une couleur de donnée sur tous les écrans** : la douleur est sur l'échelle rose `--intensite-N`
+    (calendrier, graphiques, pastilles) ; la teinte orange `teinte-douleur` ne sert qu'à l'identité de la rubrique (tuile
+    d'icône). Les émotions sont en violet (`--emotion-N`, `teinte-symptome`). Dans « Tendances », les tuiles de moyennes sont
+    neutres (`bg-surface-2`) et seule l'icône porte la teinte de l'indicateur.
+  - Le focus clavier est visible partout par une règle globale `:focus-visible` (`index.css`) : ne pas mettre
+    `focus:outline-none` sur un élément focalisable sans donner un autre indicateur. L'en-tête (logo, compte) est
+    posé sur la page en `pointer-events-none` : la première carte peut passer dessous sans perdre ses clics.
+  - Intensité 0-10 : `var(--intensite-N)` (texte foncé jusqu'à 5, clair à partir de 6) via `couleursIntensite(n)`
+    (`shared/utils/intensite.ts`), jamais recopié. Émotions du jour : `bg-emotion-0..4` (violet de la teinte symptôme,
+    texte clair `text-sur-fonce` à partir de 3). Le texte posé sur une couleur foncée est `text-sur-fonce`, pas `text-white`.
+  - **Graphiques** (revue de design du 2026-09-29) : les jours de règles sont un repère fin **sous l'axe**
+    (`teinte-regles`), jamais un fond de colonne (il se lit comme une barre) ; les barres restent à pleine couleur (une
+    barre atténuée passe sous 3:1), le jour choisi se lit à son fond `surface-2`.
+  - `Card` (shadcn) n'a ni survol ni curseur : une carte n'est pas cliquable. `CardHeader` est un `div`, le titre est
+    porté par `CardTitle` seul.
+  - Les pages pas encore refaites (Cycle, Activité, Export…) gardent des couleurs brutes : les migrer quand on les touche.
+- Polices servies par l'app (`src/assets/polices.css`, paquets `@fontsource`), **jamais Google Fonts** (IP envoyée à Google, RGPD) :
+  Poppins 400/400 italique/500/600/700 en latin ; une graisse ou un axe d'icône en plus s'ajoute dans ce fichier.
+- Icônes Material Symbols (`<i class="material-symbols-outlined">nom</i>`, axe FILL seul, graisse 400) ; les correspondances type → icône vont dans
   `shared/config/materialSymbols.ts`.
 - Textes 100 % en français, dates via `useDateTimeFormat` (`fr-FR`).
 - **Jour calendaire envoyé à l'API** : jamais un `Date` à minuit (sérialisé en UTC, il glisse au jour précédent et le
@@ -98,14 +174,33 @@ Nouveau composant shadcn : `npx shadcn-vue add <nom>` (alias configurés vers `@
   signifie irritable). « Humeur » ne désigne que l'ancienne saisie (Positive, Neutre, Négative) des anciens bilans.
 - Courbes à plusieurs échelles ou avec des bandes de fond (règles) : `GraphiqueLignes.vue` (SVG simple, jours non
   renseignés non tracés) plutôt que `LineChart` (unovis), qui n'a qu'un axe et relie les trous.
-- Élément collé en bas d'écran (`sticky`/`fixed`) : sous 1024px la navigation est fixée en bas (`.navbar-side`, ~4.25rem),
-  le décaler d'autant (modèle : barre d'enregistrement de `SaisieBilan.vue`).
+- Élément collé en bas d'écran (`sticky`/`fixed`) : sous 1024px la navigation est fixée en bas (`BarreNavigation.vue`,
+  4.25rem), le décaler d'autant (modèle : barre d'enregistrement de `SaisieBilan.vue`).
 - La taille de police racine grandit en desktop (20px à 1280px) : les largeurs en `rem` (`max-w-3xl`…) y sont plus
   larges que prévu, vérifier en situation.
 - Pastilles, préréglages et chips : grilles à colonnes égales (`grid-cols-n`) plutôt que `flex-wrap`, pour des rangées
   alignées à 375px ; libellés courts, `whitespace-nowrap` si besoin.
-- Accessibilité : labels associés aux champs, navigation clavier, cibles tactiles d'au moins 44px, contraste suffisant.
-- Jamais de `v-html` ; pour `Datatable`, ne pas rendre de texte saisi comme HTML.
+- Accessibilité : labels associés aux champs, navigation clavier, cibles tactiles d'au moins 44px (`min-h-11`, onglets,
+  segments, liens seuls et jours de calendrier compris), contraste suffisant. Le nom accessible d'un bouton commence par
+  son libellé visible (« Je l'ai pris : Diénogest, 8 h 00 »), sinon la commande vocale échoue. Chaque page garde un `h1`
+  (en `sr-only` si un écran de saisie porte son propre titre).
+- Jamais de `v-html` : le texte saisi s'affiche toujours comme du texte.
+
+## Navigation
+- Une seule liste des rubriques : `shared/config/navigation.ts` (principales = barre du bas mobile, secondaires = menu
+  « Plus », compte). Ajouter une page = une entrée ici, rien à toucher dans les composants.
+- Sous 1024px : `BarreNavigation.vue` (Accueil · Bilan · Douleurs · Cycle · Plus) et `MenuPlus.vue` ; au-delà :
+  `NavigationLaterale.vue` (toutes les entrées). Orchestration dans `shared/components/Layout.vue`.
+- Panneau qui monte du bas (menus, saisies rapides) : `shared/components/PanneauBas.vue` (Dialog radix accessible).
+
+## Routage
+- Toute route exige une session, sauf celles marquées `meta: { public: true }` (connexion, inscription, documents légaux) :
+  le garde de `router/index.ts` ne teste que ce drapeau.
+- Session sans consentement (`user.consentementAJour === false`, ou 403 `consentement-requis` de l'API traité dans
+  `apiService`) : seule `/consentement` est accessible (avec les pages publiques). `meta: { sansNavigation: true }` masque
+  la navigation.
+- Documents légaux (`features/legal/`) : gabarit `DocumentLegal.vue`, éditeur et date de mise à jour dans
+  `config/editeur.ts`, liens de pied `LiensLegaux.vue`. Texte en tutoiement, comme le reste de l'app.
 
 ## État et stockage
 - Pinia uniquement pour l'authentification (`features/auth/store/auth.ts`) ; le reste en état local ou composable.
@@ -132,6 +227,9 @@ Nouveau composant shadcn : `npx shadcn-vue add <nom>` (alias configurés vers `@
 ## Vérifications
 - `npm run type-check` après chaque changement significatif, `npm run build` avant de commiter.
 - `npx eslint <fichiers modifiés>` (le script `npm run lint` corrige tout le client et mélangerait les commits).
+- SonarCloud analyse aussi le client (TS, Vue, **CSS**) : la note de fiabilité du nouveau code doit rester A, sinon le
+  check de la PR échoue. Piège déjà rencontré : `font-family` sans famille générique (S4649), y compris pour une police
+  d'icônes. Constats d'une PR : `https://sonarcloud.io/api/issues/search?componentKeys=ClementBartholome_MonEndoV2&pullRequest=<n>&resolved=false`.
 - Test visuel dans le navigateur à 375px et en desktop ; console sans erreur. Pas de `console.log` laissé dans le code.
 - **Tests E2E** (`npm run test:e2e`) : Playwright pilote l'interface comme une utilisatrice, avec une **API simulée**
   (pas de Vitest ni de tests unitaires client : le serveur est couvert par xUnit). Vue d'ensemble : `docs/tests.md`.

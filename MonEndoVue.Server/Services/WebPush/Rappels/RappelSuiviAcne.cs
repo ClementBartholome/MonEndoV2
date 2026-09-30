@@ -20,11 +20,14 @@ public class RappelSuiviAcne(AppDbContext context) : IRegleRappel
     public MessagePush Message { get; } =
         new("MonEndo", "C'est le moment de la photo de suivi de ton acné.", "/cycle?onglet=acne");
 
-    public Task<bool> SuiviDejaFaitAsync(int carnetSanteId, DateOnly jourLocal, TimeZoneInfo fuseau, CancellationToken cancellationToken)
+    public async Task<bool> SuiviDejaFaitAsync(int carnetSanteId, DateOnly jourLocal, TimeZoneInfo fuseau, CancellationToken cancellationToken)
     {
+        // Pas d'épisode en cours : rien à suivre, donc aucun rappel (la photo de la semaine accompagne un épisode).
+        if (!await context.EpisodesAcne.AnyAsync(e => e.CarnetSanteId == carnetSanteId && e.Fin == null, cancellationToken)) return true;
+
         var debut = FuseauxHoraires.JourneeEnUtc(jourLocal.AddDays(1 - JoursSansPhoto), fuseau).Debut;
         var fin = FuseauxHoraires.JourneeEnUtc(jourLocal, fuseau).Fin;
-        return context.SymptomesCycles.AnyAsync(
+        return await context.SymptomesCycles.AnyAsync(
             s => s.CarnetSanteId == carnetSanteId
                  && s.TypeSymptome == TypeSymptomeAcne
                  && s.PhotoUrl != null && s.PhotoUrl != ""

@@ -2,7 +2,7 @@ import type { Locator, Page } from '@playwright/test';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 
-type Onglet = 'Historique' | 'Analyse & Tendances';
+type Onglet = 'Historique' | 'Tendances';
 
 /**
  * Page « Bilan quotidien » (/bilan-quotidien) : saisie d'un bilan, historique (calendrier, détail du jour) et analyse.
@@ -42,6 +42,11 @@ export class BilanQuotidienPage {
 
   async ouvrir() {
     await this.page.goto('/bilan-quotidien');
+  }
+
+  /** Lien profond de l'accueil et du rappel : ouvre la saisie du jour si le bilan n'est pas fait. */
+  async ouvrirSaisie() {
+    await this.page.goto('/bilan-quotidien?ajouter');
   }
 
   // --- Saisie ---
@@ -94,9 +99,16 @@ export class BilanQuotidienPage {
     await this.page.getByRole('button', { name: /^(Mois précédent|Semaine précédente)$/ }).click();
   }
 
-  /** Titre de la période affichée (« Septembre 2026 », « 14 - 20 septembre 2026 »). */
+  /** Période affichée : titre de la semaine (« 14 - 20 sept. 2026 ») ou bouton du mois (« Septembre 2026 », qui ouvre le choix). */
   titrePeriode(libelle: string | RegExp) {
-    return this.page.getByRole('heading', { level: 2, name: libelle });
+    return this.page.getByRole('heading', { level: 2, name: libelle })
+      .or(this.page.getByRole('button', { name: /choisir un autre mois$/ }).filter({ hasText: libelle }));
+  }
+
+  /** Saute directement à un mois par le choix du sélecteur (« août » → « août »). */
+  async choisirMois(nomCourt: string) {
+    await this.page.getByRole('button', { name: /choisir un autre mois$/ }).click();
+    await this.page.getByRole('dialog', { name: 'Choisir un mois' }).getByRole('button', { name: nomCourt, exact: true }).click();
   }
 
   /**
@@ -116,7 +128,7 @@ export class BilanQuotidienPage {
     return this.page.getByRole('heading', { name: titre, exact: true });
   }
 
-  // --- Analyse & Tendances ---
+  // --- Tendances ---
 
   /** Tuile d'un indicateur (« Douleur moyenne », « Fatigue moyenne »…), avec sa moyenne et son évolution. */
   indicateur(libelle: string) {

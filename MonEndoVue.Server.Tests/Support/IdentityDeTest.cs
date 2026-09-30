@@ -21,6 +21,9 @@ public sealed class IdentityDeTest : IDisposable
 {
     public const string MotDePasseValide = "MotDePasse1!";
 
+    /// <summary>Heure fixe injectée dans le contrôleur (date du consentement).</summary>
+    public static readonly DateTimeOffset Maintenant = new(2026, 9, 27, 10, 0, 0, TimeSpan.Zero);
+
     private readonly ServiceProvider _provider;
     private readonly IServiceScope _scope;
 
@@ -40,7 +43,12 @@ public sealed class IdentityDeTest : IDisposable
         services.AddLogging();
         services.AddSingleton<IConfiguration>(configuration);
         services.AddDbContext<AppDbContext>(options => options.UseInMemoryDatabase($"monendo-identity-{Guid.NewGuid()}"));
-        services.AddAuthentication();
+        services.AddHttpContextAccessor();
+        // Schémas de cookies d'Identity : SignOutAsync les appelle tous (aucun cookie réel dans ces tests).
+        services.AddAuthentication()
+            .AddCookie(IdentityConstants.ApplicationScheme)
+            .AddCookie(IdentityConstants.ExternalScheme)
+            .AddCookie(IdentityConstants.TwoFactorUserIdScheme);
         services.AddIdentityCore<ApplicationUser>(OptionsIdentite.Appliquer)
             .AddSignInManager()
             .AddEntityFrameworkStores<AppDbContext>();
@@ -59,6 +67,7 @@ public sealed class IdentityDeTest : IDisposable
             Context, NullLogger<CarnetSanteService>.Instance, sp.GetRequiredService<IMemoryCache>());
 
         var httpContext = new DefaultHttpContext { RequestServices = sp };
+        sp.GetRequiredService<IHttpContextAccessor>().HttpContext = httpContext;
         if (userId != null)
         {
             httpContext.User = new System.Security.Claims.ClaimsPrincipal(new System.Security.Claims.ClaimsIdentity(
@@ -70,6 +79,7 @@ public sealed class IdentityDeTest : IDisposable
             sp.GetRequiredService<SignInManager<ApplicationUser>>(),
             carnetSanteService,
             new TokenService(sp.GetRequiredService<IConfiguration>()),
+            new HorlogeFixe(Maintenant),
             NullLogger<AccountController>.Instance)
         {
             ControllerContext = new ControllerContext { HttpContext = httpContext },

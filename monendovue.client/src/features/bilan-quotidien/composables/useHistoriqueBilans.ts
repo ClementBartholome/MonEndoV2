@@ -115,6 +115,7 @@ export const useHistoriqueBilans = (options: { mode?: ModePeriode } = {}) => {
       jourSelectionne.value = startOfDay(new Date());
       allerA(new Date());
     },
+    allerAuMois: (mois) => allerA(mois),
     selectionnerJour: (date) => {
       jourSelectionne.value = startOfDay(date);
     },

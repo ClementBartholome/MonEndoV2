@@ -40,8 +40,8 @@ const saisieLibre = computed({
 
 <template>
   <div class="flex flex-col gap-2">
-    <p class="font-semibold text-headline flex items-center gap-2">
-      <i class="material-symbols-outlined text-button" aria-hidden="true">{{ icone }}</i>{{ libelle }}
+    <p class="font-semibold text-texte flex items-center gap-2">
+      <i class="material-symbols-outlined text-teinte-bilan" aria-hidden="true">{{ icone }}</i>{{ libelle }}
     </p>
     <div class="grid gap-2" :style="{ gridTemplateColumns: `repeat(${prereglages.length}, minmax(0, 1fr))` }">
       <Button
@@ -58,7 +58,7 @@ const saisieLibre = computed({
       </Button>
     </div>
     <div class="flex items-center gap-2">
-      <label :for="idChamp" class="text-sm text-paragraph shrink-0">Ou valeur exacte</label>
+      <label :for="idChamp" class="text-sm text-texte-2 shrink-0">Ou valeur exacte</label>
       <Input
           :id="idChamp"
           v-model="saisieLibre"
@@ -69,7 +69,7 @@ const saisieLibre = computed({
           :step="pas ?? 1"
           class="h-11 w-28"
       />
-      <span class="text-sm text-paragraph">{{ unite }}</span>
+      <span class="text-sm text-texte-2">{{ unite }}</span>
     </div>
   </div>
 </template>

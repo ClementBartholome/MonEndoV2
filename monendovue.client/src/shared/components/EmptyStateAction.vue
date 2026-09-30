@@ -11,13 +11,13 @@ const emit = defineEmits<{
 </script>
 
 <template>
-  <div class="flex flex-col justify-center items-center text-center h-40 px-4 rounded-xl border border-dashed border-gray-300 bg-white/50">
+  <div class="flex flex-col justify-center items-center text-center h-40 px-4 rounded-controle border border-dashed border-contour bg-surface">
     <p class="text-lg text-headline font-medium">{{ title }}</p>
     <p v-if="description" class="text-sm text-muted-foreground mt-1">{{ description }}</p>
     <button
       v-if="actionLabel"
       type="button"
-      class="mt-3 px-4 py-2 rounded-lg bg-button text-button text-sm font-medium hover:opacity-90 transition-opacity"
+      class="mt-3 px-4 py-2 rounded-controle bg-button text-button text-sm font-medium hover:opacity-90 transition-opacity"
       @click="emit('action')"
     >
       {{ actionLabel }}

@@ -9,4 +9,10 @@ public class DonneesMedicament
     public int NombreComprimes { get; set; }
     public DateTime Date { get; set; }
     public string? Commentaire { get; set; }
+
+    /// <summary>Prise faite ou ignorée (les anciennes entrées sont des prises faites).</summary>
+    public StatutPrise Statut { get; set; }
+
+    /// <summary>Horaire prévu auquel cette entrée répond ; null pour une prise « au besoin » ou hors horaire.</summary>
+    public TimeOnly? HeurePrevue { get; set; }
 }

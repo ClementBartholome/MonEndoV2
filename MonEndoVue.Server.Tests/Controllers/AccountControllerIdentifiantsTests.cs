@@ -16,10 +16,11 @@ public sealed class AccountControllerIdentifiantsTests : IDisposable
     {
         var controller = _identity.CreerController();
 
-        var resultat = await controller.Register(new IdentifiantsDto
+        var resultat = await controller.Register(new InscriptionDto
         {
             Email = "nouvelle@local",
             Password = IdentityDeTest.MotDePasseValide,
+            ConsentementDonneesSante = true,
         });
 
         Assert.IsType<OkObjectResult>(resultat);
@@ -33,7 +34,7 @@ public sealed class AccountControllerIdentifiantsTests : IDisposable
     {
         var controller = _identity.CreerController();
 
-        var resultat = await controller.Register(new IdentifiantsDto { Email = "faible@local", Password = "abc" });
+        var resultat = await controller.Register(new InscriptionDto { Email = "faible@local", Password = "abc", ConsentementDonneesSante = true });
 
         Assert.IsType<BadRequestObjectResult>(resultat);
         Assert.Null(await _identity.UserManager.FindByEmailAsync("faible@local"));
@@ -52,6 +53,57 @@ public sealed class AccountControllerIdentifiantsTests : IDisposable
         });
 
         Assert.IsType<OkObjectResult>(resultat);
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("jeton-inconnu")]
+    public async Task RefreshToken_CookieVideOuInconnu_NOuvreAucuneSession(string cookie)
+    {
+        // Compte dont le jeton n'a jamais été émis : sa valeur vide ne doit pas correspondre à un cookie vide.
+        await _identity.CreerUtilisatrice("sans-jeton@local");
+        var utilisatrice = (await _identity.UserManager.FindByEmailAsync("sans-jeton@local"))!;
+        utilisatrice.RefreshToken = string.Empty;
+        utilisatrice.RefreshTokenExpiryTime = null;
+        await _identity.UserManager.UpdateAsync(utilisatrice);
+        var controller = _identity.CreerController();
+        controller.ControllerContext.HttpContext.Request.Headers.Cookie = $"refreshToken={cookie}";
+
+        var resultat = await controller.RefreshToken();
+
+        Assert.IsType<BadRequestObjectResult>(resultat);
+        Assert.DoesNotContain("accessToken", controller.Response.Headers.SetCookie.ToString());
+    }
+
+    [Fact]
+    public async Task Logout_RevoqueLeJetonDeRenouvellement()
+    {
+        await _identity.CreerUtilisatrice("sortie@local");
+        var controller = _identity.CreerController();
+        await controller.Login(new IdentifiantsDto { Email = "sortie@local", Password = IdentityDeTest.MotDePasseValide });
+        var jeton = (await _identity.UserManager.FindByEmailAsync("sortie@local"))!.RefreshToken;
+        Assert.NotEmpty(jeton);
+
+        var sortie = _identity.CreerController();
+        sortie.ControllerContext.HttpContext.Request.Headers.Cookie = $"refreshToken={jeton}";
+        await sortie.Logout();
+
+        var apres = (await _identity.UserManager.FindByEmailAsync("sortie@local"))!;
+        Assert.Empty(apres.RefreshToken);
+        Assert.Null(apres.RefreshTokenExpiryTime);
+    }
+
+    [Fact]
+    public async Task Login_ReponseSansJetons_ILsNeSontQueDansLesCookiesHttpOnly()
+    {
+        await _identity.CreerUtilisatrice("jetons@local");
+        var controller = _identity.CreerController();
+
+        var resultat = await controller.Login(new IdentifiantsDto { Email = "jetons@local", Password = IdentityDeTest.MotDePasseValide });
+
+        var corps = Assert.IsType<OkObjectResult>(resultat).Value!;
+        // Seuls l'expiration et les informations d'affichage sont lisibles par le script de la page.
+        Assert.Equal(["TokenExpiry", "UserName", "CarnetSanteId", "ConsentementAJour"], corps.GetType().GetProperties().Select(p => p.Name));
     }
 
     [Theory]

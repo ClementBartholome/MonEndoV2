@@ -10,6 +10,8 @@ export interface RequeteSimulee {
 export interface ReponseSimulee {
   status?: number;
   body?: unknown;
+  /** Réponse binaire (image) : type et octets. */
+  image?: { type: string; octets: Buffer };
 }
 
 type Gestionnaire = (requete: RequeteSimulee) => ReponseSimulee | void;
@@ -50,7 +52,7 @@ export class FauxServeur {
       const url = new URL(requete.url());
       // Seuls les appels à l'API (relatifs, donc vers le serveur Vite local) sont simulés ; les ressources tierces
       // (traductions DataTables, polices) passent normalement.
-      if (!['xhr', 'fetch'].includes(requete.resourceType()) || url.hostname !== 'localhost') {
+      if (!['xhr', 'fetch', 'image'].includes(requete.resourceType()) || url.hostname !== 'localhost') {
         return route.fallback();
       }
 
@@ -60,12 +62,18 @@ export class FauxServeur {
       this.appels.push({ methode, chemin, parametres: url.searchParams, corps });
 
       const trouvee = this.routes.find((r) => r.methode === methode && r.motif.test(chemin));
+      // Une image (logo, icône) sans route simulée est servie normalement par Vite ; seule une photo d'API est simulée.
+      if (!trouvee && requete.resourceType() === 'image') {
+        this.appels.pop();
+        return route.fallback();
+      }
       if (!trouvee) {
         this.nonGerees.push(`${methode} ${chemin}`);
         return route.fulfill({ status: 404 });
       }
 
       const reponse = trouvee.gerer({ params: trouvee.motif.exec(chemin)!.slice(1), corps, url }) ?? {};
+      if (reponse.image) return route.fulfill({ status: 200, contentType: reponse.image.type, body: reponse.image.octets });
       return route.fulfill({
         status: reponse.status ?? 200,
         contentType: 'application/json',

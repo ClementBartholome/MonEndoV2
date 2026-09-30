@@ -23,18 +23,22 @@
           <FormMessage/>
         </FormItem>
       </FormField>
-      <Button type="submit">
+      <CaseConsentement v-model="consentement"/>
+      <Button type="submit" :disabled="!consentement">
         Créer un compte
       </Button>
       <p class="mt-4">
         Déjà inscrit ? <router-link to="/login" class="!text-highlight">Connectez-vous</router-link>
       </p>
+      <LiensLegaux/>
     </form>
   </div>
 </template>
 
 <script setup lang="ts">
-import { onMounted } from 'vue';
+import LiensLegaux from '@/features/legal/components/LiensLegaux.vue';
+import { onMounted, ref } from 'vue';
+import CaseConsentement from '@/features/legal/components/CaseConsentement.vue';
 import {Button} from '@/shared/components/ui/button'
 import {
   FormControl,
@@ -51,6 +55,8 @@ import BackButton from "@/shared/components/BackButton.vue";
 
 const auth = useAuthStore();
 const {toast} = useToast();
+/** Case non cochée par défaut : l'accord doit être un geste explicite. */
+const consentement = ref(false);
 
 onMounted(() => {
   if (auth.user) {
@@ -66,7 +72,7 @@ const onSubmitRegister = async (event: any) => {
 
   let user;
   try {
-    user = await auth.register(email, password);
+    user = await auth.register(email, password, consentement.value);
     toast({
       title: 'Inscription réussie',
       description: `Bienvenue ${user.email}`,

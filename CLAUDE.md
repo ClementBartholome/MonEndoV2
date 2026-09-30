@@ -50,26 +50,60 @@ dotnet ef migrations add NomEnPascalCase --project MonEndoVue.Server
   Chaque entité porte un `CarnetSanteId` : c'est la clé du cloisonnement.
 - **`DonneesDouleur`** (type, intensité 0-10, date, commentaire) — page `/douleurs`.
 - **`SymptomeCycle`** (type, intensité, date, commentaire, photo optionnelle) dont l'**acné** avec suivi photo ;
-  **`JourRegle`** (jours de règles) — page `/cycle` (onglets symptômes, acné, cycles).
-- **`Medicament`** (traitement, `TypeTraitement` médicamenteux ou non, en cours ou passé), **`DonneesMedicament`** (prises),
-  **`DonneesTraitementNonMedicamenteux`** (séances) — page `/medicaments`.
-- **`DonneesTransit`** — `/transit` (ancien suivi par événements ; le suivi quotidien passe désormais par le bilan) ; **`DonneesActivitePhysique`** — `/activite`.
+  **`JourRegle`** (jours de règles) — page `/cycle`, onglets Règles (`?onglet=cycles`), Symptômes et Acné.
+  Règles via `CycleController` (carnet de la session) : `GET Cycle?jour=&mois=` (jours du mois, cycle en cours,
+  6 derniers cycles et moyenne dès deux cycles) et `PUT`/`DELETE Cycle/regles/{jour}` (un jour à la fois, jamais à venir).
+  Règles = jours notés consécutifs, un oubli d'un jour toléré ; un écart de plus de 60 jours n'est ni listé ni compté
+  (`HistoriqueCycles`, même seuils que `CycleDuJour`). **Aucune prédiction** de prochaines règles.
+  Acné : **`EpisodeAcne`** (début, fin vide = en cours ; un seul en cours, sans chevauchement) via `AcneController`
+  (`GET Acne?jour=`, `POST/PUT/DELETE Acne/episodes`, `POST Acne/episodes/{id}/fin`) : rien à noter chaque jour
+  tant qu'il dure. Le point de suivi hebdomadaire (photo, intensité) reste un `SymptomeCycle` « Acné » avec photo.
+  Les anciens jours d'acné (une entrée par jour) ont été regroupés en épisodes par la migration `AjouteEpisodesAcne`
+  et sont conservés tels quels.
+- **`Medicament`** (traitement, `TypeTraitement` médicamenteux ou non, en cours ou passé, avec une **fréquence** à la
+  manière de l'app Santé d'Apple : `AuBesoin`, `ChaqueJour`, `CertainsJours` + jours de la semaine, `TousLesNJours`
+  depuis la date de début, et jusqu'à 6 **`HorairePrise`**), **`DonneesMedicament`** (réponses aux prises : `Statut`
+  `Pris` ou `Ignore`, `HeurePrevue` pour une prise planifiée, absente pour une prise au besoin),
+  **`DonneesTraitementNonMedicamenteux`** (séances) — page `/medicaments` (`TraitementsController`, `GET Traitements/jour`).
+  Le planning d'un jour est calculé par `PlanningTraitement` ; une prise **ignorée** est stockée dans la même table :
+  toute lecture qui compte des prises (PDF, historique, accueil) filtre `Statut == Pris`.
+  Page `/medicaments/:id` : historique d'un traitement un mois à la fois (`GET Traitements/{id}/historique?mois=&jour=`,
+  `HistoriqueTraitementsService`) ; les prises prévues d'un traitement arrêté se comptent jusqu'à sa fin
+  (`PlanningTraitement.EstPrevuDansSesDates`), avec la fréquence et les horaires actuels (leurs versions passées ne sont
+  pas gardées). Une prise ou une séance se retire depuis cette page (`DELETE Traitements/prises/{id}`, `…/seances/{id}`).
+- **`DonneesTransit`** — `/transit` (ancien suivi par événements ; le suivi quotidien passe désormais par le bilan) .
+- **`DonneesActivitePhysique`** — `/activite` via `ActiviteController` (carnet de la session) : intensité ressentie sur 3 niveaux
+  (`NiveauIntensite` : douce, modérée, soutenue ; l'ancienne `Intensite` 1-10 reste écrite, 2 / 5 / 8, pour un retour
+  arrière et le PDF) et effet sur la douleur (`EffetDouleur` : 0 non renseigné, soulagée, inchangée, plus forte).
 - **`BilanQuotidien`** (émotions, stress, fatigue, pas, douleur moyenne, hydratation, alimentation, notes, et une catégorie
   **transit** facultative : selles avec type de Bristol 1-7, crampes d'estomac et ballonnements avec intensité) — `/bilan-quotidien`,
-  avec des repères personnels réglables dans `/parametres` (stockés en `localStorage`). L'onglet « Analyse & Tendances »
+  avec des repères personnels réglables dans `/parametres` (stockés en `localStorage`). L'onglet « Tendances »
   ne donne ni score ni note : moyennes, évolution vs période précédente, repères atteints, observations factuelles
   douleur / règles (`utils/tendances.ts`). Historique par semaine ou par mois (`GET BilanQuotidien/periode`,
   bilans + jours de règles, carnet déduit de la session) : une seule période pilote calendrier, détail, courbes et analyse. Émotions : 1 à 3 **`EmotionBilan`** par bilan (table
   `EmotionsBilan`, type possédé chargé avec le bilan ; enum `Emotion`, libellés et tonalité dans `config/emotions.ts`).
+  La page s'ouvre sur l'historique ; la saisie du jour ne s'ouvre d'office qu'avec `?ajouter` (accueil, rappel).
   Saisie en un écran (`components/saisie/`) : douleur et émotions obligatoires, stress, fatigue, pas et hydratation
   **nullables** (null = non renseigné, jamais compté pour 0) ; **un seul bilan par jour** et aucun jour futur (409 / 400).
   Les bilans antérieurs gardent leur ancienne humeur `Mood` (`Heureuse`/`Neutre`/`Triste`) : tout calcul d'humeur passe
   par `features/bilan-quotidien/utils/humeur.ts`, qui prend en compte les deux.
-- Accueil `/` (carnet : dernières entrées), agenda `/agenda` (Google Calendar en lecture via le serveur, seulement pour une utilisatrice associée à un calendrier dans la configuration `Agenda`), export PDF `/export`.
+- Accueil `/` « Aujourd'hui » (`GET Accueil/aujourdhui?jour=AAAA-MM-JJ`, jour local envoyé par le client, carnet de la
+  session : cycle déduit des jours de règles sans prédiction, bilan du jour, prises prévues ce jour-là (heure et réponse) et
+  traitements au besoin, faits descriptifs des 7 derniers jours ; prise notée en un geste par `POST Traitements/{id}/prises`), agenda `/agenda` (Google Calendar en lecture via le serveur, seulement pour une utilisatrice associée à un calendrier dans la configuration `Agenda`), « Préparer un rendez-vous » `/export` : PDF créé dans le navigateur (jsPDF, chargé à la demande) depuis
+  `GET Synthese?du=&au=` (`SyntheseRendezVousService`, carnet de la session, un an au plus : comptes et moyennes par
+  rubrique, prises des traitements, règles, détail jour par jour, **sans interprétation**). Période 1 mois / 3 mois /
+  libre, rubriques au choix, « Mes questions » (texte libre gardé sur l'appareil, jamais envoyé, en première page).
+  Les anciens endpoints `CarnetSante/{id}/{mois}/{année}` ne servent plus au client.
+- Pages publiques (sans compte, `meta: { public: true }` dans le routeur) : connexion, inscription, politique de
+  confidentialité `/confidentialite` et mentions légales `/mentions-legales` (`features/legal/`). **Consentement explicite**
+  aux données de santé (`ApplicationUser.ConsentementDonneesSanteLe`, version de la politique acceptée) : case à l'inscription,
+  page `/consentement` pour les comptes sans accord à jour, exigé par l'API (voir `MonEndoVue.Server/CLAUDE.md`). **Tout changement de
+  donnée collectée, de sous-traitant ou de durée de conservation met à jour la politique** (et sa date, `config/editeur.ts`)
+  dans la même PR.
 - Notifications **Web Push standard** envoyées par le serveur (clés VAPID, sans service tiers) : chaque appareil s'abonne
   depuis `/parametres` ; rappels réglables (job Quartz toutes les 15 min), chacun omis si le suivi est déjà fait :
-  bilan quotidien (bilan du jour pas encore rempli, ouvre `/bilan-quotidien`) et photo de suivi de l'acné hebdomadaire
-  (aucune photo d'acné depuis 7 jours, ouvre `/cycle?onglet=acne`). Sur iOS (16.4+), uniquement dans l'app ajoutée à l'écran d'accueil.
+  bilan quotidien (bilan du jour pas encore rempli, ouvre `/bilan-quotidien?ajouter`) et photo de suivi de l'acné hebdomadaire
+  (**seulement pendant un épisode d'acné en cours**, si aucune photo depuis 7 jours ; ouvre `/cycle?onglet=acne`). Sur iOS (16.4+), uniquement dans l'app ajoutée à l'écran d'accueil.
   Entités : **`AbonnementPush`** (un par appareil, endpoint unique, rattaché au carnet) et **`Rappel`** (un par carnet et
   par type : actif, heure locale, jour de la semaine si hebdomadaire, fuseau IANA, date du dernier envoi). L'ancienne table
   `PreferencesRappel` est supprimée depuis la 1.2.0.
@@ -111,7 +145,7 @@ Sinon, une classe concrète simple injectée telle quelle. Pas d'interface « au
 3. **Rien de secret côté client** : toute variable `VITE_*` finit dans le bundle public. Un appel tiers nécessitant une clé secrète passe par le serveur.
 4. Jamais de mot de passe, token ou code OAuth dans une URL (query string, redirection) : body JSON ou cookie HttpOnly.
 5. Logs structurés **sans** email, token, donnée de santé ; jamais `ex.Message` renvoyé au client.
-6. Pas de `v-html` ni de rendu HTML de texte saisi (attention aux colonnes DataTables).
+6. Pas de `v-html` ni de rendu HTML de texte saisi (le texte saisi s'affiche toujours comme du texte).
 7. Uploads : valider taille et type côté serveur, ne jamais réutiliser une URL fournie par le client.
 8. Ne pas lire, afficher ou copier les fichiers de secrets (`appsettings*.json`, `.env*`, `serviceAccountKey.json`, `keys/`, logs).
 
@@ -149,9 +183,13 @@ Utiliser le skill `revue-securite` avant de commiter un changement touchant auth
 - **Versions (SemVer, depuis la 1.0.0)** : les sujets sont regroupés sur une branche `release/X.Y.Z` (PR dont la base est
   cette branche), puis livrés par une PR vers `main`, suivie du tag `vX.Y.Z` et d'une GitHub Release. Numéro de version dans
   `monendovue.client/package.json` **et** `MonEndoVue.Server.csproj`, historique dans `CHANGELOG.md`. Procédure : skill `release`.
+- **Sauvegardes de la base** : `deploy/sauvegarde-base.sh` (cron du VPS, 2 h 30) → sauvegarde SQL Server chiffrée par
+  `openssl` sur l'hôte → conteneur Azure `sauvegardes` (SAS « Créer » seul, suppression à 30 jours par une règle de cycle de
+  vie : durée annoncée par la politique de confidentialité). Restauration et test : `deploy/README.md`.
 - Rollback : repointer l'image du service `app` sur une version précédente (`vX.Y.Z`, ou `sha-…` / `main-<sha>` avant la 1.0.0), puis `docker compose up -d`.
   Les images antérieures à 2026-09 chargent encore `serviceAccountKey.json` au démarrage : garder ce montage tant qu'un tel retour est envisageable.
-- Ne jamais pousser sur `main` ni ouvrir/merger une PR sans demande explicite. Travailler sur une branche.
+- Ne jamais pousser sur `main`. Travailler sur une branche. **Ouvrir une PR** vers `release/X.Y.Z` (ou `main` pour un hotfix)
+  est permis sans demande (décision du 2026-09-27) ; **le merge reste toujours à l'utilisateur**.
 
 ## Convention de commit
 - Format : `type(perimetre): message court` — **en français**, impératif ou présent, sans point final.
@@ -218,7 +256,7 @@ Objectif : que l'utilisateur n'ait jamais à répéter une consigne ou une infor
 - `gh` est authentifié (jeton dans le trousseau Windows, scopes `repo` et `workflow`) : l'utiliser pour lire PR, checks et runs.
   Si `gh auth status` signale un jeton invalide, demander à l'utilisateur de lancer lui-même
   `gh auth login -h github.com -p https -w` (connexion par navigateur) ; ne jamais demander ni manipuler de jeton.
-  Ouvrir ou merger une PR reste soumis à une demande explicite.
+  Merger une PR reste réservé à l'utilisateur.
 - Contrôle visuel sans backend : lancer `npx vite --port <port>` puis, dans le navigateur intégré, poser un faux `user` dans
   `localStorage` (le garde de routes ne vérifie que sa présence) ; les appels API échouent, l'UI reste testable.
 
@@ -235,3 +273,6 @@ Procédure validée (sans jamais lire les fichiers de secrets) :
    puis `npx vite --port 5173 --strictPort` (5173 est l'origine autorisée par CORS).
 4. Attendre `https://localhost:7206/health` = `Healthy`, ouvrir `https://localhost:5173/login` : **l'utilisateur se connecte
    lui-même** avec son compte local, puis on teste à 375px et en desktop.
+5. **Tester avec un volume réaliste**, jamais trois entrées : si le compte local est peu rempli, y ajouter environ un an
+   de données génériques avec `tools/donnees-demo/generer.mjs` (mode d'emploi en tête du fichier ; ajoute sans rien
+   effacer). Un écran lisible avec quelques données peut devenir illisible avec un mois complet (cas des graphiques du bilan).
