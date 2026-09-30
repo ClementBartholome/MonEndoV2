@@ -86,7 +86,7 @@ public sealed class ReglesRappelTests : IDisposable
         var bilan = new RappelBilanQuotidien(_carnet.Context);
         var acne = new RappelSuiviAcne(_carnet.Context);
 
-        Assert.Equal((TypeRappel.BilanQuotidien, false, new TimeOnly(21, 0), (DayOfWeek?)null, "/bilan-quotidien"),
+        Assert.Equal((TypeRappel.BilanQuotidien, false, new TimeOnly(21, 0), (DayOfWeek?)null, "/bilan-quotidien?ajouter"),
             (bilan.Type, bilan.EstHebdomadaire, bilan.HeureParDefaut, bilan.JourParDefaut, bilan.Message.Url));
         Assert.Equal((TypeRappel.SuiviAcne, true, new TimeOnly(20, 0), (DayOfWeek?)DayOfWeek.Sunday, "/cycle?onglet=acne"),
             (acne.Type, acne.EstHebdomadaire, acne.HeureParDefaut, acne.JourParDefaut, acne.Message.Url));

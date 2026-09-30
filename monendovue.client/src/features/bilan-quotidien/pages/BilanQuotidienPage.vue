@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue';
-import { useRoute } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import { format, isAfter, isToday, startOfDay, subDays } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { Skeleton } from '@/shared/components/ui/skeleton';
@@ -19,7 +19,9 @@ import { calculerTendances } from '@/features/bilan-quotidien/utils/tendances';
 import { getWellbeingGoals } from '@/shared/services/wellbeingGoalsStorage';
 
 /** Lien profond vers un onglet (`/bilan-quotidien?onglet=analyse`, depuis l'accueil). */
-const ongletInitial = useRoute().query.onglet === 'analyse' ? 'analyse' : 'historique';
+const route = useRoute();
+const router = useRouter();
+const ongletInitial = route.query.onglet === 'analyse' ? 'analyse' : 'historique';
 import type { BilanQuotidien } from '@/features/bilan-quotidien/types/bilan-quotidien';
 
 const carnetSanteId = useAuthStore().user!.carnetSanteId;
@@ -62,8 +64,12 @@ const apresEnregistrement = (bilan: BilanQuotidien) => {
 onMounted(async () => {
   const aujourdhui = startOfDay(new Date());
   await actions.recharger();
-  // Pas encore de bilan aujourd'hui : on ouvre directement la saisie (rappel du soir).
-  if (!model.value.erreur && !bilanDu(aujourdhui)) await ouvrirSaisie(aujourdhui);
+  // La saisie ne s'ouvre d'office que sur demande (`?ajouter` : « Faire mon bilan » de l'accueil, rappel du soir) :
+  // sinon la page montre l'historique, avec « Remplir le bilan de ce jour ».
+  if (route.query.ajouter !== undefined) {
+    await router.replace({ query: {} });
+    if (!model.value.erreur && !bilanDu(aujourdhui)) await ouvrirSaisie(aujourdhui);
+  }
   isLoading.value = false;
 });
 
@@ -90,8 +96,8 @@ const tendances = computed(() => calculerTendances(model.value.jours, model.valu
   <main class="mx-auto flex w-full max-w-xl flex-col gap-3.5 px-5 pb-40 pt-24 lg:pb-12 lg:pt-10">
     <!-- Pendant la saisie, le titre de page reste lu (sr-only) : la saisie a son propre titre visible. -->
     <header class="flex items-center gap-3" :class="{ 'sr-only': saisie }">
-      <i class="material-symbols-outlined rounded-controle bg-teinte-bilan-fond p-2 text-[26px] text-teinte-bilan" aria-hidden="true">event_note</i>
-      <h1 class="m-0 grow text-[26px] font-semibold tracking-normal text-texte">Bilan</h1>
+      <i class="material-symbols-outlined rounded-controle bg-teinte-bilan-fond p-2 text-titre-page text-teinte-bilan" aria-hidden="true">event_note</i>
+      <h1 class="m-0 grow text-titre-page font-semibold tracking-normal text-texte">Bilan</h1>
     </header>
 
     <div v-if="isLoading" class="flex flex-col gap-3.5" aria-busy="true" aria-label="Chargement des bilans">

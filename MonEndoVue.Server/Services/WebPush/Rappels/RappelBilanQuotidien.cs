@@ -11,7 +11,7 @@ public class RappelBilanQuotidien(AppDbContext context) : IRegleRappel
     public bool EstHebdomadaire => false;
     public TimeOnly HeureParDefaut => new(21, 0);
     public DayOfWeek? JourParDefaut => null;
-    public MessagePush Message { get; } = new("MonEndo", "N'oublie pas de remplir ton bilan quotidien.", "/bilan-quotidien");
+    public MessagePush Message { get; } = new("MonEndo", "N'oublie pas de remplir ton bilan quotidien.", "/bilan-quotidien?ajouter");
 
     public Task<bool> SuiviDejaFaitAsync(int carnetSanteId, DateOnly jourLocal, TimeZoneInfo fuseau, CancellationToken cancellationToken)
     {

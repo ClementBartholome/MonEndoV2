@@ -44,6 +44,11 @@ export class BilanQuotidienPage {
     await this.page.goto('/bilan-quotidien');
   }
 
+  /** Lien profond de l'accueil et du rappel : ouvre la saisie du jour si le bilan n'est pas fait. */
+  async ouvrirSaisie() {
+    await this.page.goto('/bilan-quotidien?ajouter');
+  }
+
   // --- Saisie ---
 
   /** Pastille d'une échelle : « Douleur » sur 10, « Fatigue », « Stress · vie pro », « Stress · vie perso » sur 5. */

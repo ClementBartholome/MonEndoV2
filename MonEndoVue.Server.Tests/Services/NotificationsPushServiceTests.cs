@@ -73,7 +73,7 @@ public sealed class NotificationsPushServiceTests : IDisposable
         Assert.Equal(0, await Service().EnvoyerRappelsDusAsync(CancellationToken.None));
 
         var envoi = Assert.Single(_envoi.Envois);
-        Assert.Equal("/bilan-quotidien", envoi.Message.Url);
+        Assert.Equal("/bilan-quotidien?ajouter", envoi.Message.Url);
         Assert.Equal(AujourdhuiParis, rappel.DernierEnvoiLe);
     }
 
