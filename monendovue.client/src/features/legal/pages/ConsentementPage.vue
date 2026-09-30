@@ -24,13 +24,18 @@
           Tu ne souhaites pas donner ton accord ? Tu peux te déconnecter, ou supprimer ton compte et toutes tes données.
         </p>
         <Button type="button" variant="outline" class="min-h-11" @click="seDeconnecter">Me déconnecter</Button>
-        <SuppressionCompte/>
+        <Button type="button" variant="outline" class="min-h-11 text-destructive border-destructive/40" @click="suppressionOuverte = true">
+          <i class="material-symbols-outlined mr-2" aria-hidden="true">delete_forever</i>
+          Supprimer mon compte
+        </Button>
+        <SuppressionCompte v-model:open="suppressionOuverte"/>
       </div>
     </div>
   </section>
 </template>
 
 <script setup lang="ts">
+import {ref} from 'vue';
 import {useRouter} from 'vue-router';
 import {Button} from '@/shared/components/ui/button';
 import {useAuthStore} from '@/features/auth/store/auth';
@@ -39,6 +44,7 @@ import {useConsentement} from '../composables/useConsentement';
 import SuppressionCompte from '@/features/parametres/components/SuppressionCompte.vue';
 
 const router = useRouter();
+const suppressionOuverte = ref(false);
 const auth = useAuthStore();
 
 const {accepte, envoiEnCours, erreur, donnerAccord} = useConsentement({surAccord: () => router.push('/')});

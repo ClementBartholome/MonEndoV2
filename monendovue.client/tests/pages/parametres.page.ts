@@ -1,6 +1,6 @@
 import type { Locator, Page } from '@playwright/test';
 
-/** Page « Paramètres » (/parametres) : section « Mes données » (export, suppression du compte). */
+/** Page « Paramètres » (/parametres) : réglages en lignes groupées, chacune ouvrant un panneau ou lançant une action. */
 export class ParametresPage {
   readonly page: Page;
 
@@ -18,7 +18,7 @@ export class ParametresPage {
 
   constructor(page: Page) {
     this.page = page;
-    this.boutonExport = page.getByRole('button', { name: 'Télécharger toutes mes données' });
+    this.boutonExport = page.getByRole('button', { name: 'Télécharger mes données' });
     this.erreur = page.getByRole('alert');
     this.boutonSuppression = page.getByRole('button', { name: 'Supprimer mon compte' });
     this.fenetreSuppression = page.getByRole('dialog', { name: 'Supprimer ton compte ?' });
@@ -28,5 +28,14 @@ export class ParametresPage {
 
   async ouvrir() {
     await this.page.goto('/parametres');
+  }
+
+  /** Ligne d'un groupe (« Notifications », « Mot de passe »…), par son titre. */
+  ligne(titre: string) {
+    return this.page.getByRole('button', { name: new RegExp(`^${titre}`) });
+  }
+
+  panneau(titre: string) {
+    return this.page.getByRole('dialog', { name: titre });
   }
 }
