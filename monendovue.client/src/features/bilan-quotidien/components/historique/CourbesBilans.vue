@@ -39,8 +39,8 @@ const aucunBilan = computed(() => props.jours.every((jour) => !jour.bilan));
 <template>
   <Card class="flex w-full flex-col rounded-carte border-0 bg-surface shadow-elevation">
     <CardHeader class="p-4 md:p-6">
-      <CardTitle class="m-0 flex items-center gap-2 text-[17px] font-semibold leading-tight tracking-normal text-texte">
-        <i class="material-symbols-outlined rounded-controle bg-teinte-bilan-fond p-1.5 text-[22px] text-teinte-bilan" aria-hidden="true">bar_chart</i>
+      <CardTitle class="m-0 flex items-center gap-2 text-titre-carte font-semibold leading-tight tracking-normal text-texte">
+        <i class="material-symbols-outlined rounded-controle bg-teinte-bilan-fond p-1.5 text-titre-2 text-teinte-bilan" aria-hidden="true">bar_chart</i>
         Évolution {{ mode === 'mois' ? 'du mois' : 'de la semaine' }}
       </CardTitle>
     </CardHeader>
@@ -62,7 +62,7 @@ const aucunBilan = computed(() => props.jours.every((jour) => !jour.bilan));
             @selectionner="(index) => emit('selectionner', jours[index].date)"
         />
         <p v-if="aDesRegles" class="m-0 flex items-center gap-2 text-left text-xs text-texte-2">
-          <span class="h-3 w-4 rounded-sm bg-teinte-regles-fond" aria-hidden="true"/>
+          <span class="h-1 w-4 rounded-full bg-teinte-regles" aria-hidden="true"/>
           Jours de règles
         </p>
         <p class="m-0 text-left text-xs text-texte-3">
