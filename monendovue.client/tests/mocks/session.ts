@@ -1,7 +1,9 @@
 /** Session et horloge communes à tous les tests E2E. */
 
 /** Date du jour vue par l'application pendant les tests (mardi 15 septembre 2026, 10 h) : les parcours ne dépendent pas du jour où ils tournent. */
-export const MAINTENANT = new Date(2026, 8, 15, 10, 0, 0);
+// 10 h à Paris (heure d'été, +02:00) quel que soit le fuseau de la machine : le navigateur de test est réglé sur
+// Europe/Paris (playwright.config.ts), la CI tourne en UTC.
+export const MAINTENANT = new Date('2026-09-15T10:00:00+02:00');
 
 export const CARNET_ID = 1;
 
