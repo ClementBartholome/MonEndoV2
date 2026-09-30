@@ -63,7 +63,19 @@ const onSubmit = async (event: any) => {
   const email = form.email.value;
   const password = form.password.value;
 
-  const user = await auth.login(email, password);
+  let user;
+  try {
+    user = await auth.login(email, password);
+  } catch (error: any) {
+    toast({
+      title: 'Connexion impossible pour le moment',
+      description: error.response?.status === 429
+        ? 'Trop de tentatives. Veuillez patienter une minute avant de réessayer.'
+        : 'Le service est momentanément indisponible. Veuillez réessayer dans un instant.',
+      variant: 'custom'
+    });
+    return;
+  }
   if (user) {
     router.push('/');
   } else {
