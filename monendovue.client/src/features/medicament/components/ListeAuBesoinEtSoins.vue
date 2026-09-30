@@ -10,7 +10,7 @@
         </div>
         <button type="button" class="inline-flex min-h-11 shrink-0 items-center gap-1 rounded-controle border-[1.5px] border-contour px-3 text-sm font-medium text-texte disabled:opacity-60"
                 :disabled="envoi" :aria-label="`Noter une prise de ${traitement.nom}`" @click="emit('prendre', traitement)">
-          <i class="material-symbols-outlined text-lg" aria-hidden="true">add</i>Prise
+          <i class="material-symbols-outlined text-lg" aria-hidden="true">add</i>Noter une prise
         </button>
       </li>
     </ul>
@@ -28,7 +28,7 @@
         </div>
         <button type="button" class="inline-flex min-h-11 shrink-0 items-center gap-1 rounded-controle border-[1.5px] border-contour px-3 text-sm font-medium text-texte disabled:opacity-60"
                 :disabled="envoi" :aria-label="`Noter une séance de ${soin.nom}`" @click="emit('seance', soin)">
-          <i class="material-symbols-outlined text-lg" aria-hidden="true">add</i>Séance
+          <i class="material-symbols-outlined text-lg" aria-hidden="true">add</i>Noter une séance
         </button>
       </li>
     </ul>

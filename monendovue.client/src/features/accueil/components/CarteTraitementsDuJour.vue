@@ -29,7 +29,7 @@
     <div v-if="auBesoin.length" class="flex min-h-[52px] items-center gap-2 border-t border-trait text-legende text-texte-3">
       <span class="grow">Au besoin : {{ auBesoin.map((t) => t.nom).join(', ') }}</span>
       <router-link to="/medicaments" class="inline-flex min-h-11 items-center gap-0.5 font-medium !text-lien">
-        <i class="material-symbols-outlined text-lg" aria-hidden="true">add</i>Une prise
+        <i class="material-symbols-outlined text-lg" aria-hidden="true">add</i>Noter une prise
       </router-link>
     </div>
   </section>

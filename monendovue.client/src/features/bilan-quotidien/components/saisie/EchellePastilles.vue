@@ -57,7 +57,7 @@ function classes(niveau: number): string {
           v-for="niveau in niveaux"
           :key="niveau"
           type="button"
-          class="min-h-11 rounded-controle border-[1.5px] text-corps"
+          class="relative min-h-11 overflow-hidden rounded-controle border-[1.5px] text-corps"
           :class="classes(niveau)"
           :style="style(niveau)"
           :aria-pressed="valeur === niveau"
@@ -65,6 +65,8 @@ function classes(niveau: number): string {
           @click="choisir(niveau)"
       >
         {{ niveau }}
+        <!-- Comme ChoixIntensite : un choix non sélectionné garde un trait de sa couleur pour lire l'échelle. -->
+        <span v-if="couleurs && valeur !== niveau" aria-hidden="true" class="absolute inset-x-0 bottom-0 h-1" :style="{ background: `var(--intensite-${niveau})` }"></span>
       </button>
     </div>
     <div class="flex justify-between text-xs text-texte-3" aria-hidden="true">
