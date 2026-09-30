@@ -4,7 +4,7 @@ import { useElementSize } from '@vueuse/core';
 
 /**
  * Un indicateur sur la période : une barre par jour (hauteur = valeur, plus haut = plus lourd), dans la couleur de
- * l'indicateur ; jour non renseigné = pas de barre, jamais 0. Jours de règles en bande de fond. Toucher un jour le choisit.
+ * l'indicateur ; jour non renseigné = pas de barre, jamais 0. Jours de règles en repère sous l'axe. Toucher un jour le choisit.
  */
 const props = defineProps<{
   titre: string;
@@ -24,8 +24,8 @@ const props = defineProps<{
 
 const emit = defineEmits<{ selectionner: [index: number] }>();
 
-const HAUTEUR = 96;
-const MARGE = { gauche: 22, droite: 4, haut: 6, bas: 18 };
+const HAUTEUR = 102;
+const MARGE = { gauche: 22, droite: 4, haut: 6, bas: 24 };
 /** Espace entre deux barres (couleur de la surface). */
 const ESPACE = 2;
 
@@ -67,27 +67,29 @@ const resume = computed(() => {
     </figcaption>
     <div ref="conteneur" class="w-full" :style="{ height: `${HAUTEUR}px` }">
       <svg v-if="largeur > 0" :width="largeur" :height="HAUTEUR" role="img" :aria-label="resume" class="block text-texte-3">
-        <rect v-for="(regles, index) in bandes" v-show="regles" :key="`bande-${index}`"
-              :x="MARGE.gauche + colonne * index" :y="MARGE.haut" :width="colonne" :height="hauteurUtile"
-              class="fill-teinte-regles-fond"/>
         <rect v-if="selection >= 0" :x="MARGE.gauche + colonne * selection" :y="MARGE.haut" :width="colonne" :height="hauteurUtile"
               rx="3" class="fill-surface-2"/>
         <line :x1="MARGE.gauche" :x2="largeur - MARGE.droite" :y1="basTrace" :y2="basTrace" class="stroke-trait"/>
-        <text :x="MARGE.gauche - 5" :y="MARGE.haut" dy="0.7em" text-anchor="end" font-size="10" fill="currentColor">{{ max }}</text>
-        <text :x="MARGE.gauche - 5" :y="basTrace" text-anchor="end" font-size="10" fill="currentColor">0</text>
+        <text :x="MARGE.gauche - 5" :y="MARGE.haut" dy="0.7em" text-anchor="end" font-size="11" fill="currentColor">{{ max }}</text>
+        <text :x="MARGE.gauche - 5" :y="basTrace" text-anchor="end" font-size="11" fill="currentColor">0</text>
 
+        <!-- Barres à pleine couleur (une barre atténuée passe sous 3:1) : le jour choisi se lit à son fond. -->
         <rect v-for="barre in barres.filter((b) => b.valeur !== null)" :key="`barre-${barre.index}`"
               :x="barre.x + ESPACE / 2" :y="basTrace - barre.hauteur"
-              :width="Math.max(colonne - ESPACE, 1)" :height="barre.hauteur" rx="2"
-              :style="{ fill: couleur, opacity: selection >= 0 && barre.index !== selection ? 0.55 : 1 }"/>
+              :width="Math.max(colonne - ESPACE, 1)" :height="barre.hauteur" rx="2" :style="{ fill: couleur }"/>
+
+        <!-- Règles : repère sous l'axe, jamais un fond de colonne (il se lirait comme une barre). -->
+        <rect v-for="(regles, index) in bandes" v-show="regles" :key="`bande-${index}`"
+              :x="MARGE.gauche + colonne * index" :y="basTrace + 3" :width="colonne" height="3" class="fill-teinte-regles"/>
 
         <text v-for="(etiquette, index) in etiquettes" v-show="etiquette" :key="`etiquette-${index}`"
-              :x="MARGE.gauche + colonne * (index + 0.5)" :y="HAUTEUR - 4" text-anchor="middle" font-size="10" fill="currentColor">
+              :x="MARGE.gauche + colonne * (index + 0.5)" :y="HAUTEUR - 3" text-anchor="middle" font-size="11" fill="currentColor">
           {{ etiquette }}
         </text>
 
-        <!-- Zones de toucher : toute la hauteur de la colonne, plus facile que la barre seule. -->
-        <rect v-for="(_, index) in valeurs" :key="`zone-${index}`"
+        <!-- Zones de toucher : toute la hauteur de la colonne, plus facile que la barre seule. Le calendrier, au-dessus,
+             reste le moyen de choisir un jour au clavier. -->
+        <rect v-for="(_, index) in valeurs" :key="`zone-${index}`" aria-hidden="true"
               :x="MARGE.gauche + colonne * index" y="0" :width="colonne" :height="HAUTEUR"
               fill="transparent" class="cursor-pointer" @click="emit('selectionner', index)"/>
       </svg>
