@@ -5,6 +5,8 @@ export const teintesRubrique = {
     bilan: 'bg-teinte-bilan-fond text-teinte-bilan',
     symptome: 'bg-teinte-symptome-fond text-teinte-symptome',
     traitement: 'bg-teinte-traitement-fond text-teinte-traitement',
+    douleur: 'bg-teinte-douleur-fond text-teinte-douleur',
+    regles: 'bg-teinte-regles-fond text-teinte-regles',
     neutre: 'bg-teinte-neutre-fond text-teinte-neutre',
 } as const;
 

@@ -31,7 +31,7 @@ Complète le skill générique `/security-review` avec les points propres au pro
 - `localStorage`/IndexedDB sans token ni donnée de santé.
 
 **Front**
-- Pas de `v-html`, pas de rendu HTML de texte saisi (DataTables, tooltips de graphiques).
+- Pas de `v-html`, pas de rendu HTML de texte saisi (tooltips de graphiques).
 - Pas de nouvelle URL construite avec des données sensibles.
 
 **Uploads et fichiers**
