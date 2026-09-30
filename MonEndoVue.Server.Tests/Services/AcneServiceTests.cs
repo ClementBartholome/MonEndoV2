@@ -15,7 +15,9 @@ public sealed class AcneServiceTests : IDisposable
 
     private readonly CarnetDeTest _carnet = new();
 
-    private AcneService Service() => new(_carnet.Context, _carnet.CarnetSanteService, new HorlogeFixe(Maintenant));
+    private readonly FauxStockagePhotos _stockage = new();
+
+    private AcneService Service() => new(_carnet.Context, _carnet.CarnetSanteService, new HorlogeFixe(Maintenant), _stockage);
 
     private async Task<int> Creer(DateOnly debut, DateOnly? fin = null, string userId = CarnetDeTest.UserId)
     {
@@ -126,6 +128,64 @@ public sealed class AcneServiceTests : IDisposable
     public async Task SansCarnet_NonAuthentifie()
     {
         Assert.Equal(StatutOperation.NonAuthentifie, (await Service().GetAsync("inconnue", Jour, CancellationToken.None)).Statut);
+    }
+
+    private async Task<int> SuiviAvecPhoto(int carnet, string url)
+    {
+        var suivi = new SymptomeCycle { CarnetSanteId = carnet, TypeSymptome = "Acné", Date = new DateTime(2026, 9, 13), Intensite = 3, PhotoUrl = url };
+        _carnet.Context.SymptomesCycles.Add(suivi);
+        await _carnet.Context.SaveChangesAsync();
+        return suivi.Id;
+    }
+
+    [Fact]
+    public async Task Get_LesPhotosPassentParLAPI_JamaisParLAdresseDuStockage()
+    {
+        var id = await SuiviAvecPhoto(CarnetDeTest.CarnetSanteId, "https://stockage.test/symptomes/1/a.png");
+
+        var vue = (await Service().GetAsync(CarnetDeTest.UserId, Jour, CancellationToken.None)).Valeur!;
+
+        Assert.Equal($"Acne/photos/{id}", vue.Suivis.Single().PhotoUrl);
+    }
+
+    [Fact]
+    public async Task Photo_DeLaProprietaire_EstLueParLeServeurAvecUnTypeDeduitDeLExtension()
+    {
+        var url = "https://stockage.test/symptomes/1/a.png";
+        _stockage.Contenus[url] = [1, 2, 3];
+        var id = await SuiviAvecPhoto(CarnetDeTest.CarnetSanteId, url);
+
+        var resultat = await Service().PhotoAsync(CarnetDeTest.UserId, id, CancellationToken.None);
+
+        Assert.Equal(StatutOperation.Succes, resultat.Statut);
+        Assert.Equal("image/png", resultat.Valeur!.TypeContenu);
+        using var flux = new MemoryStream();
+        await resultat.Valeur.Contenu.CopyToAsync(flux);
+        Assert.Equal([1, 2, 3], flux.ToArray());
+    }
+
+    [Fact]
+    public async Task Photo_DUnAutreCarnet_EstRefusee()
+    {
+        var url = "https://stockage.test/symptomes/2/b.jpg";
+        _stockage.Contenus[url] = [9];
+        var id = await SuiviAvecPhoto(CarnetDeTest.AutreCarnetSanteId, url);
+
+        var resultat = await Service().PhotoAsync(CarnetDeTest.UserId, id, CancellationToken.None);
+
+        Assert.Equal(StatutOperation.Interdit, resultat.Statut);
+    }
+
+    [Fact]
+    public async Task Photo_InexistanteOuAbsenteDuStockage_EstIntrouvable()
+    {
+        var sansPhoto = await SuiviAvecPhoto(CarnetDeTest.CarnetSanteId, "");
+        var absenteDuStockage = await SuiviAvecPhoto(CarnetDeTest.CarnetSanteId, "https://stockage.test/symptomes/1/perdue.jpg");
+
+        Assert.Equal(StatutOperation.Introuvable, (await Service().PhotoAsync(CarnetDeTest.UserId, 9999, CancellationToken.None)).Statut);
+        Assert.Equal(StatutOperation.Introuvable, (await Service().PhotoAsync(CarnetDeTest.UserId, sansPhoto, CancellationToken.None)).Statut);
+        Assert.Equal(StatutOperation.Introuvable, (await Service().PhotoAsync(CarnetDeTest.UserId, absenteDuStockage, CancellationToken.None)).Statut);
+        Assert.Equal(StatutOperation.NonAuthentifie, (await Service().PhotoAsync("", sansPhoto, CancellationToken.None)).Statut);
     }
 
     public void Dispose() => _carnet.Dispose();

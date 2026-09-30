@@ -167,7 +167,8 @@ public class SyntheseRendezVousService(AppDbContext context)
                 return new SyntheseTraitementViewModel
                 {
                     Traitement = TraitementsService.Vue(t),
-                    EnCours = t.TraitementEnCours,
+                    // Une fin atteinte avant la fin de la période : arrêté (le drapeau stocké peut dater d'avant cette fin).
+                    EnCours = t.TraitementEnCours && (t.DateFinTraitement == null || DateOnly.FromDateTime(t.DateFinTraitement.Value) >= au),
                     Prevues = PrisesPrevues(t, du, au),
                     Faites = faites.Count,
                     Ignorees = prises.Count(p => p.MedicamentId == t.Id && p.Statut == StatutPrise.Ignore),

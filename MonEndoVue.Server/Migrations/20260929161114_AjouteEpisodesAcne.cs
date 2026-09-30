@@ -37,19 +37,24 @@ namespace MonEndoVue.Server.Migrations
                 table: "EpisodesAcne",
                 columns: new[] { "CarnetSanteId", "Debut" });
 
-            // Reprise des jours d'acné déjà notés (une entrée par jour) : jours consécutifs = un épisode, comme les
-            // regroupait l'ancien onglet. Le dernier épisode reste en cours s'il va jusqu'à hier ou aujourd'hui (fuseau).
-            // Les entrées d'origine sont conservées (historique, photos, export).
+            // Reprise des jours d'acné déjà notés : des entrées espacées d'au plus 7 jours (jours consécutifs, ou une photo
+            // par semaine) forment un épisode ; au-delà, un nouvel épisode commence. Le dernier épisode reste en cours s'il va
+            // jusqu'à hier ou aujourd'hui (fuseau). Les entrées d'origine sont conservées (historique, photos, export).
             migrationBuilder.Sql("""
                 WITH Jours AS (
                     SELECT DISTINCT CarnetSanteId, CAST([Date] AS date) AS Jour
                     FROM SymptomesCycles
                     WHERE TypeSymptome = N'Acné'
                 ),
+                Marques AS (
+                    SELECT CarnetSanteId, Jour,
+                           CASE WHEN DATEDIFF(day, LAG(Jour) OVER (PARTITION BY CarnetSanteId ORDER BY Jour), Jour) <= 7 THEN 0 ELSE 1 END AS Nouveau
+                    FROM Jours
+                ),
                 Ilots AS (
                     SELECT CarnetSanteId, Jour,
-                           DATEADD(day, -ROW_NUMBER() OVER (PARTITION BY CarnetSanteId ORDER BY Jour), Jour) AS Groupe
-                    FROM Jours
+                           SUM(Nouveau) OVER (PARTITION BY CarnetSanteId ORDER BY Jour ROWS UNBOUNDED PRECEDING) AS Groupe
+                    FROM Marques
                 )
                 INSERT INTO EpisodesAcne (CarnetSanteId, Debut, Fin)
                 SELECT CarnetSanteId, MIN(Jour),

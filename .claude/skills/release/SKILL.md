@@ -81,4 +81,11 @@ Points d'attention connus :
   Avant de repointer l'image, exécuter sur la base de prod
   `UPDATE BilansQuotidiens SET StressPro = ISNULL(StressPro, 0), StressPerso = ISNULL(StressPerso, 0), Fatigue = ISNULL(Fatigue, 0), Pas = ISNULL(Pas, 0), Hydratation = ISNULL(Hydratation, 0)`
   (les anciennes versions comptaient de toute façon une valeur absente pour 0 ; la distinction « non renseigné » est perdue).
+- **Retour de la 1.3.0 vers la 1.2.1** : les migrations de la 1.3.0 sont additives (colonnes et tables en plus, valeurs par défaut),
+  l'ancienne image les ignore. Deux précautions avant de repointer l'image :
+  `DELETE FROM DonneesMedicaments WHERE Statut = 'Ignore'` (l'ancienne image ne connaît pas le statut et compterait ces réponses
+  comme des prises faites ; les réponses ignorées sont perdues) et savoir que les traitements gardent leur fréquence et leurs
+  horaires en base mais que l'ancienne image les traite tous comme des traitements sans planning. Les photos restent lisibles
+  par l'ancienne image seulement si le conteneur de stockage est redevenu public : **ne pas le rendre public pour un retour**,
+  mieux vaut corriger en avant. Plus ancien point de retour possible après la 1.3.0 : la 1.2.1.
 - Toute version qui rend un champ nullable ou supprime une table ajoute ici sa propre consigne de retour arrière.

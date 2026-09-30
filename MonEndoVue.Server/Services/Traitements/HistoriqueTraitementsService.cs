@@ -19,6 +19,9 @@ public class HistoriqueTraitementsService(AppDbContext context, TraitementsServi
         if (traitement == null) return ResultatOperation<HistoriqueTraitementViewModel>.Echec(StatutOperation.Introuvable);
         if (traitement.CarnetSanteId != carnetId) return ResultatOperation<HistoriqueTraitementViewModel>.Echec(StatutOperation.Interdit);
 
+        if (mois.Year < 2000 || mois.Year > 2100 || jour.Year < 2000 || jour.Year > 2100)
+            return ResultatOperation<HistoriqueTraitementViewModel>.Echec(StatutOperation.Invalide, "Mois ou jour invalide.");
+
         var debut = new DateOnly(mois.Year, mois.Month, 1);
         var fin = debut.AddMonths(1);
         var entrees = await EntreesAsync(traitement, debut.AddMonths(-1), fin, ct);

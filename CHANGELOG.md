@@ -37,6 +37,13 @@ versions en [SemVer](https://semver.org/lang/fr/) (voir la section Déploiement 
   quotidien) ; une entrée peut toujours être supprimée.
 
 ### Corrigé
+- Historique des cycles : les jours de douleur forte d'un cycle s'affichent correctement (des repères en trop pouvaient
+  apparaître).
+- Changement de mois rapide : seule la dernière réponse s'affiche (plus de mois mélangés sous un mauvais titre).
+- Modifier un ancien traitement arrêté ne le remet plus en cours ; le jour où un traitement est arrêté, ses prises prévues
+  restent visibles.
+- Téléchargement de mes données : le fichier n'est plus annulé sur iPhone. PDF de rendez-vous : pas de page vide pour un
+  mois sans donnée, accords au singulier.
 - Graphiques du bilan lisibles sur un mois complet : un graphique en barres par indicateur (douleur, fatigue, stress,
   émotions difficiles) au lieu de courbes superposées.
 
@@ -48,6 +55,7 @@ versions en [SemVer](https://semver.org/lang/fr/) (voir la section Déploiement 
 - Les mois se choisissent aussi directement (touche le nom du mois) pour revenir vite loin en arrière, sur les pages
   Douleurs, Cycle et Bilan ; l'historique des cycles et les photos d'acné plus anciennes s'affichent à la demande, pour que
   les pages restent rapides au fil des années.
+- Le rappel hebdomadaire de la photo d'acné n'est envoyé que pendant un épisode en cours.
 - Suivi de l'acné repensé : plus besoin de la noter chaque jour. Un épisode commence (« L'acné revient ») et dure
   jusqu'à « Ça s'est calmé » ; la photo de la semaine, la comparaison avant / après sur 1, 3 ou 6 mois et l'historique
   des épisodes restent sur le même onglet. Les jours déjà notés sont regroupés en épisodes, sans rien perdre.
@@ -82,6 +90,11 @@ versions en [SemVer](https://semver.org/lang/fr/) (voir la section Déploiement 
   onglets, liens et jours du calendrier sont plus faciles à toucher.
 
 ### Sécurité
+- Les photos de suivi de l'acné ne sont plus lues par un lien direct vers le stockage : MonEndo les sert lui-même, à la
+  seule personne connectée qui les a prises.
+- La limite de requêtes est maintenant propre à chaque utilisatrice (ou à chaque adresse pour une connexion), et non plus
+  partagée par toute l'application.
+- La déconnexion invalide aussi le jeton de renouvellement de la session.
 - Les jetons de connexion ne sont plus renvoyés dans les réponses de l'API : ils ne vivent que dans des cookies HttpOnly,
   hors de portée des scripts de la page. Un point d'accès inutilisé qui recevait ces jetons est supprimé.
 - Les polices et les icônes sont servies par MonEndo lui-même : plus aucune page ne contacte Google Fonts, qui
