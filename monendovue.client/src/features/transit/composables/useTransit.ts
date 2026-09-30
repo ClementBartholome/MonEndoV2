@@ -1,6 +1,7 @@
 import { computed, ref } from 'vue';
 import { startOfMonth } from 'date-fns';
 import apiService from '@/shared/services/apiService';
+import { derniereDemande } from '@/shared/utils/derniereDemande';
 import { useAuthStore } from '@/features/auth/store/auth';
 import { grouperParJour } from '@/shared/utils/jours';
 import { enTableau } from '@/shared/utils/json';
@@ -16,15 +17,19 @@ export function useTransit({ maintenant = () => new Date() }: { maintenant?: () 
 
     const groupes = computed(() => grouperParJour(entrees.value));
 
+    const nouvelleDemande = derniereDemande();
+
     async function charger() {
+        const estCourante = nouvelleDemande();
         chargement.value = entrees.value.length === 0;
         erreur.value = false;
         try {
-            entrees.value = enTableau(await apiService.getDonneesTransitByMonth(carnetSanteId, mois.value.getMonth() + 1, mois.value.getFullYear()));
+            const recues = enTableau<DonneesTransit>(await apiService.getDonneesTransitByMonth(carnetSanteId, mois.value.getMonth() + 1, mois.value.getFullYear()));
+            if (estCourante()) entrees.value = recues;
         } catch {
-            erreur.value = true;
+            if (estCourante()) erreur.value = true;
         } finally {
-            chargement.value = false;
+            if (estCourante()) chargement.value = false;
         }
     }
 
