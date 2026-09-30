@@ -12,9 +12,9 @@ src/
     types/                   # contrats TS (kebab-case : donnees-douleur.ts), miroir des DTO C#
     services/ store/         # seulement si propre au domaine (ex. auth)
   shared/
-    components/              # composants transverses (GenericCardList, SectionKpiHeader, EmptyStateAction, Datatable…)
+    components/              # composants transverses (SelecteurMois, PanneauBas, ChoixIntensite, EmptyStateAction…)
     components/ui/           # composants shadcn-vue générés : les modifier le moins possible
-    composables/             # useMonthData, useCrudOperations, useDialogForm, useDateTimeFormat
+    composables/             # seulement ce que plusieurs features partagent réellement
     services/apiService.ts   # unique point d'accès à l'API
     config/materialSymbols.ts# icônes et configurations d'icônes par type
     types/card.ts            # contrats des cartes génériques
@@ -28,8 +28,9 @@ Nouveau composant shadcn : `npx shadcn-vue add <nom>` (alias configurés vers `@
 - `import type` obligatoire pour les imports de types (`verbatimModuleSyntax`).
 - Taille : au-delà d'environ 150-200 lignes pour un bloc UI métier, extraire un composant dédié. `CyclePage.vue`
   est trop gros : les découper quand on y travaille (skill `fonctionnalite-front`).
-- Réutiliser l'existant avant de créer : `GenericCardList` (cartes mobiles, callbacks `onEdit`/`onDelete`/`onPhotoClick`),
-  `SectionKpiHeader`, `EmptyStateAction`, `Datatable`, `SelectMonth`, composants `ui/`.
+- Réutiliser l'existant avant de créer : `SelecteurMois`, `PanneauBas`, `ChoixIntensite`, `EmptyStateAction`, composants `ui/`.
+  Les anciens `GenericCardList`, `SectionKpiHeader`, `Datatable`, `SelectMonth`, `useMonthData`, `useCrudOperations`,
+  `useDialogForm` et `useDateTimeFormat` (et la dépendance DataTables) sont supprimés : plus aucune page n'en dépend.
 
 ## Page de suivi refondue (1.3.0) : modèle à suivre
 `features/douleurs/` est le modèle des pages du lot 3 : `utils/` (calculs purs : chiffres, graphique, regroupement par jour),
@@ -38,6 +39,11 @@ composants de présentation (`ChiffresDuMois`, `GraphiqueDouleursMois`, `ListeDo
 **actions en props** (`ActionsSaisieDouleur`) plutôt que des événements. Choix en boutons (`aria-pressed`), dates envoyées en
 AAAA-MM-JJTHH:mm:ss, lien profond `?ajouter`, bouton flottant au-dessus de la barre (mobile) et bouton d'en-tête (desktop),
 plus de DataTables.
+
+**Paramètres** : réglages en lignes groupées (`GroupeParametres` + `LigneParametre`), chaque ligne ouvre un `PanneauBas`
+(notifications, repères, mot de passe, suppression du compte) ou lance une action (se déconnecter, télécharger mes
+données) ; le contenu d'un panneau n'est monté, et ne charge ses données, qu'à son ouverture. **Transit** : ancien suivi en
+lecture seule (liste par jour, `SelecteurMois`, suppression en deux temps), plus de saisie.
 
 ## Deux patterns de référence
 1. **Page CRUD par mois** — modèle : `features/douleurs/pages/DouleursPage.vue`.
@@ -171,7 +177,7 @@ plus de DataTables.
   segments, liens seuls et jours de calendrier compris), contraste suffisant. Le nom accessible d'un bouton commence par
   son libellé visible (« Je l'ai pris : Diénogest, 8 h 00 »), sinon la commande vocale échoue. Chaque page garde un `h1`
   (en `sr-only` si un écran de saisie porte son propre titre).
-- Jamais de `v-html` ; pour `Datatable`, ne pas rendre de texte saisi comme HTML.
+- Jamais de `v-html` : le texte saisi s'affiche toujours comme du texte.
 
 ## Navigation
 - Une seule liste des rubriques : `shared/config/navigation.ts` (principales = barre du bas mobile, secondaires = menu

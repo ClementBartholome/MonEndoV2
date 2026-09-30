@@ -145,7 +145,7 @@ Sinon, une classe concrète simple injectée telle quelle. Pas d'interface « au
 3. **Rien de secret côté client** : toute variable `VITE_*` finit dans le bundle public. Un appel tiers nécessitant une clé secrète passe par le serveur.
 4. Jamais de mot de passe, token ou code OAuth dans une URL (query string, redirection) : body JSON ou cookie HttpOnly.
 5. Logs structurés **sans** email, token, donnée de santé ; jamais `ex.Message` renvoyé au client.
-6. Pas de `v-html` ni de rendu HTML de texte saisi (attention aux colonnes DataTables).
+6. Pas de `v-html` ni de rendu HTML de texte saisi (le texte saisi s'affiche toujours comme du texte).
 7. Uploads : valider taille et type côté serveur, ne jamais réutiliser une URL fournie par le client.
 8. Ne pas lire, afficher ou copier les fichiers de secrets (`appsettings*.json`, `.env*`, `serviceAccountKey.json`, `keys/`, logs).
 

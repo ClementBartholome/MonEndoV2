@@ -31,6 +31,11 @@ versions en [SemVer](https://semver.org/lang/fr/) (voir la section Déploiement 
   douleurs par type avec leurs jours de règles, traitements, bilans, activité), puis un tableau jour par jour par mois
   et les notes des bilans. Uniquement ce que tu as noté, sans interprétation.
 
+- Paramètres, refaits : les réglages sont regroupés en lignes (rappels, suivi, compte, mes données) et chacune s'ouvre
+  dans un panneau ; le même panneau sert à changer de mot de passe ou à supprimer son compte.
+- Transit : l'ancien suivi reste consultable, mois par mois, sans nouvelle saisie (le transit se note dans le bilan
+  quotidien) ; une entrée peut toujours être supprimée.
+
 ### Corrigé
 - Graphiques du bilan lisibles sur un mois complet : un graphique en barres par indicateur (douleur, fatigue, stress,
   émotions difficiles) au lieu de courbes superposées.
