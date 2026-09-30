@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Options;
 using System.Net;
 using MonEndoVue.Server.Services;
 using MonEndoVue.Server.Services.Agenda;
@@ -80,6 +81,103 @@ public class AgendaServiceTests
         Assert.Contains("timeMax=2026-09-30T22%3A00%3A00Z", url);
         Assert.Contains("singleEvents=true", url);
         Assert.Contains("orderBy=startTime", url);
+    }
+
+    /// <summary>Compte lié par OAuth : la liaison et le service d'agenda partagent la même base.</summary>
+    private static async Task<(AgendaService Service, FauxGoogleCalendar Calendrier)> AvecLiaison(
+        string items = "", IOptions<AgendaOptions>? configuration = null)
+    {
+        var carnet = new CarnetDeTest();
+        var protection = LiaisonAgendaDeTest.Protection();
+        var liaison = LiaisonAgendaDeTest.Service(carnet.Context, LiaisonAgendaDeTest.FauxGoogle(), protection: protection);
+        var debut = (await liaison.DemarrerAsync(CarnetDeTest.UserId, CancellationToken.None)).Valeur!;
+        var etat = Uri.UnescapeDataString(debut.UrlAutorisation.Split("state=")[1].Split('&')[0]);
+        await liaison.FinaliserAsync(debut.CookieEtat, etat, LiaisonAgendaDeTest.Code, null, CancellationToken.None);
+        var calendrier = Google(items);
+        return (AgendaDeTest.Service(calendrier, configuration, liaison), calendrier);
+    }
+
+    [Fact]
+    public async Task GetEvenementsAsync_AgendaLie_LitLeCalendrierPrincipalAvecLeJetonEtSansCleApi()
+    {
+        var (service, calendrier) = await AvecLiaison();
+
+        var resultat = await service.GetEvenementsAsync(CarnetDeTest.UserId, Debut, Fin, CancellationToken.None);
+
+        Assert.Equal(StatutOperation.Succes, resultat.Statut);
+        var requete = Assert.Single(calendrier.Requetes);
+        Assert.StartsWith($"{AgendaService.UrlApi}primary/events?", requete.RequestUri!.AbsoluteUri);
+        Assert.Equal("Bearer", requete.Headers.Authorization!.Scheme);
+        Assert.Equal(LiaisonAgendaDeTest.JetonAcces, requete.Headers.Authorization.Parameter);
+        Assert.False(requete.Headers.Contains(AgendaService.EnteteCleApi));
+        Assert.DoesNotContain(LiaisonAgendaDeTest.JetonAcces, requete.RequestUri.AbsoluteUri);
+    }
+
+    [Fact]
+    public async Task GetEvenementsAsync_AgendaLieSansEntreeDeConfiguration_Fonctionne()
+    {
+        var (service, calendrier) = await AvecLiaison(configuration: AgendaDeTest.Options(cleApi: null));
+
+        var resultat = await service.GetEvenementsAsync(CarnetDeTest.UserId, Debut, Fin, CancellationToken.None);
+
+        Assert.Equal(StatutOperation.Succes, resultat.Statut);
+        Assert.Single(calendrier.Requetes);
+    }
+
+    [Fact]
+    public async Task GetProchainsAsync_AgendaLie_UtiliseLeJetonEtEcarteLesJourneesEntieres()
+    {
+        var items = string.Join(',',
+            AgendaDeTest.Evenement("conges", "Congés", "2026-09-28", journeeEntiere: true),
+            AgendaDeTest.Evenement("rdv", "Rendez-vous", "2026-09-29T09:00:00+02:00"));
+        var (service, calendrier) = await AvecLiaison(items);
+
+        var resultat = await service.GetProchainsAsync(CarnetDeTest.UserId, CancellationToken.None);
+
+        Assert.Equal(["rdv"], resultat.Valeur!.Select(e => e.Id));
+        Assert.Equal("Bearer", Assert.Single(calendrier.Requetes).Headers.Authorization!.Scheme);
+    }
+
+    [Fact]
+    public async Task GetEvenementsAsync_AccordRevoque_RepliSurLaConfigurationPuisIntrouvableSansElle()
+    {
+        var carnet = new CarnetDeTest();
+        var protection = LiaisonAgendaDeTest.Protection();
+        var liaison = LiaisonAgendaDeTest.Service(carnet.Context, LiaisonAgendaDeTest.FauxGoogle(), protection: protection);
+        var debut = (await liaison.DemarrerAsync(CarnetDeTest.UserId, CancellationToken.None)).Valeur!;
+        var etat = Uri.UnescapeDataString(debut.UrlAutorisation.Split("state=")[1].Split('&')[0]);
+        await liaison.FinaliserAsync(debut.CookieEtat, etat, LiaisonAgendaDeTest.Code, null, CancellationToken.None);
+        var revoque = LiaisonAgendaDeTest.Service(
+            carnet.Context, LiaisonAgendaDeTest.FauxGoogle(_ => LiaisonAgendaDeTest.Erreur("invalid_grant")), protection: protection);
+
+        var avecConfig = await AgendaDeTest.Service(Google(), liaison: revoque)
+            .GetEvenementsAsync(CarnetDeTest.UserId, Debut, Fin, CancellationToken.None);
+        var sansConfig = await AgendaDeTest.Service(Google(), AgendaDeTest.Options(cleApi: null), revoque)
+            .GetEvenementsAsync(CarnetDeTest.UserId, Debut, Fin, CancellationToken.None);
+
+        Assert.Equal(StatutOperation.Succes, avecConfig.Statut);
+        Assert.Equal(StatutOperation.Introuvable, sansConfig.Statut);
+    }
+
+    [Fact]
+    public async Task GetEvenementsAsync_GoogleOAuthEnPanne_IndisponibleSansAppelerLeCalendrier()
+    {
+        var carnet = new CarnetDeTest();
+        var protection = LiaisonAgendaDeTest.Protection();
+        var liaison = LiaisonAgendaDeTest.Service(carnet.Context, LiaisonAgendaDeTest.FauxGoogle(), protection: protection);
+        var debut = (await liaison.DemarrerAsync(CarnetDeTest.UserId, CancellationToken.None)).Valeur!;
+        var etat = Uri.UnescapeDataString(debut.UrlAutorisation.Split("state=")[1].Split('&')[0]);
+        await liaison.FinaliserAsync(debut.CookieEtat, etat, LiaisonAgendaDeTest.Code, null, CancellationToken.None);
+        var enPanne = LiaisonAgendaDeTest.Service(
+            carnet.Context, LiaisonAgendaDeTest.FauxGoogle(_ => new HttpResponseMessage(HttpStatusCode.InternalServerError)),
+            protection: protection);
+        var calendrier = Google();
+
+        var resultat = await AgendaDeTest.Service(calendrier, liaison: enPanne)
+            .GetEvenementsAsync(CarnetDeTest.UserId, Debut, Fin, CancellationToken.None);
+
+        Assert.Equal(StatutOperation.Indisponible, resultat.Statut);
+        Assert.Empty(calendrier.Requetes);
     }
 
     [Fact]

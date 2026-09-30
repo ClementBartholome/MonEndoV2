@@ -18,6 +18,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : IdentityDbCo
     public DbSet<SymptomeCycle> SymptomesCycles { get; set; }
     public DbSet<AbonnementPush> AbonnementsPush { get; set; }
     public DbSet<Rappel> Rappels { get; set; }
+    public DbSet<LiaisonAgenda> LiaisonsAgenda { get; set; }
     public DbSet<EpisodeAcne> EpisodesAcne { get; set; }
     
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -144,6 +145,17 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : IdentityDbCo
             entity.HasOne(r => r.CarnetSante)
                 .WithMany()
                 .HasForeignKey(r => r.CarnetSanteId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // Liaison à l'agenda Google : une par carnet, supprimée avec lui
+        modelBuilder.Entity<LiaisonAgenda>(entity =>
+        {
+            entity.ToTable("LiaisonsAgenda");
+            entity.HasIndex(l => l.CarnetSanteId).IsUnique();
+            entity.HasOne(l => l.CarnetSante)
+                .WithMany()
+                .HasForeignKey(l => l.CarnetSanteId)
                 .OnDelete(DeleteBehavior.Cascade);
         });
 

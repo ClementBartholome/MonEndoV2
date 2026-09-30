@@ -20,8 +20,12 @@ public static class AgendaDeTest
             Calendriers = new Dictionary<string, string> { [userId] = Calendrier },
         });
 
-    public static AgendaService Service(FauxGoogleCalendar google, IOptions<AgendaOptions>? options = null) =>
-        new(new HttpClient(google), options ?? Options(), new HorlogeFixe(Maintenant), NullLogger<AgendaService>.Instance);
+    /// <summary>Sans liaison fournie, une base vide : aucune utilisatrice liée, seule la configuration compte.</summary>
+    public static AgendaService Service(
+        FauxGoogleCalendar google, IOptions<AgendaOptions>? options = null, LiaisonAgendaService? liaison = null) =>
+        new(new HttpClient(google), options ?? Options(),
+            liaison ?? LiaisonAgendaDeTest.ServiceSansGoogle(new CarnetDeTest().Context),
+            new HorlogeFixe(Maintenant), NullLogger<AgendaService>.Instance);
 
     /// <summary>Réponse JSON de l'API Google Calendar (format events.list).</summary>
     public static HttpResponseMessage Reponse(string items, string? pageSuivante = null) =>
@@ -48,9 +52,13 @@ public sealed class FauxGoogleCalendar(Func<HttpRequestMessage, HttpResponseMess
 {
     public List<HttpRequestMessage> Requetes { get; } = [];
 
-    protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+    /// <summary>Corps (formulaire) de chaque requête, lu à l'envoi : le contenu est libéré ensuite.</summary>
+    public List<string> Corps { get; } = [];
+
+    protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
     {
         Requetes.Add(request);
-        return Task.FromResult(repondre(request));
+        Corps.Add(request.Content is null ? "" : await request.Content.ReadAsStringAsync(cancellationToken));
+        return repondre(request);
     }
 }

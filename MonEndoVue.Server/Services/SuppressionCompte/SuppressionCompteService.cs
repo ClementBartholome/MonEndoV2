@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using MonEndoVue.Server.Data;
 using MonEndoVue.Server.Models;
+using MonEndoVue.Server.Services.Agenda;
 using MonEndoVue.Server.Services.Photos;
 
 namespace MonEndoVue.Server.Services.SuppressionCompte;
@@ -15,6 +16,7 @@ public class SuppressionCompteService(
     AppDbContext context,
     UserManager<ApplicationUser> userManager,
     IStockagePhotos stockagePhotos,
+    LiaisonAgendaService liaisonAgenda,
     ILogger<SuppressionCompteService> logger)
 {
     public const string MessageMotDePasseIncorrect = "Le mot de passe est incorrect.";
@@ -57,6 +59,8 @@ public class SuppressionCompteService(
                     "La suppression n'a pas pu aboutir. Aucune donnée n'a été supprimée : réessaie dans quelques minutes.");
             }
 
+            // Accord Google révoqué avant de perdre le jeton ; un échec est journalisé et ne bloque pas l'effacement.
+            await liaisonAgenda.RevoquerPourSuppressionAsync(id, ct);
             await MarquerDonneesDuCarnetAsync(id, ct);
         }
 
@@ -81,6 +85,7 @@ public class SuppressionCompteService(
         context.SymptomesCycles.RemoveRange(await context.SymptomesCycles.Where(e => e.CarnetSanteId == carnetId).ToListAsync(ct));
         context.EpisodesAcne.RemoveRange(await context.EpisodesAcne.Where(e => e.CarnetSanteId == carnetId).ToListAsync(ct));
         context.Rappels.RemoveRange(await context.Rappels.Where(e => e.CarnetSanteId == carnetId).ToListAsync(ct));
+        context.LiaisonsAgenda.RemoveRange(await context.LiaisonsAgenda.Where(e => e.CarnetSanteId == carnetId).ToListAsync(ct));
         context.AbonnementsPush.RemoveRange(await context.AbonnementsPush.Where(e => e.CarnetSanteId == carnetId).ToListAsync(ct));
         context.CarnetSantes.RemoveRange(await context.CarnetSantes.Where(c => c.Id == carnetId).ToListAsync(ct));
     }

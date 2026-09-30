@@ -7,17 +7,20 @@ using MonEndoVue.Server.ViewModels;
 namespace MonEndoVue.Server.Services.Agenda;
 
 /// <summary>
-/// Lecture de l'agenda Google de l'utilisatrice connectée, via l'API Calendar et une clé restée côté serveur.
-/// Le calendrier est déduit de la session (configuration), jamais reçu du client.
+/// Lecture de l'agenda Google de l'utilisatrice connectée, via l'API Calendar. Accès par la liaison OAuth de
+/// l'utilisatrice (calendrier principal, jeton d'accès) ou, à défaut et le temps de la transition, par la clé API et le
+/// calendrier de la configuration. Le calendrier est déduit de la session, jamais reçu du client.
 /// </summary>
 public class AgendaService(
     HttpClient httpClient,
     IOptions<AgendaOptions> options,
+    LiaisonAgendaService liaison,
     TimeProvider horloge,
     ILogger<AgendaService> logger)
 {
     public const string UrlApi = "https://www.googleapis.com/calendar/v3/calendars/";
     public const string EnteteCleApi = "X-goog-api-key";
+    public const string CalendrierPrincipal = "primary";
 
     /// <summary>Une vue mois de FullCalendar couvre au plus 6 semaines : au-delà, la demande est refusée.</summary>
     public static readonly TimeSpan PeriodeMax = TimeSpan.FromDays(62);
@@ -31,10 +34,10 @@ public class AgendaService(
     public async Task<ResultatOperation<IReadOnlyList<EvenementAgendaViewModel>>> GetEvenementsAsync(
         string userId, DateTimeOffset debut, DateTimeOffset fin, CancellationToken cancellationToken)
     {
-        var calendrier = options.Value.CalendrierDe(userId);
-        if (calendrier is null)
+        var acces = await AccesAsync(userId, cancellationToken);
+        if (acces.Statut != StatutOperation.Succes)
         {
-            return ResultatOperation<IReadOnlyList<EvenementAgendaViewModel>>.Echec(StatutOperation.Introuvable);
+            return ResultatOperation<IReadOnlyList<EvenementAgendaViewModel>>.Echec(acces.Statut, acces.Message);
         }
 
         if (fin <= debut || fin - debut > PeriodeMax)
@@ -43,28 +46,53 @@ public class AgendaService(
                 StatutOperation.Invalide, "La période demandée est invalide.");
         }
 
-        return await LireAsync(calendrier, debut, fin, EvenementsParPage, PagesMax, cancellationToken);
+        return await LireAsync(acces.Valeur!, debut, fin, EvenementsParPage, PagesMax, cancellationToken);
     }
 
     /// <summary>Les prochains rendez-vous à heure fixe (sans les événements sur la journée entière), comme sur l'accueil.</summary>
     public async Task<ResultatOperation<IReadOnlyList<EvenementAgendaViewModel>>> GetProchainsAsync(
         string userId, CancellationToken cancellationToken)
     {
-        var calendrier = options.Value.CalendrierDe(userId);
-        if (calendrier is null)
+        var acces = await AccesAsync(userId, cancellationToken);
+        if (acces.Statut != StatutOperation.Succes)
         {
-            return ResultatOperation<IReadOnlyList<EvenementAgendaViewModel>>.Echec(StatutOperation.Introuvable);
+            return ResultatOperation<IReadOnlyList<EvenementAgendaViewModel>>.Echec(acces.Statut, acces.Message);
         }
 
-        var resultat = await LireAsync(calendrier, horloge.GetUtcNow(), null, ProchainsCandidats, 1, cancellationToken);
+        var resultat = await LireAsync(acces.Valeur!, horloge.GetUtcNow(), null, ProchainsCandidats, 1, cancellationToken);
         return resultat.Statut != StatutOperation.Succes
             ? resultat
             : ResultatOperation<IReadOnlyList<EvenementAgendaViewModel>>.Succes(
                 resultat.Valeur!.Where(e => !e.JourneeEntiere).Take(NombreProchains).ToList());
     }
 
+    /// <summary>La liaison OAuth prime ; sans liaison, l'entrée de configuration (clé API) ; sinon Introuvable.</summary>
+    private async Task<ResultatOperation<AccesAgenda>> AccesAsync(string userId, CancellationToken cancellationToken)
+    {
+        var jeton = await liaison.JetonAccesAsync(userId, cancellationToken);
+        if (jeton.Statut == StatutOperation.Succes)
+        {
+            return ResultatOperation<AccesAgenda>.Succes(new AccesAgenda(
+                CalendrierPrincipal,
+                r => r.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", jeton.Valeur)));
+        }
+
+        if (jeton.Statut == StatutOperation.Indisponible)
+        {
+            return ResultatOperation<AccesAgenda>.Echec(StatutOperation.Indisponible, MessageIndisponible);
+        }
+
+        var calendrier = options.Value.CalendrierDe(userId);
+        return calendrier is null
+            ? ResultatOperation<AccesAgenda>.Echec(StatutOperation.Introuvable)
+            : ResultatOperation<AccesAgenda>.Succes(
+                new AccesAgenda(calendrier, r => r.Headers.Add(EnteteCleApi, options.Value.CleApi)));
+    }
+
+    private sealed record AccesAgenda(string Calendrier, Action<HttpRequestMessage> Authentifier);
+
     private async Task<ResultatOperation<IReadOnlyList<EvenementAgendaViewModel>>> LireAsync(
-        string calendrier, DateTimeOffset debut, DateTimeOffset? fin, int parPage, int pagesMax,
+        AccesAgenda acces, DateTimeOffset debut, DateTimeOffset? fin, int parPage, int pagesMax,
         CancellationToken cancellationToken)
     {
         var evenements = new List<EvenementAgendaViewModel>();
@@ -73,9 +101,9 @@ public class AgendaService(
         {
             for (var page = 0; page < pagesMax; page++)
             {
-                using var requete = new HttpRequestMessage(HttpMethod.Get, Url(calendrier, debut, fin, parPage, pageSuivante));
-                // Clé en en-tête plutôt qu'en query string : HttpClient journalise les URL (niveau Information).
-                requete.Headers.Add(EnteteCleApi, options.Value.CleApi);
+                using var requete = new HttpRequestMessage(HttpMethod.Get, Url(acces.Calendrier, debut, fin, parPage, pageSuivante));
+                // Jeton ou clé en en-tête plutôt qu'en query string : HttpClient journalise les URL (niveau Information).
+                acces.Authentifier(requete);
                 using var reponse = await httpClient.SendAsync(requete, cancellationToken);
                 if (!reponse.IsSuccessStatusCode)
                 {

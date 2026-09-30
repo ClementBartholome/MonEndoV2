@@ -89,7 +89,7 @@ dotnet ef migrations add NomEnPascalCase --project MonEndoVue.Server
   par `features/bilan-quotidien/utils/humeur.ts`, qui prend en compte les deux.
 - Accueil `/` « Aujourd'hui » (`GET Accueil/aujourdhui?jour=AAAA-MM-JJ`, jour local envoyé par le client, carnet de la
   session : cycle déduit des jours de règles sans prédiction, bilan du jour, prises prévues ce jour-là (heure et réponse) et
-  traitements au besoin, faits descriptifs des 7 derniers jours ; prise notée en un geste par `POST Traitements/{id}/prises`), agenda `/agenda` (Google Calendar en lecture via le serveur, seulement pour une utilisatrice associée à un calendrier dans la configuration `Agenda`), « Préparer un rendez-vous » `/export` : PDF créé dans le navigateur (jsPDF, chargé à la demande) depuis
+  traitements au besoin, faits descriptifs des 7 derniers jours ; prise notée en un geste par `POST Traitements/{id}/prises`), agenda `/agenda` (Google Calendar en lecture via le serveur : calendrier principal de l'utilisatrice après **liaison OAuth** (`Agenda/liaison/*`, `LiaisonAgenda`, portée `calendar.events.readonly`), ou, pendant la transition, calendrier associé dans la configuration `Agenda` ; l'interface de liaison dans `/parametres` reste à faire), « Préparer un rendez-vous » `/export` : PDF créé dans le navigateur (jsPDF, chargé à la demande) depuis
   `GET Synthese?du=&au=` (`SyntheseRendezVousService`, carnet de la session, un an au plus : comptes et moyennes par
   rubrique, prises des traitements, règles, détail jour par jour, **sans interprétation**). Période 1 mois / 3 mois /
   libre, rubriques au choix, « Mes questions » (texte libre gardé sur l'appareil, jamais envoyé, en première page).
