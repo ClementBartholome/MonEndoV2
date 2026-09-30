@@ -69,6 +69,9 @@ versions en [SemVer](https://semver.org/lang/fr/) (voir la section Déploiement 
   (prise notée, bilan rempli) s'affiche en texte avec une coche verte et ne ressemble plus à un bouton, et le bouton de
   prise dit « Je l'ai pris ».
 - Les icônes gardent leur taille pendant le chargement de la page (plus de décalage ni de défilement horizontal).
+- Douleur, émotions et indicateurs du bilan gardent la même couleur d'un écran à l'autre ; l'échelle de douleur du bilan
+  a le même liseré de couleur que dans les autres saisies ; les actions se nomment par un verbe (« Noter une prise »,
+  « Noter une séance ») ; le focus au clavier est visible partout.
 - Bilan : la page s'ouvre sur l'historique, avec « Remplir le bilan de ce jour » ; la saisie s'ouvre directement depuis
   « Faire mon bilan » de l'accueil et depuis le rappel du soir.
 - Navigation : la rubrique en cours est marquée d'un fond neutre, le rose est réservé aux boutons d'action.

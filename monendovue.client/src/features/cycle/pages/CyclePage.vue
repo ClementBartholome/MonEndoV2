@@ -18,7 +18,7 @@
         </TabsTrigger>
       </TabsList>
 
-      <TabsContent value="cycles" class="flex flex-col gap-3.5 focus:outline-none">
+      <TabsContent value="cycles" class="flex flex-col gap-3.5">
         <div v-if="regles.chargement.value" class="flex flex-col gap-3.5" aria-busy="true" aria-label="Chargement des règles">
           <Skeleton class="h-24 rounded-carte"/>
           <Skeleton class="h-80 rounded-carte"/>
@@ -38,7 +38,7 @@
         </template>
       </TabsContent>
 
-      <TabsContent value="symptomes" class="flex flex-col gap-3.5 focus:outline-none">
+      <TabsContent value="symptomes" class="flex flex-col gap-3.5">
         <nav aria-label="Mois affiché" class="-mx-3">
           <SelecteurMois :mois="symptomes.mois.value" @changer="symptomes.allerAuMois"/>
         </nav>
@@ -58,7 +58,7 @@
                           action-label="Noter un symptôme" @action="ouvrirAjout(false)"/>
       </TabsContent>
 
-      <TabsContent value="acne" class="flex flex-col gap-3.5 focus:outline-none">
+      <TabsContent value="acne" class="flex flex-col gap-3.5">
         <div v-if="acne.chargement.value" class="flex flex-col gap-3.5" aria-busy="true" aria-label="Chargement du suivi de l'acné">
           <Skeleton class="h-24 rounded-carte"/>
           <Skeleton class="h-36 rounded-carte"/>
