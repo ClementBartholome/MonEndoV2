@@ -55,6 +55,19 @@ public sealed class AccountControllerIdentifiantsTests : IDisposable
         Assert.IsType<OkObjectResult>(resultat);
     }
 
+    [Fact]
+    public async Task Login_ReponseSansJetons_ILsNeSontQueDansLesCookiesHttpOnly()
+    {
+        await _identity.CreerUtilisatrice("jetons@local");
+        var controller = _identity.CreerController();
+
+        var resultat = await controller.Login(new IdentifiantsDto { Email = "jetons@local", Password = IdentityDeTest.MotDePasseValide });
+
+        var corps = Assert.IsType<OkObjectResult>(resultat).Value!;
+        // Seuls l'expiration et les informations d'affichage sont lisibles par le script de la page.
+        Assert.Equal(["TokenExpiry", "UserName", "CarnetSanteId", "ConsentementAJour"], corps.GetType().GetProperties().Select(p => p.Name));
+    }
+
     [Theory]
     [InlineData("connexion@local", "MauvaisMotDePasse1!")]
     [InlineData("inconnue@local", IdentityDeTest.MotDePasseValide)]
