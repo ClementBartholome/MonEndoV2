@@ -102,8 +102,9 @@ public class TraitementsService(AppDbContext context, CarnetSanteService carnetS
         if (TraitementValidator.Valider(dto) is { } erreur) return ResultatOperation.Echec(StatutOperation.Invalide, erreur);
 
         Appliquer(traitement!, dto);
-        // Une fin passée arrête le traitement, une fin retirée ou future le relance.
-        traitement!.TraitementEnCours = dto.DateFin == null || dto.DateFin >= DateOnly.FromDateTime(horloge.GetLocalNow().DateTime);
+        // Une fin passée arrête le traitement, une fin future le garde en cours. Sans date de fin, l'état ne change pas :
+        // enregistrer un ancien traitement arrêté (sans date) pour y ajouter une fréquence ne le relance pas.
+        if (dto.DateFin is { } fin) traitement!.TraitementEnCours = fin >= DateOnly.FromDateTime(horloge.GetLocalNow().DateTime);
         await context.SaveChangesAsync(ct);
         carnetSanteService.InvalidateCache(traitement.CarnetSanteId);
         return ResultatOperation.Succes();

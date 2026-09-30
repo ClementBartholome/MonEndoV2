@@ -17,6 +17,8 @@ public class ActiviteService(AppDbContext context, CarnetSanteService carnetSant
     {
         if (await CarnetDeAsync(userId, ct) is not { } carnetId) return ResultatOperation<List<ActiviteViewModel>>.Echec(StatutOperation.NonAuthentifie);
 
+        if (mois.Year < 2000 || mois.Year > 2100) return ResultatOperation<List<ActiviteViewModel>>.Echec(StatutOperation.Invalide, "Mois invalide.");
+
         var debut = new DateTime(mois.Year, mois.Month, 1);
         var activites = await context.DonneesActivitePhysique.AsNoTracking()
             .Where(a => a.CarnetSanteId == carnetId && a.Date >= debut && a.Date < debut.AddMonths(1))

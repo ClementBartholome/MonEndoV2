@@ -48,6 +48,12 @@ Complète le [CLAUDE.md racine](../CLAUDE.md). S'applique à tout le code de `Mo
 - **Dette connue** (lot C de la roadmap), à résorber quand on touche la zone :
   - les contrôleurs injectent `AppDbContext` et contiennent des requêtes (sauf `NotificationsController`, déjà conforme) ;
   - `CarnetSanteService` mélange lecture du carnet, page d'accueil, export PDF et cache ;
+  - **Les photos ne sont jamais servies par leur adresse de stockage** : `GET Acne/photos/{id}` (`AcneService.PhotoAsync`) les
+    lit par `IStockagePhotos`, vérifie le carnet en base et déduit le type de l'extension ; les view models exposent ce chemin
+    (`AcneService.CheminPhoto`), jamais `PhotoUrl`. Le conteneur Azure doit rester **privé** (réglage à vérifier sur le portail) ;
+    la CSP n'autorise plus aucun domaine de stockage pour les images.
+  - Limites de débit (`PolitiquesDebit`) : une fenêtre **par utilisatrice** (ou par adresse pour un anonyme, lue dans
+    `X-Forwarded-For` de nginx), jamais une fenêtre commune à toute l'application.
   - `AzureBlobStorageService` : lecture et suppression par URL passent par `IStockagePhotos` (`Services/Photos/`,
     `Support/FauxStockagePhotos` en test) ; l'upload et la suppression d'une photo de symptôme l'appellent encore directement ;
   - `DateTime.Now` subsiste dans l'authentification.
