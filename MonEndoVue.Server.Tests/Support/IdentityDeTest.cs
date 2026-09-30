@@ -64,7 +64,7 @@ public sealed class IdentityDeTest : IDisposable
     {
         var sp = _scope.ServiceProvider;
         var carnetSanteService = new CarnetSanteService(
-            Context, NullLogger<CarnetSanteService>.Instance, sp.GetRequiredService<IMemoryCache>());
+            Context, sp.GetRequiredService<IMemoryCache>());
 
         var httpContext = new DefaultHttpContext { RequestServices = sp };
         sp.GetRequiredService<IHttpContextAccessor>().HttpContext = httpContext;

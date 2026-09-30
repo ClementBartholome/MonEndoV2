@@ -120,10 +120,6 @@ class ApiService {
     }
     
     // GET
-    async getDonneesCarnetSante(carnetSanteId: number): Promise<any> {
-        return this.request('GET', `CarnetSante/${carnetSanteId}`);
-    }
-
     /** Synthèse du suivi du `du` au `au` inclus (AAAA-MM-JJ, un an au plus), carnet déduit de la session. */
     async getSyntheseRendezVous(du: string, au: string): Promise<SyntheseRendezVous> {
         return this.request<SyntheseRendezVous>('GET', `Synthese?du=${du}&au=${au}`);
