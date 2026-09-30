@@ -79,6 +79,8 @@ versions en [SemVer](https://semver.org/lang/fr/) (voir la section Déploiement 
   onglets, liens et jours du calendrier sont plus faciles à toucher.
 
 ### Sécurité
+- Les jetons de connexion ne sont plus renvoyés dans les réponses de l'API : ils ne vivent que dans des cookies HttpOnly,
+  hors de portée des scripts de la page. Un point d'accès inutilisé qui recevait ces jetons est supprimé.
 - Les polices et les icônes sont servies par MonEndo lui-même : plus aucune page ne contacte Google Fonts, qui
   recevait jusqu'ici l'adresse IP à chaque visite.
 - Un compte sans aucune connexion pendant 2 ans est supprimé automatiquement, avec toutes ses données.

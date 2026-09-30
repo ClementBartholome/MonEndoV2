@@ -1,4 +1,3 @@
-using System.IdentityModel.Tokens.Jwt;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Identity;
@@ -45,10 +44,10 @@ namespace MonEndoVue.Server.Controllers
             }
             await carnetSanteService.CreateCarnetSante(user.Id);
 
-            var (accessToken, refreshToken, tokenExpiry) = await OuvrirSessionAsync(user);
+            var (_, _, tokenExpiry) = await OuvrirSessionAsync(user);
 
             var carnetSante = await carnetSanteService.GetCarnetSanteByUserId(user.Id);
-            return Ok(new { AccessToken = accessToken, RefreshToken = refreshToken, TokenExpiry = tokenExpiry, user.UserName, CarnetSanteId = carnetSante.Id, ConsentementAJour = PolitiqueConfidentialite.EstAJour(user) });
+            return Ok(new { TokenExpiry = tokenExpiry, user.UserName, CarnetSanteId = carnetSante.Id, ConsentementAJour = PolitiqueConfidentialite.EstAJour(user) });
         }
 
         [HttpPost("login")]
@@ -67,10 +66,10 @@ namespace MonEndoVue.Server.Controllers
                 var result = await signInManager.CheckPasswordSignInAsync(user, identifiants.Password, lockoutOnFailure: true);
                 if (!result.Succeeded) return Unauthorized();
 
-                var (accessToken, refreshToken, tokenExpiry) = await OuvrirSessionAsync(user);
+                var (_, _, tokenExpiry) = await OuvrirSessionAsync(user);
 
                 var carnetSante = await carnetSanteService.GetCarnetSanteByUserId(user.Id);
-                return Ok(new { AccessToken = accessToken, RefreshToken = refreshToken, TokenExpiry = tokenExpiry, user.UserName, CarnetSanteId = carnetSante.Id, ConsentementAJour = PolitiqueConfidentialite.EstAJour(user) });
+                return Ok(new { TokenExpiry = tokenExpiry, user.UserName, CarnetSanteId = carnetSante.Id, ConsentementAJour = PolitiqueConfidentialite.EstAJour(user) });
             }
             catch (Exception ex)
             {
@@ -102,41 +101,10 @@ namespace MonEndoVue.Server.Controllers
                 return BadRequest("Expired refresh token");
             }
 
-            var (newAccessToken, newRefreshToken, tokenExpiry) = await OuvrirSessionAsync(user);
+            var (_, _, tokenExpiry) = await OuvrirSessionAsync(user);
 
             logger.LogInformation("Refresh token successfully generated for user: {UserId}", user.Id);
-            return Ok(new { AccessToken = newAccessToken, RefreshToken = newRefreshToken, TokenExpiry = tokenExpiry });
-        }
-        
-        [HttpPost("check-token-validity")]
-        public async Task<IActionResult> CheckTokenValidity([FromBody] TokenRequest tokenRequest)
-        {
-            var tokenHandler = new JwtSecurityTokenHandler();
-            var jwtToken = tokenHandler.ReadToken(tokenRequest.AccessToken) as JwtSecurityToken;
-
-            if (jwtToken == null)
-            {
-                return BadRequest("Invalid access token");
-            }
-
-            if (jwtToken.ValidTo < DateTime.Now)
-            {
-                return Ok(new { IsValid = false, Message = "Token has expired" });
-            }
-
-            var principal = tokenService.GetPrincipalFromExpiredToken(tokenRequest.AccessToken);
-            var username = principal.Identity?.Name;
-            if (username == null) return BadRequest("Invalid access token");
-
-            var user = await userManager.FindByNameAsync(username);
-            if (user == null) return BadRequest("User not found.");
-
-            if (user.RefreshToken != tokenRequest.RefreshToken)
-            {
-                return Ok(new { IsValid = false, Message = "Invalid refresh token" });
-            }
-
-            return Ok(new { IsValid = true });
+            return Ok(new { TokenExpiry = tokenExpiry });
         }
         
         [HttpPost("logout")]
