@@ -22,7 +22,8 @@ export function simulerRegles(serveur: FauxServeur, initiaux: string[] = [], vue
           dureeMaximale: null,
           ...vue,
           // Comme le serveur : les N derniers cycles demandés (6 par défaut) et le nombre de plus anciens.
-          cycles: liste((vue.cycles ?? []).slice(0, Number(url.searchParams.get('cycles') ?? 6))),
+          // Comme le serveur (ReferenceHandler.Preserve) : chaque liste imbriquée est sous $values, joursDouleurForte compris.
+          cycles: liste((vue.cycles ?? []).slice(0, Number(url.searchParams.get('cycles') ?? 6)).map((c) => ({ ...c, joursDouleurForte: liste(c.joursDouleurForte ?? []) }))),
           cyclesPlusAnciens: Math.max(0, (vue.cycles ?? []).length - Number(url.searchParams.get('cycles') ?? 6)),
           joursDeRegles: liste([...jours].filter((j) => j.startsWith(mois)).sort((a, b) => a.localeCompare(b))),
         },
@@ -105,6 +106,8 @@ export function simulerAcne(serveur: FauxServeur, initiaux: { debut: string; fin
   initiaux.forEach((e) => enregistrer(prochainId++, e.debut, e.fin ?? null));
 
   serveur
+    // Photos servies par l'API (Acne/photos/{id}) : un pixel GIF.
+    .on('GET', /^Acne\/photos\/\d+$/, () => ({ image: { type: 'image/gif', octets: Buffer.from('R0lGODlhAQABAAAAACw=', 'base64') } }))
     .on('GET', /^Acne$/, () => ({
       body: { episodes: liste([...episodes].sort((a, b) => b.debut.localeCompare(a.debut))), suivis: liste(suivis), suivisPlusAnciens: 0 },
     }))

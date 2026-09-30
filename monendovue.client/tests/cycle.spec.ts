@@ -160,8 +160,8 @@ test.describe('Cycle · symptômes', () => {
 test.describe('Cycle · acné', () => {
   const photo = (id: number, date: string) => ({
     id, date, intensite: 4, commentaire: null,
-    // Image vide servie par le navigateur de test : pas d'appel réseau.
-    photoUrl: 'data:image/gif;base64,R0lGODlhAQABAAAAACw=',
+    // Chemin de l'API, comme le serveur : la photo est servie par Acne/photos/{id}, jamais par le stockage.
+    photoUrl: `Acne/photos/${id}`,
   });
 
   test('épisode en cours, point de la semaine, avant / après et historique', async ({ cyclePage, serveur, page }) => {

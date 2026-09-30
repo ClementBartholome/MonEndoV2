@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using MonEndoVue.Server.Data;
 using MonEndoVue.Server.Dto;
 using MonEndoVue.Server.Models;
+using MonEndoVue.Server.Services.Photos;
 using MonEndoVue.Server.ViewModels;
 
 namespace MonEndoVue.Server.Services.Cycle;
@@ -11,7 +12,10 @@ namespace MonEndoVue.Server.Services.Cycle;
 /// Suivi de l'acné de l'utilisatrice connectée (carnet déduit de la session) : épisodes (début, fin, en cours) et points
 /// de suivi avec photo. Les épisodes d'un carnet ne se chevauchent pas et un seul peut être en cours.
 /// </summary>
-public class AcneService(AppDbContext context, CarnetSanteService carnetSanteService, TimeProvider horloge)
+/// <summary>Flux d'une photo de suivi et son type.</summary>
+public sealed record PhotoDeSuivi(Stream Contenu, string TypeContenu);
+
+public class AcneService(AppDbContext context, CarnetSanteService carnetSanteService, TimeProvider horloge, IStockagePhotos stockagePhotos)
 {
     /// <summary>Type des symptômes de suivi (photo, intensité), partagé avec l'onglet et le rappel hebdomadaire.</summary>
     public const string TypeAcne = "Acné";
@@ -56,11 +60,42 @@ public class AcneService(AppDbContext context, CarnetSanteService carnetSanteSer
                 Date = s.Date.ToString("yyyy-MM-dd'T'HH:mm:ss", CultureInfo.InvariantCulture),
                 Intensite = s.Intensite,
                 Commentaire = s.Commentaire,
-                PhotoUrl = s.PhotoUrl!,
+                // Chemin de l'API (jamais l'adresse du stockage) : la photo n'est lisible qu'en étant connectée.
+                PhotoUrl = CheminPhoto(s.Id),
             }).ToList(),
             SuivisPlusAnciens = plusAnciens,
         });
     }
+
+    /// <summary>Chemin relatif de l'API qui sert la photo d'un suivi (<c>GET Acne/photos/{id}</c>).</summary>
+    public static string CheminPhoto(int symptomeId) => $"Acne/photos/{symptomeId}";
+
+    /// <summary>
+    /// Photo d'un suivi de l'utilisatrice connectée, lue dans le stockage par le serveur : l'adresse du stockage n'est jamais
+    /// donnée au navigateur et le conteneur peut rester privé. Le carnet est celui de la session, l'adresse celle de la base.
+    /// </summary>
+    public async Task<ResultatOperation<PhotoDeSuivi>> PhotoAsync(string userId, int symptomeId, CancellationToken ct)
+    {
+        if (await CarnetDeAsync(userId, ct) is not { } carnetId) return ResultatOperation<PhotoDeSuivi>.Echec(StatutOperation.NonAuthentifie);
+        var symptome = await context.SymptomesCycles.AsNoTracking().SingleOrDefaultAsync(s => s.Id == symptomeId, ct);
+        if (symptome == null || string.IsNullOrEmpty(symptome.PhotoUrl)) return ResultatOperation<PhotoDeSuivi>.Echec(StatutOperation.Introuvable);
+        if (symptome.CarnetSanteId != carnetId) return ResultatOperation<PhotoDeSuivi>.Echec(StatutOperation.Interdit);
+
+        var contenu = await stockagePhotos.OuvrirAsync(symptome.PhotoUrl, ct);
+        return contenu == null
+            ? ResultatOperation<PhotoDeSuivi>.Echec(StatutOperation.Introuvable)
+            : ResultatOperation<PhotoDeSuivi>.Succes(new PhotoDeSuivi(contenu, TypeDeContenu(symptome.PhotoUrl)));
+    }
+
+    /// <summary>Type d'après l'extension enregistrée, jamais le type déclaré par le client à l'envoi.</summary>
+    private static string TypeDeContenu(string url) => Path.GetExtension(url).ToLowerInvariant() switch
+    {
+        ".jpg" or ".jpeg" => "image/jpeg",
+        ".png" => "image/png",
+        ".webp" => "image/webp",
+        ".heic" or ".heif" => "image/heic",
+        _ => "application/octet-stream",
+    };
 
     /// <summary>Nouvel épisode (« L'acné revient »), en cours ou déjà terminé si une fin est donnée.</summary>
     public async Task<ResultatOperation<int>> CreerAsync(string userId, EpisodeAcneDto dto, CancellationToken ct)

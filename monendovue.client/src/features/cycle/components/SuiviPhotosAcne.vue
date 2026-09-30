@@ -26,8 +26,8 @@
     <div class="grid grid-cols-2 gap-2.5">
       <figure v-for="photo in [comparaison.avant, comparaison.apres]" :key="photo.id" class="m-0 flex flex-col gap-1.5">
         <button type="button" class="overflow-hidden rounded-carte" :aria-label="`Agrandir la photo du ${jour(photo.date)}`"
-                @click="emit('agrandir', photo.photoUrl)">
-          <img :src="photo.photoUrl" :alt="`Photo du ${jour(photo.date)}`" loading="lazy" class="aspect-[3/4] w-full bg-surface-2 object-cover object-top">
+                @click="emit('agrandir', urlDeApi(photo.photoUrl))">
+          <img :src="urlDeApi(photo.photoUrl)" :alt="`Photo du ${jour(photo.date)}`" loading="lazy" class="aspect-[3/4] w-full bg-surface-2 object-cover object-top">
         </button>
         <figcaption class="text-center text-legende text-texte-2">{{ jour(photo.date) }}</figcaption>
       </figure>
@@ -40,7 +40,7 @@
       <li v-for="suivi in suivis" :key="suivi.id">
         <button type="button" class="flex w-full flex-col items-stretch gap-1 text-left" :aria-label="`Photo du ${jour(suivi.date)}, intensité ${suivi.intensite} sur 10`"
                 @click="emit('modifier', suivi)">
-          <img :src="suivi.photoUrl" alt="" loading="lazy" class="aspect-square w-full rounded-controle bg-surface-2 object-cover object-top">
+          <img :src="urlDeApi(suivi.photoUrl)" alt="" loading="lazy" class="aspect-square w-full rounded-controle bg-surface-2 object-cover object-top">
           <span class="text-xs text-texte-2">{{ jourAbrege(suivi.date) }}</span>
         </button>
       </li>
@@ -54,6 +54,7 @@
 <script setup lang="ts">
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import { urlDeApi } from '@/shared/services/apiBase';
 import type { SuiviAcne } from '../types/acne';
 import { ilYA, type EcartComparaison } from '../utils/acne';
 

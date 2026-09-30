@@ -82,7 +82,7 @@ namespace MonEndoVue.Server.Controllers
         public async Task<IActionResult> RefreshToken()
         {
             var refreshToken = Request.Cookies["refreshToken"];
-            if (refreshToken == null)
+            if (string.IsNullOrEmpty(refreshToken))
             {
                 logger.LogWarning("Refresh token is not provided");
                 return BadRequest("Refresh token is not provided");
@@ -95,7 +95,8 @@ namespace MonEndoVue.Server.Controllers
                 return BadRequest("Invalid refresh token");
             }
 
-            if (user.RefreshTokenExpiryTime <= DateTime.Now)
+            // Un compte sans expiration (jeton jamais émis) ne peut pas ouvrir de session par ce chemin.
+            if (user.RefreshTokenExpiryTime is not { } expiration || expiration <= DateTime.Now)
             {
                 logger.LogWarning("Expired refresh token");
                 return BadRequest("Expired refresh token");
@@ -111,6 +112,15 @@ namespace MonEndoVue.Server.Controllers
         public async Task<IActionResult> Logout()
         {
             await signInManager.SignOutAsync();
+
+            // Le jeton de renouvellement meurt avec la session : un cookie recopié ne rouvrirait rien.
+            if (Request.Cookies["refreshToken"] is { Length: > 0 } cookie
+                && await userManager.Users.SingleOrDefaultAsync(u => u.RefreshToken == cookie) is { } utilisatrice)
+            {
+                utilisatrice.RefreshToken = string.Empty;
+                utilisatrice.RefreshTokenExpiryTime = null;
+                await userManager.UpdateAsync(utilisatrice);
+            }
             
             // Efface les cookies actuels (Path=/)
             Response.Cookies.Delete("accessToken", new CookieOptions { Path = "/" });

@@ -1,3 +1,5 @@
+using System.Security.Claims;
+using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.RateLimiting;
 
 namespace MonEndoVue.Server.Services;
@@ -11,6 +13,21 @@ public static class PolitiquesDebit
 {
     public const string Api = "api";
     public const string Auth = "auth";
+
+    /// <summary>Fenêtre fixe d'une minute par utilisatrice connectée, ou par adresse pour un appel anonyme.</summary>
+    public static RateLimitPartition<string> Partition(HttpContext contexte, int limite)
+    {
+        var cle = contexte.User.FindFirstValue(ClaimTypes.NameIdentifier) is { } id
+            ? $"utilisatrice:{id}"
+            : $"adresse:{contexte.Connection.RemoteIpAddress}";
+        return RateLimitPartition.GetFixedWindowLimiter(cle, _ => new FixedWindowRateLimiterOptions
+        {
+            PermitLimit = limite,
+            Window = TimeSpan.FromMinutes(1),
+            QueueLimit = 0,
+            AutoReplenishment = true,
+        });
+    }
 
     public static void AppliquerParDefaut(EndpointBuilder endpoint, string politique)
     {

@@ -24,6 +24,16 @@ public class AcneController(AcneService service) : ControllerBase
     public async Task<IActionResult> Get([FromQuery] DateOnly jour, CancellationToken ct, [FromQuery] int mois = AcneService.MoisDePhotos) =>
         this.VersReponse(await service.GetAsync(User.GetCurrentUserId(), jour, ct, mois), vue => Ok(vue));
 
+    /// <summary>Photo d'un suivi (<c>id</c> du suivi) : lue par le serveur, réservée à sa propriétaire, non partagée en cache.</summary>
+    [HttpGet("photos/{symptomeId:int}")]
+    public async Task<IActionResult> Photo(int symptomeId, CancellationToken ct)
+    {
+        var resultat = await service.PhotoAsync(User.GetCurrentUserId(), symptomeId, ct);
+        if (resultat.Statut == StatutOperation.Succes)
+            Response.Headers.CacheControl = "private, max-age=60";
+        return this.VersReponse(resultat, photo => File(photo.Contenu, photo.TypeContenu));
+    }
+
     [HttpPost("episodes")]
     public async Task<IActionResult> Creer(EpisodeAcneDto dto, CancellationToken ct) =>
         this.VersReponse(await service.CreerAsync(User.GetCurrentUserId(), dto, ct), id => Ok(new { id }));

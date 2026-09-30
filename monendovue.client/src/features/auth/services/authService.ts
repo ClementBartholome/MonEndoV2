@@ -1,8 +1,6 @@
 ﻿import axios from 'axios';
+import { API_URL } from '@/shared/services/apiBase';
 
-const API_URL = import.meta.env.VITE_DOCKER === 'true'
-    ? '/' // Même serveur : chemins absolus, justes quelle que soit la page (ex. /medicaments/12)
-    : (import.meta.env.MODE === 'production' ? import.meta.env.VITE_API_URL_PROD : import.meta.env.VITE_API_URL);
 
 const authService = {
     async login(email: string, password: string) {
