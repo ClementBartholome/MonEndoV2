@@ -40,7 +40,6 @@ public sealed class CarnetDeTest : IDisposable
 
         CarnetSanteService = new CarnetSanteService(
             Context,
-            NullLogger<CarnetSanteService>.Instance,
             new MemoryCache(new MemoryCacheOptions()));
     }
 

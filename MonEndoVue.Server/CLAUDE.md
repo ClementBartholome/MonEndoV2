@@ -61,7 +61,7 @@ Complète le [CLAUDE.md racine](../CLAUDE.md). S'applique à tout le code de `Mo
 ## Style C#
 - Namespace **file-scoped**, **primary constructors** pour l'injection, `Nullable` activé (déclarer `?` ou `required`).
 - Contrôleur : `[Route("[controller]")]`, `[ApiController]`, `[Authorize]` sur la classe ; segments d'action en kebab-case
-  (`by-month`, `last-entries`) et contraintes typées (`{id:int}`).
+  (`par-periode`, `rendez-vous`) et contraintes typées (`{id:int}`).
 - Actions `async` retournant `Task<ActionResult<T>>` / `Task<IActionResult>` ; propager un `CancellationToken` dans le nouveau code.
 - Noms métier en français (`CarnetSante`, `Intensite`), verbes techniques en anglais (`GetByMonth`, `UploadFileAsync`), suffixe `Async` sur les méthodes asynchrones.
 - Utilisatrice courante : `User.GetCurrentUserId()` (`Services/UserExtensions.cs`). Pas de `ClaimsPrincipal.Current`.
