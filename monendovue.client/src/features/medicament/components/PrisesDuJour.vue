@@ -32,7 +32,7 @@
                   :disabled="envoi" :aria-label="`Ignorer la prise de ${prise.nom} de ${heureAffichee(prise.heurePrevue)}`"
                   @click="emit('repondre', prise, 'Ignore')">Ignorer</button>
           <button type="button" class="inline-flex min-h-11 items-center justify-center gap-1 rounded-controle bg-button text-sm font-semibold text-texte disabled:opacity-60"
-                  :disabled="envoi" :aria-label="`Noter la prise de ${prise.nom} de ${heureAffichee(prise.heurePrevue)}`"
+                  :disabled="envoi" :aria-label="`Je l'ai pris : ${prise.nom}, ${heureAffichee(prise.heurePrevue)}`"
                   @click="emit('repondre', prise, 'Pris')">Je l'ai pris</button>
         </div>
       </div>

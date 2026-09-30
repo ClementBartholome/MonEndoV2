@@ -4,7 +4,7 @@
       <i class="material-symbols-outlined text-lg" aria-hidden="true">insights</i>Ta semaine
     </h2>
     <p class="m-0 text-[15px] leading-relaxed text-texte">{{ phrases.join(' ') }}</p>
-    <router-link to="/bilan-quotidien?onglet=analyse" class="inline-flex min-h-8 items-center text-sm font-medium !text-lien">
+    <router-link to="/bilan-quotidien?onglet=analyse" class="inline-flex min-h-11 items-center text-sm font-medium !text-lien">
       Voir l'analyse
     </router-link>
   </section>

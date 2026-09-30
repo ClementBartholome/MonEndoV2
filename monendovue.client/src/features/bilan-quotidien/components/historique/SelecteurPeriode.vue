@@ -24,7 +24,7 @@ const modes: { valeur: ModePeriode; libelle: string }[] = [
           v-for="mode in modes"
           :key="mode.valeur"
           type="button"
-          class="min-h-10 rounded-controle text-sm"
+          class="min-h-11 rounded-controle text-sm"
           :class="periode.mode === mode.valeur ? 'bg-surface font-semibold text-texte shadow-elevation' : 'text-texte-2'"
           :aria-pressed="periode.mode === mode.valeur"
           @click="emit('changer-mode', mode.valeur)"

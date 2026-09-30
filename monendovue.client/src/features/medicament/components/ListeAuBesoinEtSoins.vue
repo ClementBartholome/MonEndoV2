@@ -21,7 +21,7 @@
     <ul class="m-0 flex list-none flex-col rounded-carte bg-surface p-0 shadow-elevation">
       <li v-for="(soin, index) in soins" :key="soin.id"
           class="flex items-center gap-3 px-3.5 py-3" :class="{ 'border-t border-trait': index > 0 }">
-        <i class="material-symbols-outlined rounded-controle bg-teinte-bilan-fond p-1.5 text-[22px] text-teinte-bilan" aria-hidden="true">physical_therapy</i>
+        <i class="material-symbols-outlined rounded-controle bg-teinte-traitement-fond p-1.5 text-[22px] text-teinte-traitement" aria-hidden="true">physical_therapy</i>
         <div class="flex min-w-0 grow flex-col text-left">
           <span class="text-[15px] font-medium text-texte">{{ soin.nom }}</span>
           <span class="text-[13px] text-texte-3">{{ soin.derniereSeance ? `Dernière séance le ${jour(soin.derniereSeance)}` : 'Aucune séance notée' }}</span>

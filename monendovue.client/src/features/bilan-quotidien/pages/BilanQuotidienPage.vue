@@ -88,7 +88,8 @@ const tendances = computed(() => calculerTendances(model.value.jours, model.valu
 
 <template>
   <main class="mx-auto flex w-full max-w-xl flex-col gap-3.5 px-5 pb-40 pt-24 lg:pb-12 lg:pt-10">
-    <header v-if="!saisie" class="flex items-center gap-3">
+    <!-- Pendant la saisie, le titre de page reste lu (sr-only) : la saisie a son propre titre visible. -->
+    <header class="flex items-center gap-3" :class="{ 'sr-only': saisie }">
       <i class="material-symbols-outlined rounded-controle bg-teinte-bilan-fond p-2 text-[26px] text-teinte-bilan" aria-hidden="true">event_note</i>
       <h1 class="m-0 grow text-[26px] font-semibold tracking-normal text-texte">Bilan</h1>
     </header>
@@ -129,7 +130,7 @@ const tendances = computed(() => calculerTendances(model.value.jours, model.valu
                 :aria-busy="model.chargement">
         <TabsList aria-label="Vues du bilan" class="grid grid-cols-2 gap-1 rounded-controle bg-surface-2 p-1">
           <TabsTrigger v-for="o in ONGLETS" :key="o.valeur" :value="o.valeur"
-                       class="min-h-10 rounded-controle px-2 text-sm leading-tight text-texte-2 data-[state=active]:bg-surface data-[state=active]:font-semibold data-[state=active]:text-texte data-[state=active]:shadow-elevation">
+                       class="min-h-11 rounded-controle px-2 text-sm leading-tight text-texte-2 data-[state=active]:bg-surface data-[state=active]:font-semibold data-[state=active]:text-texte data-[state=active]:shadow-elevation">
             {{ o.libelle }}
           </TabsTrigger>
         </TabsList>

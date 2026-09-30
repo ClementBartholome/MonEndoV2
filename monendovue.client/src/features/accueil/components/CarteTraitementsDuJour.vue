@@ -20,7 +20,7 @@
       <button v-else type="button"
               class="inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-controle bg-button px-3.5 text-sm font-semibold text-texte disabled:opacity-60"
               :disabled="priseEnCours !== null"
-              :aria-label="`Noter la prise de ${prise.nom} de ${heureAffichee(prise.heurePrevue)}`"
+              :aria-label="`Je l'ai pris : ${prise.nom}, ${heureAffichee(prise.heurePrevue)}`"
               @click="emit('prendre', prise)">
         <i v-if="enCours(prise)" class="material-symbols-outlined animate-spin text-lg" aria-hidden="true">progress_activity</i>Je l'ai pris
       </button>

@@ -7,7 +7,7 @@
           :aria-describedby="undefined">
         <div aria-hidden="true" class="mx-auto h-1 w-10 shrink-0 rounded-full bg-trait"></div>
         <div class="flex items-center justify-between">
-          <DialogTitle class="text-xl font-semibold text-texte">{{ titre }}</DialogTitle>
+          <DialogTitle class="m-0 text-xl font-semibold tracking-normal text-texte">{{ titre }}</DialogTitle>
           <DialogClose aria-label="Fermer" class="-mr-2 flex h-11 w-11 items-center justify-center rounded-full text-texte hover:bg-surface-2">
             <i class="material-symbols-outlined" aria-hidden="true">close</i>
           </DialogClose>

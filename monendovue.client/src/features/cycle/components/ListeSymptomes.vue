@@ -23,7 +23,7 @@
             <span class="truncate text-[13px] text-texte-3">{{ detail(entree) }}</span>
           </span>
           <span class="flex h-9 min-w-9 shrink-0 items-center justify-center rounded-controle px-1 text-sm font-semibold"
-                :style="pastille(entree.intensite)">{{ entree.intensite }}<span class="sr-only"> sur 10</span></span>
+                :style="couleursIntensite(entree.intensite)">{{ entree.intensite }}<span class="sr-only"> sur 10</span></span>
         </button>
       </li>
     </ul>
@@ -32,15 +32,12 @@
 
 <script setup lang="ts">
 import { heure, type GroupeDuJour } from '@/shared/utils/jours';
+import { couleursIntensite } from '@/shared/utils/intensite';
 import type { SymptomeCycle } from '../types/symptome-cycle';
 import { iconeSymptome, type ChiffresSymptomes } from '../utils/symptomes';
 
 defineProps<{ chiffres: ChiffresSymptomes; groupes: GroupeDuJour<SymptomeCycle>[] }>();
 const emit = defineEmits<{ modifier: [entree: SymptomeCycle] }>();
-
-function pastille(intensite: number) {
-  return { background: `var(--intensite-${intensite})`, color: intensite >= 6 ? '#ffffff' : 'var(--couleur-texte)' };
-}
 
 function detail(entree: SymptomeCycle): string {
   const commentaire = entree.commentaire?.trim();

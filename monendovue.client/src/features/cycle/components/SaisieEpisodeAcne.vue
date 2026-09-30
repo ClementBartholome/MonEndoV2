@@ -5,13 +5,13 @@
         <label v-if="mode !== 'terminer'" class="flex flex-col gap-1 text-[13px] text-texte-2">
           {{ mode === 'commencer' ? 'Depuis le' : 'Début' }}
           <input v-model="debut" type="date" required :max="aujourdhui"
-                 class="min-h-11 rounded-controle border-[1.5px] border-contour bg-white px-3 text-[15px] text-texte">
+                 class="min-h-11 rounded-controle border-[1.5px] border-contour bg-champ px-3 text-[15px] text-texte">
         </label>
         <label v-if="mode !== 'commencer'" class="flex flex-col gap-1 text-[13px] text-texte-2">
           <span>{{ mode === 'terminer' ? 'Dernier jour' : 'Fin' }}
             <span v-if="mode === 'modifier'" class="text-texte-3">(vide = en cours)</span></span>
           <input v-model="fin" type="date" :required="mode === 'terminer'" :min="debut" :max="aujourdhui"
-                 class="min-h-11 rounded-controle border-[1.5px] border-contour bg-white px-3 text-[15px] text-texte">
+                 class="min-h-11 rounded-controle border-[1.5px] border-contour bg-champ px-3 text-[15px] text-texte">
         </label>
       </div>
 

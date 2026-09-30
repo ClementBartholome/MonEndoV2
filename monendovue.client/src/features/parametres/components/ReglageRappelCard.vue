@@ -49,7 +49,7 @@ const onJour = (event: Event) => {
         <select
             :value="rappel.jourSemaine ?? 0"
             :disabled="desactive"
-            class="rounded-md border border-input bg-white px-3 py-2 min-h-11"
+            class="rounded-md border border-input bg-champ px-3 py-2 min-h-11"
             @change="onJour"
         >
           <option v-for="jour in joursSemaine" :key="jour.valeur" :value="jour.valeur">{{ jour.libelle }}</option>

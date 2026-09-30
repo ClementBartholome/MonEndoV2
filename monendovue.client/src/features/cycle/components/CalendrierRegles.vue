@@ -9,7 +9,7 @@
     <div class="grid grid-cols-7 gap-1">
       <span v-for="n in calendrier.decalage" :key="`vide-${n}`" aria-hidden="true"></span>
       <button v-for="jour in calendrier.cases" :key="jour.cle" type="button"
-              class="flex min-h-10 items-center justify-center rounded-full p-0 text-sm disabled:cursor-default"
+              class="flex min-h-11 items-center justify-center rounded-full p-0 text-sm disabled:cursor-default"
               :class="classes(jour)"
               :disabled="jour.futur || enCoursDEnvoi.has(jour.cle)"
               :aria-pressed="jour.regles"
@@ -43,7 +43,7 @@ const INITIALES = ['L', 'M', 'M', 'J', 'V', 'S', 'D'];
 
 function classes(jour: CaseCalendrier): string[] {
   const liste: string[] = [];
-  if (jour.regles) liste.push('bg-teinte-regles font-semibold text-white');
+  if (jour.regles) liste.push('bg-teinte-regles font-semibold text-sur-fonce');
   else if (jour.futur) liste.push('text-texte-3');
   else liste.push('text-texte hover:bg-surface-2');
   // Aujourd'hui : un contour, jamais une couleur de fond (réservée aux règles).

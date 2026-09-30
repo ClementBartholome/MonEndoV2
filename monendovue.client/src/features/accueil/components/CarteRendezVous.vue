@@ -6,7 +6,7 @@
       <span class="text-[15px] font-medium text-texte">{{ evenement.titre }}</span>
       <span class="text-[13px] text-texte-2">{{ quand }}</span>
       <a v-if="evenement.lieu" :href="itineraire" target="_blank" rel="noopener noreferrer"
-         class="mt-0.5 inline-flex min-h-8 items-center text-[13px] font-medium !text-lien">Itinéraire</a>
+         class="mt-0.5 inline-flex min-h-11 items-center text-[13px] font-medium !text-lien">Itinéraire</a>
     </div>
   </section>
 </template>

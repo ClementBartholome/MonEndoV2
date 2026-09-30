@@ -6,7 +6,7 @@
         <div class="grid grid-cols-3 gap-2">
           <button v-for="t in types" :key="t.valeur" type="button"
                   class="flex min-h-14 flex-col items-center justify-center gap-0.5 rounded-controle border-[1.5px] px-1 text-[13px]"
-                  :class="form.type.value === t.valeur ? 'border-texte bg-texte font-medium text-fond' : 'border-trait bg-surface text-texte'"
+                  :class="form.type.value === t.valeur ? 'border-texte bg-texte font-medium text-fond' : 'border-contour bg-surface text-texte'"
                   :aria-pressed="form.type.value === t.valeur"
                   :aria-label="t.valeur === 'Autre' ? 'Autre activité' : undefined"
                   @click="form.type.value = t.valeur">
@@ -15,7 +15,7 @@
         </div>
         <label v-if="form.type.value === 'Autre'" class="mt-3 flex flex-col gap-1 text-[13px] text-texte-2">Laquelle ?
           <input v-model="form.typeLibre.value" type="text" required maxlength="50" placeholder="Danse, pilates…"
-                 class="min-h-11 rounded-controle border-[1.5px] border-contour bg-white px-3 text-[15px] text-texte">
+                 class="min-h-11 rounded-controle border-[1.5px] border-contour bg-champ px-3 text-[15px] text-texte">
         </label>
       </fieldset>
 
@@ -24,13 +24,13 @@
         <div class="grid grid-cols-4 gap-2">
           <button v-for="minutes in DUREES" :key="minutes" type="button"
                   class="min-h-11 rounded-controle border-[1.5px] text-sm"
-                  :class="form.duree.value === minutes ? 'border-texte bg-texte font-medium text-fond' : 'border-trait bg-surface text-texte'"
+                  :class="form.duree.value === minutes ? 'border-texte bg-texte font-medium text-fond' : 'border-contour bg-surface text-texte'"
                   :aria-pressed="form.duree.value === minutes"
                   @click="form.duree.value = minutes">{{ duree(minutes) }}</button>
         </div>
         <label class="mt-3 flex items-center gap-2 text-[13px] text-texte-2">Autre durée
           <input v-model.number="form.duree.value" type="number" min="1" max="600" inputmode="numeric"
-                 class="min-h-11 w-24 rounded-controle border-[1.5px] border-contour bg-white px-3 text-center text-[15px] text-texte">
+                 class="min-h-11 w-24 rounded-controle border-[1.5px] border-contour bg-champ px-3 text-center text-[15px] text-texte">
           minutes
         </label>
       </fieldset>
@@ -40,7 +40,7 @@
         <div class="grid grid-cols-3 gap-2">
           <button v-for="n in NIVEAUX" :key="n.valeur" type="button"
                   class="min-h-11 rounded-controle border-[1.5px] text-sm"
-                  :class="form.niveau.value === n.valeur ? 'border-texte bg-texte font-medium text-fond' : 'border-trait bg-surface text-texte'"
+                  :class="form.niveau.value === n.valeur ? 'border-texte bg-texte font-medium text-fond' : 'border-contour bg-surface text-texte'"
                   :aria-pressed="form.niveau.value === n.valeur"
                   @click="form.niveau.value = n.valeur">{{ n.libelle }}</button>
         </div>
@@ -51,7 +51,7 @@
         <div class="grid grid-cols-3 gap-2">
           <button v-for="e in EFFETS" :key="e.valeur" type="button"
                   class="min-h-11 rounded-controle border-[1.5px] text-sm"
-                  :class="form.effet.value === e.valeur ? 'border-texte bg-texte font-medium text-fond' : 'border-trait bg-surface text-texte'"
+                  :class="form.effet.value === e.valeur ? 'border-texte bg-texte font-medium text-fond' : 'border-contour bg-surface text-texte'"
                   :aria-pressed="form.effet.value === e.valeur"
                   @click="form.effet.value = form.effet.value === e.valeur ? 'NonRenseigne' : e.valeur">{{ e.libelle }}</button>
         </div>
@@ -62,21 +62,21 @@
         <div class="grid grid-cols-3 gap-2">
           <button v-for="m in moments" :key="m.valeur" type="button"
                   class="min-h-11 rounded-controle border-[1.5px] text-sm"
-                  :class="form.moment.value === m.valeur ? 'border-texte bg-texte font-medium text-fond' : 'border-trait bg-surface text-texte'"
+                  :class="form.moment.value === m.valeur ? 'border-texte bg-texte font-medium text-fond' : 'border-contour bg-surface text-texte'"
                   :aria-pressed="form.moment.value === m.valeur"
                   :aria-label="m.valeur === 'autre' ? 'Autre jour' : undefined"
                   @click="form.moment.value = m.valeur">{{ m.libelle }}</button>
         </div>
         <label v-if="form.moment.value === 'autre'" class="mt-3 flex flex-col gap-1 text-[13px] text-texte-2">Jour
           <input v-model="form.jour.value" type="date" required :max="aujourdhui"
-                 class="min-h-11 rounded-controle border-[1.5px] border-contour bg-white px-3 text-[15px] text-texte">
+                 class="min-h-11 rounded-controle border-[1.5px] border-contour bg-champ px-3 text-[15px] text-texte">
         </label>
       </fieldset>
 
       <label class="flex flex-col gap-1.5 text-sm font-semibold text-texte">
         <span>Commentaire <span class="font-normal text-texte-3">(facultatif)</span></span>
         <textarea v-model="form.commentaire.value" rows="2" maxlength="500" placeholder="Comment tu t'es sentie…"
-                  class="resize-none rounded-controle border-[1.5px] border-contour bg-white px-3 py-2.5 text-[15px] font-normal text-texte"></textarea>
+                  class="resize-none rounded-controle border-[1.5px] border-contour bg-champ px-3 py-2.5 text-[15px] font-normal text-texte"></textarea>
       </label>
 
       <p v-if="erreur" role="alert" class="m-0 text-sm text-danger">{{ erreur }}</p>

@@ -13,7 +13,7 @@
     <TabsRoot v-model="onglet" class="flex flex-col gap-3.5" @update:model-value="changerOnglet">
       <TabsList aria-label="Rubriques du cycle" class="grid grid-cols-3 gap-1 rounded-controle bg-surface-2 p-1">
         <TabsTrigger v-for="o in ONGLETS" :key="o.valeur" :value="o.valeur"
-                     class="min-h-10 rounded-controle text-sm text-texte-2 data-[state=active]:bg-surface data-[state=active]:font-semibold data-[state=active]:text-texte data-[state=active]:shadow-elevation">
+                     class="min-h-11 rounded-controle text-sm text-texte-2 data-[state=active]:bg-surface data-[state=active]:font-semibold data-[state=active]:text-texte data-[state=active]:shadow-elevation">
           {{ o.libelle }}
         </TabsTrigger>
       </TabsList>

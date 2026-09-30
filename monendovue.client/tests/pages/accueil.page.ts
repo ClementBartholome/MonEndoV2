@@ -26,6 +26,6 @@ export class AccueilPage {
   }
 
   boutonPrise(nom: string, heure: string) {
-    return this.traitements.getByRole('button', { name: `Noter la prise de ${nom} de ${heure}` });
+    return this.traitements.getByRole('button', { name: `Je l'ai pris : ${nom}, ${heure}` });
   }
 }

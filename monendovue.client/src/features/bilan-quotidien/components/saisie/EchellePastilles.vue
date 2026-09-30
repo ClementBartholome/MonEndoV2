@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { useId } from 'radix-vue';
+import { couleursIntensite } from '@/shared/utils/intensite';
 
 /**
  * Échelle de 0 à max : un tap choisit, un second tap sur la même valeur efface (non renseigné).
@@ -27,12 +28,11 @@ const choisir = (niveau: number) => {
 
 function style(niveau: number) {
   if (valeur.value !== niveau || !props.couleurs) return undefined;
-  const couleur = `var(--intensite-${niveau})`;
-  return { background: couleur, borderColor: couleur, color: niveau >= 6 ? '#ffffff' : 'var(--couleur-texte)' };
+  return couleursIntensite(niveau);
 }
 
 function classes(niveau: number): string {
-  if (valeur.value !== niveau) return 'border-trait bg-surface text-texte-2';
+  if (valeur.value !== niveau) return 'border-contour bg-surface text-texte-2';
   return props.couleurs ? 'font-semibold' : 'border-texte bg-texte font-semibold text-fond';
 }
 </script>

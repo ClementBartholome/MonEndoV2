@@ -5,7 +5,7 @@
       <li v-for="(entree, index) in groupe.entrees" :key="entree.id" :class="{ 'border-t border-trait': index > 0 }">
         <button type="button" class="flex min-h-16 w-full items-center gap-3 px-3.5 py-3 text-left" @click="emit('modifier', entree)">
           <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-controle text-sm font-semibold"
-                :style="pastille(entree.intensite)">{{ entree.intensite }}<span class="sr-only"> sur 10</span></span>
+                :style="couleursIntensite(entree.intensite)">{{ entree.intensite }}<span class="sr-only"> sur 10</span></span>
           <span class="flex min-w-0 grow flex-col">
             <span class="text-[15px] font-medium text-texte">{{ libelleCourt(entree.typeDouleur) }}</span>
             <span class="truncate text-[13px] text-texte-3">{{ detail(entree) }}</span>
@@ -20,14 +20,11 @@
 <script setup lang="ts">
 import type { DonneesDouleur } from '../types/donnees-douleur';
 import { heure, type GroupeDuJour } from '@/shared/utils/jours';
+import { couleursIntensite } from '@/shared/utils/intensite';
 import { commentaireAffiche, libelleCourt } from '../utils/douleurs';
 
 defineProps<{ groupes: GroupeDuJour<DonneesDouleur>[] }>();
 const emit = defineEmits<{ modifier: [entree: DonneesDouleur] }>();
-
-function pastille(intensite: number) {
-  return { background: `var(--intensite-${intensite})`, color: intensite >= 6 ? '#ffffff' : 'var(--couleur-texte)' };
-}
 
 function detail(entree: DonneesDouleur): string {
   const commentaire = commentaireAffiche(entree.commentaire);

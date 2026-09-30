@@ -74,7 +74,7 @@ const choisirIntensite = (champ: ChampIntensite, intensite: IntensiteTransit) =>
               'flex items-start gap-2.5 min-h-[44px] px-2.5 py-2 rounded-controle border-[1.5px] text-left transition-colors',
               transit.typeBristol === bristol.type
                 ? 'border-texte bg-surface-2'
-                : 'border-trait bg-surface hover:border-contour'
+                : 'border-contour bg-surface'
             ]"
             @click="choisirBristol(bristol.type)"
         >
@@ -99,7 +99,7 @@ const choisirIntensite = (champ: ChampIntensite, intensite: IntensiteTransit) =>
             :aria-pressed="transit.typeBristol === null"
             :class="[
               'min-h-[44px] px-3 rounded-controle border-[1.5px] text-sm transition-colors',
-              transit.typeBristol === null ? 'border-texte bg-texte font-medium text-fond' : 'border-trait bg-surface text-texte hover:border-contour'
+              transit.typeBristol === null ? 'border-texte bg-texte font-medium text-fond' : 'border-contour bg-surface text-texte'
             ]"
             @click="choisirBristol(null)"
         >
