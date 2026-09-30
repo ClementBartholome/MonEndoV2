@@ -59,6 +59,10 @@ versions en [SemVer](https://semver.org/lang/fr/) (voir la section Déploiement 
   (prise notée, bilan rempli) s'affiche en texte avec une coche verte et ne ressemble plus à un bouton, et le bouton de
   prise dit « Je l'ai pris ».
 - Les icônes gardent leur taille pendant le chargement de la page (plus de décalage ni de défilement horizontal).
+- Bilan : la page s'ouvre sur l'historique, avec « Remplir le bilan de ce jour » ; la saisie s'ouvre directement depuis
+  « Faire mon bilan » de l'accueil et depuis le rappel du soir.
+- Navigation : la rubrique en cours est marquée d'un fond neutre, le rose est réservé aux boutons d'action.
+- Sur ordinateur, les textes des nouvelles pages grandissent ensemble (les titres restent plus grands que le reste).
 - Lisibilité et accessibilité, après une revue d'ensemble : dans les graphiques, les jours de règles sont un repère sous
   l'axe (ils ne se confondent plus avec une barre) et les barres gardent leur pleine couleur ; le calendrier des émotions
   passe au violet des émotions, avec des chiffres bien contrastés ; les choix d'un formulaire ont un bord visible ;

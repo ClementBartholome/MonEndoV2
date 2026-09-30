@@ -82,6 +82,7 @@ dotnet ef migrations add NomEnPascalCase --project MonEndoVue.Server
   douleur / règles (`utils/tendances.ts`). Historique par semaine ou par mois (`GET BilanQuotidien/periode`,
   bilans + jours de règles, carnet déduit de la session) : une seule période pilote calendrier, détail, courbes et analyse. Émotions : 1 à 3 **`EmotionBilan`** par bilan (table
   `EmotionsBilan`, type possédé chargé avec le bilan ; enum `Emotion`, libellés et tonalité dans `config/emotions.ts`).
+  La page s'ouvre sur l'historique ; la saisie du jour ne s'ouvre d'office qu'avec `?ajouter` (accueil, rappel).
   Saisie en un écran (`components/saisie/`) : douleur et émotions obligatoires, stress, fatigue, pas et hydratation
   **nullables** (null = non renseigné, jamais compté pour 0) ; **un seul bilan par jour** et aucun jour futur (409 / 400).
   Les bilans antérieurs gardent leur ancienne humeur `Mood` (`Heureuse`/`Neutre`/`Triste`) : tout calcul d'humeur passe
@@ -97,7 +98,7 @@ dotnet ef migrations add NomEnPascalCase --project MonEndoVue.Server
   dans la même PR.
 - Notifications **Web Push standard** envoyées par le serveur (clés VAPID, sans service tiers) : chaque appareil s'abonne
   depuis `/parametres` ; rappels réglables (job Quartz toutes les 15 min), chacun omis si le suivi est déjà fait :
-  bilan quotidien (bilan du jour pas encore rempli, ouvre `/bilan-quotidien`) et photo de suivi de l'acné hebdomadaire
+  bilan quotidien (bilan du jour pas encore rempli, ouvre `/bilan-quotidien?ajouter`) et photo de suivi de l'acné hebdomadaire
   (aucune photo d'acné depuis 7 jours, ouvre `/cycle?onglet=acne`). Sur iOS (16.4+), uniquement dans l'app ajoutée à l'écran d'accueil.
   Entités : **`AbonnementPush`** (un par appareil, endpoint unique, rattaché au carnet) et **`Rappel`** (un par carnet et
   par type : actif, heure locale, jour de la semaine si hebdomadaire, fuseau IANA, date du dernier envoi). L'ancienne table

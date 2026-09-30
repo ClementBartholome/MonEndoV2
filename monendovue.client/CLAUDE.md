@@ -118,7 +118,14 @@ plus de DataTables.
       `bg-surface font-semibold shadow-elevation` : jamais de rose ni de fond foncé (retour utilisateur du 2026-09-29) ;
     - intensité 1-10 : composant partagé `ChoixIntensite` (choisie = pleine dans sa couleur, bordure de la même
       couleur, jamais de bordure noire ; les autres gardent un trait de leur couleur pour lire l'échelle) ;
-    - la teinte d'une rubrique identifie (tuile d'icône, calendrier), elle ne change pas avec l'état.
+    - la teinte d'une rubrique identifie (tuile d'icône, calendrier), elle ne change pas avec l'état ;
+    - la rubrique active de la navigation (barre du bas, barre latérale) = pilule `surface-2`, icône pleine et libellé
+      en gras : le rose reste réservé aux actions (décision du 2026-09-30).
+  - **Tailles de texte** (décision du 2026-09-30) : la racine passe de 16 à 20 px dès 768 px (`index.css`), donc toute
+    taille est en rem pour grandir avec elle : `text-legende` (13), `text-corps` (15), `text-titre-carte` (17),
+    `text-titre-2` (22), `text-titre-page` (26), en plus de `text-xs` / `text-sm` / `text-base` / `text-xl`. **Jamais de
+    `text-[Npx]`** : figé, il devenait plus petit que le texte secondaire sur ordinateur. Une nouvelle taille nommée
+    s'ajoute dans `tailwind.config.js` **et** dans `lib/utils.ts` (tailwind-merge la prendrait sinon pour une couleur).
   - **Volume et historique** (retour utilisateur du 2026-09-29 : « et quand on aura des centaines de cycles ? ») : aucune
     liste ne grandit sans limite avec les années. Soit elle est bornée par une période (mois affiché, avec
     `SelecteurMois` pour sauter loin en arrière), soit elle affiche les N plus récents et demande la suite au serveur
