@@ -59,8 +59,8 @@ const plusActif = computed(() => menuOuvert.value
 }
 
 .pastille.active {
-  background: var(--couleur-accent);
-  color: var(--couleur-sur-accent);
+  background: var(--couleur-surface-2);
+  color: var(--couleur-texte);
   font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
 }
 </style>
