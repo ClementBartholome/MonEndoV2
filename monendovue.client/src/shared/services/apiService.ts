@@ -82,13 +82,8 @@ class ApiService {
         try {
             const tokenExpired = this.isTokenExpired();
             if (tokenExpired) {
-                try {
-                    await tokenService.refreshToken();
-                } catch (error) {
-                    console.error('Error refreshing token:', error);
-                    router.push({ name: 'login' });
-                    throw error;
-                }
+                // Refus de session : refreshToken() redirige lui-même ; serveur injoignable : l'appel échoue, la session reste.
+                await tokenService.refreshToken();
             }
 
             const response: AxiosResponse<T> = await this.axiosInstance.request({

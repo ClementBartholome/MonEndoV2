@@ -20,7 +20,9 @@ const authService = {
             if (error.response) {
                 console.error(error.response.data);
             }
-            return null;
+            // Identifiants refusés (ou compte verrouillé) : null. Serveur injoignable, 429, 5xx : l'erreur est remontée.
+            if (error.response?.status === 401) return null;
+            throw error;
         }
     },
 
@@ -48,7 +50,7 @@ const authService = {
 
     async logout() {
         try {
-            await axios.post(`${API_URL}Account/logout`, {
+            await axios.post(`${API_URL}Account/logout`, {}, {
                 headers: {
                     'Content-Type': 'application/json'
                 },

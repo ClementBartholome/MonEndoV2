@@ -196,6 +196,10 @@ lecture seule (liste par jour, `SelecteurMois`, suppression en deux temps), plus
 ## Routage
 - Toute route exige une session, sauf celles marquées `meta: { public: true }` (connexion, inscription, documents légaux) :
   le garde de `router/index.ts` ne teste que ce drapeau.
+- Renouvellement de session (`tokenService.refreshToken`, jeton d'accès 30 min) : **seul un refus du serveur (400/401/403/404)
+  déconnecte**. Serveur injoignable, 5xx ou 429 (déploiement en cours) : 3 nouveaux essais espacés, puis l'appel échoue sans
+  toucher à la session. Un seul renouvellement pour plusieurs appels simultanés (chaque renouvellement remplace le jeton
+  côté serveur). Connexion : `authService.login` renvoie `null` seulement pour un 401, le reste est remonté à la page.
 - Session sans consentement (`user.consentementAJour === false`, ou 403 `consentement-requis` de l'API traité dans
   `apiService`) : seule `/consentement` est accessible (avec les pages publiques). `meta: { sansNavigation: true }` masque
   la navigation.
