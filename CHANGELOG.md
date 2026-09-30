@@ -59,6 +59,10 @@ versions en [SemVer](https://semver.org/lang/fr/) (voir la section Déploiement 
   (prise notée, bilan rempli) s'affiche en texte avec une coche verte et ne ressemble plus à un bouton, et le bouton de
   prise dit « Je l'ai pris ».
 - Les icônes gardent leur taille pendant le chargement de la page (plus de décalage ni de défilement horizontal).
+- Lisibilité et accessibilité, après une revue d'ensemble : dans les graphiques, les jours de règles sont un repère sous
+  l'axe (ils ne se confondent plus avec une barre) et les barres gardent leur pleine couleur ; le calendrier des émotions
+  passe au violet des émotions, avec des chiffres bien contrastés ; les choix d'un formulaire ont un bord visible ;
+  onglets, liens et jours du calendrier sont plus faciles à toucher.
 
 ### Sécurité
 - Les polices et les icônes sont servies par MonEndo lui-même : plus aucune page ne contacte Google Fonts, qui
