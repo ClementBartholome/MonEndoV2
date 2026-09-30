@@ -26,6 +26,11 @@ versions en [SemVer](https://semver.org/lang/fr/) (voir la section Déploiement 
 - Historique des cycles : durée moyenne du cycle et des règles, écart entre le plus court et le plus long, et chaque cycle
   regroupé par année avec une barre qui montre les jours de règles et les jours de douleur forte (aucune prédiction).
 
+- Préparer un rendez-vous, refait : choix de la période (1 mois, 3 mois ou dates libres, un an au plus) et des rubriques,
+  champ « Mes questions » placé en première page. Le PDF commence par une synthèse lisible en deux minutes (règles,
+  douleurs par type avec leurs jours de règles, traitements, bilans, activité), puis un tableau jour par jour par mois
+  et les notes des bilans. Uniquement ce que tu as noté, sans interprétation.
+
 ### Corrigé
 - Graphiques du bilan lisibles sur un mois complet : un graphique en barres par indicateur (douleur, fatigue, stress,
   émotions difficiles) au lieu de courbes superposées.
