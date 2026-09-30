@@ -5,15 +5,17 @@
 export interface Teinte {
     fond: string;
     texte: string;
+    /** Couleur CSS de la teinte, pour les graphiques (SVG). */
+    variable: string;
 }
 
 const TEINTES = {
-    douleur: { fond: 'bg-teinte-douleur-fond', texte: 'text-teinte-douleur' },
-    bilan: { fond: 'bg-teinte-bilan-fond', texte: 'text-teinte-bilan' },
-    symptome: { fond: 'bg-teinte-symptome-fond', texte: 'text-teinte-symptome' },
-    traitement: { fond: 'bg-teinte-traitement-fond', texte: 'text-teinte-traitement' },
-    regles: { fond: 'bg-teinte-regles-fond', texte: 'text-teinte-regles' },
-    neutre: { fond: 'bg-teinte-neutre-fond', texte: 'text-teinte-neutre' },
+    douleur: { fond: 'bg-teinte-douleur-fond', texte: 'text-teinte-douleur', variable: 'var(--teinte-douleur)' },
+    bilan: { fond: 'bg-teinte-bilan-fond', texte: 'text-teinte-bilan', variable: 'var(--teinte-bilan)' },
+    symptome: { fond: 'bg-teinte-symptome-fond', texte: 'text-teinte-symptome', variable: 'var(--teinte-symptome)' },
+    traitement: { fond: 'bg-teinte-traitement-fond', texte: 'text-teinte-traitement', variable: 'var(--teinte-traitement)' },
+    regles: { fond: 'bg-teinte-regles-fond', texte: 'text-teinte-regles', variable: 'var(--teinte-regles)' },
+    neutre: { fond: 'bg-teinte-neutre-fond', texte: 'text-teinte-neutre', variable: 'var(--teinte-neutre)' },
 } satisfies Record<string, Teinte>;
 
 export const TEINTE_INDICATEUR: Record<string, Teinte> = {

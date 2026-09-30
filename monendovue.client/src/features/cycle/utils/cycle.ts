@@ -1,4 +1,4 @@
-import { format, getDaysInMonth } from 'date-fns';
+import { addDays, format, getDaysInMonth } from 'date-fns';
 import { fr } from 'date-fns/locale';
 
 export interface CaseCalendrier {
@@ -32,6 +32,26 @@ export function jourEnToutesLettres(cle: string): string {
 /** « 14 août » */
 export function jourCourt(cle: string): string {
     return format(new Date(`${cle}T12:00:00`), 'd MMMM', { locale: fr });
+}
+
+/** « 14 août – 13 sept. » : du premier jour des règles à la veille des suivantes. */
+export function periodeDuCycle(debut: string, duree: number): string {
+    const premier = new Date(`${debut}T12:00:00`);
+    const dernier = addDays(premier, duree - 1);
+    const court = (date: Date) => format(date, 'd MMM', { locale: fr });
+    return `${court(premier)} – ${court(dernier)}`;
+}
+
+/** Cycles regroupés par année de leur début, dans l'ordre reçu (du plus récent au plus ancien). */
+export function grouperParAnnee<T extends { debut: string }>(cycles: T[]): { annee: string; cycles: T[] }[] {
+    const groupes: { annee: string; cycles: T[] }[] = [];
+    for (const cycle of cycles) {
+        const annee = cycle.debut.slice(0, 4);
+        const dernier = groupes[groupes.length - 1];
+        if (dernier?.annee === annee) dernier.cycles.push(cycle);
+        else groupes.push({ annee, cycles: [cycle] });
+    }
+    return groupes;
 }
 
 export function jours(nombre: number): string {

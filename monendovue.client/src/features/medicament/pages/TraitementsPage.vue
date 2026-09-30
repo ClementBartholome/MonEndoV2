@@ -30,7 +30,7 @@
                     @repondre="repondrePrise" @annuler="annulerPrise"/>
       <ListeAuBesoinEtSoins :au-besoin="donnees.auBesoin" :soins="donnees.soins" :envoi="envoi"
                             @prendre="prendre" @seance="seance"/>
-      <MesTraitements :en-cours="donnees.enCours" :termines="donnees.termines" @modifier="ouvrirModification"/>
+      <MesTraitements :en-cours="donnees.enCours" :termines="donnees.termines" @ouvrir="(traitement) => router.push(`/medicaments/${traitement.id}`)"/>
     </template>
 
     <button type="button"
@@ -95,11 +95,6 @@ const seance = (soin: Soin) => noter(() => noterSeance(soin), `${soin.nom} : sé
 
 function ouvrirAjout() {
   traitementModifie.value = null;
-  saisieOuverte.value = true;
-}
-
-function ouvrirModification(traitement: Traitement) {
-  traitementModifie.value = traitement;
   saisieOuverte.value = true;
 }
 

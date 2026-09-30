@@ -17,6 +17,9 @@ export function simulerRegles(serveur: FauxServeur, initiaux: string[] = [], vue
         body: {
           enCours: null,
           dureeMoyenne: null,
+          reglesMoyenne: null,
+          dureeMinimale: null,
+          dureeMaximale: null,
           ...vue,
           // Comme le serveur : les N derniers cycles demandés (6 par défaut) et le nombre de plus anciens.
           cycles: liste((vue.cycles ?? []).slice(0, Number(url.searchParams.get('cycles') ?? 6))),

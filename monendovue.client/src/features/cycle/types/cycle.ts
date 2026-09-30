@@ -5,6 +5,11 @@ export interface CycleDuMois {
     cycles: CycleTermine[];
     /** Moyenne des 6 derniers cycles ; null avant deux cycles terminés. */
     dureeMoyenne: number | null;
+    /** Durée moyenne des règles des 6 derniers cycles ; null avant deux cycles. */
+    reglesMoyenne: number | null;
+    /** Cycle le plus court et le plus long des 6 derniers ; null avant deux cycles. */
+    dureeMinimale: number | null;
+    dureeMaximale: number | null;
     /** Cycles plus anciens que ceux listés (« Voir plus »). */
     cyclesPlusAnciens: number;
 }
@@ -20,4 +25,6 @@ export interface CycleTermine {
     debut: string;
     joursDeRegles: number;
     duree: number;
+    /** Jours du cycle (1 = premier jour des règles) avec une douleur de 6/10 ou plus (Douleurs ou bilan). */
+    joursDouleurForte: number[];
 }

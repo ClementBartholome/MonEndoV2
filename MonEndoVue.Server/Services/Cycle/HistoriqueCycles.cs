@@ -46,4 +46,8 @@ public static class HistoriqueCycles
     /// <summary>Durée moyenne arrondie des cycles donnés ; aucune avant deux cycles, trop peu pour parler de moyenne.</summary>
     public static int? DureeMoyenne(IReadOnlyList<CycleTermine> cycles) =>
         cycles.Count < 2 ? null : (int)Math.Round(cycles.Average(c => c.Duree), MidpointRounding.AwayFromZero);
+
+    /// <summary>Durée moyenne arrondie des règles des cycles donnés ; aucune avant deux cycles.</summary>
+    public static int? ReglesMoyenne(IReadOnlyList<CycleTermine> cycles) =>
+        cycles.Count < 2 ? null : (int)Math.Round(cycles.Average(c => c.JoursDeRegles), MidpointRounding.AwayFromZero);
 }

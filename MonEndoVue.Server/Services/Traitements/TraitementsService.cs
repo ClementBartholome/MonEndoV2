@@ -168,6 +168,20 @@ public class TraitementsService(AppDbContext context, CarnetSanteService carnetS
         return ResultatOperation.Succes();
     }
 
+    /// <summary>Retire une séance notée par erreur (depuis l'historique du soin).</summary>
+    public async Task<ResultatOperation> AnnulerSeanceAsync(string userId, int seanceId, CancellationToken ct)
+    {
+        if (await CarnetDeAsync(userId, ct) is not { } carnetId) return ResultatOperation.Echec(StatutOperation.NonAuthentifie);
+        var seance = await context.DonneesTraitementNonMedicamenteux.FindAsync([seanceId], ct);
+        if (seance == null) return ResultatOperation.Echec(StatutOperation.Introuvable);
+        if (seance.CarnetSanteId != carnetId) return ResultatOperation.Echec(StatutOperation.Interdit);
+
+        context.DonneesTraitementNonMedicamenteux.Remove(seance);
+        await context.SaveChangesAsync(ct);
+        carnetSanteService.InvalidateCache(carnetId);
+        return ResultatOperation.Succes();
+    }
+
     public async Task<ResultatOperation<int>> NoterSeanceAsync(string userId, int traitementId, SeanceDto dto, CancellationToken ct)
     {
         var (traitement, echec) = await TraitementDeAsync(userId, traitementId, ct);
@@ -216,7 +230,7 @@ public class TraitementsService(AppDbContext context, CarnetSanteService carnetS
         if (avecHoraires) traitement.Horaires.AddRange(dto.Horaires.Order().Select(h => new HorairePrise { Heure = h }));
     }
 
-    private static TraitementViewModel Vue(Medicament m) => new()
+    internal static TraitementViewModel Vue(Medicament m) => new()
     {
         Id = m.Id,
         Nom = m.Nom,

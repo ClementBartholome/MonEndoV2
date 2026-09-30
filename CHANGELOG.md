@@ -21,6 +21,14 @@ versions en [SemVer](https://semver.org/lang/fr/) (voir la section Déploiement 
   de la semaine, tous les N jours ou au besoin) et ses horaires ; la page et l'accueil ne montrent que les prises prévues
   aujourd'hui, regroupées par moment, à noter « Pris » ou « Ignorer » (et à annuler en cas d'erreur). Les traitements au
   besoin et les soins (kiné, ostéo…) se notent en un geste ; les traitements terminés restent consultables.
+- Historique de chaque traitement, mois par mois : prises faites sur les prévues, ignorées, et le même compte le mois
+  précédent ; une prise ou une séance notée par erreur se retire depuis la liste.
+- Historique des cycles : durée moyenne du cycle et des règles, écart entre le plus court et le plus long, et chaque cycle
+  regroupé par année avec une barre qui montre les jours de règles et les jours de douleur forte (aucune prédiction).
+
+### Corrigé
+- Graphiques du bilan lisibles sur un mois complet : un graphique en barres par indicateur (douleur, fatigue, stress,
+  émotions difficiles) au lieu de courbes superposées.
 
 ### Modifié
 - Cycle : page repensée pour le téléphone. Onglet Règles : le cycle en cours, un calendrier où un toucher ajoute ou

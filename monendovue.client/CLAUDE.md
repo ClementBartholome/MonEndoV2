@@ -86,6 +86,9 @@ plus de DataTables.
 - Les listes renvoyées par l'API sont sous `$values` (sérialisation .NET `ReferenceHandler.Preserve`).
 - Retours utilisateur par `useToast()` : variante `custom` (succès/erreur) ou `destructive` ; messages en français.
 - Aucun secret dans `import.meta.env` : toute variable `VITE_*` est publique.
+- URL de base de l'API : `/` dans l'image Docker (`VITE_DOCKER=true`), jamais `''` ; sinon les appels sont relatifs à la
+  page (depuis `/medicaments/12`, `Traitements/…` part vers `/medicaments/Traitements/…`). Trois endroits la construisent :
+  `apiService`, `authService`, `tokenService`.
 
 ## Style et UX
 - **Mobile d'abord** : styles de base = mobile, `md:` = desktop ; ajustements ≤ 425px via `@media (max-width: 425px)`

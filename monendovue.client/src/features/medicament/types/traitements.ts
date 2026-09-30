@@ -84,6 +84,34 @@ export interface PriseSaisie {
     date: string;
 }
 
+/** `HistoriqueTraitementViewModel` : un traitement sur un mois (GET Traitements/{id}/historique). */
+export interface HistoriqueTraitement {
+    traitement: Traitement;
+    /** Prises prévues du mois jusqu'à aujourd'hui (0 pour un traitement au besoin ou un soin). */
+    prevues: number;
+    /** Prises faites ou séances. */
+    faites: number;
+    ignorees: number;
+    faitesMoisPrecedent: number;
+    jours: JourHistoriqueTraitement[];
+}
+
+export interface JourHistoriqueTraitement {
+    /** AAAA-MM-JJ */
+    jour: string;
+    entrees: EntreeHistoriqueTraitement[];
+}
+
+export interface EntreeHistoriqueTraitement {
+    /** Identifiant de la prise ou de la séance. */
+    id: number;
+    nature: 'Pris' | 'Ignore' | 'Seance';
+    /** Date locale sans fuseau. */
+    date: string;
+    /** « HH:mm » de la prise prévue ; null pour une prise au besoin ou une séance. */
+    heurePrevue: string | null;
+}
+
 /** Corps de POST Traitements/{id}/seances (`SeanceDto`). */
 export interface SeanceSaisie {
     date: string;

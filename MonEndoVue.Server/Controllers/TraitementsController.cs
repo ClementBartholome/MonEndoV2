@@ -43,4 +43,14 @@ public class TraitementsController(TraitementsService service) : ControllerBase
     [HttpPost("{id:int}/seances")]
     public async Task<IActionResult> NoterSeance(int id, SeanceDto dto, CancellationToken ct) =>
         this.VersReponse(await service.NoterSeanceAsync(User.GetCurrentUserId(), id, dto, ct), seanceId => Ok(new { id = seanceId }));
+
+    [HttpDelete("seances/{seanceId:int}")]
+    public async Task<IActionResult> AnnulerSeance(int seanceId, CancellationToken ct) =>
+        this.VersReponse(await service.AnnulerSeanceAsync(User.GetCurrentUserId(), seanceId, ct), NoContent);
+
+    /// <summary>Historique d'un mois (<c>?mois=2026-09-01&amp;jour=2026-09-15</c>, jour local : prises prévues jusqu'à ce jour).</summary>
+    [HttpGet("{id:int}/historique")]
+    public async Task<IActionResult> Historique(int id, [FromQuery] DateOnly mois, [FromQuery] DateOnly jour,
+        [FromServices] HistoriqueTraitementsService historique, CancellationToken ct) =>
+        this.VersReponse(await historique.GetAsync(User.GetCurrentUserId(), id, mois, jour, ct), vue => Ok(vue));
 }

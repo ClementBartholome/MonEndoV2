@@ -3,8 +3,9 @@ import { computed } from 'vue';
 import { format, isSameDay } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/card';
-import GraphiqueLignes from '@/features/bilan-quotidien/components/historique/GraphiqueLignes.vue';
-import { graphiquesCourbes } from '@/features/bilan-quotidien/config/historique';
+import GraphiqueBarres from '@/features/bilan-quotidien/components/historique/GraphiqueBarres.vue';
+import { indicateursGraphiques } from '@/features/bilan-quotidien/config/historique';
+import { teinteDe } from '@/features/bilan-quotidien/config/teintes';
 import type { JourHistorique, ModePeriode } from '@/features/bilan-quotidien/types/historique';
 
 const props = defineProps<{
@@ -26,12 +27,10 @@ const aDesRegles = computed(() => bandes.value.some(Boolean));
 
 const selection = computed(() => props.jours.findIndex((jour) => isSameDay(jour.date, props.jourSelectionne)));
 
-const graphiques = computed(() => graphiquesCourbes.map((graphique) => ({
-  ...graphique,
-  series: graphique.series.map((serie) => ({
-    ...serie,
-    valeurs: props.jours.map((jour) => (jour.bilan ? serie.valeur(jour.bilan) : null)),
-  })),
+const graphiques = computed(() => indicateursGraphiques.map((indicateur) => ({
+  ...indicateur,
+  couleur: teinteDe(indicateur.cle).variable,
+  valeurs: props.jours.map((jour) => (jour.bilan ? indicateur.valeur(jour.bilan) : null)),
 })));
 
 const aucunBilan = computed(() => props.jours.every((jour) => !jour.bilan));
@@ -41,31 +40,33 @@ const aucunBilan = computed(() => props.jours.every((jour) => !jour.bilan));
   <Card class="flex w-full flex-col rounded-carte border-0 bg-surface shadow-elevation">
     <CardHeader class="p-4 md:p-6">
       <CardTitle class="m-0 flex items-center gap-2 text-[17px] font-semibold leading-tight tracking-normal text-texte">
-        <i class="material-symbols-outlined rounded-controle bg-teinte-bilan-fond p-1.5 text-[22px] text-teinte-bilan" aria-hidden="true">show_chart</i>
+        <i class="material-symbols-outlined rounded-controle bg-teinte-bilan-fond p-1.5 text-[22px] text-teinte-bilan" aria-hidden="true">bar_chart</i>
         Évolution {{ mode === 'mois' ? 'du mois' : 'de la semaine' }}
       </CardTitle>
     </CardHeader>
-    <CardContent class="px-4 pb-4 md:px-6 md:pb-6 flex flex-col gap-4">
-      <p v-if="aucunBilan" class="text-texte-2 text-left">Aucun bilan sur cette période.</p>
+    <CardContent class="flex flex-col gap-4 px-4 pb-4 md:px-6 md:pb-6">
+      <p v-if="aucunBilan" class="m-0 text-left text-texte-2">Aucun bilan sur cette période.</p>
       <template v-else>
-        <GraphiqueLignes
+        <p class="m-0 text-left text-xs text-texte-3">Plus la barre est haute, plus la journée a été lourde. Touche un jour pour voir son bilan.</p>
+        <GraphiqueBarres
             v-for="graphique in graphiques"
-            :key="graphique.titre"
+            :key="graphique.cle"
             :titre="graphique.titre"
             :max="graphique.max"
-            :graduations="graphique.graduations"
-            :series="graphique.series"
+            :unite="graphique.unite"
+            :couleur="graphique.couleur"
+            :valeurs="graphique.valeurs"
             :bandes="bandes"
             :etiquettes="etiquettes"
             :selection="selection"
             @selectionner="(index) => emit('selectionner', jours[index].date)"
         />
-        <p v-if="aDesRegles" class="flex items-center gap-2 text-xs text-texte-2 text-left">
-          <span class="w-4 h-3 rounded-sm bg-teinte-regles-fond" aria-hidden="true"/>
+        <p v-if="aDesRegles" class="m-0 flex items-center gap-2 text-left text-xs text-texte-2">
+          <span class="h-3 w-4 rounded-sm bg-teinte-regles-fond" aria-hidden="true"/>
           Jours de règles
         </p>
-        <p class="text-xs text-texte-3 text-left">
-          Les jours sans valeur ne sont pas tracés : une mesure non renseignée ne compte jamais pour zéro.
+        <p class="m-0 text-left text-xs text-texte-3">
+          Un jour sans valeur n'a pas de barre : une mesure non renseignée ne compte jamais pour zéro.
         </p>
       </template>
     </CardContent>

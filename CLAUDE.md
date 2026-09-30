@@ -67,6 +67,10 @@ dotnet ef migrations add NomEnPascalCase --project MonEndoVue.Server
   **`DonneesTraitementNonMedicamenteux`** (séances) — page `/medicaments` (`TraitementsController`, `GET Traitements/jour`).
   Le planning d'un jour est calculé par `PlanningTraitement` ; une prise **ignorée** est stockée dans la même table :
   toute lecture qui compte des prises (PDF, historique, accueil) filtre `Statut == Pris`.
+  Page `/medicaments/:id` : historique d'un traitement un mois à la fois (`GET Traitements/{id}/historique?mois=&jour=`,
+  `HistoriqueTraitementsService`) ; les prises prévues d'un traitement arrêté se comptent jusqu'à sa fin
+  (`PlanningTraitement.EstPrevuDansSesDates`), avec la fréquence et les horaires actuels (leurs versions passées ne sont
+  pas gardées). Une prise ou une séance se retire depuis cette page (`DELETE Traitements/prises/{id}`, `…/seances/{id}`).
 - **`DonneesTransit`** — `/transit` (ancien suivi par événements ; le suivi quotidien passe désormais par le bilan) .
 - **`DonneesActivitePhysique`** — `/activite` via `ActiviteController` (carnet de la session) : intensité ressentie sur 3 niveaux
   (`NiveauIntensite` : douce, modérée, soutenue ; l'ancienne `Intensite` 1-10 reste écrite, 2 / 5 / 8, pour un retour
@@ -264,3 +268,6 @@ Procédure validée (sans jamais lire les fichiers de secrets) :
    puis `npx vite --port 5173 --strictPort` (5173 est l'origine autorisée par CORS).
 4. Attendre `https://localhost:7206/health` = `Healthy`, ouvrir `https://localhost:5173/login` : **l'utilisateur se connecte
    lui-même** avec son compte local, puis on teste à 375px et en desktop.
+5. **Tester avec un volume réaliste**, jamais trois entrées : si le compte local est peu rempli, y ajouter environ un an
+   de données génériques avec `tools/donnees-demo/generer.mjs` (mode d'emploi en tête du fichier ; ajoute sans rien
+   effacer). Un écran lisible avec quelques données peut devenir illisible avec un mois complet (cas des graphiques du bilan).
