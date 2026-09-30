@@ -25,8 +25,10 @@
     --couleur-accent-rgb: 242 179 194;
     --couleur-sur-accent: #33272a;
 
-    /* Contour des champs et contrôles (≥ 3:1 sur fond et surface) */
-    --couleur-contour: #97817b;
+    /* Contour des champs et contrôles (≥ 3:1 sur fond, surface et surface-2) */
+    --couleur-contour: #8f7872;
+    /* Fond des champs de saisie */
+    --couleur-champ: #ffffff;
     --couleur-danger: #b42318;
     /* Voile derrière une fenêtre ou un panneau modal */
     --couleur-voile: rgb(51 39 42 / 0.45);
@@ -60,6 +62,15 @@
     --intensite-8: #80304c;
     --intensite-9: #69263e;
     --intensite-10: #521d30;
+
+    /* Émotions du jour (teinte symptôme, plus foncé = plus difficile) : texte foncé jusqu'à 2 (≥ 6.8:1), blanc ensuite (≥ 4.8:1). */
+    --emotion-0: #ece6f5;
+    --emotion-1: #d9cfee;
+    --emotion-2: #bcabdf;
+    --emotion-3: #7a64b3;
+    --emotion-4: #4e3d80;
+    /* Texte posé sur une couleur foncée (intensité ≥ 6, émotions ≥ 3) */
+    --couleur-sur-fonce: #ffffff;
 
     /* Formes : un rayon par rôle (voir monendovue.client/CLAUDE.md, « Formes et états ») et une seule élévation.
        Contrôles = boutons, champs, choix, onglets ; cartes = cartes et listes ; panneau = panneau du bas.

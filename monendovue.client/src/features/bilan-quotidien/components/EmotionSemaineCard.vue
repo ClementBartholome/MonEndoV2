@@ -16,8 +16,8 @@ const semaine = computed(() => emotionDeLaSemaine(props.bilans));
 <template>
   <Card class="flex w-full flex-col rounded-carte border-0 bg-surface shadow-elevation">
     <CardHeader class="p-4 md:p-6">
-      <CardTitle class="m-0 flex items-center gap-2 text-[17px] font-semibold leading-tight tracking-normal text-texte">
-        <i class="material-symbols-outlined rounded-controle bg-teinte-symptome-fond p-1.5 text-[22px] text-teinte-symptome" aria-hidden="true">mood</i>Émotion {{ periode.de }}
+      <CardTitle class="m-0 flex items-center gap-2 text-titre-carte font-semibold leading-tight tracking-normal text-texte">
+        <i class="material-symbols-outlined rounded-controle bg-teinte-symptome-fond p-1.5 text-titre-2 text-teinte-symptome" aria-hidden="true">mood</i>Émotion {{ periode.de }}
       </CardTitle>
     </CardHeader>
     <CardContent class="px-4 pb-4 md:px-6 md:pb-6 text-left">

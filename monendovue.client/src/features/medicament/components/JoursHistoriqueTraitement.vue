@@ -1,14 +1,14 @@
 <template>
   <!-- Une seule liste compacte (un traitement quotidien donne une trentaine de lignes par mois) : une ligne par prise. -->
   <section aria-labelledby="titre-historique-prises" class="flex flex-col gap-2">
-    <h2 id="titre-historique-prises" class="m-0 text-[17px] font-semibold tracking-normal text-texte">{{ titre }}</h2>
+    <h2 id="titre-historique-prises" class="m-0 text-titre-carte font-semibold tracking-normal text-texte">{{ titre }}</h2>
     <ul class="m-0 flex list-none flex-col rounded-carte bg-surface p-0 shadow-elevation">
       <template v-for="(jour, indexJour) in jours" :key="jour.jour">
         <li v-for="(entree, index) in jour.entrees" :key="entree.id"
             class="flex min-h-[52px] items-center gap-3 py-1.5 pl-3.5 pr-1.5 text-left"
             :class="{ 'border-t border-trait': indexJour > 0 || index > 0 }">
-          <span class="w-14 shrink-0 whitespace-nowrap text-[13px] text-texte-3">{{ index === 0 ? jourCourt(jour.jour) : '' }}</span>
-          <span class="inline-flex min-w-0 grow items-center gap-1.5 text-[15px]" :class="entree.nature === 'Ignore' ? 'text-texte-3' : 'text-texte'">
+          <span class="w-14 shrink-0 whitespace-nowrap text-legende text-texte-3">{{ index === 0 ? jourCourt(jour.jour) : '' }}</span>
+          <span class="inline-flex min-w-0 grow items-center gap-1.5 text-corps" :class="entree.nature === 'Ignore' ? 'text-texte-3' : 'text-texte'">
             <i class="material-symbols-outlined icone-pleine text-xl" :class="icone(entree).classe" aria-hidden="true">{{ icone(entree).nom }}</i>
             <span class="truncate">{{ libelle(entree) }}</span>
           </span>

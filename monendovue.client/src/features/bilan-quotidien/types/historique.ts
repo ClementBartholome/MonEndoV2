@@ -50,6 +50,8 @@ export interface HistoriqueActions {
   precedente: () => void;
   suivante: () => void;
   revenirAujourdhui: () => void;
+  /** Saut direct à un mois choisi (même loin en arrière). */
+  allerAuMois: (mois: Date) => void;
   selectionnerJour: (date: Date) => void;
   recharger: () => Promise<void>;
 }

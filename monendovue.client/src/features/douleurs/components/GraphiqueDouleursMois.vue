@@ -1,18 +1,19 @@
 <template>
   <section class="flex flex-col gap-2.5 rounded-carte bg-surface px-4 pb-3 pt-4 shadow-elevation" aria-labelledby="titre-graphique-douleurs">
-    <h2 id="titre-graphique-douleurs" class="m-0 text-[15px] font-semibold tracking-normal text-texte">Intensité la plus forte, jour par jour</h2>
-    <div class="flex h-[120px] items-end gap-[3px]" role="img" :aria-label="description">
-      <div v-for="jour in jours" :key="jour.jour" class="flex h-full grow flex-col justify-end rounded-[3px]"
-           :class="{ 'bg-teinte-regles-fond': jour.regles }">
+    <h2 id="titre-graphique-douleurs" class="m-0 text-corps font-semibold tracking-normal text-texte">Intensité la plus forte, jour par jour</h2>
+    <!-- Les règles sont un repère sous l'axe, jamais un fond de colonne : il se lirait comme une barre de douleur. -->
+    <div class="flex h-[128px] items-end gap-[3px]" role="img" :aria-label="description">
+      <div v-for="jour in jours" :key="jour.jour" class="flex h-full grow flex-col justify-end gap-1">
         <div class="rounded-[3px]" :style="barre(jour.intensiteMax)"></div>
+        <div class="h-1 rounded-full" :class="{ 'bg-teinte-regles': jour.regles }"></div>
       </div>
     </div>
-    <div class="flex justify-between text-[11px] text-texte-3" aria-hidden="true">
+    <div class="flex justify-between text-xs text-texte-3" aria-hidden="true">
       <span>1</span><span>8</span><span>15</span><span>22</span><span>{{ jours.length }}</span>
     </div>
     <div class="flex flex-wrap items-center gap-x-3.5 gap-y-1 text-xs text-texte-2">
       <span v-if="jours.some((j) => j.regles)" class="inline-flex items-center gap-1.5">
-        <span class="h-3 w-3 rounded-[3px] bg-teinte-regles-fond" aria-hidden="true"></span>Règles
+        <span class="h-1 w-3 rounded-full bg-teinte-regles" aria-hidden="true"></span>Règles
       </span>
       <span>Plus la barre est foncée, plus la douleur était forte.</span>
     </div>

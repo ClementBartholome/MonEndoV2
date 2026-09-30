@@ -8,10 +8,10 @@
           class="flex min-h-16 items-center gap-3 px-4 text-texte"
           :class="{ 'border-b border-trait': index < navigationSecondaire.length - 1 }"
           @click="ouvert = false">
-        <i class="material-symbols-outlined rounded-controle p-1.5 text-[22px]" :class="teintesRubrique[entree.teinte ?? 'neutre']" aria-hidden="true">{{ entree.icone }}</i>
+        <i class="material-symbols-outlined rounded-controle p-1.5 text-titre-2" :class="teintesRubrique[entree.teinte ?? 'neutre']" aria-hidden="true">{{ entree.icone }}</i>
         <span class="flex grow flex-col">
-          <span class="text-[15px] font-medium">{{ entree.libelle }}</span>
-          <span class="text-[13px] text-texte-3">{{ entree.detail }}</span>
+          <span class="text-corps font-medium">{{ entree.libelle }}</span>
+          <span class="text-legende text-texte-3">{{ entree.detail }}</span>
         </span>
         <i class="material-symbols-outlined text-texte-3" aria-hidden="true">chevron_right</i>
       </router-link>
@@ -19,13 +19,13 @@
 
     <nav aria-label="Compte" class="flex flex-col rounded-carte bg-surface shadow-elevation">
       <router-link :to="navigationCompte.vers" class="flex min-h-14 items-center gap-3 border-b border-trait px-4 text-texte" @click="ouvert = false">
-        <i class="material-symbols-outlined p-1.5 text-[22px]" aria-hidden="true">{{ navigationCompte.icone }}</i>
-        <span class="grow text-[15px]">{{ navigationCompte.libelle }}</span>
+        <i class="material-symbols-outlined p-1.5 text-titre-2" aria-hidden="true">{{ navigationCompte.icone }}</i>
+        <span class="grow text-corps">{{ navigationCompte.libelle }}</span>
         <i class="material-symbols-outlined text-texte-3" aria-hidden="true">chevron_right</i>
       </router-link>
       <button type="button" class="flex min-h-14 items-center gap-3 px-4 text-left text-texte" @click="emit('deconnexion')">
-        <i class="material-symbols-outlined p-1.5 text-[22px]" aria-hidden="true">logout</i>
-        <span class="grow text-[15px]">Se déconnecter</span>
+        <i class="material-symbols-outlined p-1.5 text-titre-2" aria-hidden="true">logout</i>
+        <span class="grow text-corps">Se déconnecter</span>
       </button>
     </nav>
 

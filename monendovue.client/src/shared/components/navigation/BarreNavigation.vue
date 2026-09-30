@@ -5,14 +5,14 @@
         v-for="entree in navigationPrincipale"
         :key="entree.vers"
         :to="entree.vers"
-        class="entree flex flex-col items-center gap-0.5 text-[11px]"
+        class="entree flex flex-col items-center gap-0.5 text-xs"
         :class="estActive(entree, route.path) ? 'font-semibold text-texte' : 'text-texte-2'"
         :aria-current="estActive(entree, route.path) ? 'page' : undefined">
       <i class="material-symbols-outlined pastille" :class="{ active: estActive(entree, route.path) }" aria-hidden="true">{{ entree.icone }}</i>
       {{ entree.libelle }}
     </router-link>
     <button type="button"
-            class="entree flex flex-col items-center gap-0.5 text-[11px]"
+            class="entree flex flex-col items-center gap-0.5 text-xs"
             :class="plusActif ? 'font-semibold text-texte' : 'text-texte-2'"
             :aria-expanded="menuOuvert"
             @click="menuOuvert = true">
@@ -59,8 +59,8 @@ const plusActif = computed(() => menuOuvert.value
 }
 
 .pastille.active {
-  background: var(--couleur-accent);
-  color: var(--couleur-sur-accent);
+  background: var(--couleur-surface-2);
+  color: var(--couleur-texte);
   font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
 }
 </style>

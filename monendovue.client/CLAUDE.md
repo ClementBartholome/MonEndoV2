@@ -112,11 +112,20 @@ plus de DataTables.
       en `text-etat-fait` ; « ignorée » en `text-texte-3` ;
     - une action se nomme par un verbe, sans icône de validation : « Je l'ai pris », pas « ✓ Pris » ;
     - un choix sélectionné dans un formulaire (type, moment, fréquence) = fond `bg-texte` et texte `text-fond`, partout ;
+      non sélectionné = `border-contour bg-surface` (jamais `border-trait`, invisible à 1,3:1 : `trait` sépare, il ne
+      délimite pas un contrôle) ; un champ de saisie = `border-contour bg-champ` ;
     - une bascule de vue (onglets, semaine / mois, écart de comparaison) = segment `bg-surface-2 p-1`, élément choisi
       `bg-surface font-semibold shadow-elevation` : jamais de rose ni de fond foncé (retour utilisateur du 2026-09-29) ;
     - intensité 1-10 : composant partagé `ChoixIntensite` (choisie = pleine dans sa couleur, bordure de la même
       couleur, jamais de bordure noire ; les autres gardent un trait de leur couleur pour lire l'échelle) ;
-    - la teinte d'une rubrique identifie (tuile d'icône, calendrier), elle ne change pas avec l'état.
+    - la teinte d'une rubrique identifie (tuile d'icône, calendrier), elle ne change pas avec l'état ;
+    - la rubrique active de la navigation (barre du bas, barre latérale) = pilule `surface-2`, icône pleine et libellé
+      en gras : le rose reste réservé aux actions (décision du 2026-09-30).
+  - **Tailles de texte** (décision du 2026-09-30) : la racine passe de 16 à 20 px dès 768 px (`index.css`), donc toute
+    taille est en rem pour grandir avec elle : `text-legende` (13), `text-corps` (15), `text-titre-carte` (17),
+    `text-titre-2` (22), `text-titre-page` (26), en plus de `text-xs` / `text-sm` / `text-base` / `text-xl`. **Jamais de
+    `text-[Npx]`** : figé, il devenait plus petit que le texte secondaire sur ordinateur. Une nouvelle taille nommée
+    s'ajoute dans `tailwind.config.js` **et** dans `lib/utils.ts` (tailwind-merge la prendrait sinon pour une couleur).
   - **Volume et historique** (retour utilisateur du 2026-09-29 : « et quand on aura des centaines de cycles ? ») : aucune
     liste ne grandit sans limite avec les années. Soit elle est bornée par une période (mois affiché, avec
     `SelecteurMois` pour sauter loin en arrière), soit elle affiche les N plus récents et demande la suite au serveur
@@ -127,7 +136,14 @@ plus de DataTables.
   - Icônes : `polices.css` force `line-height: 1` (les classes `text-lg`… décalaient le glyphe) ; ne pas le surcharger.
   - Pas de bouton « Revenir en arrière » dans les pages : la navigation est toujours visible. L'en-tête (logo, compte) est
     posé sur la page en `pointer-events-none` : la première carte peut passer dessous sans perdre ses clics.
-  - Intensité 0-10 : `var(--intensite-N)` (texte foncé jusqu'à 5, blanc à partir de 6).
+  - Intensité 0-10 : `var(--intensite-N)` (texte foncé jusqu'à 5, clair à partir de 6) via `couleursIntensite(n)`
+    (`shared/utils/intensite.ts`), jamais recopié. Émotions du jour : `bg-emotion-0..4` (violet de la teinte symptôme,
+    texte clair `text-sur-fonce` à partir de 3). Le texte posé sur une couleur foncée est `text-sur-fonce`, pas `text-white`.
+  - **Graphiques** (revue de design du 2026-09-29) : les jours de règles sont un repère fin **sous l'axe**
+    (`teinte-regles`), jamais un fond de colonne (il se lit comme une barre) ; les barres restent à pleine couleur (une
+    barre atténuée passe sous 3:1), le jour choisi se lit à son fond `surface-2`.
+  - `Card` (shadcn) n'a ni survol ni curseur : une carte n'est pas cliquable. `CardHeader` est un `div`, le titre est
+    porté par `CardTitle` seul.
   - Les pages pas encore refaites (Cycle, Activité, Export…) gardent des couleurs brutes : les migrer quand on les touche.
 - Polices servies par l'app (`src/assets/polices.css`, paquets `@fontsource`), **jamais Google Fonts** (IP envoyée à Google, RGPD) :
   Poppins 400/400 italique/500/600/700 en latin ; une graisse ou un axe d'icône en plus s'ajoute dans ce fichier.
@@ -151,7 +167,10 @@ plus de DataTables.
   larges que prévu, vérifier en situation.
 - Pastilles, préréglages et chips : grilles à colonnes égales (`grid-cols-n`) plutôt que `flex-wrap`, pour des rangées
   alignées à 375px ; libellés courts, `whitespace-nowrap` si besoin.
-- Accessibilité : labels associés aux champs, navigation clavier, cibles tactiles d'au moins 44px, contraste suffisant.
+- Accessibilité : labels associés aux champs, navigation clavier, cibles tactiles d'au moins 44px (`min-h-11`, onglets,
+  segments, liens seuls et jours de calendrier compris), contraste suffisant. Le nom accessible d'un bouton commence par
+  son libellé visible (« Je l'ai pris : Diénogest, 8 h 00 »), sinon la commande vocale échoue. Chaque page garde un `h1`
+  (en `sr-only` si un écran de saisie porte son propre titre).
 - Jamais de `v-html` ; pour `Datatable`, ne pas rendre de texte saisi comme HTML.
 
 ## Navigation

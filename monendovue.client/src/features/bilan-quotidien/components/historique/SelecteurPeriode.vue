@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import SelecteurMois from '@/shared/components/SelecteurMois.vue';
 import type { ModePeriode, PeriodeHistorique } from '@/features/bilan-quotidien/types/historique';
 
 defineProps<{ periode: PeriodeHistorique }>();
@@ -8,6 +9,7 @@ const emit = defineEmits<{
   precedente: [];
   suivante: [];
   aujourdhui: [];
+  'aller-au-mois': [mois: Date];
 }>();
 
 const modes: { valeur: ModePeriode; libelle: string }[] = [
@@ -24,7 +26,7 @@ const modes: { valeur: ModePeriode; libelle: string }[] = [
           v-for="mode in modes"
           :key="mode.valeur"
           type="button"
-          class="min-h-10 rounded-controle text-sm"
+          class="min-h-11 rounded-controle text-sm"
           :class="periode.mode === mode.valeur ? 'bg-surface font-semibold text-texte shadow-elevation' : 'text-texte-2'"
           :aria-pressed="periode.mode === mode.valeur"
           @click="emit('changer-mode', mode.valeur)"
@@ -33,10 +35,19 @@ const modes: { valeur: ModePeriode; libelle: string }[] = [
       </button>
     </div>
 
-    <div class="-mx-3 flex items-start justify-between gap-2">
+    <!-- Au mois : le sélecteur commun (flèches + choix direct d'un mois, pour revenir loin en arrière). -->
+    <div v-if="periode.mode === 'mois'" class="-mx-3 flex flex-col items-stretch">
+      <SelecteurMois :mois="periode.debut" @changer="emit('aller-au-mois', $event)"/>
+      <button v-if="!periode.contientAujourdhui" type="button" class="min-h-11 self-center px-2 text-sm font-medium text-lien"
+              @click="emit('aujourdhui')">
+        Revenir à aujourd'hui
+      </button>
+    </div>
+
+    <div v-else class="-mx-3 flex items-start justify-between gap-2">
       <button
           type="button" class="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-texte hover:bg-surface-2"
-          :aria-label="periode.mode === 'mois' ? 'Mois précédent' : 'Semaine précédente'"
+          aria-label="Semaine précédente"
           @click="emit('precedente')"
       >
         <i class="material-symbols-outlined" aria-hidden="true">chevron_left</i>
@@ -57,7 +68,7 @@ const modes: { valeur: ModePeriode; libelle: string }[] = [
       <button
           type="button" class="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-texte hover:bg-surface-2 disabled:text-trait"
           :disabled="!periode.suivantePossible"
-          :aria-label="periode.mode === 'mois' ? 'Mois suivant' : 'Semaine suivante'"
+          aria-label="Semaine suivante"
           @click="emit('suivante')"
       >
         <i class="material-symbols-outlined" aria-hidden="true">chevron_right</i>

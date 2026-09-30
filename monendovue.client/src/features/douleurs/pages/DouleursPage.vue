@@ -1,8 +1,8 @@
 <template>
   <main class="mx-auto flex w-full max-w-xl flex-col gap-3.5 px-5 pb-40 pt-24 lg:pb-12 lg:pt-10">
     <header class="flex items-center gap-3">
-      <i class="material-symbols-outlined rounded-controle bg-teinte-douleur-fond p-2 text-[26px] text-teinte-douleur" aria-hidden="true">sick</i>
-      <h1 class="m-0 grow text-[26px] font-semibold tracking-normal text-texte">Douleurs</h1>
+      <i class="material-symbols-outlined rounded-controle bg-teinte-douleur-fond p-2 text-titre-page text-teinte-douleur" aria-hidden="true">sick</i>
+      <h1 class="m-0 grow text-titre-page font-semibold tracking-normal text-texte">Douleurs</h1>
       <button type="button" class="hidden min-h-11 items-center gap-2 rounded-controle bg-button px-4 font-semibold text-texte lg:inline-flex"
               @click="ouvrirAjout">
         <i class="material-symbols-outlined" aria-hidden="true">add</i>Noter une douleur
@@ -34,7 +34,7 @@
     </template>
 
     <button type="button"
-            class="fixed bottom-[calc(4.25rem+16px)] right-5 z-30 inline-flex min-h-14 items-center gap-2 rounded-controle bg-button pl-4 pr-5 text-[15px] font-semibold text-texte shadow-elevation lg:hidden"
+            class="fixed bottom-[calc(4.25rem+16px)] right-5 z-30 inline-flex min-h-14 items-center gap-2 rounded-controle bg-button pl-4 pr-5 text-corps font-semibold text-texte shadow-elevation lg:hidden"
             @click="ouvrirAjout">
       <i class="material-symbols-outlined" aria-hidden="true">add</i>Noter une douleur
     </button>

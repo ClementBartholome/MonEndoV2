@@ -23,6 +23,15 @@ module.exports = {
             },
         },
         extend: {
+            // Tailles de texte des pages refaites, en rem : elles suivent la racine (16 px, 20 px dès 768 px) comme
+            // text-sm / text-base. Jamais de text-[Npx], qui resterait figé sur ordinateur. Les icônes reprennent ces pas.
+            fontSize: {
+                legende: '0.8125rem',
+                corps: '0.9375rem',
+                'titre-carte': '1.0625rem',
+                'titre-2': '1.375rem',
+                'titre-page': '1.625rem',
+            },
             // Couleur d'accent (--button) utilisable avec opacité : border-button, bg-button/15, ring-button/50...
             // Pas de textColor : la classe text-button existante désigne la couleur de texte des boutons (--button-text).
             borderColor: { button: "rgb(var(--button-rgb) / <alpha-value>)" },
@@ -37,10 +46,13 @@ module.exports = {
                 texte: { DEFAULT: "var(--couleur-texte)", 2: "var(--couleur-texte-2)", 3: "var(--couleur-texte-3)" },
                 lien: { DEFAULT: "var(--couleur-lien)", survol: "var(--couleur-lien-survol)" },
                 contour: "var(--couleur-contour)",
+                champ: "var(--couleur-champ)",
                 danger: "var(--couleur-danger)",
                 voile: "var(--couleur-voile)",
                 "etat-fait": "var(--etat-fait)",
                 teinte: {"bilan":{"DEFAULT":"var(--teinte-bilan)","fond":"var(--teinte-bilan-fond)"},"douleur":{"DEFAULT":"var(--teinte-douleur)","fond":"var(--teinte-douleur-fond)"},"regles":{"DEFAULT":"var(--teinte-regles)","fond":"var(--teinte-regles-fond)"},"symptome":{"DEFAULT":"var(--teinte-symptome)","fond":"var(--teinte-symptome-fond)"},"traitement":{"DEFAULT":"var(--teinte-traitement)","fond":"var(--teinte-traitement-fond)"},"neutre":{"DEFAULT":"var(--teinte-neutre)","fond":"var(--teinte-neutre-fond)"}},
+                emotion: {"0":"var(--emotion-0)","1":"var(--emotion-1)","2":"var(--emotion-2)","3":"var(--emotion-3)","4":"var(--emotion-4)"},
+                "sur-fonce": "var(--couleur-sur-fonce)",
                 intensite: {"0":"var(--intensite-0)","1":"var(--intensite-1)","2":"var(--intensite-2)","3":"var(--intensite-3)","4":"var(--intensite-4)","5":"var(--intensite-5)","6":"var(--intensite-6)","7":"var(--intensite-7)","8":"var(--intensite-8)","9":"var(--intensite-9)","10":"var(--intensite-10)"},
                 border: "hsl(var(--border))",
                 input: "hsl(var(--input))",

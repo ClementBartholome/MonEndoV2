@@ -53,7 +53,7 @@ const libelleJour = (jour: JourHistorique) => {
             v-for="(config, cle) in echellesCalendrier"
             :key="cle"
             type="button"
-            class="min-h-10 rounded-controle px-3 text-sm"
+            class="min-h-11 rounded-controle px-3 text-sm"
             :class="indicateur === cle ? 'bg-surface font-semibold text-texte shadow-elevation' : 'text-texte-2'"
             :aria-pressed="indicateur === cle"
             @click="indicateur = cle"

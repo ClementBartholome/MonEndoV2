@@ -30,7 +30,7 @@ export const navigationPrincipale: EntreeNavigation[] = [
 export const navigationSecondaire: EntreeNavigation[] = [
     { libelle: 'Traitements', icone: 'pill', vers: '/medicaments', detail: 'Prises et séances', teinte: 'traitement' },
     { libelle: 'Activité', icone: 'directions_run', vers: '/activite', detail: 'Séances et types d\'activité', teinte: 'bilan' },
-    { libelle: 'Préparer un rendez-vous', icone: 'picture_as_pdf', vers: '/export', detail: 'Synthèse PDF pour la consultation', teinte: 'symptome' },
+    { libelle: 'Préparer un rendez-vous', icone: 'picture_as_pdf', vers: '/export', detail: 'Synthèse PDF pour la consultation', teinte: 'neutre' },
     { libelle: 'Transit', icone: 'gastroenterology', vers: '/transit', detail: 'Ancien suivi, en lecture', teinte: 'neutre' },
 ];
 

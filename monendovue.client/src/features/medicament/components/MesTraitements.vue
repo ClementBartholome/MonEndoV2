@@ -1,12 +1,12 @@
 <template>
   <section class="flex flex-col gap-2" aria-labelledby="titre-mes-traitements">
-    <h2 id="titre-mes-traitements" class="m-0 text-[17px] font-semibold tracking-normal text-texte">Mes traitements</h2>
+    <h2 id="titre-mes-traitements" class="m-0 text-titre-carte font-semibold tracking-normal text-texte">Mes traitements</h2>
     <ul v-if="enCours.length" class="m-0 flex list-none flex-col rounded-carte bg-surface p-0 shadow-elevation">
       <li v-for="(traitement, index) in enCours" :key="traitement.id" :class="{ 'border-t border-trait': index > 0 }">
         <button type="button" class="flex min-h-[62px] w-full items-center gap-3 px-3.5 text-left" @click="emit('ouvrir', traitement)">
           <span class="flex min-w-0 grow flex-col">
-            <span class="text-[15px] font-medium text-texte">{{ traitement.nom }}</span>
-            <span class="truncate text-[13px] text-texte-3">{{ detail(traitement) }}</span>
+            <span class="text-corps font-medium text-texte">{{ traitement.nom }}</span>
+            <span class="truncate text-legende text-texte-3">{{ detail(traitement) }}</span>
           </span>
           <i class="material-symbols-outlined text-texte-3" aria-hidden="true">chevron_right</i>
         </button>
@@ -21,8 +21,8 @@
       <li v-for="(traitement, index) in termines" :key="traitement.id" :class="{ 'border-t border-trait': index > 0 }">
         <button type="button" class="flex min-h-14 w-full items-center gap-3 px-3.5 text-left" @click="emit('ouvrir', traitement)">
           <span class="flex min-w-0 grow flex-col">
-            <span class="text-[15px] text-texte">{{ traitement.nom }}</span>
-            <span class="text-[13px] text-texte-3">{{ periode(traitement) }}</span>
+            <span class="text-corps text-texte">{{ traitement.nom }}</span>
+            <span class="text-legende text-texte-3">{{ periode(traitement) }}</span>
           </span>
           <i class="material-symbols-outlined text-texte-3" aria-hidden="true">chevron_right</i>
         </button>

@@ -2,9 +2,9 @@
   <section aria-labelledby="titre-mes-cycles" class="flex flex-col gap-3.5">
     <div class="flex flex-col gap-3 rounded-carte bg-surface px-[18px] py-4 shadow-elevation">
       <div class="flex items-center gap-2.5">
-        <i class="material-symbols-outlined rounded-controle bg-teinte-regles-fond p-1.5 text-[22px] text-teinte-regles" aria-hidden="true">menstrual_health</i>
+        <i class="material-symbols-outlined rounded-controle bg-teinte-regles-fond p-1.5 text-titre-2 text-teinte-regles" aria-hidden="true">menstrual_health</i>
         <div class="flex flex-col">
-          <h2 id="titre-mes-cycles" class="m-0 text-[17px] font-semibold tracking-normal text-texte">Mes cycles</h2>
+          <h2 id="titre-mes-cycles" class="m-0 text-titre-carte font-semibold tracking-normal text-texte">Mes cycles</h2>
           <span class="text-xs text-texte-3">{{ resume.dureeMoyenne !== null ? 'Sur les 6 derniers cycles' : 'Dès deux cycles terminés' }}</span>
         </div>
       </div>
@@ -26,12 +26,12 @@
       </ul>
 
       <section v-for="groupe in groupes" :key="groupe.annee" class="flex flex-col gap-2" :aria-labelledby="`cycles-${groupe.annee}`">
-        <h3 :id="`cycles-${groupe.annee}`" class="m-0 mt-1 text-[15px] font-semibold tracking-normal text-texte">{{ groupe.annee }}</h3>
+        <h3 :id="`cycles-${groupe.annee}`" class="m-0 mt-1 text-corps font-semibold tracking-normal text-texte">{{ groupe.annee }}</h3>
         <ul class="m-0 flex list-none flex-col rounded-carte bg-surface p-0 shadow-elevation">
           <li v-for="(cycle, index) in groupe.cycles" :key="cycle.debut"
               class="flex flex-col gap-2 px-3.5 py-3 text-left" :class="{ 'border-t border-trait': index > 0 }">
             <div class="flex items-baseline justify-between gap-2">
-              <span class="text-[15px] font-medium text-texte">{{ periodeDuCycle(cycle.debut, cycle.duree) }}</span>
+              <span class="text-corps font-medium text-texte">{{ periodeDuCycle(cycle.debut, cycle.duree) }}</span>
               <span class="shrink-0 text-sm font-semibold text-texte-2">{{ jours(cycle.duree) }}</span>
             </div>
             <!-- Même échelle pour toutes les barres : les cycles se comparent d'un coup d'œil. -->

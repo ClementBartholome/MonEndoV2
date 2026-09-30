@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { useId } from 'radix-vue';
+import { couleursIntensite } from '@/shared/utils/intensite';
 
 /**
  * Échelle de 0 à max : un tap choisit, un second tap sur la même valeur efface (non renseigné).
@@ -27,12 +28,11 @@ const choisir = (niveau: number) => {
 
 function style(niveau: number) {
   if (valeur.value !== niveau || !props.couleurs) return undefined;
-  const couleur = `var(--intensite-${niveau})`;
-  return { background: couleur, borderColor: couleur, color: niveau >= 6 ? '#ffffff' : 'var(--couleur-texte)' };
+  return couleursIntensite(niveau);
 }
 
 function classes(niveau: number): string {
-  if (valeur.value !== niveau) return 'border-trait bg-surface text-texte-2';
+  if (valeur.value !== niveau) return 'border-contour bg-surface text-texte-2';
   return props.couleurs ? 'font-semibold' : 'border-texte bg-texte font-semibold text-fond';
 }
 </script>
@@ -40,7 +40,7 @@ function classes(niveau: number): string {
 <template>
   <div class="flex flex-col gap-2">
     <div class="flex items-center justify-between gap-2">
-      <p :id="idLibelle" class="m-0 flex items-center gap-2 text-[15px] font-semibold text-texte">
+      <p :id="idLibelle" class="m-0 flex items-center gap-2 text-corps font-semibold text-texte">
         <i class="material-symbols-outlined text-teinte-bilan" aria-hidden="true">{{ icone }}</i>{{ libelle }}
       </p>
       <span class="text-sm text-texte-2" aria-hidden="true">
@@ -57,7 +57,7 @@ function classes(niveau: number): string {
           v-for="niveau in niveaux"
           :key="niveau"
           type="button"
-          class="min-h-11 rounded-controle border-[1.5px] text-[15px]"
+          class="min-h-11 rounded-controle border-[1.5px] text-corps"
           :class="classes(niveau)"
           :style="style(niveau)"
           :aria-pressed="valeur === niveau"

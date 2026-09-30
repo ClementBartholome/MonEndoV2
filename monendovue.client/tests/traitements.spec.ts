@@ -19,9 +19,9 @@ test.describe('Traitements', () => {
     await expect(traitementsPage.aujourdhui.getByRole('heading', { name: 'Matin · 8 h 00' })).toBeVisible();
     await expect(traitementsPage.aujourdhui.getByRole('heading', { name: 'Soir · 20 h 30' })).toBeVisible();
     await expect(traitementsPage.aujourdhui).toContainText('0 prise sur 2');
-    await expect(traitementsPage.aujourdhui.getByRole('button', { name: 'Noter la prise de Diénogest 2 mg de 8 h 00' })).toHaveText('Je l\'ai pris');
+    await expect(traitementsPage.aujourdhui.getByRole('button', { name: "Je l'ai pris : Diénogest 2 mg, 8 h 00" })).toHaveText('Je l\'ai pris');
 
-    await traitementsPage.aujourdhui.getByRole('button', { name: 'Noter la prise de Diénogest 2 mg de 8 h 00' }).click();
+    await traitementsPage.aujourdhui.getByRole('button', { name: "Je l'ai pris : Diénogest 2 mg, 8 h 00" }).click();
     await expect(traitementsPage.aujourdhui).toContainText('Pris à 10 h 00');
     await expect(traitementsPage.aujourdhui).toContainText('1 prise sur 2');
     expect(prises[0]).toMatchObject({ statut: 'Pris', heurePrevue: '08:00:00', date: '2026-09-15T10:00:00' });

@@ -1,10 +1,10 @@
 <template>
   <section aria-labelledby="titre-cycle-en-cours" class="flex items-center gap-3.5 rounded-carte bg-surface px-[18px] py-4 shadow-elevation">
     <div class="flex min-w-0 grow flex-col">
-      <span class="text-[13px] text-texte-3">Cycle en cours</span>
+      <span class="text-legende text-texte-3">Cycle en cours</span>
       <h2 id="titre-cycle-en-cours" class="m-0 text-xl font-semibold tracking-normal"
           :class="enCours?.jourDeRegles ? 'text-teinte-regles' : 'text-texte'">{{ titre }}</h2>
-      <span class="text-[13px] text-texte-2">{{ detail }}</span>
+      <span class="text-legende text-texte-2">{{ detail }}</span>
     </div>
     <span v-if="enCours?.jourDeRegles" class="inline-flex shrink-0 items-center gap-1 text-sm font-medium text-etat-fait">
       <i class="material-symbols-outlined icone-pleine text-xl" aria-hidden="true">check_circle</i>Noté aujourd'hui

@@ -6,8 +6,8 @@
         <i class="material-symbols-outlined" aria-hidden="true">arrow_back</i>
       </router-link>
       <div class="flex min-w-0 grow flex-col">
-        <h1 class="m-0 truncate text-[22px] font-semibold tracking-normal text-texte">{{ donnees?.traitement.nom ?? 'Traitement' }}</h1>
-        <span v-if="donnees" class="truncate text-[13px] text-texte-3">{{ detail }}</span>
+        <h1 class="m-0 truncate text-titre-2 font-semibold tracking-normal text-texte">{{ donnees?.traitement.nom ?? 'Traitement' }}</h1>
+        <span v-if="donnees" class="truncate text-legende text-texte-3">{{ detail }}</span>
       </div>
       <button v-if="donnees" type="button" aria-label="Modifier le traitement"
               class="-mr-2 flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-texte hover:bg-surface-2"

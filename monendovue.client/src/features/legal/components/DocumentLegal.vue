@@ -6,7 +6,7 @@
     </router-link>
 
     <header class="mt-6 mb-8">
-      <h1 class="m-0 text-[26px] font-semibold tracking-normal text-texte">{{ titre }}</h1>
+      <h1 class="m-0 text-titre-page font-semibold tracking-normal text-texte">{{ titre }}</h1>
       <p class="m-0 mt-2 text-sm text-texte-3">Dernière mise à jour : {{ MISE_A_JOUR_DOCUMENTS_LEGAUX }}</p>
     </header>
 

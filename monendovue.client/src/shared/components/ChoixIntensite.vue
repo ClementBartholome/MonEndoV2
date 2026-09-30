@@ -7,8 +7,8 @@
       <!-- Choisie : pleine dans sa couleur. Sinon : neutre, avec un trait de sa couleur pour lire l'échelle. -->
       <button v-for="n in 10" :key="n" type="button"
               class="relative min-h-12 overflow-hidden rounded-controle border-[1.5px] p-0 text-sm font-semibold"
-              :class="intensite === n ? '' : 'border-trait bg-surface text-texte-2'"
-              :style="intensite === n ? pleine(n) : undefined"
+              :class="intensite === n ? '' : 'border-contour bg-surface text-texte-2'"
+              :style="intensite === n ? couleursIntensite(n) : undefined"
               :aria-label="`Intensité ${n} sur 10`" :aria-pressed="intensite === n"
               @click="intensite = n">
         {{ n }}
@@ -20,12 +20,9 @@
 </template>
 
 <script setup lang="ts">
+import { couleursIntensite } from '@/shared/utils/intensite';
+
 /** Intensité de 1 à 10 sur l'échelle de couleur commune (`--intensite-N`) : douleurs, symptômes, acné. */
 const intensite = defineModel<number | null>({ required: true });
 defineProps<{ minimum: string; maximum: string }>();
-
-function pleine(n: number) {
-  const couleur = `var(--intensite-${n})`;
-  return { background: couleur, borderColor: couleur, color: n >= 6 ? '#ffffff' : 'var(--couleur-texte)' };
-}
 </script>
