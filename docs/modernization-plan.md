@@ -86,7 +86,7 @@ Patterns repris des apps de suivi sante/cycle et chronic care:
    - mettre en avant des signaux utiles avant/pendant un rendez-vous medical
 
 2. Parcours "Rendez-vous medecin"
-   - renforcer l'export PDF (synthese decisionnelle, timeline, points marquants)
+   - [x] renforcer l'export PDF : synthese en premiere page, detail jour par jour, "Mes questions" (1.3.0, `SyntheseRendezVousService`)
    - inclure une page de preparation consultation (questions, historique recent, red flags)
    - rendre l'export accessible en 1 tap depuis la homepage
 

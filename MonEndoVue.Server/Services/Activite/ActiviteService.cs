@@ -89,10 +89,13 @@ public class ActiviteService(AppDbContext context, CarnetSanteService carnetSant
         Date = a.Date.ToString("yyyy-MM-dd'T'HH:mm:ss", CultureInfo.InvariantCulture),
         Duree = a.Duree,
         // Une activité antérieure à la migration sans niveau garde sa correspondance avec l'ancienne échelle.
-        Niveau = (NiveauActivite)(a.NiveauIntensite ?? NiveauDeLAncienneEchelle(a.Intensite)),
+        Niveau = (NiveauActivite)NiveauDe(a),
         Effet = Enum.IsDefined((EffetActivite)a.EffetDouleur) ? (EffetActivite)a.EffetDouleur : EffetActivite.NonRenseigne,
         Commentaire = a.Commentaire,
     };
+
+    /// <summary>Niveau d'une séance (1 à 3), y compris pour une séance antérieure à la migration, sans niveau enregistré.</summary>
+    internal static int NiveauDe(DonneesActivitePhysique a) => a.NiveauIntensite ?? NiveauDeLAncienneEchelle(a.Intensite);
 
     /// <summary>Correspondance de la migration : 1-3 douce, 4-7 modérée, 8-10 soutenue.</summary>
     private static int NiveauDeLAncienneEchelle(int intensite)

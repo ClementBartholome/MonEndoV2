@@ -8,7 +8,7 @@ import ActivitePage from "@/features/activite/pages/ActivitePage.vue";
 import TraitementsPage from "@/features/medicament/pages/TraitementsPage.vue";
 import HistoriqueTraitementPage from "@/features/medicament/pages/HistoriqueTraitementPage.vue";
 import TransitPage from "@/features/transit/pages/TransitPage.vue";
-import ExportPdfPage from "@/features/export/pages/ExportPdfPage.vue";
+import PreparerRendezVousPage from "@/features/export/pages/PreparerRendezVousPage.vue";
 import BilanQuotidienPage from "@/features/bilan-quotidien/pages/BilanQuotidienPage.vue";
 import ParametresPage from "@/features/parametres/pages/ParametresPage.vue";
 import RegisterPage from "@/features/auth/pages/RegisterPage.vue";
@@ -64,7 +64,7 @@ const router = createRouter({
         {
             path: '/export',
             name: 'export',
-            component: ExportPdfPage
+            component: PreparerRendezVousPage
         },
         {
             path: '/bilan-quotidien',

@@ -11,6 +11,7 @@ import { AccueilPage } from './pages/accueil.page';
 import { DouleursPage } from './pages/douleurs.page';
 import { TraitementsPage } from './pages/traitements.page';
 import { CyclePage } from './pages/cycle.page';
+import { RendezVousPage } from './pages/rendez-vous.page';
 import { ACCUEIL_VIDE } from './mocks/accueil';
 
 interface Options {
@@ -31,6 +32,7 @@ interface Fixtures {
   douleursPage: DouleursPage;
   traitementsPage: TraitementsPage;
   cyclePage: CyclePage;
+  rendezVousPage: RendezVousPage;
 }
 
 /**
@@ -98,6 +100,10 @@ export const test = base.extend<Options & Fixtures>({
 
   cyclePage: async ({ page }, use) => {
     await use(new CyclePage(page));
+  },
+
+  rendezVousPage: async ({ page }, use) => {
+    await use(new RendezVousPage(page));
   },
 });
 
