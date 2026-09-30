@@ -158,6 +158,10 @@ modifiables, jamais `Entry(dto).State = Modified`, jamais de changement de `Carn
   un `appsettings.DesignTime.json` contenant uniquement une chaîne de connexion factice (fichier ignoré par git, l'écrire
   avec node pour un JSON valide), lancer `ASPNETCORE_ENVIRONMENT=DesignTime dotnet ef migrations add Nom`, puis le supprimer.
   Aucune connexion à une base n'est nécessaire pour `migrations add`.
+- **Pages et API partagent l'espace des chemins** (routage insensible à la casse : la page `/cycle` et `GET Cycle`). Sans garde,
+  un rafraîchissement affichait le JSON de l'API (bug de la 1.3.0 sur `/cycle` et `/activite`). `NavigationVersSpa` sert la
+  page d'entrée à toute navigation `Accept: text/html`, **avant** `UseRouting` (appel explicite, à ne pas déplacer : sinon le
+  routage choisit l'endpoint en premier). Un appel de l'API ne doit donc jamais passer par une navigation de page.
 
 ## Configuration
 Chargée depuis `appsettings.{Environment}.json` (**obligatoire**, non versionné), variables d'environnement puis user-secrets.

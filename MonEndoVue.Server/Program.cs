@@ -316,6 +316,13 @@ namespace MonEndoVue.Server
                 await next();
             });
 
+            // Avant le routage : un rafraîchissement sur /cycle ou /activite ne doit pas tomber sur l'endpoint du même nom.
+            app.Use(async (context, next) =>
+            {
+                NavigationVersSpa.Appliquer(context.Request);
+                await next();
+            });
+
             app.UseHttpsRedirection();
             app.UseDefaultFiles();
             app.UseStaticFiles();
@@ -327,6 +334,8 @@ namespace MonEndoVue.Server
             }
 
 
+            // Explicite : sans cet appel, le routage s'exécute en tout premier et choisit l'endpoint avant la réécriture ci-dessus.
+            app.UseRouting();
             app.UseAuthentication();
             app.UseAuthorization();
             app.UseRateLimiter();
