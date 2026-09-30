@@ -124,6 +124,7 @@ const tendances = computed(() => calculerTendances(model.value.jours, model.valu
           @precedente="actions.precedente"
           @suivante="actions.suivante"
           @aujourdhui="actions.revenirAujourdhui"
+          @aller-au-mois="actions.allerAuMois"
       />
 
       <section v-if="model.erreur" role="alert" class="flex flex-col items-start gap-3 rounded-carte bg-surface p-5 shadow-elevation">

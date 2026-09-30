@@ -36,7 +36,7 @@ versions en [SemVer](https://semver.org/lang/fr/) (voir la section Déploiement 
   Onglet Symptômes : les symptômes du mois regroupés par jour et une saisie rapide depuis le bas de l'écran, aussi
   depuis la tuile « Symptôme » de l'accueil.
 - Les mois se choisissent aussi directement (touche le nom du mois) pour revenir vite loin en arrière, sur les pages
-  Douleurs et Cycle ; l'historique des cycles et les photos d'acné plus anciennes s'affichent à la demande, pour que
+  Douleurs, Cycle et Bilan ; l'historique des cycles et les photos d'acné plus anciennes s'affichent à la demande, pour que
   les pages restent rapides au fil des années.
 - Suivi de l'acné repensé : plus besoin de la noter chaque jour. Un épisode commence (« L'acné revient ») et dure
   jusqu'à « Ça s'est calmé » ; la photo de la semaine, la comparaison avant / après sur 1, 3 ou 6 mois et l'historique

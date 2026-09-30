@@ -99,9 +99,16 @@ export class BilanQuotidienPage {
     await this.page.getByRole('button', { name: /^(Mois précédent|Semaine précédente)$/ }).click();
   }
 
-  /** Titre de la période affichée (« Septembre 2026 », « 14 - 20 septembre 2026 »). */
+  /** Période affichée : titre de la semaine (« 14 - 20 sept. 2026 ») ou bouton du mois (« Septembre 2026 », qui ouvre le choix). */
   titrePeriode(libelle: string | RegExp) {
-    return this.page.getByRole('heading', { level: 2, name: libelle });
+    return this.page.getByRole('heading', { level: 2, name: libelle })
+      .or(this.page.getByRole('button', { name: /choisir un autre mois$/ }).filter({ hasText: libelle }));
+  }
+
+  /** Saute directement à un mois par le choix du sélecteur (« août » → « août »). */
+  async choisirMois(nomCourt: string) {
+    await this.page.getByRole('button', { name: /choisir un autre mois$/ }).click();
+    await this.page.getByRole('dialog', { name: 'Choisir un mois' }).getByRole('button', { name: nomCourt, exact: true }).click();
   }
 
   /**
