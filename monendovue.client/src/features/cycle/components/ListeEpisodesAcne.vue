@@ -1,10 +1,10 @@
 <template>
   <section v-if="episodes.length" aria-labelledby="titre-episodes" class="flex flex-col gap-2">
-    <h2 id="titre-episodes" class="m-0 text-[17px] font-semibold tracking-normal text-texte">Épisodes</h2>
+    <h2 id="titre-episodes" class="m-0 text-titre-carte font-semibold tracking-normal text-texte">Épisodes</h2>
     <ul class="m-0 flex list-none flex-col rounded-carte bg-surface p-0 shadow-elevation">
       <li v-for="(episode, index) in affiches" :key="episode.id" :class="{ 'border-t border-trait': index > 0 }">
         <button type="button" class="flex min-h-[58px] w-full items-center gap-3 px-3.5 py-2.5 text-left" @click="emit('modifier', episode)">
-          <span class="grow text-[15px] text-texte">
+          <span class="grow text-corps text-texte">
             {{ periode(episode) }}
           </span>
           <span class="shrink-0 text-sm font-semibold text-texte-2">{{ jours(episode.jours) }}</span>

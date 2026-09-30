@@ -27,13 +27,13 @@
                   @click="form.moment.value = m.valeur">{{ m.libelle }}</button>
         </div>
         <div v-if="form.moment.value === 'autre'" class="mt-3 grid grid-cols-2 gap-2">
-          <label class="flex flex-col gap-1 text-[13px] text-texte-2">Jour
+          <label class="flex flex-col gap-1 text-legende text-texte-2">Jour
             <input v-model="form.jour.value" type="date" required :max="aujourdhui"
-                   class="min-h-11 rounded-controle border-[1.5px] border-contour bg-champ px-3 text-[15px] text-texte">
+                   class="min-h-11 rounded-controle border-[1.5px] border-contour bg-champ px-3 text-corps text-texte">
           </label>
-          <label class="flex flex-col gap-1 text-[13px] text-texte-2">Heure
+          <label class="flex flex-col gap-1 text-legende text-texte-2">Heure
             <input v-model="form.heure.value" type="time" required
-                   class="min-h-11 rounded-controle border-[1.5px] border-contour bg-champ px-3 text-[15px] text-texte">
+                   class="min-h-11 rounded-controle border-[1.5px] border-contour bg-champ px-3 text-corps text-texte">
           </label>
         </div>
       </fieldset>
@@ -42,7 +42,7 @@
         <legend class="mb-2.5 p-0 text-sm font-semibold text-texte">Photo <span class="font-normal text-texte-3">(facultative)</span></legend>
         <div v-if="photo.apercu.value || form.photoExistante.value" class="mb-2.5 flex items-center gap-3">
           <img :src="photo.apercu.value || form.photoExistante.value!" alt="Photo choisie" class="h-16 w-16 rounded-controle object-cover">
-          <span class="grow text-[13px] text-texte-2">{{ photo.apercu.value ? 'Nouvelle photo' : 'Photo enregistrée' }}</span>
+          <span class="grow text-legende text-texte-2">{{ photo.apercu.value ? 'Nouvelle photo' : 'Photo enregistrée' }}</span>
           <button v-if="photo.apercu.value" type="button" class="min-h-11 px-2 text-sm font-medium text-lien" @click="photo.retirer">Retirer</button>
         </div>
         <div class="grid grid-cols-2 gap-2">
@@ -59,15 +59,15 @@
                    @change="(e) => choisirPhoto(e, 'gallery')">
           </label>
         </div>
-        <p v-if="photo.preparation.value" class="m-0 mt-2 text-[13px] text-texte-2" aria-live="polite">Préparation de la photo…</p>
-        <p v-else-if="photo.message.value" class="m-0 mt-2 text-[13px] text-danger" role="alert">{{ photo.message.value }}</p>
+        <p v-if="photo.preparation.value" class="m-0 mt-2 text-legende text-texte-2" aria-live="polite">Préparation de la photo…</p>
+        <p v-else-if="photo.message.value" class="m-0 mt-2 text-legende text-danger" role="alert">{{ photo.message.value }}</p>
       </fieldset>
 
       <label class="flex flex-col gap-1.5 text-sm font-semibold text-texte">
         <span>Commentaire <span class="font-normal text-texte-3">(facultatif)</span></span>
         <textarea v-model="form.commentaire.value" rows="2" maxlength="500"
                   :placeholder="acne ? 'Zone, nouveau soin…' : 'Ce qui l\'a déclenché, ce qui a aidé…'"
-                  class="resize-none rounded-controle border-[1.5px] border-contour bg-champ px-3 py-2.5 text-[15px] font-normal text-texte"></textarea>
+                  class="resize-none rounded-controle border-[1.5px] border-contour bg-champ px-3 py-2.5 text-corps font-normal text-texte"></textarea>
       </label>
 
       <p v-if="erreur" role="alert" class="m-0 text-sm text-danger">{{ erreur }}</p>

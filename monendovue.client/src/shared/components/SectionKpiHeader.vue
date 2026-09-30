@@ -19,7 +19,7 @@ defineProps<{
     >
       <p class="text-xs text-muted-foreground">{{ item.label }}</p>
       <p class="text-xl font-bold text-headline">{{ item.value }}</p>
-      <p v-if="item.helper" class="text-[11px] text-muted-foreground mt-0.5">{{ item.helper }}</p>
+      <p v-if="item.helper" class="text-xs text-muted-foreground mt-0.5">{{ item.helper }}</p>
     </div>
   </div>
 </template>

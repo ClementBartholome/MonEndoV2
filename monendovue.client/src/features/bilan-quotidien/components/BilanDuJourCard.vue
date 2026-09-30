@@ -47,7 +47,7 @@ const consommations = computed(() => consommationsAlimentaires.filter((c) => pro
 <template>
   <Card class="flex w-full flex-col rounded-carte border-0 bg-surface shadow-elevation">
     <CardHeader class="flex flex-row items-center justify-between gap-3 space-y-0 p-4 md:p-6">
-      <CardTitle class="m-0 text-left text-[17px] font-semibold leading-tight tracking-normal text-texte first-letter:uppercase">{{ titre }}</CardTitle>
+      <CardTitle class="m-0 text-left text-titre-carte font-semibold leading-tight tracking-normal text-texte first-letter:uppercase">{{ titre }}</CardTitle>
       <Button v-if="bilan" type="button" variant="outline" class="h-11 shrink-0 gap-2" @click="emit('modifier')">
         <i class="material-symbols-outlined text-lg" aria-hidden="true">edit</i>Modifier
       </Button>

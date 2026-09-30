@@ -1,12 +1,12 @@
 <template>
   <section class="flex items-center gap-3.5 rounded-carte bg-surface px-[18px] py-4 shadow-elevation" aria-labelledby="titre-rendez-vous">
-    <i class="material-symbols-outlined rounded-controle bg-teinte-neutre-fond p-2.5 text-[26px] text-teinte-neutre" aria-hidden="true">event</i>
+    <i class="material-symbols-outlined rounded-controle bg-teinte-neutre-fond p-2.5 text-titre-page text-teinte-neutre" aria-hidden="true">event</i>
     <div class="flex min-w-0 grow flex-col gap-px">
-      <h2 id="titre-rendez-vous" class="m-0 text-[13px] font-normal tracking-normal text-texte-3">Prochain rendez-vous</h2>
-      <span class="text-[15px] font-medium text-texte">{{ evenement.titre }}</span>
-      <span class="text-[13px] text-texte-2">{{ quand }}</span>
+      <h2 id="titre-rendez-vous" class="m-0 text-legende font-normal tracking-normal text-texte-3">Prochain rendez-vous</h2>
+      <span class="text-corps font-medium text-texte">{{ evenement.titre }}</span>
+      <span class="text-legende text-texte-2">{{ quand }}</span>
       <a v-if="evenement.lieu" :href="itineraire" target="_blank" rel="noopener noreferrer"
-         class="mt-0.5 inline-flex min-h-11 items-center text-[13px] font-medium !text-lien">Itinéraire</a>
+         class="mt-0.5 inline-flex min-h-11 items-center text-legende font-medium !text-lien">Itinéraire</a>
     </div>
   </section>
 </template>

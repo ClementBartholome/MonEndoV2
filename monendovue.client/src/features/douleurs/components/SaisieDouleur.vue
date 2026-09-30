@@ -25,13 +25,13 @@
                   @click="form.moment.value = m.valeur">{{ m.libelle }}</button>
         </div>
         <div v-if="form.moment.value === 'autre'" class="mt-3 grid grid-cols-2 gap-2">
-          <label class="flex flex-col gap-1 text-[13px] text-texte-2">Jour
+          <label class="flex flex-col gap-1 text-legende text-texte-2">Jour
             <input v-model="form.jour.value" type="date" required :max="aujourdhui"
-                   class="min-h-11 rounded-controle border-[1.5px] border-contour bg-champ px-3 text-[15px] text-texte">
+                   class="min-h-11 rounded-controle border-[1.5px] border-contour bg-champ px-3 text-corps text-texte">
           </label>
-          <label class="flex flex-col gap-1 text-[13px] text-texte-2">Heure
+          <label class="flex flex-col gap-1 text-legende text-texte-2">Heure
             <input v-model="form.heure.value" type="time" required
-                   class="min-h-11 rounded-controle border-[1.5px] border-contour bg-champ px-3 text-[15px] text-texte">
+                   class="min-h-11 rounded-controle border-[1.5px] border-contour bg-champ px-3 text-corps text-texte">
           </label>
         </div>
       </fieldset>
@@ -40,7 +40,7 @@
         <span>Commentaire <span class="font-normal text-texte-3">(facultatif)</span></span>
         <textarea v-model="form.commentaire.value" rows="2" maxlength="500"
                   placeholder="Ce qui l'a déclenchée, ce qui a soulagé…"
-                  class="resize-none rounded-controle border-[1.5px] border-contour bg-champ px-3 py-2.5 text-[15px] font-normal text-texte"></textarea>
+                  class="resize-none rounded-controle border-[1.5px] border-contour bg-champ px-3 py-2.5 text-corps font-normal text-texte"></textarea>
       </label>
 
       <p v-if="erreur" role="alert" class="m-0 text-sm text-danger">{{ erreur }}</p>

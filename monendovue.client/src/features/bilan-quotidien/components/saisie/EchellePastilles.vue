@@ -40,7 +40,7 @@ function classes(niveau: number): string {
 <template>
   <div class="flex flex-col gap-2">
     <div class="flex items-center justify-between gap-2">
-      <p :id="idLibelle" class="m-0 flex items-center gap-2 text-[15px] font-semibold text-texte">
+      <p :id="idLibelle" class="m-0 flex items-center gap-2 text-corps font-semibold text-texte">
         <i class="material-symbols-outlined text-teinte-bilan" aria-hidden="true">{{ icone }}</i>{{ libelle }}
       </p>
       <span class="text-sm text-texte-2" aria-hidden="true">
@@ -57,7 +57,7 @@ function classes(niveau: number): string {
           v-for="niveau in niveaux"
           :key="niveau"
           type="button"
-          class="min-h-11 rounded-controle border-[1.5px] text-[15px]"
+          class="min-h-11 rounded-controle border-[1.5px] text-corps"
           :class="classes(niveau)"
           :style="style(niveau)"
           :aria-pressed="valeur === niveau"

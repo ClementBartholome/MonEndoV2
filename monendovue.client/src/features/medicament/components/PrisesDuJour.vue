@@ -1,23 +1,23 @@
 <template>
   <section class="flex flex-col gap-2.5" aria-labelledby="titre-aujourdhui">
     <div class="flex items-baseline justify-between">
-      <h2 id="titre-aujourdhui" class="m-0 text-[17px] font-semibold tracking-normal text-texte">Aujourd'hui</h2>
-      <span v-if="total" class="text-[13px] text-texte-3">{{ faites }} {{ faites > 1 ? 'prises' : 'prise' }} sur {{ total }}</span>
+      <h2 id="titre-aujourdhui" class="m-0 text-titre-carte font-semibold tracking-normal text-texte">Aujourd'hui</h2>
+      <span v-if="total" class="text-legende text-texte-3">{{ faites }} {{ faites > 1 ? 'prises' : 'prise' }} sur {{ total }}</span>
     </div>
     <p v-if="!total" class="m-0 rounded-carte bg-surface-2 px-4 py-3 text-sm text-texte-2">
       Aucune prise prévue aujourd'hui. Les traitements à heures fixes apparaissent ici.
     </p>
 
     <div v-for="groupe in groupes" :key="groupe.moment" class="flex flex-col gap-1.5">
-      <h3 class="m-0 flex items-center gap-1.5 text-[13px] font-medium tracking-normal text-texte-3">
+      <h3 class="m-0 flex items-center gap-1.5 text-legende font-medium tracking-normal text-texte-3">
         <i class="material-symbols-outlined text-base" aria-hidden="true">{{ icones[groupe.moment] }}</i>{{ groupe.moment }} · {{ groupe.heure }}
       </h3>
       <div v-for="prise in groupe.prises" :key="`${prise.traitementId}-${prise.heurePrevue}`"
            class="flex flex-col gap-2.5 rounded-carte bg-surface px-3.5 py-3 shadow-elevation">
         <div class="flex items-center gap-3">
           <div class="flex min-w-0 grow flex-col text-left">
-            <span class="text-[15px] font-medium text-texte">{{ prise.nom }}</span>
-            <span class="text-[13px] text-texte-3">{{ [prise.dose, heureAffichee(prise.heurePrevue)].filter(Boolean).join(' · ') }}</span>
+            <span class="text-corps font-medium text-texte">{{ prise.nom }}</span>
+            <span class="text-legende text-texte-3">{{ [prise.dose, heureAffichee(prise.heurePrevue)].filter(Boolean).join(' · ') }}</span>
           </div>
           <template v-if="prise.reponse">
             <EtatPrise :reponse="prise.reponse"/>

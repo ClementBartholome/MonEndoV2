@@ -16,14 +16,14 @@
         Nom
         <input v-model="form.nom.value" type="text" required maxlength="100"
                :placeholder="medicament ? 'Dienogest, ibuprofène…' : 'Kiné, ostéopathie, TENS…'"
-               class="min-h-11 rounded-controle border-[1.5px] border-contour bg-champ px-3 text-[15px] font-normal text-texte">
+               class="min-h-11 rounded-controle border-[1.5px] border-contour bg-champ px-3 text-corps font-normal text-texte">
       </label>
 
       <template v-if="medicament">
         <label class="flex flex-col gap-1.5 text-sm font-semibold text-texte">
           <span>Dose <span class="font-normal text-texte-3">(facultatif)</span></span>
           <input v-model="form.dose.value" type="text" maxlength="100" placeholder="1 comprimé, 400 mg…"
-                 class="min-h-11 rounded-controle border-[1.5px] border-contour bg-champ px-3 text-[15px] font-normal text-texte">
+                 class="min-h-11 rounded-controle border-[1.5px] border-contour bg-champ px-3 text-corps font-normal text-texte">
         </label>
 
         <fieldset class="m-0 border-0 p-0">
@@ -39,16 +39,16 @@
           <fieldset v-if="form.frequence.value === 'CertainsJours'" class="m-0 mt-3 grid grid-cols-7 gap-1 border-0 p-0">
             <legend class="sr-only">Jours de prise</legend>
             <button v-for="jour in JOURS_SEMAINE" :key="jour" type="button"
-                    class="min-h-11 rounded-full p-0 text-[13px]"
+                    class="min-h-11 rounded-full p-0 text-legende"
                     :class="form.joursSemaine.value.includes(jour) ? 'bg-texte font-semibold text-fond' : 'border-[1.5px] border-contour bg-surface text-texte'"
                     :aria-label="jour" :aria-pressed="form.joursSemaine.value.includes(jour)"
                     @click="form.basculerJour(jour)">{{ jour.charAt(0) }}</button>
           </fieldset>
 
-          <label v-if="form.frequence.value === 'TousLesNJours'" class="mt-3 flex items-center gap-2 text-[15px] text-texte">
+          <label v-if="form.frequence.value === 'TousLesNJours'" class="mt-3 flex items-center gap-2 text-corps text-texte">
             Tous les
             <input v-model.number="form.intervalleJours.value" type="number" min="2" max="30" required
-                   class="min-h-11 w-20 rounded-controle border-[1.5px] border-contour bg-champ px-3 text-center text-[15px] text-texte">
+                   class="min-h-11 w-20 rounded-controle border-[1.5px] border-contour bg-champ px-3 text-center text-corps text-texte">
             jours, à partir du début
           </label>
         </fieldset>
@@ -58,7 +58,7 @@
           <div class="flex flex-col gap-2">
             <div v-for="(_, index) in form.horaires.value" :key="index" class="flex items-center gap-2">
               <input v-model="form.horaires.value[index]" type="time" required :aria-label="`Horaire ${index + 1}`"
-                     class="min-h-11 grow rounded-controle border-[1.5px] border-contour bg-champ px-3 text-[15px] text-texte">
+                     class="min-h-11 grow rounded-controle border-[1.5px] border-contour bg-champ px-3 text-corps text-texte">
               <button v-if="form.horaires.value.length > 1" type="button"
                       class="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-texte-3 hover:bg-surface-2"
                       :aria-label="`Retirer l'horaire ${index + 1}`" @click="form.retirerHoraire(index)">
@@ -75,13 +75,13 @@
       </template>
 
       <div class="grid grid-cols-2 gap-2">
-        <label class="flex flex-col gap-1 text-[13px] text-texte-2">Début
+        <label class="flex flex-col gap-1 text-legende text-texte-2">Début
           <input v-model="form.dateDebut.value" type="date" required
-                 class="min-h-11 rounded-controle border-[1.5px] border-contour bg-champ px-3 text-[15px] text-texte">
+                 class="min-h-11 rounded-controle border-[1.5px] border-contour bg-champ px-3 text-corps text-texte">
         </label>
-        <label class="flex flex-col gap-1 text-[13px] text-texte-2"><span>Fin <span class="text-texte-3">(facultatif)</span></span>
+        <label class="flex flex-col gap-1 text-legende text-texte-2"><span>Fin <span class="text-texte-3">(facultatif)</span></span>
           <input v-model="form.dateFin.value" type="date" :min="form.dateDebut.value"
-                 class="min-h-11 rounded-controle border-[1.5px] border-contour bg-champ px-3 text-[15px] text-texte">
+                 class="min-h-11 rounded-controle border-[1.5px] border-contour bg-champ px-3 text-corps text-texte">
         </label>
       </div>
 

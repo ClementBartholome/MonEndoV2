@@ -23,6 +23,15 @@ module.exports = {
             },
         },
         extend: {
+            // Tailles de texte des pages refaites, en rem : elles suivent la racine (16 px, 20 px dès 768 px) comme
+            // text-sm / text-base. Jamais de text-[Npx], qui resterait figé sur ordinateur. Les icônes reprennent ces pas.
+            fontSize: {
+                legende: '0.8125rem',
+                corps: '0.9375rem',
+                'titre-carte': '1.0625rem',
+                'titre-2': '1.375rem',
+                'titre-page': '1.625rem',
+            },
             // Couleur d'accent (--button) utilisable avec opacité : border-button, bg-button/15, ring-button/50...
             // Pas de textColor : la classe text-button existante désigne la couleur de texte des boutons (--button-text).
             borderColor: { button: "rgb(var(--button-rgb) / <alpha-value>)" },

@@ -46,8 +46,8 @@ const couverture = computed(() => {
       <Card class="flex w-full flex-col rounded-carte border-0 bg-surface shadow-elevation">
         <CardHeader class="p-4 md:p-6">
           <div class="flex flex-col gap-1">
-            <CardTitle class="m-0 flex items-center gap-2 text-[17px] font-semibold leading-tight tracking-normal text-texte">
-              <i class="material-symbols-outlined rounded-controle p-1.5 text-[22px]" :class="[TEINTE_BLOC.tendances.fond, TEINTE_BLOC.tendances.texte]" aria-hidden="true">insights</i>Moyennes
+            <CardTitle class="m-0 flex items-center gap-2 text-titre-carte font-semibold leading-tight tracking-normal text-texte">
+              <i class="material-symbols-outlined rounded-controle p-1.5 text-titre-2" :class="[TEINTE_BLOC.tendances.fond, TEINTE_BLOC.tendances.texte]" aria-hidden="true">insights</i>Moyennes
             </CardTitle>
             <p class="m-0 text-left text-sm tracking-normal text-texte-3">
               <template v-if="sansComparaison">Moyennes de la période ({{ periodePrecedente.sansBilan }} pour comparer).</template>
@@ -87,8 +87,8 @@ const couverture = computed(() => {
       <Card v-if="tendances.reperes.length" class="flex w-full flex-col rounded-carte border-0 bg-surface shadow-elevation">
         <CardHeader class="p-4 md:p-6">
           <div class="flex flex-col gap-1">
-            <CardTitle class="m-0 flex items-center gap-2 text-[17px] font-semibold leading-tight tracking-normal text-texte">
-              <i class="material-symbols-outlined rounded-controle p-1.5 text-[22px]" :class="[TEINTE_BLOC.reperes.fond, TEINTE_BLOC.reperes.texte]" aria-hidden="true">flag</i>Repères personnels
+            <CardTitle class="m-0 flex items-center gap-2 text-titre-carte font-semibold leading-tight tracking-normal text-texte">
+              <i class="material-symbols-outlined rounded-controle p-1.5 text-titre-2" :class="[TEINTE_BLOC.reperes.fond, TEINTE_BLOC.reperes.texte]" aria-hidden="true">flag</i>Repères personnels
             </CardTitle>
             <p class="m-0 text-left text-sm tracking-normal text-texte-3">
               Tes repères se règlent dans
@@ -119,8 +119,8 @@ const couverture = computed(() => {
 
       <Card class="flex w-full flex-col rounded-carte border-0 bg-surface shadow-elevation">
         <CardHeader class="p-4 md:p-6">
-          <CardTitle class="m-0 flex items-center gap-2 text-[17px] font-semibold leading-tight tracking-normal text-texte">
-            <i class="material-symbols-outlined rounded-controle p-1.5 text-[22px]" :class="[TEINTE_BLOC.cycle.fond, TEINTE_BLOC.cycle.texte]" aria-hidden="true">menstrual_health</i>Douleur et cycle
+          <CardTitle class="m-0 flex items-center gap-2 text-titre-carte font-semibold leading-tight tracking-normal text-texte">
+            <i class="material-symbols-outlined rounded-controle p-1.5 text-titre-2" :class="[TEINTE_BLOC.cycle.fond, TEINTE_BLOC.cycle.texte]" aria-hidden="true">menstrual_health</i>Douleur et cycle
           </CardTitle>
         </CardHeader>
         <CardContent class="px-4 pb-4 md:px-6 md:pb-6 text-left flex flex-col gap-2">

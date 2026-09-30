@@ -31,7 +31,7 @@
         </div>
         <div class="grid grid-cols-3 gap-2" role="group" :aria-label="`Mois de ${annee}`">
           <button v-for="(nom, index) in NOMS" :key="nom" type="button"
-                  class="min-h-12 rounded-controle border-[1.5px] text-[15px] disabled:opacity-40"
+                  class="min-h-12 rounded-controle border-[1.5px] text-corps disabled:opacity-40"
                   :class="estChoisi(index) ? 'border-texte bg-texte font-medium text-fond' : 'border-contour bg-surface text-texte'"
                   :disabled="!avantLeMax(new Date(annee, index, 1))"
                   :aria-pressed="estChoisi(index)"

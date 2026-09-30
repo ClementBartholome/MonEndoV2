@@ -149,7 +149,7 @@ const annuler = () => confirmation.demanderSiNecessaire(() => emit('annule'));
             id="notes-bilan"
             v-model="formulaire.commentaire"
             placeholder="Un événement, un ressenti, un repas…"
-            class="min-h-[120px] w-full resize-y rounded-controle border-[1.5px] border-contour bg-champ p-3 text-[15px] text-texte"
+            class="min-h-[120px] w-full resize-y rounded-controle border-[1.5px] border-contour bg-champ p-3 text-corps text-texte"
             :maxlength="COMMENTAIRE_MAX"
         ></textarea>
         <p class="-mt-4 text-right text-xs text-texte-3">{{ formulaire.commentaire.length }}/{{ COMMENTAIRE_MAX }}</p>

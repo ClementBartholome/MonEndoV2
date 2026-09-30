@@ -1,13 +1,13 @@
 <template>
   <section aria-labelledby="titre-point-semaine" class="flex flex-col gap-3 rounded-carte bg-surface px-[18px] py-4 shadow-elevation">
     <div class="flex items-center gap-3.5">
-      <i class="material-symbols-outlined rounded-controle bg-teinte-symptome-fond p-2.5 text-[26px] text-teinte-symptome" aria-hidden="true">photo_camera</i>
+      <i class="material-symbols-outlined rounded-controle bg-teinte-symptome-fond p-2.5 text-titre-page text-teinte-symptome" aria-hidden="true">photo_camera</i>
       <div class="flex min-w-0 flex-col">
-        <h2 id="titre-point-semaine" class="m-0 text-[17px] font-semibold tracking-normal text-texte">Point de la semaine</h2>
-        <span class="text-[13px] text-texte-2">{{ suivis.length ? `Dernière photo ${ilYA(suivis[0].date, maintenant)}` : 'Aucune photo pour l\'instant' }}</span>
+        <h2 id="titre-point-semaine" class="m-0 text-titre-carte font-semibold tracking-normal text-texte">Point de la semaine</h2>
+        <span class="text-legende text-texte-2">{{ suivis.length ? `Dernière photo ${ilYA(suivis[0].date, maintenant)}` : 'Aucune photo pour l\'instant' }}</span>
       </div>
     </div>
-    <button type="button" class="inline-flex min-h-12 items-center justify-center gap-2 rounded-controle bg-button text-[15px] font-semibold text-texte"
+    <button type="button" class="inline-flex min-h-12 items-center justify-center gap-2 rounded-controle bg-button text-corps font-semibold text-texte"
             @click="emit('ajouter')">
       <i class="material-symbols-outlined text-xl" aria-hidden="true">add_a_photo</i>Ajouter une photo
     </button>
@@ -15,10 +15,10 @@
 
   <section v-if="comparaison" aria-labelledby="titre-avant-apres" class="flex flex-col gap-2.5">
     <div class="flex items-center justify-between gap-2">
-      <h2 id="titre-avant-apres" class="m-0 text-[17px] font-semibold tracking-normal text-texte">Avant / après</h2>
+      <h2 id="titre-avant-apres" class="m-0 text-titre-carte font-semibold tracking-normal text-texte">Avant / après</h2>
       <div role="radiogroup" aria-label="Écart entre les photos" class="flex gap-1 rounded-controle bg-surface-2 p-1">
         <button v-for="valeur in ECARTS" :key="valeur" type="button" role="radio" :aria-checked="ecart === valeur"
-                class="min-h-11 rounded-controle px-2.5 text-[13px]"
+                class="min-h-11 rounded-controle px-2.5 text-legende"
                 :class="ecart === valeur ? 'bg-surface font-semibold text-texte shadow-elevation' : 'text-texte-2'"
                 @click="ecart = valeur">{{ valeur }} mois</button>
       </div>
@@ -29,13 +29,13 @@
                 @click="emit('agrandir', photo.photoUrl)">
           <img :src="photo.photoUrl" :alt="`Photo du ${jour(photo.date)}`" loading="lazy" class="aspect-[3/4] w-full bg-surface-2 object-cover object-top">
         </button>
-        <figcaption class="text-center text-[13px] text-texte-2">{{ jour(photo.date) }}</figcaption>
+        <figcaption class="text-center text-legende text-texte-2">{{ jour(photo.date) }}</figcaption>
       </figure>
     </div>
   </section>
 
   <section v-if="suivis.length" aria-labelledby="titre-photos" class="flex flex-col gap-2.5">
-    <h2 id="titre-photos" class="m-0 text-[17px] font-semibold tracking-normal text-texte">Toutes les photos</h2>
+    <h2 id="titre-photos" class="m-0 text-titre-carte font-semibold tracking-normal text-texte">Toutes les photos</h2>
     <ul class="m-0 grid list-none grid-cols-3 gap-2 p-0">
       <li v-for="suivi in suivis" :key="suivi.id">
         <button type="button" class="flex w-full flex-col items-stretch gap-1 text-left" :aria-label="`Photo du ${jour(suivi.date)}, intensité ${suivi.intensite} sur 10`"
