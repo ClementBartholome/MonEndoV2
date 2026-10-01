@@ -3,6 +3,17 @@
 Toutes les évolutions notables de MonEndo. Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/),
 versions en [SemVer](https://semver.org/lang/fr/) (voir la section Déploiement de `CLAUDE.md`).
 
+## [1.4.0] - non publiée
+
+### Corrigé
+- Actualiser la page Cycle ou la page Activité affichait un message technique à la place de la page.
+- Après une mise à jour de MonEndo, une indisponibilité de quelques secondes ne déconnecte plus : la session est
+  conservée et l'application réessaie. Si la connexion échoue parce que le service est momentanément indisponible,
+  le message ne met plus en cause l'email ou le mot de passe.
+
+### Modifié
+- Nettoyage interne : retrait d'anciennes routes de l'API qui n'étaient plus utilisées.
+
 ## [1.3.0] - 2026-09-30
 
 ### Ajouté
