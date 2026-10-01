@@ -30,5 +30,6 @@ function enregistrer(contenu: Blob, nomFichier: string) {
     lien.href = url;
     lien.download = nomFichier;
     lien.click();
-    URL.revokeObjectURL(url);
+    // Safari (et iOS) peuvent annuler le téléchargement si l'adresse est révoquée tout de suite.
+    setTimeout(() => URL.revokeObjectURL(url), 10000);
 }

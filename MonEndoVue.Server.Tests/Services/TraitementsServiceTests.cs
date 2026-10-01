@@ -85,6 +85,36 @@ public sealed class TraitementsServiceTests : IDisposable
     }
 
     [Fact]
+    public async Task Modifier_UnTraitementDejaArreteSansDateDeFin_NeLeRelancePas()
+    {
+        // Ancienne donnée : arrêté avant que la date de fin existe. L'enregistrer pour y ajouter une fréquence ne le relance pas.
+        var id = await Creer(Quotidien("Ancien"));
+        var traitement = await _carnet.Context.Medicaments.SingleAsync(m => m.Id == id);
+        traitement.TraitementEnCours = false;
+        traitement.DateFinTraitement = null;
+        await _carnet.Context.SaveChangesAsync();
+
+        await Service().ModifierAsync(CarnetDeTest.UserId, id, Quotidien("Ancien"), CancellationToken.None);
+
+        Assert.False((await _carnet.Context.Medicaments.AsNoTracking().SingleAsync(m => m.Id == id)).TraitementEnCours);
+        var vue = (await Service().GetDuJourAsync(CarnetDeTest.UserId, Jour, CancellationToken.None)).Valeur!;
+        Assert.Empty(vue.PrisesPrevues);
+    }
+
+    [Fact]
+    public async Task Arreter_AujourdHui_GardeLesPrisesDuJourVisibles()
+    {
+        var id = await Creer(Quotidien("Diénogest", "08:00", "20:00"));
+
+        await Service().ArreterAsync(CarnetDeTest.UserId, id, Jour, CancellationToken.None);
+
+        var vue = (await Service().GetDuJourAsync(CarnetDeTest.UserId, Jour, CancellationToken.None)).Valeur!;
+        Assert.Equal(2, vue.PrisesPrevues.Count);
+        var demain = (await Service().GetDuJourAsync(CarnetDeTest.UserId, Jour.AddDays(1), CancellationToken.None)).Valeur!;
+        Assert.Empty(demain.PrisesPrevues);
+    }
+
+    [Fact]
     public async Task Modifier_RemplaceFrequenceEtHoraires_EtArreteSiLaFinEstPassee()
     {
         var id = await Creer(Quotidien("Diénogest", "08:00", "20:00"));

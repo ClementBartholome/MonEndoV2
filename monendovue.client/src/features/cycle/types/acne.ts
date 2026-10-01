@@ -22,6 +22,7 @@ export interface SuiviAcne {
     date: string;
     intensite: number;
     commentaire: string | null;
+    /** Chemin de l'API qui sert la photo (`Acne/photos/{id}`), à passer par `urlDeApi`. */
     photoUrl: string;
 }
 

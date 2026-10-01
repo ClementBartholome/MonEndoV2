@@ -43,7 +43,12 @@ public sealed class IdentityDeTest : IDisposable
         services.AddLogging();
         services.AddSingleton<IConfiguration>(configuration);
         services.AddDbContext<AppDbContext>(options => options.UseInMemoryDatabase($"monendo-identity-{Guid.NewGuid()}"));
-        services.AddAuthentication();
+        services.AddHttpContextAccessor();
+        // Schémas de cookies d'Identity : SignOutAsync les appelle tous (aucun cookie réel dans ces tests).
+        services.AddAuthentication()
+            .AddCookie(IdentityConstants.ApplicationScheme)
+            .AddCookie(IdentityConstants.ExternalScheme)
+            .AddCookie(IdentityConstants.TwoFactorUserIdScheme);
         services.AddIdentityCore<ApplicationUser>(OptionsIdentite.Appliquer)
             .AddSignInManager()
             .AddEntityFrameworkStores<AppDbContext>();
@@ -59,9 +64,10 @@ public sealed class IdentityDeTest : IDisposable
     {
         var sp = _scope.ServiceProvider;
         var carnetSanteService = new CarnetSanteService(
-            Context, NullLogger<CarnetSanteService>.Instance, sp.GetRequiredService<IMemoryCache>());
+            Context, sp.GetRequiredService<IMemoryCache>());
 
         var httpContext = new DefaultHttpContext { RequestServices = sp };
+        sp.GetRequiredService<IHttpContextAccessor>().HttpContext = httpContext;
         if (userId != null)
         {
             httpContext.User = new System.Security.Claims.ClaimsPrincipal(new System.Security.Claims.ClaimsIdentity(

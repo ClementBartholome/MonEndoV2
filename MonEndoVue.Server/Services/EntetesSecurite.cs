@@ -15,7 +15,7 @@ public static class EntetesSecurite
         // data: : police d'icônes intégrée en base64 par une feuille de style d'une dépendance.
         "font-src 'self' data:",
         // data: et blob: : aperçu d'une photo avant envoi et export PDF.
-        "img-src 'self' data: blob: https://*.blob.core.windows.net",
+        "img-src 'self' data: blob:",
         "connect-src 'self' https://cdn.datatables.net",
         "worker-src 'self'",
         "manifest-src 'self'",

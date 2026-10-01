@@ -1,6 +1,7 @@
 import { computed, ref } from 'vue';
 import { format, startOfMonth } from 'date-fns';
 import apiService from '@/shared/services/apiService';
+import { derniereDemande } from '@/shared/utils/derniereDemande';
 import type { CycleDuMois } from '../types/cycle';
 import { calendrierDuMois, type CaseCalendrier } from '../utils/cycle';
 
@@ -19,15 +20,19 @@ export function useRegles({ maintenant = () => new Date() }: { maintenant?: () =
     const aujourdhui = () => format(maintenant(), 'yyyy-MM-dd');
     const aujourdhuiNote = computed(() => donnees.value?.enCours?.jourDeRegles != null);
 
+    const nouvelleDemande = derniereDemande();
+
     async function charger() {
+        const estCourante = nouvelleDemande();
         chargement.value = donnees.value === null;
         erreur.value = false;
         try {
-            donnees.value = await apiService.getCycle(aujourdhui(), format(mois.value, 'yyyy-MM-dd'), nombreCycles.value);
+            const recu = await apiService.getCycle(aujourdhui(), format(mois.value, 'yyyy-MM-dd'), nombreCycles.value);
+            if (estCourante()) donnees.value = recu;
         } catch {
-            erreur.value = true;
+            if (estCourante()) erreur.value = true;
         } finally {
-            chargement.value = false;
+            if (estCourante()) chargement.value = false;
         }
     }
 

@@ -48,6 +48,12 @@ Complète le [CLAUDE.md racine](../CLAUDE.md). S'applique à tout le code de `Mo
 - **Dette connue** (lot C de la roadmap), à résorber quand on touche la zone :
   - les contrôleurs injectent `AppDbContext` et contiennent des requêtes (sauf `NotificationsController`, déjà conforme) ;
   - `CarnetSanteService` mélange lecture du carnet, page d'accueil, export PDF et cache ;
+  - **Les photos ne sont jamais servies par leur adresse de stockage** : `GET Acne/photos/{id}` (`AcneService.PhotoAsync`) les
+    lit par `IStockagePhotos`, vérifie le carnet en base et déduit le type de l'extension ; les view models exposent ce chemin
+    (`AcneService.CheminPhoto`), jamais `PhotoUrl`. Le conteneur Azure doit rester **privé** (réglage à vérifier sur le portail) ;
+    la CSP n'autorise plus aucun domaine de stockage pour les images.
+  - Limites de débit (`PolitiquesDebit`) : une fenêtre **par utilisatrice** (ou par adresse pour un anonyme, lue dans
+    `X-Forwarded-For` de nginx), jamais une fenêtre commune à toute l'application.
   - `AzureBlobStorageService` : lecture et suppression par URL passent par `IStockagePhotos` (`Services/Photos/`,
     `Support/FauxStockagePhotos` en test) ; l'upload et la suppression d'une photo de symptôme l'appellent encore directement ;
   - `DateTime.Now` subsiste dans l'authentification.
@@ -55,7 +61,7 @@ Complète le [CLAUDE.md racine](../CLAUDE.md). S'applique à tout le code de `Mo
 ## Style C#
 - Namespace **file-scoped**, **primary constructors** pour l'injection, `Nullable` activé (déclarer `?` ou `required`).
 - Contrôleur : `[Route("[controller]")]`, `[ApiController]`, `[Authorize]` sur la classe ; segments d'action en kebab-case
-  (`by-month`, `last-entries`) et contraintes typées (`{id:int}`).
+  (`par-periode`, `rendez-vous`) et contraintes typées (`{id:int}`).
 - Actions `async` retournant `Task<ActionResult<T>>` / `Task<IActionResult>` ; propager un `CancellationToken` dans le nouveau code.
 - Noms métier en français (`CarnetSante`, `Intensite`), verbes techniques en anglais (`GetByMonth`, `UploadFileAsync`), suffixe `Async` sur les méthodes asynchrones.
 - Utilisatrice courante : `User.GetCurrentUserId()` (`Services/UserExtensions.cs`). Pas de `ClaimsPrincipal.Current`.
@@ -166,6 +172,10 @@ modifiables, jamais `Entry(dto).State = Modified`, jamais de changement de `Carn
   un `appsettings.DesignTime.json` contenant uniquement une chaîne de connexion factice (fichier ignoré par git, l'écrire
   avec node pour un JSON valide), lancer `ASPNETCORE_ENVIRONMENT=DesignTime dotnet ef migrations add Nom`, puis le supprimer.
   Aucune connexion à une base n'est nécessaire pour `migrations add`.
+- **Pages et API partagent l'espace des chemins** (routage insensible à la casse : la page `/cycle` et `GET Cycle`). Sans garde,
+  un rafraîchissement affichait le JSON de l'API (bug de la 1.3.0 sur `/cycle` et `/activite`). `NavigationVersSpa` sert la
+  page d'entrée à toute navigation `Accept: text/html`, **avant** `UseRouting` (appel explicite, à ne pas déplacer : sinon le
+  routage choisit l'endpoint en premier). Un appel de l'API ne doit donc jamais passer par une navigation de page.
 
 ## Configuration
 Chargée depuis `appsettings.{Environment}.json` (**obligatoire**, non versionné), variables d'environnement puis user-secrets.

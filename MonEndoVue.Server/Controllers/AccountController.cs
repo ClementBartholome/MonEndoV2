@@ -1,4 +1,3 @@
-using System.IdentityModel.Tokens.Jwt;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Identity;
@@ -45,10 +44,10 @@ namespace MonEndoVue.Server.Controllers
             }
             await carnetSanteService.CreateCarnetSante(user.Id);
 
-            var (accessToken, refreshToken, tokenExpiry) = await OuvrirSessionAsync(user);
+            var (_, _, tokenExpiry) = await OuvrirSessionAsync(user);
 
             var carnetSante = await carnetSanteService.GetCarnetSanteByUserId(user.Id);
-            return Ok(new { AccessToken = accessToken, RefreshToken = refreshToken, TokenExpiry = tokenExpiry, user.UserName, CarnetSanteId = carnetSante.Id, ConsentementAJour = PolitiqueConfidentialite.EstAJour(user) });
+            return Ok(new { TokenExpiry = tokenExpiry, user.UserName, CarnetSanteId = carnetSante.Id, ConsentementAJour = PolitiqueConfidentialite.EstAJour(user) });
         }
 
         [HttpPost("login")]
@@ -67,10 +66,10 @@ namespace MonEndoVue.Server.Controllers
                 var result = await signInManager.CheckPasswordSignInAsync(user, identifiants.Password, lockoutOnFailure: true);
                 if (!result.Succeeded) return Unauthorized();
 
-                var (accessToken, refreshToken, tokenExpiry) = await OuvrirSessionAsync(user);
+                var (_, _, tokenExpiry) = await OuvrirSessionAsync(user);
 
                 var carnetSante = await carnetSanteService.GetCarnetSanteByUserId(user.Id);
-                return Ok(new { AccessToken = accessToken, RefreshToken = refreshToken, TokenExpiry = tokenExpiry, user.UserName, CarnetSanteId = carnetSante.Id, ConsentementAJour = PolitiqueConfidentialite.EstAJour(user) });
+                return Ok(new { TokenExpiry = tokenExpiry, user.UserName, CarnetSanteId = carnetSante.Id, ConsentementAJour = PolitiqueConfidentialite.EstAJour(user) });
             }
             catch (Exception ex)
             {
@@ -83,7 +82,7 @@ namespace MonEndoVue.Server.Controllers
         public async Task<IActionResult> RefreshToken()
         {
             var refreshToken = Request.Cookies["refreshToken"];
-            if (refreshToken == null)
+            if (string.IsNullOrEmpty(refreshToken))
             {
                 logger.LogWarning("Refresh token is not provided");
                 return BadRequest("Refresh token is not provided");
@@ -96,53 +95,32 @@ namespace MonEndoVue.Server.Controllers
                 return BadRequest("Invalid refresh token");
             }
 
-            if (user.RefreshTokenExpiryTime <= DateTime.Now)
+            // Un compte sans expiration (jeton jamais émis) ne peut pas ouvrir de session par ce chemin.
+            if (user.RefreshTokenExpiryTime is not { } expiration || expiration <= DateTime.Now)
             {
                 logger.LogWarning("Expired refresh token");
                 return BadRequest("Expired refresh token");
             }
 
-            var (newAccessToken, newRefreshToken, tokenExpiry) = await OuvrirSessionAsync(user);
+            var (_, _, tokenExpiry) = await OuvrirSessionAsync(user);
 
             logger.LogInformation("Refresh token successfully generated for user: {UserId}", user.Id);
-            return Ok(new { AccessToken = newAccessToken, RefreshToken = newRefreshToken, TokenExpiry = tokenExpiry });
-        }
-        
-        [HttpPost("check-token-validity")]
-        public async Task<IActionResult> CheckTokenValidity([FromBody] TokenRequest tokenRequest)
-        {
-            var tokenHandler = new JwtSecurityTokenHandler();
-            var jwtToken = tokenHandler.ReadToken(tokenRequest.AccessToken) as JwtSecurityToken;
-
-            if (jwtToken == null)
-            {
-                return BadRequest("Invalid access token");
-            }
-
-            if (jwtToken.ValidTo < DateTime.Now)
-            {
-                return Ok(new { IsValid = false, Message = "Token has expired" });
-            }
-
-            var principal = tokenService.GetPrincipalFromExpiredToken(tokenRequest.AccessToken);
-            var username = principal.Identity?.Name;
-            if (username == null) return BadRequest("Invalid access token");
-
-            var user = await userManager.FindByNameAsync(username);
-            if (user == null) return BadRequest("User not found.");
-
-            if (user.RefreshToken != tokenRequest.RefreshToken)
-            {
-                return Ok(new { IsValid = false, Message = "Invalid refresh token" });
-            }
-
-            return Ok(new { IsValid = true });
+            return Ok(new { TokenExpiry = tokenExpiry });
         }
         
         [HttpPost("logout")]
         public async Task<IActionResult> Logout()
         {
             await signInManager.SignOutAsync();
+
+            // Le jeton de renouvellement meurt avec la session : un cookie recopié ne rouvrirait rien.
+            if (Request.Cookies["refreshToken"] is { Length: > 0 } cookie
+                && await userManager.Users.SingleOrDefaultAsync(u => u.RefreshToken == cookie) is { } utilisatrice)
+            {
+                utilisatrice.RefreshToken = string.Empty;
+                utilisatrice.RefreshTokenExpiryTime = null;
+                await userManager.UpdateAsync(utilisatrice);
+            }
             
             // Efface les cookies actuels (Path=/)
             Response.Cookies.Delete("accessToken", new CookieOptions { Path = "/" });

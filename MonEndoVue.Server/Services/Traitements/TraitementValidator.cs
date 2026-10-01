@@ -17,6 +17,7 @@ public static class TraitementValidator
         if (string.IsNullOrWhiteSpace(dto.Nom)) return "Le nom du traitement est obligatoire.";
         if (dto.Nom.Trim().Length > NomMax) return $"Le nom ne peut pas dépasser {NomMax} caractères.";
         if (dto.Dose?.Trim().Length > DoseMax) return $"La dose ne peut pas dépasser {DoseMax} caractères.";
+        if (!Enum.IsDefined(dto.Type)) return "Type de traitement inconnu.";
         if (!Enum.IsDefined(dto.Frequence)) return "Fréquence inconnue.";
         if (dto.DateFin is { } fin && fin < dto.DateDebut) return "La fin du traitement ne peut pas précéder son début.";
 

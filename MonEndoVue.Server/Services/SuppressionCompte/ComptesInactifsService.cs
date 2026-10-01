@@ -26,8 +26,17 @@ public class ComptesInactifsService(
         var supprimes = 0;
         foreach (var user in inactifs)
         {
-            var resultat = await suppressionCompte.SupprimerDefinitivementAsync(user, ct);
-            if (resultat.Statut == StatutOperation.Succes) supprimes++;
+            try
+            {
+                var resultat = await suppressionCompte.SupprimerDefinitivementAsync(user, ct);
+                if (resultat.Statut == StatutOperation.Succes) supprimes++;
+            }
+            catch (Exception ex) when (ex is not OperationCanceledException)
+            {
+                // Sans identifiant du compte ni donnée de santé ; le compte sera retenté au prochain passage.
+                logger.LogError(ex, "Suppression d'un compte inactif impossible");
+                context.ChangeTracker.Clear();
+            }
         }
 
         if (inactifs.Count > 0)

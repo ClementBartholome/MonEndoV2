@@ -2,6 +2,8 @@ using System.Text;
 using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.DataProtection;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
@@ -155,25 +157,23 @@ namespace MonEndoVue.Server
 
             builder.Services.AddAuthorization();
 
+            // nginx est le seul service exposé et ajoute l'adresse du client à X-Forwarded-For : on la lit pour limiter le débit
+            // par adresse. Seule la dernière entrée (celle de nginx) est retenue, une valeur envoyée par le client est ignorée.
+            builder.Services.Configure<ForwardedHeadersOptions>(options =>
+            {
+                options.ForwardedHeaders = ForwardedHeaders.XForwardedFor;
+                options.KnownNetworks.Clear();
+                options.KnownProxies.Clear();
+            });
+
             builder.Services.AddRateLimiter(options =>
             {
                 options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
 
-                options.AddFixedWindowLimiter("api", limiterOptions =>
-                {
-                    limiterOptions.PermitLimit = 120;
-                    limiterOptions.Window = TimeSpan.FromMinutes(1);
-                    limiterOptions.QueueLimit = 0;
-                    limiterOptions.AutoReplenishment = true;
-                });
-
-                options.AddFixedWindowLimiter("auth", limiterOptions =>
-                {
-                    limiterOptions.PermitLimit = 20;
-                    limiterOptions.Window = TimeSpan.FromMinutes(1);
-                    limiterOptions.QueueLimit = 0;
-                    limiterOptions.AutoReplenishment = true;
-                });
+                // Une fenêtre par utilisatrice connectée, ou par adresse pour un appel anonyme : une seule personne (ou un
+                // script) ne peut pas épuiser la limite de toutes les autres.
+                options.AddPolicy(PolitiquesDebit.Api, contexte => PolitiquesDebit.Partition(contexte, 120));
+                options.AddPolicy(PolitiquesDebit.Auth, contexte => PolitiquesDebit.Partition(contexte, 20));
             });
 
             builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -299,6 +299,7 @@ namespace MonEndoVue.Server
             }
 
 
+            app.UseForwardedHeaders();
             app.UseCors("CorsPolicy");
 
             app.Use(async (context, next) =>
@@ -319,6 +320,13 @@ namespace MonEndoVue.Server
                 await next();
             });
 
+            // Avant le routage : un rafraîchissement sur /cycle ou /activite ne doit pas tomber sur l'endpoint du même nom.
+            app.Use(async (context, next) =>
+            {
+                NavigationVersSpa.Appliquer(context.Request);
+                await next();
+            });
+
             app.UseHttpsRedirection();
             app.UseDefaultFiles();
             app.UseStaticFiles();
@@ -330,6 +338,8 @@ namespace MonEndoVue.Server
             }
 
 
+            // Explicite : sans cet appel, le routage s'exécute en tout premier et choisit l'endpoint avant la réécriture ci-dessus.
+            app.UseRouting();
             app.UseAuthentication();
             app.UseAuthorization();
             app.UseRateLimiter();

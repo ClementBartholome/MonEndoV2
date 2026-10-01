@@ -24,12 +24,20 @@ public sealed class ReglesRappelTests : IDisposable
         _carnet.Context.SaveChanges();
     }
 
+    /// <summary>Le rappel de la photo n'a de sens que pendant un épisode d'acné : on en ouvre un pour ces cas.</summary>
+    private void EpisodeEnCours(int carnetSanteId = CarnetDeTest.CarnetSanteId, DateOnly? fin = null)
+    {
+        _carnet.Context.EpisodesAcne.Add(new EpisodeAcne { CarnetSanteId = carnetSanteId, Debut = new DateOnly(2026, 9, 1), Fin = fin });
+        _carnet.Context.SaveChanges();
+    }
+
     private Task<bool> AcneSuivie() => new RappelSuiviAcne(_carnet.Context)
         .SuiviDejaFaitAsync(CarnetDeTest.CarnetSanteId, Aujourdhui, Paris, CancellationToken.None);
 
     [Fact]
     public async Task Acne_PhotoIlYA3Jours_SuiviDejaFait()
     {
+        EpisodeEnCours();
         Symptome(CarnetDeTest.CarnetSanteId, "Acné", new DateTime(2026, 9, 23, 10, 0, 0), "https://photos/1.jpg");
 
         Assert.True(await AcneSuivie());
@@ -38,6 +46,7 @@ public sealed class ReglesRappelTests : IDisposable
     [Fact]
     public async Task Acne_PhotoIlYA8Jours_SuiviAFaire()
     {
+        EpisodeEnCours();
         Symptome(CarnetDeTest.CarnetSanteId, "Acné", new DateTime(2026, 9, 18, 10, 0, 0), "https://photos/1.jpg");
 
         Assert.False(await AcneSuivie());
@@ -48,6 +57,7 @@ public sealed class ReglesRappelTests : IDisposable
     [InlineData("")]
     public async Task Acne_EntreeRecenteSansPhoto_SuiviAFaire(string? photoUrl)
     {
+        EpisodeEnCours();
         Symptome(CarnetDeTest.CarnetSanteId, "Acné", new DateTime(2026, 9, 25, 10, 0, 0), photoUrl);
 
         Assert.False(await AcneSuivie());
@@ -56,10 +66,21 @@ public sealed class ReglesRappelTests : IDisposable
     [Fact]
     public async Task Acne_PhotoDUnAutreSymptomeOuDUnAutreCarnet_Ignoree()
     {
+        EpisodeEnCours();
         Symptome(CarnetDeTest.CarnetSanteId, "Migraine", new DateTime(2026, 9, 25, 10, 0, 0), "https://photos/1.jpg");
         Symptome(CarnetDeTest.AutreCarnetSanteId, "Acné", new DateTime(2026, 9, 25, 10, 0, 0), "https://photos/2.jpg");
 
         Assert.False(await AcneSuivie());
+    }
+
+    [Fact]
+    public async Task Acne_SansEpisodeEnCours_AucunRappel()
+    {
+        // Ni épisode, ni épisode terminé, ni épisode en cours d'une autre utilisatrice : rien à suivre, donc rien à rappeler.
+        Assert.True(await AcneSuivie());
+        EpisodeEnCours(fin: new DateOnly(2026, 9, 10));
+        EpisodeEnCours(CarnetDeTest.AutreCarnetSanteId);
+        Assert.True(await AcneSuivie());
     }
 
     [Fact]

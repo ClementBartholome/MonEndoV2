@@ -187,7 +187,7 @@ class Redaction {
                     (traitement.dateFin ? `\njusqu'au ${jourLong(traitement.dateFin)}` : enCours ? '' : '\n(arrêté)');
                 let suivi: string;
                 if (soin) suivi = pluriel(faites, 'séance');
-                else if (prevues > 0) suivi = `${faites} prises notées sur ${prevues} prévues` + (ignorees ? `\n${pluriel(ignorees, 'prise')} ignorée${ignorees > 1 ? 's' : ''}` : '');
+                else if (prevues > 0) suivi = `${pluriel(faites, 'prise')} notée${faites > 1 ? 's' : ''} sur ${pluriel(prevues, 'prévue')}` + (ignorees ? `\n${pluriel(ignorees, 'prise')} ignorée${ignorees > 1 ? 's' : ''}` : '');
                 else suivi = pluriel(faites, 'prise');
                 return [
                     textePdf(traitement.nom + (traitement.dose ? `\n${traitement.dose}` : '')),
@@ -321,6 +321,10 @@ class Redaction {
                 ligne(type, cases((cle) => (jours.has(cle) ? 'x' : '')));
             });
         }
+
+        // Un mois sans aucune donnée notée n'a pas de page (pas de tableau vide).
+        const aDesDonnees = lignes.some((ligne) => Array.isArray(ligne) && ligne.length > 1 && ligne.slice(1).some((cellule) => cellule !== ''));
+        if (!aDesDonnees) return;
 
         doc.addPage('a4', 'landscape');
         this.y = MARGE;

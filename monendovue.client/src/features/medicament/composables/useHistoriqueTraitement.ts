@@ -1,6 +1,7 @@
 import { ref } from 'vue';
 import { format, startOfMonth } from 'date-fns';
 import apiService from '@/shared/services/apiService';
+import { derniereDemande } from '@/shared/utils/derniereDemande';
 import type { EntreeHistoriqueTraitement, HistoriqueTraitement, TraitementSaisie } from '../types/traitements';
 
 /** Page d'un traitement : son historique un mois à la fois, retrait d'une prise ou d'une séance, modification, arrêt. */
@@ -13,17 +14,22 @@ export function useHistoriqueTraitement(id: () => number, { maintenant = () => n
 
     const jour = () => format(maintenant(), 'yyyy-MM-dd');
 
+    const nouvelleDemande = derniereDemande();
+
     async function charger() {
+        const estCourante = nouvelleDemande();
         chargement.value = donnees.value === null;
         erreur.value = false;
         try {
-            donnees.value = await apiService.getHistoriqueTraitement(id(), format(mois.value, 'yyyy-MM-dd'), jour());
+            const recu = await apiService.getHistoriqueTraitement(id(), format(mois.value, 'yyyy-MM-dd'), jour());
+            if (estCourante()) donnees.value = recu;
         } catch (e) {
+            if (!estCourante()) return;
             const statut = (e as { response?: { status?: number } })?.response?.status;
             introuvable.value = statut === 404 || statut === 403;
             erreur.value = true;
         } finally {
-            chargement.value = false;
+            if (estCourante()) chargement.value = false;
         }
     }
 

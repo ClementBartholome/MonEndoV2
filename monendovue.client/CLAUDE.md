@@ -140,7 +140,14 @@ lecture seule (liste par jour, `SelecteurMois`, suppression en deux temps), plus
   - `index.css` centre le texte de toute `ul` (règle héritée, gardée tant que les anciennes pages en dépendent) : une
     liste refaite porte `text-left` sur ses lignes, sinon libellés et détails se centrent.
   - Icônes : `polices.css` force `line-height: 1` (les classes `text-lg`… décalaient le glyphe) ; ne pas le surcharger.
-  - Pas de bouton « Revenir en arrière » dans les pages : la navigation est toujours visible. L'en-tête (logo, compte) est
+  - Pas de bouton « Revenir en arrière » dans les pages : la navigation est toujours visible. Seule exception : une
+    **sous-page** qui n'a pas d'entrée dans la navigation (`/medicaments/:id`) garde un lien de retour vers sa page mère.
+  - **Une mesure garde une couleur de donnée sur tous les écrans** : la douleur est sur l'échelle rose `--intensite-N`
+    (calendrier, graphiques, pastilles) ; la teinte orange `teinte-douleur` ne sert qu'à l'identité de la rubrique (tuile
+    d'icône). Les émotions sont en violet (`--emotion-N`, `teinte-symptome`). Dans « Tendances », les tuiles de moyennes sont
+    neutres (`bg-surface-2`) et seule l'icône porte la teinte de l'indicateur.
+  - Le focus clavier est visible partout par une règle globale `:focus-visible` (`index.css`) : ne pas mettre
+    `focus:outline-none` sur un élément focalisable sans donner un autre indicateur. L'en-tête (logo, compte) est
     posé sur la page en `pointer-events-none` : la première carte peut passer dessous sans perdre ses clics.
   - Intensité 0-10 : `var(--intensite-N)` (texte foncé jusqu'à 5, clair à partir de 6) via `couleursIntensite(n)`
     (`shared/utils/intensite.ts`), jamais recopié. Émotions du jour : `bg-emotion-0..4` (violet de la teinte symptôme,
@@ -189,6 +196,10 @@ lecture seule (liste par jour, `SelecteurMois`, suppression en deux temps), plus
 ## Routage
 - Toute route exige une session, sauf celles marquées `meta: { public: true }` (connexion, inscription, documents légaux) :
   le garde de `router/index.ts` ne teste que ce drapeau.
+- Renouvellement de session (`tokenService.refreshToken`, jeton d'accès 30 min) : **seul un refus du serveur (400/401/403/404)
+  déconnecte**. Serveur injoignable, 5xx ou 429 (déploiement en cours) : 3 nouveaux essais espacés, puis l'appel échoue sans
+  toucher à la session. Un seul renouvellement pour plusieurs appels simultanés (chaque renouvellement remplace le jeton
+  côté serveur). Connexion : `authService.login` renvoie `null` seulement pour un 401, le reste est remonté à la page.
 - Session sans consentement (`user.consentementAJour === false`, ou 403 `consentement-requis` de l'API traité dans
   `apiService`) : seule `/consentement` est accessible (avec les pages publiques). `meta: { sansNavigation: true }` masque
   la navigation.

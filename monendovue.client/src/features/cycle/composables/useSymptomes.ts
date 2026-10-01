@@ -1,6 +1,7 @@
 import { computed, ref } from 'vue';
 import { startOfMonth } from 'date-fns';
 import apiService from '@/shared/services/apiService';
+import { derniereDemande } from '@/shared/utils/derniereDemande';
 import { grouperParJour } from '@/shared/utils/jours';
 import type { SymptomeCycle, SymptomeSaisie } from '../types/symptome-cycle';
 import { ACNE, chiffresDuMois } from '../utils/symptomes';
@@ -20,18 +21,21 @@ export function useSymptomes({ carnetSanteId, maintenant = () => new Date() }: O
     const chiffres = computed(() => chiffresDuMois(entrees.value));
     const groupes = computed(() => grouperParJour(entrees.value));
 
+    const nouvelleDemande = derniereDemande();
+
     async function charger() {
         const carnet = carnetSanteId();
         if (!carnet) return;
+        const estCourante = nouvelleDemande();
         chargement.value = entrees.value.length === 0;
         erreur.value = false;
         try {
             const duMois = await apiService.getSymptomesDuMois(carnet, mois.value.getMonth() + 1, mois.value.getFullYear());
-            entrees.value = duMois.filter((s) => s.typeSymptome !== ACNE);
+            if (estCourante()) entrees.value = duMois.filter((s) => s.typeSymptome !== ACNE);
         } catch {
-            erreur.value = true;
+            if (estCourante()) erreur.value = true;
         } finally {
-            chargement.value = false;
+            if (estCourante()) chargement.value = false;
         }
     }
 

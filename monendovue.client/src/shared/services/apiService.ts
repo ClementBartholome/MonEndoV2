@@ -15,6 +15,7 @@ import type { EntreeHistoriqueTraitement, HistoriqueTraitement, JourHistoriqueTr
 /** Liste C# sérialisée avec ReferenceHandler.Preserve. */
 type Liste<T> = T[] | { $values: T[] };
 import { enTableau, sansReferences } from '@/shared/utils/json';
+import { API_URL } from '@/shared/services/apiBase';
 import type { SyntheseRendezVous } from '@/features/export/types/synthese';
 import type { ReponseConsentement } from '@/features/auth/types/user';
 import type { CycleDuMois, CycleTermine } from '@/features/cycle/types/cycle';
@@ -39,9 +40,6 @@ function formulaireSymptome(carnetSanteId: number, saisie: SymptomeSaisie): Form
 /** Code du 403 renvoyé par l'API quand le consentement aux données de santé manque (ExigeConsentementFilter). */
 const CONSENTEMENT_REQUIS = 'consentement-requis';
 
-const API_URL = import.meta.env.VITE_DOCKER === 'true'
-    ? '/' // Même serveur : chemins absolus, justes quelle que soit la page (ex. /medicaments/12)
-    : (import.meta.env.MODE === 'production' ? import.meta.env.VITE_API_URL_PROD : import.meta.env.VITE_API_URL);
 
 class ApiService {
     private axiosInstance: AxiosInstance;
@@ -84,13 +82,8 @@ class ApiService {
         try {
             const tokenExpired = this.isTokenExpired();
             if (tokenExpired) {
-                try {
-                    await tokenService.refreshToken();
-                } catch (error) {
-                    console.error('Error refreshing token:', error);
-                    router.push({ name: 'login' });
-                    throw error;
-                }
+                // Refus de session : refreshToken() redirige lui-même ; serveur injoignable : l'appel échoue, la session reste.
+                await tokenService.refreshToken();
             }
 
             const response: AxiosResponse<T> = await this.axiosInstance.request({
@@ -99,7 +92,8 @@ class ApiService {
                 url,
                 data,
             });
-            return response.data;
+            // Les listes imbriquées ({ $id, $values }) sont aplaties une fois pour toutes ; un fichier reçu tel quel.
+            return (config?.responseType && config.responseType !== 'json') ? response.data : sansReferences<T>(response.data);
         } catch (error: any) {
             if (error?.response?.status === 403 && error.response.data?.code === CONSENTEMENT_REQUIS) {
                 this.authStore?.setConsentement(false);
@@ -121,13 +115,9 @@ class ApiService {
     }
     
     // GET
-    async getDonneesCarnetSante(carnetSanteId: number): Promise<any> {
-        return this.request('GET', `CarnetSante/${carnetSanteId}`);
-    }
-
     /** Synthèse du suivi du `du` au `au` inclus (AAAA-MM-JJ, un an au plus), carnet déduit de la session. */
     async getSyntheseRendezVous(du: string, au: string): Promise<SyntheseRendezVous> {
-        return sansReferences(await this.request('GET', `Synthese?du=${du}&au=${au}`));
+        return this.request<SyntheseRendezVous>('GET', `Synthese?du=${du}&au=${au}`);
     }
 
     async getDonneesDouleursByMonth(carnetSanteId: number, month: number, year: number): Promise<any> {

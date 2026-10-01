@@ -60,11 +60,10 @@ const couverture = computed(() => {
             <li
                 v-for="indicateur in tendances.indicateurs"
                 :key="indicateur.cle"
-                class="rounded-controle p-3 text-left"
-                :class="teinteDe(indicateur.cle).fond"
+                class="rounded-controle bg-surface-2 p-3 text-left"
             >
-              <p class="m-0 flex items-center gap-1 text-xs font-medium" :class="teinteDe(indicateur.cle).texte">
-                <i class="material-symbols-outlined text-base" aria-hidden="true">{{ indicateur.icone }}</i>
+              <p class="m-0 flex items-center gap-1 text-xs font-medium text-texte-2">
+                <i class="material-symbols-outlined text-base" :class="teinteDe(indicateur.cle).texte" aria-hidden="true">{{ indicateur.icone }}</i>
                 {{ indicateur.libelle }}
               </p>
               <p class="text-base font-semibold text-texte mt-1">{{ indicateur.valeur ?? '—' }}</p>

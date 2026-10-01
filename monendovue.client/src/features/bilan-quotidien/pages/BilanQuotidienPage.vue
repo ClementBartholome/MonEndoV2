@@ -142,7 +142,7 @@ const tendances = computed(() => calculerTendances(model.value.jours, model.valu
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="historique" class="flex flex-col gap-3.5 focus:outline-none">
+        <TabsContent value="historique" class="flex flex-col gap-3.5">
           <section aria-label="Calendrier des bilans" class="rounded-carte bg-surface p-3 shadow-elevation md:p-5">
             <CalendrierBilans
                 :jours="model.jours"
@@ -170,7 +170,7 @@ const tendances = computed(() => calculerTendances(model.value.jours, model.valu
           />
         </TabsContent>
 
-        <TabsContent value="analyse" class="focus:outline-none">
+        <TabsContent value="analyse">
           <AnalyseTendances :tendances="tendances" :mode="model.periode.mode"/>
         </TabsContent>
       </TabsRoot>

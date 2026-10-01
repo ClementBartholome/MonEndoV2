@@ -123,6 +123,9 @@ public sealed class NotificationsPushServiceTests : IDisposable
     [Fact]
     public async Task Rappels_AcneLeBonJour_EnvoieVersLOngletAcne()
     {
+        // Le rappel de la photo n'est envoyé que pendant un épisode d'acné.
+        _carnet.Context.EpisodesAcne.Add(new EpisodeAcne { CarnetSanteId = CarnetDeTest.CarnetSanteId, Debut = new DateOnly(2026, 9, 1) });
+        _carnet.Context.SaveChanges();
         AjouterRappel(TypeRappel.SuiviAcne, new TimeOnly(20, 0), DayOfWeek.Saturday);
         Abonnement();
 

@@ -76,6 +76,8 @@
           si tu actives les rappels : il achemine des notifications chiffrées, qui ne contiennent aucune donnée de santé ;</li>
         <li><strong>Google Agenda</strong>, uniquement si ton compte est relié à un agenda : MonEndo y lit tes prochains
           rendez-vous et n'y envoie aucune donnée de santé.</li>
+        <li><strong>Google (Gmail)</strong>, qui héberge la boîte e-mail de l'éditeur, uniquement si tu lui écris depuis la
+          page « Une suggestion ? Un bug ? ».</li>
       </ul>
       <p>
         Tes données de santé et tes photos restent dans l'Union européenne. Apple, Google et Mozilla peuvent traiter les
@@ -92,6 +94,8 @@
           données ;</li>
         <li>l'abonnement aux notifications : jusqu'à ce que tu désactives les rappels sur cet appareil ;</li>
         <li>les journaux techniques : <strong>30 jours</strong>, puis ils sont supprimés automatiquement ;</li>
+        <li>tes e-mails à l'éditeur, si tu en envoies : supprimés une fois ta demande traitée, au plus tard
+          <strong>12 mois</strong> après le dernier échange ;</li>
         <li>les sauvegardes de la base, faites chaque nuit pour pouvoir la restaurer en cas de panne : <strong>30 jours</strong>.
           Une donnée que tu effaces, ou un compte supprimé, disparaît donc aussi des sauvegardes en 30 jours au plus.</li>
       </ul>
@@ -112,6 +116,15 @@
       <p>
         MonEndo n'utilise que les cookies indispensables à ta connexion. Aucun cookie de publicité ni de mesure
         d'audience : c'est pourquoi aucun bandeau ne te demande ton accord.
+      </p>
+    </section>
+
+    <section>
+      <h2>Quand tu écris à l'éditeur</h2>
+      <p>
+        Depuis la page « Une suggestion ? Un bug ? », tu peux écrire à l'éditeur : ton message arrive par e-mail, avec ton
+        adresse e-mail et ce que tu y joins (une capture d'écran peut montrer ce que tu as noté : tu choisis ce que tu
+        envoies). Il n'est pas relié à ton compte MonEndo. Il sert uniquement à te répondre et à améliorer l'application.
       </p>
     </section>
 

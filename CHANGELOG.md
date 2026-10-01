@@ -3,7 +3,28 @@
 Toutes les évolutions notables de MonEndo. Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/),
 versions en [SemVer](https://semver.org/lang/fr/) (voir la section Déploiement de `CLAUDE.md`).
 
-## [1.3.0] - non publiée
+## [1.4.0] - non publiée
+
+### Ajouté
+- Page « Une suggestion ? Un bug ? » (menu « Plus » : « Suggestion ou bug ») : deux boutons qui préparent un e-mail à
+  l'éditeur, avec l'objet, la page d'où tu viens, la version de MonEndo et ton appareil déjà indiqués, et des conseils
+  pour décrire ce qui s'est passé. L'adresse est aussi affichée, avec un bouton « Copier », si ton appareil n'a pas de
+  messagerie. Rien de ton suivi n'est joint ; la page rappelle qu'une capture d'écran peut montrer tes données.
+
+### Modifié
+- Politique de confidentialité mise à jour (1er octobre 2026) : elle explique ce que devient un e-mail envoyé à
+  l'éditeur (conservé au plus 12 mois, utilisé seulement pour te répondre).
+
+### Corrigé
+- Actualiser la page Cycle ou la page Activité affichait un message technique à la place de la page.
+- Après une mise à jour de MonEndo, une indisponibilité de quelques secondes ne déconnecte plus : la session est
+  conservée et l'application réessaie. Si la connexion échoue parce que le service est momentanément indisponible,
+  le message ne met plus en cause l'email ou le mot de passe.
+
+### Modifié
+- Nettoyage interne : retrait d'anciennes routes de l'API qui n'étaient plus utilisées.
+
+## [1.3.0] - 2026-09-30
 
 ### Ajouté
 - Nouvel accueil « Aujourd'hui » : jour de règles ou du cycle, bilan du jour (à faire ou son résumé), ajout rapide
@@ -37,6 +58,13 @@ versions en [SemVer](https://semver.org/lang/fr/) (voir la section Déploiement 
   quotidien) ; une entrée peut toujours être supprimée.
 
 ### Corrigé
+- Historique des cycles : les jours de douleur forte d'un cycle s'affichent correctement (des repères en trop pouvaient
+  apparaître).
+- Changement de mois rapide : seule la dernière réponse s'affiche (plus de mois mélangés sous un mauvais titre).
+- Modifier un ancien traitement arrêté ne le remet plus en cours ; le jour où un traitement est arrêté, ses prises prévues
+  restent visibles.
+- Téléchargement de mes données : le fichier n'est plus annulé sur iPhone. PDF de rendez-vous : pas de page vide pour un
+  mois sans donnée, accords au singulier.
 - Graphiques du bilan lisibles sur un mois complet : un graphique en barres par indicateur (douleur, fatigue, stress,
   émotions difficiles) au lieu de courbes superposées.
 
@@ -48,6 +76,7 @@ versions en [SemVer](https://semver.org/lang/fr/) (voir la section Déploiement 
 - Les mois se choisissent aussi directement (touche le nom du mois) pour revenir vite loin en arrière, sur les pages
   Douleurs, Cycle et Bilan ; l'historique des cycles et les photos d'acné plus anciennes s'affichent à la demande, pour que
   les pages restent rapides au fil des années.
+- Le rappel hebdomadaire de la photo d'acné n'est envoyé que pendant un épisode en cours.
 - Suivi de l'acné repensé : plus besoin de la noter chaque jour. Un épisode commence (« L'acné revient ») et dure
   jusqu'à « Ça s'est calmé » ; la photo de la semaine, la comparaison avant / après sur 1, 3 ou 6 mois et l'historique
   des épisodes restent sur le même onglet. Les jours déjà notés sont regroupés en épisodes, sans rien perdre.
@@ -69,6 +98,9 @@ versions en [SemVer](https://semver.org/lang/fr/) (voir la section Déploiement 
   (prise notée, bilan rempli) s'affiche en texte avec une coche verte et ne ressemble plus à un bouton, et le bouton de
   prise dit « Je l'ai pris ».
 - Les icônes gardent leur taille pendant le chargement de la page (plus de décalage ni de défilement horizontal).
+- Douleur, émotions et indicateurs du bilan gardent la même couleur d'un écran à l'autre ; l'échelle de douleur du bilan
+  a le même liseré de couleur que dans les autres saisies ; les actions se nomment par un verbe (« Noter une prise »,
+  « Noter une séance ») ; le focus au clavier est visible partout.
 - Bilan : la page s'ouvre sur l'historique, avec « Remplir le bilan de ce jour » ; la saisie s'ouvre directement depuis
   « Faire mon bilan » de l'accueil et depuis le rappel du soir.
 - Navigation : la rubrique en cours est marquée d'un fond neutre, le rose est réservé aux boutons d'action.
@@ -79,6 +111,13 @@ versions en [SemVer](https://semver.org/lang/fr/) (voir la section Déploiement 
   onglets, liens et jours du calendrier sont plus faciles à toucher.
 
 ### Sécurité
+- Les photos de suivi de l'acné ne sont plus lues par un lien direct vers le stockage : MonEndo les sert lui-même, à la
+  seule personne connectée qui les a prises.
+- La limite de requêtes est maintenant propre à chaque utilisatrice (ou à chaque adresse pour une connexion), et non plus
+  partagée par toute l'application.
+- La déconnexion invalide aussi le jeton de renouvellement de la session.
+- Les jetons de connexion ne sont plus renvoyés dans les réponses de l'API : ils ne vivent que dans des cookies HttpOnly,
+  hors de portée des scripts de la page. Un point d'accès inutilisé qui recevait ces jetons est supprimé.
 - Les polices et les icônes sont servies par MonEndo lui-même : plus aucune page ne contacte Google Fonts, qui
   recevait jusqu'ici l'adresse IP à chaque visite.
 - Un compte sans aucune connexion pendant 2 ans est supprimé automatiquement, avec toutes ses données.

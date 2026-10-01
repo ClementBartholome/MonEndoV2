@@ -68,11 +68,13 @@ export interface IndicateurGraphique {
   max: number;
   /** « /10 », « /5 » : pour la moyenne affichée à côté du titre. */
   unite: string;
+  /** Couleur des barres si elle n'est pas la teinte de l'indicateur : la douleur garde l'échelle rose partout. */
+  couleur?: string;
   valeur: (bilan: BilanQuotidien) => number | null;
 }
 
 export const indicateursGraphiques: IndicateurGraphique[] = [
-  { cle: 'douleur', titre: 'Douleur', max: 10, unite: '/10', valeur: (b) => b.douleurMoyenne },
+  { cle: 'douleur', titre: 'Douleur', max: 10, unite: '/10', couleur: 'var(--intensite-7)', valeur: (b) => b.douleurMoyenne },
   { cle: 'fatigue', titre: 'Fatigue', max: 5, unite: '/5', valeur: (b) => b.fatigue },
   { cle: 'stress', titre: 'Stress', max: 5, unite: '/5', valeur: stressDuBilan },
   {

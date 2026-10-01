@@ -5,4 +5,4 @@ export const EDITEUR = {
 } as const;
 
 /** Date de la dernière mise à jour des documents légaux, affichée en tête de page. */
-export const MISE_A_JOUR_DOCUMENTS_LEGAUX = '27 septembre 2026';
+export const MISE_A_JOUR_DOCUMENTS_LEGAUX = '1er octobre 2026';

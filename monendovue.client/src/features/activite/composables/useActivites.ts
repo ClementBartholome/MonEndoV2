@@ -1,6 +1,7 @@
 import { computed, ref } from 'vue';
 import { format, startOfMonth } from 'date-fns';
 import apiService from '@/shared/services/apiService';
+import { derniereDemande } from '@/shared/utils/derniereDemande';
 import { grouperParJour } from '@/shared/utils/jours';
 import type { Activite, ActiviteSaisie } from '../types/activite';
 import { chiffresDuMois } from '../utils/activite';
@@ -15,15 +16,19 @@ export function useActivites({ maintenant = () => new Date() }: { maintenant?: (
     const chiffres = computed(() => chiffresDuMois(activites.value));
     const groupes = computed(() => grouperParJour(activites.value));
 
+    const nouvelleDemande = derniereDemande();
+
     async function charger() {
+        const estCourante = nouvelleDemande();
         chargement.value = activites.value.length === 0;
         erreur.value = false;
         try {
-            activites.value = await apiService.getActivites(format(mois.value, 'yyyy-MM-dd'));
+            const recues = await apiService.getActivites(format(mois.value, 'yyyy-MM-dd'));
+            if (estCourante()) activites.value = recues;
         } catch {
-            erreur.value = true;
+            if (estCourante()) erreur.value = true;
         } finally {
-            chargement.value = false;
+            if (estCourante()) chargement.value = false;
         }
     }
 

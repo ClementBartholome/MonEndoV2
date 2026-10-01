@@ -3,6 +3,9 @@ import type { Locator, Page } from '@playwright/test';
 /** Sous cette largeur, barre du bas et menu « Plus » ; au-delà, barre latérale (point de rupture `lg` de Tailwind). */
 const LARGEUR_BARRE_LATERALE = 1024;
 
+/** Libellé commençant par `nom` (le détail de la rubrique suit son titre dans le lien) ; les caractères spéciaux (« ? ») sont échappés. */
+const debutDe = (nom: string) => new RegExp(`^${nom.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`);
+
 /** Navigation principale : barre du bas et menu « Plus » (mobile), barre latérale (desktop). */
 export class NavigationPage {
   readonly page: Page;
@@ -31,7 +34,7 @@ export class NavigationPage {
   async ouvrirRubrique(nom: string) {
     if (this.estMobile) {
       await this.principale.getByRole('button', { name: 'Plus' }).click();
-      await this.menuPlus.getByRole('link', { name: new RegExp(`^${nom}`) }).click();
+      await this.menuPlus.getByRole('link', { name: debutDe(nom) }).click();
     } else {
       await this.lien(nom).click();
     }

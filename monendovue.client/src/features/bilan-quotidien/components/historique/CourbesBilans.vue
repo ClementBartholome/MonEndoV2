@@ -29,7 +29,7 @@ const selection = computed(() => props.jours.findIndex((jour) => isSameDay(jour.
 
 const graphiques = computed(() => indicateursGraphiques.map((indicateur) => ({
   ...indicateur,
-  couleur: teinteDe(indicateur.cle).variable,
+  couleur: indicateur.couleur ?? teinteDe(indicateur.cle).variable,
   valeurs: props.jours.map((jour) => (jour.bilan ? indicateur.valeur(jour.bilan) : null)),
 })));
 

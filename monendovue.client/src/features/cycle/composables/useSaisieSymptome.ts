@@ -1,6 +1,7 @@
 import { computed, ref } from 'vue';
 import { format } from 'date-fns';
 import type { SymptomeCycle } from '../types/symptome-cycle';
+import { urlDeApi } from '@/shared/services/apiBase';
 
 export type Moment = 'maintenant' | 'matin' | 'autre';
 
@@ -42,7 +43,8 @@ export function useSaisieSymptome({ maintenant = () => new Date() }: { maintenan
         jour.value = entree.date.slice(0, 10);
         heure.value = entree.date.slice(11, 16);
         commentaire.value = entree.commentaire?.trim() ?? '';
-        photoExistante.value = entree.photoUrl || null;
+        // La photo est servie par l'API (réservée à sa propriétaire), jamais lue directement dans le stockage.
+        photoExistante.value = entree.photoUrl ? urlDeApi(`Acne/photos/${entree.id}`) : null;
     }
 
     /** Date locale sans fuseau selon le moment choisi (jamais une Date, qui glisserait en UTC). */
