@@ -390,6 +390,13 @@ class ApiService {
         return this.agendaOuNull('Agenda/prochains');
     }
 
+    /** Dernier rendez-vous à heure fixe commencé avant `avant` (date ISO), ou null s'il n'y en a pas. */
+    async getRendezVousPrecedent(avant: string): Promise<EvenementAgenda | null> {
+        const liste = enTableau(await this.request<EvenementAgenda[] | { $values: EvenementAgenda[] }>(
+            'GET', `Agenda/precedent?avant=${encodeURIComponent(avant)}`));
+        return liste[0] ?? null;
+    }
+
     async getStatutLiaisonAgenda(): Promise<StatutLiaisonAgenda> {
         return this.request('GET', 'Agenda/liaison');
     }

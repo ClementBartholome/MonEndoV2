@@ -7,6 +7,7 @@
       <span class="text-legende text-texte-2">{{ quand }}</span>
       <a v-if="evenement.lieu" :href="itineraire" target="_blank" rel="noopener noreferrer"
          class="mt-0.5 inline-flex min-h-11 items-center text-legende font-medium !text-lien">Itinéraire</a>
+      <router-link to="/agenda" class="inline-flex min-h-11 items-center text-legende font-medium !text-lien">Voir mon agenda</router-link>
     </div>
   </section>
 </template>

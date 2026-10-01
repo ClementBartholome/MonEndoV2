@@ -1,4 +1,4 @@
-import type { CalendrierAgenda } from '../../src/features/schedule/types/agenda';
+import type { CalendrierAgenda, EvenementAgenda } from '../../src/features/schedule/types/agenda';
 import type { FauxServeur } from './faux-serveur';
 
 /** Adresse d'autorisation telle que la renvoie le serveur (le vrai flux OAuth n'est pas joué : Google est hors du test). */
@@ -38,4 +38,33 @@ export function simulerLiaisonAgenda(
       etat = { ...etat, liee: false, lieeLe: null, calendrierId: null };
       return { status: 204 };
     });
+}
+
+export function rendezVous(id: string, titre: string, debut: string, extra: Partial<EvenementAgenda> = {}): EvenementAgenda {
+  return { id, titre, debut, fin: null, journeeEntiere: false, lieu: null, lien: `https://calendar.example/${id}`, ...extra };
+}
+
+/** Rendez-vous de la semaine du 15 septembre 2026 (jour fixé des tests) : demain, plus tard dans la semaine, plus tard. */
+export const KINE = rendezVous('kine', 'Kinésithérapie', '2026-09-16T10:00:00+02:00', { lieu: 'Cabinet Lefèvre, Lyon 3e' });
+export const ECHO = rendezVous('echo', 'Échographie pelvienne', '2026-09-18T09:15:00+02:00', { lieu: "Centre d'imagerie du Parc" });
+export const GYNECO = rendezVous('gyneco', 'Consultation gynécologie', '2026-10-06T14:30:00+02:00', { lieu: 'Dr Martin, Lyon 6e' });
+export const PRECEDENT = rendezVous('precedent', 'Consultation précédente', '2026-06-12T11:00:00+02:00');
+
+/**
+ * Agenda lié (calendrier choisi) avec ses rendez-vous : `Agenda/evenements` ne renvoie que ceux de la période demandée,
+ * `Agenda/precedent` le dernier commencé avant la date (`precedent`, ou aucun).
+ */
+export function simulerRendezVous(
+  serveur: FauxServeur,
+  evenements: EvenementAgenda[],
+  { precedent = null }: { precedent?: EvenementAgenda | null } = {},
+) {
+  simulerLiaisonAgenda(serveur, { liee: true, calendrierId: 'rdv@example.com' });
+  serveur
+    .on('GET', /^Agenda\/evenements$/, ({ url }) => {
+      const debut = new Date(url.searchParams.get('debut') ?? '').getTime();
+      const fin = new Date(url.searchParams.get('fin') ?? '').getTime();
+      return { body: evenements.filter((e) => new Date(e.debut).getTime() >= debut && new Date(e.debut).getTime() < fin) };
+    })
+    .on('GET', /^Agenda\/precedent$/, () => ({ body: precedent ? [precedent] : [] }));
 }

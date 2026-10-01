@@ -1,6 +1,6 @@
 import {createRouter, createWebHistory} from 'vue-router'
 import AccueilPage from '@/features/accueil/pages/AccueilPage.vue'
-import Schedule from '@/features/schedule/pages/Schedule.vue'
+import AgendaPage from '@/features/schedule/pages/AgendaPage.vue'
 import LoginPage from "@/features/auth/pages/LoginPage.vue";
 import {useAuthStore} from "@/features/auth/store/auth";
 import PainPage from "@/features/douleurs/pages/DouleursPage.vue";
@@ -54,7 +54,7 @@ const router = createRouter({
         {
             path: '/agenda',
             name: 'agenda',
-            component: Schedule
+            component: AgendaPage
         },
         {
             path: '/login',

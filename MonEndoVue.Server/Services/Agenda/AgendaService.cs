@@ -25,6 +25,9 @@ public class AgendaService(
     /// <summary>Une vue mois de FullCalendar couvre au plus 6 semaines : au-delà, la demande est refusée.</summary>
     public static readonly TimeSpan PeriodeMax = TimeSpan.FromDays(62);
 
+    /** Remontée maximale pour retrouver le rendez-vous précédent : la période la plus longue de l'export (un an). */
+    public static readonly TimeSpan RemonteeRendezVousPrecedent = TimeSpan.FromDays(366);
+
     public const int NombreProchains = 3;
     private const int ProchainsCandidats = 20; // les événements sur la journée entière sont écartés ensuite
     private const int EvenementsParPage = 250;
@@ -132,6 +135,39 @@ public class AgendaService(
         }
 
         return await liaison.EnregistrerCalendrierAsync(userId, calendrierId, cancellationToken);
+    }
+
+    /// <summary>
+    /// Le dernier rendez-vous à heure fixe commencé avant <paramref name="avant"/> (un an au plus en arrière), pour régler la période
+    /// de « Préparer ce rendez-vous ». Liste de zéro ou un élément : « aucun » n'est pas une erreur.
+    /// </summary>
+    public async Task<ResultatOperation<IReadOnlyList<EvenementAgendaViewModel>>> GetPrecedentAsync(
+        string userId, DateTimeOffset avant, CancellationToken cancellationToken)
+    {
+        var acces = await AccesAsync(userId, cancellationToken);
+        if (acces.Statut != StatutOperation.Succes)
+        {
+            return ResultatOperation<IReadOnlyList<EvenementAgendaViewModel>>.Echec(acces.Statut, acces.Message);
+        }
+
+        if (avant.Year < 2000)
+        {
+            return ResultatOperation<IReadOnlyList<EvenementAgendaViewModel>>.Echec(
+                StatutOperation.Invalide, "La date demandée est invalide.");
+        }
+
+        var resultat = await LireAsync(
+            acces.Valeur!, avant - RemonteeRendezVousPrecedent, avant, EvenementsParPage, PagesMax, cancellationToken);
+        if (resultat.Statut != StatutOperation.Succes)
+        {
+            return resultat;
+        }
+
+        var dernier = resultat.Valeur!
+            .Where(e => !e.JourneeEntiere && DateTimeOffset.TryParse(e.Debut, CultureInfo.InvariantCulture, out var debut) && debut < avant)
+            .OrderBy(e => DateTimeOffset.Parse(e.Debut, CultureInfo.InvariantCulture))
+            .LastOrDefault();
+        return ResultatOperation<IReadOnlyList<EvenementAgendaViewModel>>.Succes(dernier is null ? [] : [dernier]);
     }
 
     /// <summary>La liaison OAuth prime ; sans liaison, l'entrée de configuration (clé API) ; sinon Introuvable.</summary>

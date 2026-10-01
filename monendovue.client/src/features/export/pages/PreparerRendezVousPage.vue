@@ -11,7 +11,10 @@
     </header>
 
     <form class="flex flex-col gap-[18px]" @submit.prevent="creerLePdf">
-      <ChoixPeriode v-model:choix="choix" v-model:du="du" v-model:au="au" :aujourdhui="aujourdhui" :libelle="libelle" :erreur="erreurPeriode"/>
+      <p v-if="rendezVous" class="m-0 flex items-center gap-2.5 rounded-carte bg-teinte-neutre-fond p-3 text-left text-sm font-medium text-teinte-neutre">
+        <i class="material-symbols-outlined" aria-hidden="true">event</i>Pour ton rendez-vous du {{ rendezVous }}
+      </p>
+      <ChoixPeriode v-model:choix="choix" v-model:du="du" v-model:au="au" :aujourdhui="aujourdhui" :libelle="libelle" :erreur="erreurPeriode" :options="options"/>
       <ChoixRubriques v-model="rubriques" :aucune="aucuneRubrique"/>
 
       <div class="flex flex-col gap-2">
@@ -47,7 +50,7 @@ import { usePreparationRendezVous } from '../composables/usePreparationRendezVou
 import { QUESTIONS_MAX } from '../services/questionsRendezVous';
 
 const { toast } = useToast();
-const { aujourdhui, choix, du, au, libelle, erreurPeriode, rubriques, aucuneRubrique, questions, creation, erreur, peutCreer, creer } = usePreparationRendezVous();
+const { aujourdhui, choix, options, rendezVous, du, au, libelle, erreurPeriode, rubriques, aucuneRubrique, questions, creation, erreur, peutCreer, creer } = usePreparationRendezVous();
 
 async function creerLePdf() {
   if (await creer()) toast({ title: 'PDF créé', description: 'Il est dans tes téléchargements.', variant: 'custom' });

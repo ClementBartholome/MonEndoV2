@@ -17,7 +17,15 @@ versions en [SemVer](https://semver.org/lang/fr/) (voir la section Déploiement 
   calendrier ou délier ton agenda à tout moment (l'accès est alors retiré chez Google). Google affiche d'abord un écran « application
   non validée » : l'application l'explique avant de t'y envoyer.
 
+- Préparer un rendez-vous depuis l'agenda : un bouton « Préparer ce rendez-vous » (sur le prochain rendez-vous et dans le détail de
+  chacun) ouvre l'export du PDF avec la période réglée du rendez-vous précédent jusqu'à aujourd'hui, le rappel du rendez-vous visé et tes
+  questions prêtes à être saisies. Rien du rendez-vous n'apparaît dans l'adresse de la page.
+
 ### Modifié
+- Page Agenda repensée : la liste des rendez-vous à venir, regroupés par jour (demain, cette semaine, plus tard), remplace le calendrier
+  d'origine ; chaque rendez-vous s'ouvre dans un panneau (lieu, itinéraire, lien vers Google Agenda). Le calendrier du mois, plus lisible
+  sur téléphone, devient une vue secondaire. L'Agenda a sa place dans le menu « Plus » et l'accueil y renvoie. Des messages clairs
+  expliquent quand l'agenda n'est pas lié, qu'aucun calendrier n'est choisi, qu'il n'y a rien à venir ou que Google ne répond pas.
 - Politique de confidentialité mise à jour (1er octobre 2026) : elle explique ce que devient un e-mail envoyé à
   l'éditeur (conservé au plus 12 mois, utilisé seulement pour te répondre).
 
