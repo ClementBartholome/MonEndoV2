@@ -200,6 +200,9 @@ lecture seule (liste par jour, `SelecteurMois`, suppression en deux temps), plus
   déconnecte**. Serveur injoignable, 5xx ou 429 (déploiement en cours) : 3 nouveaux essais espacés, puis l'appel échoue sans
   toucher à la session. Un seul renouvellement pour plusieurs appels simultanés (chaque renouvellement remplace le jeton
   côté serveur). Connexion : `authService.login` renvoie `null` seulement pour un 401, le reste est remonté à la page.
+- Liaison de l'agenda Google (`features/parametres/`, `useLiaisonAgenda` + `LiaisonAgenda.vue`) : la ligne « Agenda Google » n'apparaît que si le
+  serveur la dit `disponible` (Google configuré). Le départ envoie le navigateur chez Google **seulement** si l'adresse reçue commence par
+  `https://accounts.google.com/`. Retour de Google : `/parametres?agenda=lie|echec` (toast, adresse nettoyée, panneau ouvert pour choisir le calendrier).
 - Session sans consentement (`user.consentementAJour === false`, ou 403 `consentement-requis` de l'API traité dans
   `apiService`) : seule `/consentement` est accessible (avec les pages publiques). `meta: { sansNavigation: true }` masque
   la navigation.

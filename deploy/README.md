@@ -18,6 +18,27 @@ Les secrets ne sont **jamais** dans ce dossier (dépôt public). Ils restent sur
 - `~/app/config/sauvegarde.env` et `~/app/config/sauvegarde.cle` : jeton SAS et clé de chiffrement des sauvegardes ;
 - `~/app/config/appsettings.Production.json`, `~/app/keys/`, `~/app/ssl/`.
 
+## Liaison de l'agenda Google (OAuth)
+Activée par trois valeurs dans `~/app/config/app.env` (sans elles, la ligne « Agenda Google » n'apparaît pas dans les Paramètres) :
+`GoogleOAuth__ClientId=...`, `GoogleOAuth__ClientSecret=...`, `GoogleOAuth__RedirectUri=https://monendoapp.fr/Agenda/liaison/callback`.
+Le script `configurer-google-oauth.sh` les demande à l'invite (saisie masquée, seules les longueurs sont affichées, rien n'est écrit sans confirmation) :
+`curl -fsSL https://raw.githubusercontent.com/ClementBartholome/MonEndoV2/main/deploy/configurer-google-oauth.sh -o ~/app/configurer-google-oauth.sh && bash ~/app/configurer-google-oauth.sh`.
+Le secret est copié depuis la console Google **directement sur le VPS** (jamais dans le dépôt, un chat ou un fichier versionné), puis le
+conteneur `app` est recréé (`docker compose -f docker-compose.prod.yml up -d --force-recreate app`).
+
+Dans la console Google Cloud (une seule fois) :
+1. Projet dédié, API **Google Calendar** activée.
+2. Écran de consentement OAuth : type **Externe**, nom « MonEndo », e-mail d'assistance, domaine autorisé `monendoapp.fr`, lien vers la
+   politique de confidentialité `https://monendoapp.fr/confidentialite`, portées `.../auth/calendar.events.readonly` et
+   `.../auth/calendar.calendarlist.readonly`.
+3. **État de publication : « En production »** (sans demande de validation). En mode « Test », les jetons d'actualisation expirent au bout
+   de 7 jours et seuls les comptes de test peuvent se lier. En production non validée : écran « application non validée » avant l'accord
+   (expliqué dans l'application) et plafond de 100 comptes.
+4. Identifiants : client OAuth de type **Application Web**, URI de redirection autorisée exactement `https://monendoapp.fr/Agenda/liaison/callback`.
+
+Après la liaison de l'utilisatrice actuelle, retirer `Agenda__CleApi` et `Agenda__Calendriers__*` de `app.env` et supprimer la clé API Google
+(ancienne méthode, ouverte à quiconque connaît l'identifiant du calendrier).
+
 ## Créer `config/app.env` (une fois, avant le premier compose qui l'utilise)
 
 Le compose lit les secrets de l'application dans `~/app/config/app.env` (une ligne `CLE=valeur` par variable, sans

@@ -15,7 +15,10 @@
       </Button>
     </div>
 
-    <p v-if="!agendaDisponible">Aucun agenda n'est associé à ton compte.</p>
+    <p v-if="!agendaDisponible">
+      Aucun agenda n'est associé à ton compte. Tu peux lier ton agenda Google depuis les
+      <router-link to="/parametres" class="underline">Paramètres</router-link>.
+    </p>
     <template v-else>
       <p v-if="loading">Chargement des données du calendrier...</p>
       <p v-if="erreur" class="text-sm text-muted-foreground mb-2">{{ erreur }}</p>

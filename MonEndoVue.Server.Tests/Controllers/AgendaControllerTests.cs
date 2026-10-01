@@ -2,6 +2,7 @@ using System.Net;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Infrastructure;
 using MonEndoVue.Server.Controllers;
+using MonEndoVue.Server.Dto;
 using MonEndoVue.Server.ViewModels;
 using MonEndoVue.Server.Tests.Support;
 
@@ -30,6 +31,28 @@ public class AgendaControllerTests
         var evenements = Assert.IsAssignableFrom<IReadOnlyList<EvenementAgendaViewModel>>(
             Assert.IsType<OkObjectResult>(resultat).Value);
         Assert.Equal("rdv", Assert.Single(evenements).Id);
+    }
+
+    [Fact]
+    public async Task GetCalendriers_SansLiaison_404SansAppelerGoogle()
+    {
+        var google = Google();
+
+        var resultat = await Controller(google).GetCalendriers(CancellationToken.None);
+
+        Assert.IsType<NotFoundResult>(resultat);
+        Assert.Empty(google.Requetes);
+    }
+
+    [Fact]
+    public async Task ChoisirCalendrier_SansLiaison_404SansAppelerGoogle()
+    {
+        var google = Google();
+
+        var resultat = await Controller(google).ChoisirCalendrier(new CalendrierChoisiDto { Id = "perso@example.com" }, CancellationToken.None);
+
+        Assert.IsType<NotFoundResult>(resultat);
+        Assert.Empty(google.Requetes);
     }
 
     [Fact]

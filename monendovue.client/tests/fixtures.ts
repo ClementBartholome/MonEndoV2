@@ -117,5 +117,7 @@ function routesCommunes(serveur: FauxServeur) {
     .on('GET', /^Accueil\/aujourdhui$/, () => ({ body: ACCUEIL_VIDE }))
     // Pas d'agenda associé au compte par défaut : pas de bloc « Prochains rendez-vous ».
     .on('GET', /^Agenda\//, () => ({ status: 404 }))
+    // Liaison Google non configurée par défaut : pas de ligne « Agenda Google » dans les Paramètres.
+    .on('GET', /^Agenda\/liaison$/, () => ({ body: { disponible: false, liee: false, lieeLe: null } }))
     .on('POST', /^Account\/logout$/, () => ({ status: 200 }));
 }

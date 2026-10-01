@@ -93,6 +93,29 @@ modifiables, jamais `Entry(dto).State = Modified`, jamais de changement de `Carn
 - Changer `PolitiqueConfidentialite.Version` (avec la date de `features/legal/config/editeur.ts`) redemande l'accord à toutes
   les utilisatrices : seulement pour une évolution importante de la politique.
 
+## Liaison de l'agenda Google (OAuth)
+- `LiaisonAgendaController` (`Agenda/liaison`) / `LiaisonAgendaService` / `GoogleOAuthClient` (`Services/Agenda/`). Flux : `POST demarrer`
+  (authentifié) renvoie l'URL Google et pose un **cookie d'état** ; Google redirige vers `GET callback` ; `DELETE` délie et révoque.
+- **Le cookie de session est SameSite=Strict : il n'accompagne pas le retour de Google.** Le callback est donc anonyme
+  (`[AllowAnonymous]`, justifié) et identifie l'utilisatrice par le cookie d'état (`EtatLiaison` : Data Protection, 10 min,
+  HttpOnly, Secure, SameSite=Lax, Path `/Agenda/liaison`) qui porte `state`, vérificateur PKCE (S256) et identifiant : un état ou
+  un cookie forgé, expiré, ou d'un autre navigateur est refusé avant tout appel à Google.
+- Le jeton d'actualisation est chiffré par Data Protection (`keys/` : les perdre oblige à relier ; la liaison illisible est supprimée)
+  et le jeton d'accès mis en cache mémoire. `AgendaService` : liaison OAuth (calendrier `primary`, `Authorization: Bearer`), sinon repli sur la configuration.
+  Google qui signale `invalid_grant` (accord retiré) supprime la liaison ; une panne de Google ne la supprime pas.
+- **Un seul calendrier est lu : celui que l'utilisatrice choisit** (`LiaisonAgenda.CalendrierId`, nul tant qu'elle n'a pas choisi, et remis
+  à nul à chaque nouvelle liaison, le compte Google pouvant changer). Sans choix, `AgendaService` répond Introuvable **sans appeler
+  Google** (pas de repli sur la configuration). `GET Agenda/calendriers` liste les calendriers (`calendarList`), `PUT Agenda/calendrier`
+  enregistre le choix **après l'avoir recherché dans cette liste** (un identifiant qui n'y figure pas est refusé : jamais pris tel quel du client).
+- `GoogleOAuth:RetourApplication` (optionnelle, dev seulement) : adresse absolue de `/parametres` du front quand il n'est pas servi par l'API (Vite sur 5173) ;
+  absente, le callback redirige vers le chemin relatif `/parametres`.
+- Portées `calendar.events.readonly` et `calendar.calendarlist.readonly` (les plus étroites suffisantes) : Google permet de n'en accorder qu'une
+  partie, la liaison est donc refusée (et l'accord révoqué) si l'une manque dans la réponse de l'échange du code.
+- `NavigationVersSpa` exempte `/Agenda/liaison/callback` : le retour de Google est une navigation `Accept: text/html` vers l'API, qui répond elle-même
+  par une redirection vers Paramètres (sans cette exemption, il serait réécrit vers la page d'entrée et la liaison échouerait sans bruit). Le code arrive dans l'URL du callback : non journalisé par l'app,
+  mais présent dans le journal d'accès nginx (à usage unique et lié au PKCE, donc inutilisable une fois échangé).
+- Suppression du compte : `RevoquerPourSuppressionAsync` puis suppression de la ligne ; export : date de liaison seulement, jamais de jeton.
+
 ## Droits sur les données (RGPD)
 - `DonneesPersonnellesController` (`[SansConsentement]`) : export complet par `ExportDonneesService` (ZIP en fichier temporaire
   supprimé à la fermeture, `donnees.json` + `photos/` + `LISEZMOI.txt`, carnet déduit de la session) ;
@@ -170,7 +193,7 @@ Clés attendues (noms seulement) : `ConnectionStrings:DefaultConnection`, `Azure
 `Authentication:Schemes:Bearer:{Secret,ValidIssuer,ValidAudiences}`, `Jwt:Key`, `RootUser:{UserName,Email,Password}` (compte créé au démarrage en **développement** seulement),
 `WebPush:{Subject,PublicKey,PrivateKey}` (clés VAPID ; absentes ou invalides — sujet sans `mailto:`/`https:`, clés ≠ 87/43 caractères — = notifications désactivées
  avec un avertissement au démarrage, sans bloquer ni faire échouer les routes ;
- en dev via `dotnet user-secrets`), `Agenda:CleApi` (clé API Google Calendar) et `Agenda:Calendriers:<id de l'utilisatrice>` (identifiant du calendrier affiché ; sans entrée, pas d'agenda : 404). En production, dans `config/app.env` sous la forme `Agenda__CleApi=…` et `Agenda__Calendriers__<id>=…`. Ne jamais lire ni afficher les valeurs.
+ en dev via `dotnet user-secrets`), `GoogleOAuth:{ClientId,ClientSecret,RedirectUri}` (client OAuth « application Web » de la console Google Cloud ; `RedirectUri` = `https://<domaine>/Agenda/liaison/callback`, enregistrée à l'identique chez Google ; absents = liaison désactivée, 503), et, le temps de la transition, `Agenda:CleApi` (clé API Google Calendar) et `Agenda:Calendriers:<id de l'utilisatrice>` (la liaison OAuth prime ; sans liaison ni entrée, pas d'agenda : 404). En production, dans `config/app.env` sous la forme `Agenda__CleApi=…`, `GoogleOAuth__ClientSecret=…` et `Agenda__Calendriers__<id>=…`. Ne jamais lire ni afficher les valeurs.
 
 ## Tests
 Projet `MonEndoVue.Server.Tests` (xUnit, **net8.0** comme la CI et le Dockerfile), lancé par `dotnet test` et par la CI.

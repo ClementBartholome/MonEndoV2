@@ -30,6 +30,9 @@
           stress, fatigue, pas, hydratation, alimentation, notes).</li>
         <li><strong>Les rappels</strong>, si tu les actives : l'abonnement aux notifications de ton appareil (une adresse
           technique fournie par ton navigateur), l'heure choisie et ton fuseau horaire.</li>
+        <li><strong>Ton agenda Google</strong>, si tu le relies : un jeton d'accès, conservé chiffré, et l'identifiant du calendrier que
+          tu as choisi. MonEndo ne lit que ce calendrier, en lecture seule. Les rendez-vous eux-mêmes ne sont pas enregistrés :
+          ils sont lus chez Google quand tu ouvres l'accueil ou ton agenda.</li>
         <li><strong>Les journaux techniques</strong> du serveur : adresse IP, date et page demandée, utiles à la sécurité
           et à la correction des pannes. Ils ne contiennent ni ton e-mail ni tes données de santé.</li>
       </ul>

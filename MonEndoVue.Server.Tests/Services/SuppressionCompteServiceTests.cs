@@ -4,6 +4,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 using MonEndoVue.Server.Controllers;
 using MonEndoVue.Server.Dto;
 using MonEndoVue.Server.Models;
+using MonEndoVue.Server.Services.Agenda;
 using MonEndoVue.Server.Services;
 using MonEndoVue.Server.Services.SuppressionCompte;
 using MonEndoVue.Server.Tests.Support;
@@ -18,6 +19,7 @@ public sealed class SuppressionCompteServiceTests : IDisposable
 
     private readonly IdentityDeTest _identity = new();
     private readonly FauxStockagePhotos _photos = new();
+    private readonly FauxGoogleCalendar _google = LiaisonAgendaDeTest.FauxGoogle();
 
     [Fact]
     public async Task SupprimerAsync_BonMotDePasse_NeLaisseRienDuCompte()
@@ -42,6 +44,7 @@ public sealed class SuppressionCompteServiceTests : IDisposable
         Assert.False(await ctx.DonneesTraitementNonMedicamenteux.AnyAsync(e => e.CarnetSanteId == carnetId));
         Assert.False(await ctx.Rappels.AnyAsync(e => e.CarnetSanteId == carnetId));
         Assert.False(await ctx.AbonnementsPush.AnyAsync(e => e.CarnetSanteId == carnetId));
+        Assert.False(await ctx.LiaisonsAgenda.AnyAsync(e => e.CarnetSanteId == carnetId));
         Assert.DoesNotContain(Photo, _photos.Contenus.Keys);
     }
 
@@ -132,8 +135,31 @@ public sealed class SuppressionCompteServiceTests : IDisposable
         Assert.IsType<BadRequestObjectResult>(resultat);
     }
 
+    [Fact]
+    public async Task SupprimerAsync_AgendaLie_RevoqueLAccordChezGoogle()
+    {
+        var user = await _identity.CreerUtilisatrice("agenda@local");
+        var protection = LiaisonAgendaDeTest.Protection();
+        var liaison = LiaisonAgendaDeTest.Service(_identity.Context, _google, protection: protection);
+        var debut = await liaison.DemarrerAsync(user.Id, CancellationToken.None);
+        var etat = Uri.UnescapeDataString(debut.Valeur!.UrlAutorisation.Split("state=")[1].Split('&')[0]);
+        await liaison.FinaliserAsync(debut.Valeur.CookieEtat, etat, LiaisonAgendaDeTest.Code, null, CancellationToken.None);
+        _google.Corps.Clear();
+        var service = new SuppressionCompteService(
+            _identity.Context, _identity.UserManager, _photos,
+            LiaisonAgendaDeTest.Service(_identity.Context, _google, protection: protection),
+            NullLogger<SuppressionCompteService>.Instance);
+
+        var resultat = await service.SupprimerAsync(user.Id, IdentityDeTest.MotDePasseValide, CancellationToken.None);
+
+        Assert.Equal(StatutOperation.Succes, resultat.Statut);
+        Assert.Equal(GoogleOAuthClient.UrlRevocation, Assert.Single(_google.Requetes.TakeLast(1)).RequestUri!.ToString());
+        Assert.Contains(LiaisonAgendaDeTest.JetonActualisation, Assert.Single(_google.Corps));
+        Assert.False(await _identity.Context.LiaisonsAgenda.AnyAsync());
+    }
+
     private SuppressionCompteService Service() =>
-        new(_identity.Context, _identity.UserManager, _photos, NullLogger<SuppressionCompteService>.Instance);
+        new(_identity.Context, _identity.UserManager, _photos, LiaisonAgendaDeTest.Service(_identity.Context, _google), NullLogger<SuppressionCompteService>.Instance);
 
     /// <summary>Compte avec une donnée de chaque sorte, dont une photo de suivi.</summary>
     private async Task<(ApplicationUser User, int CarnetId)> CreerCompteRempli(string email, string photo)
@@ -154,6 +180,7 @@ public sealed class SuppressionCompteServiceTests : IDisposable
         ctx.EpisodesAcne.Add(new EpisodeAcne { CarnetSanteId = carnetId, Debut = DateOnly.FromDateTime(jour) });
         ctx.Rappels.Add(new Rappel { CarnetSanteId = carnetId, Type = TypeRappel.BilanQuotidien });
         ctx.AbonnementsPush.Add(new AbonnementPush { CarnetSanteId = carnetId, Endpoint = $"https://push.test/{email}" });
+        ctx.LiaisonsAgenda.Add(new LiaisonAgenda { CarnetSanteId = carnetId, JetonActualisationProtege = "illisible" });
         await ctx.SaveChangesAsync();
         ctx.DonneesMedicaments.Add(new DonneesMedicament { CarnetSanteId = carnetId, MedicamentId = traitement.Id, Date = jour });
         ctx.DonneesTraitementNonMedicamenteux.Add(new DonneesTraitementNonMedicamenteux { CarnetSanteId = carnetId, MedicamentId = traitement.Id, Date = jour });
