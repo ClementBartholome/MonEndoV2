@@ -16,6 +16,12 @@ public class GoogleOAuthOptions
     /// <summary>Adresse de retour enregistrée chez Google : https://&lt;domaine&gt;/Agenda/liaison/callback.</summary>
     public string? RedirectUri { get; set; }
 
+    /// <summary>
+    /// Page Paramètres où ramener l'utilisatrice après Google, si l'application n'est pas servie par l'API elle-même (dev : front
+    /// Vite sur un autre port). Absente : chemin relatif, c'est-à-dire la page de l'API (production). Lue en configuration seulement.
+    /// </summary>
+    public string? RetourApplication { get; set; }
+
     public bool EstConfiguree =>
         !string.IsNullOrWhiteSpace(ClientId)
         && !string.IsNullOrWhiteSpace(ClientSecret)

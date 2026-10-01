@@ -84,8 +84,11 @@ public class AgendaServiceTests
     }
 
     /// <summary>Compte lié par OAuth : la liaison et le service d'agenda partagent la même base.</summary>
+    private const string CalendrierChoisi = "rdv.medicaux@example.com";
+
     private static async Task<(AgendaService Service, FauxGoogleCalendar Calendrier)> AvecLiaison(
-        string items = "", IOptions<AgendaOptions>? configuration = null)
+        string items = "", IOptions<AgendaOptions>? configuration = null, bool calendrierChoisi = true,
+        Func<HttpRequestMessage, HttpResponseMessage>? repondre = null)
     {
         var carnet = new CarnetDeTest();
         var protection = LiaisonAgendaDeTest.Protection();
@@ -93,12 +96,121 @@ public class AgendaServiceTests
         var debut = (await liaison.DemarrerAsync(CarnetDeTest.UserId, CancellationToken.None)).Valeur!;
         var etat = Uri.UnescapeDataString(debut.UrlAutorisation.Split("state=")[1].Split('&')[0]);
         await liaison.FinaliserAsync(debut.CookieEtat, etat, LiaisonAgendaDeTest.Code, null, CancellationToken.None);
-        var calendrier = Google(items);
+        if (calendrierChoisi)
+        {
+            await liaison.EnregistrerCalendrierAsync(CarnetDeTest.UserId, CalendrierChoisi, CancellationToken.None);
+        }
+
+        var calendrier = repondre is null ? Google(items) : new FauxGoogleCalendar(repondre);
         return (AgendaDeTest.Service(calendrier, configuration, liaison), calendrier);
     }
 
+    private static HttpResponseMessage CalendriersDeLUtilisatrice(HttpRequestMessage requete) =>
+        requete.RequestUri!.AbsoluteUri.StartsWith(AgendaService.UrlListeCalendriers)
+            ? AgendaDeTest.ReponseCalendriers(
+                ("perso@example.com", "Perso", false), (CalendrierChoisi, "Rendez-vous médicaux", false), ("moi@example.com", "moi@example.com", true))
+            : AgendaDeTest.Reponse("");
+
     [Fact]
-    public async Task GetEvenementsAsync_AgendaLie_LitLeCalendrierPrincipalAvecLeJetonEtSansCleApi()
+    public async Task GetEvenementsAsync_AgendaLieSansCalendrierChoisi_IntrouvableSansLireDEvenements()
+    {
+        var (service, calendrier) = await AvecLiaison(calendrierChoisi: false);
+
+        var resultat = await service.GetEvenementsAsync(CarnetDeTest.UserId, Debut, Fin, CancellationToken.None);
+
+        Assert.Equal(StatutOperation.Introuvable, resultat.Statut);
+        Assert.Empty(calendrier.Requetes);
+    }
+
+    [Fact]
+    public async Task GetProchainsAsync_AgendaLieSansCalendrierChoisi_IntrouvableMemeAvecUneEntreeDeConfiguration()
+    {
+        var (service, calendrier) = await AvecLiaison(configuration: AgendaDeTest.Options(), calendrierChoisi: false);
+
+        var resultat = await service.GetProchainsAsync(CarnetDeTest.UserId, CancellationToken.None);
+
+        Assert.Equal(StatutOperation.Introuvable, resultat.Statut);
+        Assert.Empty(calendrier.Requetes);
+    }
+
+    [Fact]
+    public async Task ListerCalendriersAsync_AgendaLie_RenvoieLePrincipalPuisLesAutresParNomAvecLeJeton()
+    {
+        var (service, calendrier) = await AvecLiaison(repondre: CalendriersDeLUtilisatrice);
+
+        var resultat = await service.ListerCalendriersAsync(CarnetDeTest.UserId, CancellationToken.None);
+
+        Assert.Equal(["moi@example.com", "perso@example.com", CalendrierChoisi], resultat.Valeur!.Select(c => c.Id));
+        Assert.True(resultat.Valeur![0].Principal);
+        var requete = Assert.Single(calendrier.Requetes);
+        Assert.StartsWith(AgendaService.UrlListeCalendriers, requete.RequestUri!.AbsoluteUri);
+        Assert.Contains("minAccessRole=reader", requete.RequestUri.AbsoluteUri);
+        Assert.Equal(LiaisonAgendaDeTest.JetonAcces, requete.Headers.Authorization!.Parameter);
+        Assert.DoesNotContain(LiaisonAgendaDeTest.JetonAcces, requete.RequestUri.AbsoluteUri);
+    }
+
+    [Fact]
+    public async Task ListerCalendriersAsync_SansLiaison_IntrouvableSansAppelerGoogle()
+    {
+        var google = Google();
+        var service = AgendaDeTest.Service(google);
+
+        var resultat = await service.ListerCalendriersAsync(CarnetDeTest.UserId, CancellationToken.None);
+
+        Assert.Equal(StatutOperation.Introuvable, resultat.Statut);
+        Assert.Empty(google.Requetes);
+    }
+
+    [Fact]
+    public async Task ListerCalendriersAsync_GoogleEnErreur_Indisponible()
+    {
+        var (service, _) = await AvecLiaison(repondre: _ => new HttpResponseMessage(HttpStatusCode.InternalServerError));
+
+        var resultat = await service.ListerCalendriersAsync(CarnetDeTest.UserId, CancellationToken.None);
+
+        Assert.Equal(StatutOperation.Indisponible, resultat.Statut);
+    }
+
+    [Fact]
+    public async Task ChoisirCalendrierAsync_CalendrierDeLaListe_EstEnregistreEtLuEnsuite()
+    {
+        var (service, calendrier) = await AvecLiaison(calendrierChoisi: false, repondre: CalendriersDeLUtilisatrice);
+
+        var resultat = await service.ChoisirCalendrierAsync(CarnetDeTest.UserId, "perso@example.com", CancellationToken.None);
+        await service.GetEvenementsAsync(CarnetDeTest.UserId, Debut, Fin, CancellationToken.None);
+
+        Assert.Equal(StatutOperation.Succes, resultat.Statut);
+        Assert.StartsWith($"{AgendaService.UrlApi}{Uri.EscapeDataString("perso@example.com")}/events?", calendrier.Requetes[^1].RequestUri!.AbsoluteUri);
+    }
+
+    [Theory]
+    [InlineData("calendrier-d-une-autre-personne@example.com")]
+    [InlineData("primary")]
+    [InlineData("")]
+    public async Task ChoisirCalendrierAsync_IdentifiantAbsentDeLaListe_InvalideEtRienEnregistre(string identifiant)
+    {
+        var (service, calendrier) = await AvecLiaison(calendrierChoisi: false, repondre: CalendriersDeLUtilisatrice);
+
+        var resultat = await service.ChoisirCalendrierAsync(CarnetDeTest.UserId, identifiant, CancellationToken.None);
+        var evenements = await service.GetEvenementsAsync(CarnetDeTest.UserId, Debut, Fin, CancellationToken.None);
+
+        Assert.Equal(StatutOperation.Invalide, resultat.Statut);
+        Assert.Equal(StatutOperation.Introuvable, evenements.Statut);
+        Assert.Single(calendrier.Requetes);
+    }
+
+    [Fact]
+    public async Task ChoisirCalendrierAsync_GoogleEnPanne_IndisponibleEtRienEnregistre()
+    {
+        var (service, _) = await AvecLiaison(calendrierChoisi: false, repondre: _ => new HttpResponseMessage(HttpStatusCode.BadGateway));
+
+        var resultat = await service.ChoisirCalendrierAsync(CarnetDeTest.UserId, CalendrierChoisi, CancellationToken.None);
+
+        Assert.Equal(StatutOperation.Indisponible, resultat.Statut);
+    }
+
+    [Fact]
+    public async Task GetEvenementsAsync_AgendaLie_LitLeCalendrierChoisiAvecLeJetonEtSansCleApi()
     {
         var (service, calendrier) = await AvecLiaison();
 
@@ -106,7 +218,7 @@ public class AgendaServiceTests
 
         Assert.Equal(StatutOperation.Succes, resultat.Statut);
         var requete = Assert.Single(calendrier.Requetes);
-        Assert.StartsWith($"{AgendaService.UrlApi}primary/events?", requete.RequestUri!.AbsoluteUri);
+        Assert.StartsWith($"{AgendaService.UrlApi}{Uri.EscapeDataString(CalendrierChoisi)}/events?", requete.RequestUri!.AbsoluteUri);
         Assert.Equal("Bearer", requete.Headers.Authorization!.Scheme);
         Assert.Equal(LiaisonAgendaDeTest.JetonAcces, requete.Headers.Authorization.Parameter);
         Assert.False(requete.Headers.Contains(AgendaService.EnteteCleApi));

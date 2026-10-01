@@ -8,7 +8,7 @@ namespace MonEndoVue.Server.Services.Agenda;
 
 /// <summary>
 /// Lecture de l'agenda Google de l'utilisatrice connectée, via l'API Calendar. Accès par la liaison OAuth de
-/// l'utilisatrice (calendrier principal, jeton d'accès) ou, à défaut et le temps de la transition, par la clé API et le
+/// l'utilisatrice (calendrier qu'elle a choisi, jeton d'accès) ou, à défaut et le temps de la transition, par la clé API et le
 /// calendrier de la configuration. Le calendrier est déduit de la session, jamais reçu du client.
 /// </summary>
 public class AgendaService(
@@ -20,7 +20,7 @@ public class AgendaService(
 {
     public const string UrlApi = "https://www.googleapis.com/calendar/v3/calendars/";
     public const string EnteteCleApi = "X-goog-api-key";
-    public const string CalendrierPrincipal = "primary";
+    public const string UrlListeCalendriers = "https://www.googleapis.com/calendar/v3/users/me/calendarList";
 
     /// <summary>Une vue mois de FullCalendar couvre au plus 6 semaines : au-delà, la demande est refusée.</summary>
     public static readonly TimeSpan PeriodeMax = TimeSpan.FromDays(62);
@@ -66,15 +66,87 @@ public class AgendaService(
                 resultat.Valeur!.Where(e => !e.JourneeEntiere).Take(NombreProchains).ToList());
     }
 
+    /// <summary>
+    /// Calendriers de l'utilisatrice lisibles (liste Google), le principal d'abord : de quoi choisir celui qui est lu. Limité à
+    /// la première page de Google (250 calendriers).
+    /// </summary>
+    public async Task<ResultatOperation<IReadOnlyList<CalendrierViewModel>>> ListerCalendriersAsync(
+        string userId, CancellationToken cancellationToken)
+    {
+        var jeton = await liaison.JetonAccesAsync(userId, cancellationToken);
+        if (jeton.Statut != StatutOperation.Succes)
+        {
+            return ResultatOperation<IReadOnlyList<CalendrierViewModel>>.Echec(
+                jeton.Statut, jeton.Statut == StatutOperation.Indisponible ? MessageIndisponible : null);
+        }
+
+        try
+        {
+            using var requete = new HttpRequestMessage(HttpMethod.Get,
+                $"{UrlListeCalendriers}?minAccessRole=reader&maxResults=250&fields=items(id,summary,summaryOverride,primary)");
+            requete.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", jeton.Valeur);
+            using var reponse = await httpClient.SendAsync(requete, cancellationToken);
+            if (!reponse.IsSuccessStatusCode)
+            {
+                logger.LogWarning("Google Calendar list request failed with status {StatusCode}", (int)reponse.StatusCode);
+                return ResultatOperation<IReadOnlyList<CalendrierViewModel>>.Echec(StatutOperation.Indisponible, MessageIndisponible);
+            }
+
+            var contenu = await reponse.Content.ReadFromJsonAsync<ReponseListeGoogle>(cancellationToken);
+            var calendriers = (contenu?.Items ?? [])
+                .Where(c => !string.IsNullOrEmpty(c.Id))
+                .Select(c => new CalendrierViewModel(
+                    c.Id!, c.SummaryOverride ?? c.Summary ?? c.Id!, c.Primary == true))
+                .OrderByDescending(c => c.Principal)
+                .ThenBy(c => c.Nom, StringComparer.CurrentCultureIgnoreCase)
+                .ToList();
+            return ResultatOperation<IReadOnlyList<CalendrierViewModel>>.Succes(calendriers);
+        }
+        catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException or System.Text.Json.JsonException)
+        {
+            if (cancellationToken.IsCancellationRequested)
+            {
+                throw;
+            }
+
+            logger.LogWarning("Google Calendar list request failed ({ExceptionType})", ex.GetType().Name);
+            return ResultatOperation<IReadOnlyList<CalendrierViewModel>>.Echec(StatutOperation.Indisponible, MessageIndisponible);
+        }
+    }
+
+    /// <summary>
+    /// Enregistre le calendrier choisi. L'identifiant reçu n'est jamais pris tel quel : il doit figurer dans la liste de
+    /// calendriers que Google renvoie pour cette utilisatrice.
+    /// </summary>
+    public async Task<ResultatOperation> ChoisirCalendrierAsync(string userId, string calendrierId, CancellationToken cancellationToken)
+    {
+        var calendriers = await ListerCalendriersAsync(userId, cancellationToken);
+        if (calendriers.Statut != StatutOperation.Succes)
+        {
+            return ResultatOperation.Echec(calendriers.Statut, calendriers.Message);
+        }
+
+        if (calendriers.Valeur!.All(c => c.Id != calendrierId))
+        {
+            return ResultatOperation.Echec(StatutOperation.Invalide, "Ce calendrier n'est pas disponible.");
+        }
+
+        return await liaison.EnregistrerCalendrierAsync(userId, calendrierId, cancellationToken);
+    }
+
     /// <summary>La liaison OAuth prime ; sans liaison, l'entrée de configuration (clé API) ; sinon Introuvable.</summary>
     private async Task<ResultatOperation<AccesAgenda>> AccesAsync(string userId, CancellationToken cancellationToken)
     {
         var jeton = await liaison.JetonAccesAsync(userId, cancellationToken);
         if (jeton.Statut == StatutOperation.Succes)
         {
-            return ResultatOperation<AccesAgenda>.Succes(new AccesAgenda(
-                CalendrierPrincipal,
-                r => r.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", jeton.Valeur)));
+            // Seul le calendrier choisi est lu : sans choix, aucun appel à Google pour des événements.
+            var choisi = await liaison.CalendrierChoisiAsync(userId, cancellationToken);
+            return choisi is null
+                ? ResultatOperation<AccesAgenda>.Echec(StatutOperation.Introuvable)
+                : ResultatOperation<AccesAgenda>.Succes(new AccesAgenda(
+                    choisi,
+                    r => r.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", jeton.Valeur)));
         }
 
         if (jeton.Statut == StatutOperation.Indisponible)
@@ -180,6 +252,14 @@ public class AgendaService(
             string.IsNullOrWhiteSpace(e.Location) ? null : e.Location,
             e.HtmlLink);
     }
+
+    private sealed record ReponseListeGoogle([property: JsonPropertyName("items")] List<CalendrierGoogle>? Items);
+
+    private sealed record CalendrierGoogle(
+        [property: JsonPropertyName("id")] string? Id,
+        [property: JsonPropertyName("summary")] string? Summary,
+        [property: JsonPropertyName("summaryOverride")] string? SummaryOverride,
+        [property: JsonPropertyName("primary")] bool? Primary);
 
     private sealed record ReponseGoogle(
         [property: JsonPropertyName("items")] List<EvenementGoogle>? Items,

@@ -8,7 +8,7 @@ import type { DonneesDouleurModification } from '@/features/douleurs/types/donne
 import type { AbonnementPush, Rappel, ReglageRappel, TypeRappel } from '@/features/parametres/types/notifications';
 import type { BilanQuotidien, BilanQuotidienSaisie, EmotionBilan } from '@/features/bilan-quotidien/types/bilan-quotidien';
 import type { HistoriqueBilans } from '@/features/bilan-quotidien/types/historique';
-import type { EvenementAgenda } from '@/features/schedule/types/agenda';
+import type { CalendrierAgenda, EvenementAgenda, StatutLiaisonAgenda } from '@/features/schedule/types/agenda';
 import type { Aujourdhui, BilanAujourdhui } from '@/features/accueil/types/aujourdhui';
 import type { EntreeHistoriqueTraitement, HistoriqueTraitement, JourHistoriqueTraitement, PrisePrevue, PriseSaisie, SeanceSaisie, Soin, Traitement, TraitementAuBesoin, TraitementsDuJour, TraitementSaisie } from '@/features/medicament/types/traitements';
 
@@ -388,6 +388,28 @@ class ApiService {
     /** Trois prochains rendez-vous à heure fixe, ou null si l'utilisatrice n'a pas d'agenda (404). */
     async getProchainsRendezVous(): Promise<EvenementAgenda[] | null> {
         return this.agendaOuNull('Agenda/prochains');
+    }
+
+    async getStatutLiaisonAgenda(): Promise<StatutLiaisonAgenda> {
+        return this.request('GET', 'Agenda/liaison');
+    }
+
+    /** Adresse d'autorisation de Google, où le client redirige le navigateur (le serveur pose le cookie d'état). */
+    async demarrerLiaisonAgenda(): Promise<{ url: string }> {
+        return this.request('POST', 'Agenda/liaison/demarrer');
+    }
+
+    /** Calendriers que l'utilisatrice peut choisir (liste de Google, via sa liaison). */
+    async getCalendriersAgenda(): Promise<CalendrierAgenda[]> {
+        return enTableau(await this.request<CalendrierAgenda[] | { $values: CalendrierAgenda[] }>('GET', 'Agenda/calendriers'));
+    }
+
+    async choisirCalendrierAgenda(id: string): Promise<void> {
+        await this.request('PUT', 'Agenda/calendrier', { id });
+    }
+
+    async delierAgenda(): Promise<void> {
+        await this.request('DELETE', 'Agenda/liaison');
     }
 
     private async agendaOuNull(url: string): Promise<EvenementAgenda[] | null> {

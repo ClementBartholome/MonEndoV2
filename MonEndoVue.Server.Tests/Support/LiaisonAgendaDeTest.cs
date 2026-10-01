@@ -31,9 +31,12 @@ public static class LiaisonAgendaDeTest
         Func<HttpRequestMessage, HttpResponseMessage>? repondre = null) =>
         new(repondre ?? (_ => Jetons()));
 
-    public static HttpResponseMessage Jetons(string? actualisation = JetonActualisation, int validite = 3600) =>
+    /// <summary>Les deux portées demandées à Google, telles qu'il les renvoie quand tout est accordé.</summary>
+    public static readonly string PorteesAccordees = string.Join(' ', GoogleOAuthClient.PorteesRequises);
+
+    public static HttpResponseMessage Jetons(string? actualisation = JetonActualisation, int validite = 3600, string? portee = null) =>
         Json(HttpStatusCode.OK,
-            $"{{\"access_token\":\"{JetonAcces}\",\"expires_in\":{validite}" +
+            $"{{\"access_token\":\"{JetonAcces}\",\"expires_in\":{validite},\"scope\":\"{portee ?? PorteesAccordees}\"" +
             (actualisation is null ? "" : $",\"refresh_token\":\"{actualisation}\"") + "}");
 
     public static HttpResponseMessage Erreur(string erreur) => Json(HttpStatusCode.BadRequest, $"{{\"error\":\"{erreur}\"}}");

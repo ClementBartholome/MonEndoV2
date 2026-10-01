@@ -103,7 +103,16 @@ modifiables, jamais `Entry(dto).State = Modified`, jamais de changement de `Carn
 - Le jeton d'actualisation est chiffré par Data Protection (`keys/` : les perdre oblige à relier ; la liaison illisible est supprimée)
   et le jeton d'accès mis en cache mémoire. `AgendaService` : liaison OAuth (calendrier `primary`, `Authorization: Bearer`), sinon repli sur la configuration.
   Google qui signale `invalid_grant` (accord retiré) supprime la liaison ; une panne de Google ne la supprime pas.
-- Portée `calendar.events.readonly` (la plus étroite suffisante). Le code arrive dans l'URL du callback : non journalisé par l'app,
+- **Un seul calendrier est lu : celui que l'utilisatrice choisit** (`LiaisonAgenda.CalendrierId`, nul tant qu'elle n'a pas choisi, et remis
+  à nul à chaque nouvelle liaison, le compte Google pouvant changer). Sans choix, `AgendaService` répond Introuvable **sans appeler
+  Google** (pas de repli sur la configuration). `GET Agenda/calendriers` liste les calendriers (`calendarList`), `PUT Agenda/calendrier`
+  enregistre le choix **après l'avoir recherché dans cette liste** (un identifiant qui n'y figure pas est refusé : jamais pris tel quel du client).
+- `GoogleOAuth:RetourApplication` (optionnelle, dev seulement) : adresse absolue de `/parametres` du front quand il n'est pas servi par l'API (Vite sur 5173) ;
+  absente, le callback redirige vers le chemin relatif `/parametres`.
+- Portées `calendar.events.readonly` et `calendar.calendarlist.readonly` (les plus étroites suffisantes) : Google permet de n'en accorder qu'une
+  partie, la liaison est donc refusée (et l'accord révoqué) si l'une manque dans la réponse de l'échange du code.
+- `NavigationVersSpa` exempte `/Agenda/liaison/callback` : le retour de Google est une navigation `Accept: text/html` vers l'API, qui répond elle-même
+  par une redirection vers Paramètres (sans cette exemption, il serait réécrit vers la page d'entrée et la liaison échouerait sans bruit). Le code arrive dans l'URL du callback : non journalisé par l'app,
   mais présent dans le journal d'accès nginx (à usage unique et lié au PKCE, donc inutilisable une fois échangé).
 - Suppression du compte : `RevoquerPourSuppressionAsync` puis suppression de la ligne ; export : date de liaison seulement, jamais de jeton.
 

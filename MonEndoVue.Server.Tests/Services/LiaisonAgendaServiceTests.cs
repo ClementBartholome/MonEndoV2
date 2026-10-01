@@ -63,7 +63,7 @@ public sealed class LiaisonAgendaServiceTests : IDisposable
         Assert.StartsWith(GoogleOAuthClient.UrlAutorisation + "?", debut.UrlAutorisation);
         Assert.Equal("client-de-test", Parametre(debut.UrlAutorisation, "client_id"));
         Assert.Equal("https://monendo.test/Agenda/liaison/callback", Parametre(debut.UrlAutorisation, "redirect_uri"));
-        Assert.Equal(GoogleOAuthClient.Portee, Parametre(debut.UrlAutorisation, "scope"));
+        Assert.Equal(LiaisonAgendaDeTest.PorteesAccordees, Parametre(debut.UrlAutorisation, "scope"));
         Assert.Equal("code", Parametre(debut.UrlAutorisation, "response_type"));
         Assert.Equal("offline", Parametre(debut.UrlAutorisation, "access_type"));
         Assert.Equal("S256", Parametre(debut.UrlAutorisation, "code_challenge_method"));
@@ -287,6 +287,70 @@ public sealed class LiaisonAgendaServiceTests : IDisposable
     }
 
     [Fact]
+    public async Task FinaliserAsync_UnePorteeDecocheeChezGoogle_RefuseRevoqueEtNEnregistreRien()
+    {
+        var google = LiaisonAgendaDeTest.FauxGoogle(_ =>
+            LiaisonAgendaDeTest.Jetons(portee: GoogleOAuthClient.PorteeEvenements));
+        var service = Service(google);
+
+        var resultat = await Lier(service);
+
+        Assert.Equal(StatutOperation.Invalide, resultat.Statut);
+        Assert.Empty(_carnet.Context.LiaisonsAgenda);
+        Assert.Equal(GoogleOAuthClient.UrlRevocation, google.Requetes[^1].RequestUri!.ToString());
+        Assert.Equal($"token={LiaisonAgendaDeTest.JetonActualisation}", google.Corps[^1]);
+    }
+
+    [Fact]
+    public async Task FinaliserAsync_ReponseSansPortees_Refuse()
+    {
+        var service = Service(LiaisonAgendaDeTest.FauxGoogle(_ => LiaisonAgendaDeTest.Jetons(portee: "")));
+
+        var resultat = await Lier(service);
+
+        Assert.Equal(StatutOperation.Invalide, resultat.Statut);
+        Assert.Empty(_carnet.Context.LiaisonsAgenda);
+    }
+
+    [Fact]
+    public async Task FinaliserAsync_NouvelleLiaison_OublieLeCalendrierChoisi()
+    {
+        var service = Service(LiaisonAgendaDeTest.FauxGoogle());
+        await Lier(service);
+        await service.EnregistrerCalendrierAsync(UserId, "ancien@example.com", CancellationToken.None);
+
+        await Lier(service);
+
+        Assert.Null(await service.CalendrierChoisiAsync(UserId, CancellationToken.None));
+    }
+
+    [Fact]
+    public async Task EnregistrerCalendrierAsync_Liee_EnregistreLeChoixDeCetteUtilisatriceSeulement()
+    {
+        var service = Service(LiaisonAgendaDeTest.FauxGoogle());
+        await Lier(service);
+        await Lier(service, CarnetDeTest.AutreUserId);
+
+        var resultat = await service.EnregistrerCalendrierAsync(UserId, "rdv@example.com", CancellationToken.None);
+
+        Assert.Equal(StatutOperation.Succes, resultat.Statut);
+        Assert.Equal("rdv@example.com", await service.CalendrierChoisiAsync(UserId, CancellationToken.None));
+        Assert.Null(await service.CalendrierChoisiAsync(CarnetDeTest.AutreUserId, CancellationToken.None));
+        Assert.Equal("rdv@example.com", (await service.StatutAsync(UserId, CancellationToken.None)).CalendrierId);
+    }
+
+    [Fact]
+    public async Task EnregistrerCalendrierAsync_SansLiaison_IntrouvableEtRienEnregistre()
+    {
+        var service = Service(LiaisonAgendaDeTest.FauxGoogle());
+
+        var resultat = await service.EnregistrerCalendrierAsync(UserId, "rdv@example.com", CancellationToken.None);
+
+        Assert.Equal(StatutOperation.Introuvable, resultat.Statut);
+        Assert.Empty(_carnet.Context.LiaisonsAgenda);
+    }
+
+    [Fact]
     public async Task DelierAsync_Liee_SupprimeLaLiaisonEtRevoqueLAccord()
     {
         var google = LiaisonAgendaDeTest.FauxGoogle();
@@ -364,7 +428,7 @@ public sealed class LiaisonAgendaServiceTests : IDisposable
         var avec = await service.StatutAsync(CarnetDeTest.AutreUserId, CancellationToken.None);
         var nonConfiguree = await Service(LiaisonAgendaDeTest.FauxGoogle(), configuree: false).StatutAsync(UserId, CancellationToken.None);
 
-        Assert.Equal(new StatutLiaison(true, false, null), sans);
+        Assert.Equal(new StatutLiaison(true, false, null, null), sans);
         Assert.True(avec.Liee);
         Assert.Equal(AgendaDeTest.Maintenant.UtcDateTime, avec.LieeLe);
         Assert.False(nonConfiguree.Disponible);

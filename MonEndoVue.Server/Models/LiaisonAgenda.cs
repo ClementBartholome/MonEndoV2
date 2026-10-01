@@ -11,4 +11,10 @@ public class LiaisonAgenda
     public string JetonActualisationProtege { get; set; } = string.Empty;
 
     public DateTime LieeLe { get; set; }
+
+    /// <summary>
+    /// Calendrier choisi par l'utilisatrice : le seul qui est lu. Null tant qu'elle n'en a pas choisi (rien n'est alors lu),
+    /// et à nouveau après une nouvelle liaison, le compte Google pouvant être un autre.
+    /// </summary>
+    public string? CalendrierId { get; set; }
 }

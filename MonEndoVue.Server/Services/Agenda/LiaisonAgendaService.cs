@@ -11,7 +11,7 @@ namespace MonEndoVue.Server.Services.Agenda;
 /// <summary>Adresse d'autorisation Google et cookie d'état à poser dans le navigateur.</summary>
 public sealed record DebutLiaison(string UrlAutorisation, string CookieEtat);
 
-public sealed record StatutLiaison(bool Disponible, bool Liee, DateTime? LieeLe);
+public sealed record StatutLiaison(bool Disponible, bool Liee, DateTime? LieeLe, string? CalendrierId);
 
 /// <summary>
 /// Liaison de l'agenda Google de l'utilisatrice connectée : flux OAuth (code + PKCE, état lié au navigateur), jeton
@@ -36,7 +36,7 @@ public class LiaisonAgendaService(
     public async Task<StatutLiaison> StatutAsync(string userId, CancellationToken ct)
     {
         var liaison = await LiaisonDeAsync(userId, ct);
-        return new StatutLiaison(options.Value.EstConfiguree, liaison is not null, liaison?.LieeLe);
+        return new StatutLiaison(options.Value.EstConfiguree, liaison is not null, liaison?.LieeLe, liaison?.CalendrierId);
     }
 
     public async Task<ResultatOperation<DebutLiaison>> DemarrerAsync(string userId, CancellationToken ct)
@@ -82,6 +82,14 @@ public class LiaisonAgendaService(
 
         var (jetons, _) = await google.EchangerCodeAsync(code, etat.VerificateurPkce, ct);
         if (jetons is null) return ResultatOperation.Echec(StatutOperation.Indisponible, MessageEchec);
+        if (!GoogleOAuthClient.PorteesAccordees(jetons.Portee))
+        {
+            // Une permission décochée chez Google : sans elle, impossible de lister puis lire le calendrier choisi.
+            logger.LogInformation("Google Calendar linking not completed (partial scopes granted)");
+            await google.RevoquerAsync(jetons.JetonActualisation ?? jetons.JetonAcces, ct);
+            return ResultatOperation.Echec(StatutOperation.Invalide, MessageEchec);
+        }
+
         if (string.IsNullOrEmpty(jetons.JetonActualisation))
         {
             logger.LogWarning("Google Calendar linking failed: no refresh token returned");
@@ -98,11 +106,28 @@ public class LiaisonAgendaService(
 
         liaison.JetonActualisationProtege = ProtecteurJeton.Protect(jetons.JetonActualisation);
         liaison.LieeLe = horloge.GetUtcNow().UtcDateTime;
+        // Nouveau compte Google possible : l'ancien choix n'a plus de sens, rien n'est lu avant qu'elle en fasse un.
+        liaison.CalendrierId = null;
         await context.SaveChangesAsync(ct);
         MemoriserJetonAcces(carnetId.Value, jetons);
 
         if (ancienJeton is not null) await google.RevoquerAsync(ancienJeton, ct);
         logger.LogInformation("Google Calendar linked for carnet {CarnetSanteId}", carnetId);
+        return ResultatOperation.Succes();
+    }
+
+    /// <summary>Calendrier choisi par l'utilisatrice, ou null (pas de liaison, ou aucun choix encore).</summary>
+    public async Task<string?> CalendrierChoisiAsync(string userId, CancellationToken ct) =>
+        (await LiaisonDeAsync(userId, ct))?.CalendrierId;
+
+    /// <summary>Enregistre le calendrier choisi ; l'appelant a déjà vérifié qu'il figure dans la liste de l'utilisatrice.</summary>
+    public async Task<ResultatOperation> EnregistrerCalendrierAsync(string userId, string calendrierId, CancellationToken ct)
+    {
+        var liaison = await LiaisonDeAsync(userId, ct);
+        if (liaison is null) return ResultatOperation.Echec(StatutOperation.Introuvable);
+
+        liaison.CalendrierId = calendrierId;
+        await context.SaveChangesAsync(ct);
         return ResultatOperation.Succes();
     }
 

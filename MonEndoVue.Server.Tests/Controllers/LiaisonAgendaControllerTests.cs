@@ -29,6 +29,21 @@ public sealed class LiaisonAgendaControllerTests : IDisposable
         };
     }
 
+    [Fact]
+    public async Task Callback_RetourApplicationConfigure_RedirigeVersCetteAdresse()
+    {
+        var options = Microsoft.Extensions.Options.Options.Create(new GoogleOAuthOptions { RetourApplication = "https://localhost:5173/parametres" });
+        var controller = new LiaisonAgendaController(
+            LiaisonAgendaDeTest.Service(_carnet.Context, _google), new HorlogeFixe(AgendaDeTest.Maintenant), options)
+        {
+            ControllerContext = CarnetDeTest.ContexteAnonyme(),
+        };
+
+        var resultat = await controller.Callback(null, null, "access_denied", CancellationToken.None);
+
+        Assert.Equal("https://localhost:5173/parametres?agenda=echec", Assert.IsType<RedirectResult>(resultat).Url);
+    }
+
     private static int? StatutDe(IActionResult resultat) => (resultat as IStatusCodeActionResult)?.StatusCode;
 
     private static string EtatDe(string url) => Uri.UnescapeDataString(url.Split("state=")[1].Split('&')[0]);

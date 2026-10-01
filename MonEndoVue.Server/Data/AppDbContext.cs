@@ -157,6 +157,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : IdentityDbCo
                 .WithMany()
                 .HasForeignKey(l => l.CarnetSanteId)
                 .OnDelete(DeleteBehavior.Cascade);
+            entity.Property(l => l.CalendrierId).HasMaxLength(1024);
         });
 
         modelBuilder.Entity<EpisodeAcne>(entity =>

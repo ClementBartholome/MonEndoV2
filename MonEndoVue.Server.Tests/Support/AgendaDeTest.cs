@@ -37,6 +37,17 @@ public static class AgendaDeTest
                 "application/json"),
         };
 
+    /// <summary>Réponse de la liste des calendriers (calendarList.list) ; chaque entrée : identifiant, nom, principal ou non.</summary>
+    public static HttpResponseMessage ReponseCalendriers(params (string Id, string Nom, bool Principal)[] calendriers) =>
+        new(HttpStatusCode.OK)
+        {
+            Content = new StringContent(
+                "{\"items\":[" + string.Join(',', calendriers.Select(c =>
+                    $"{{\"id\":\"{c.Id}\",\"summary\":\"{c.Nom}\"" + (c.Principal ? ",\"primary\":true" : "") + "}")) + "]}",
+                Encoding.UTF8,
+                "application/json"),
+        };
+
     public static string Evenement(string id, string? titre, string debut, bool journeeEntiere = false, string? lieu = null)
     {
         var cle = journeeEntiere ? "date" : "dateTime";

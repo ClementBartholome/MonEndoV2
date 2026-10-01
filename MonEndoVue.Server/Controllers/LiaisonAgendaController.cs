@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.Extensions.Options;
 using MonEndoVue.Server.Services;
 using MonEndoVue.Server.Services.Agenda;
 using MonEndoVue.Server.Services.Consentement;
@@ -14,10 +15,12 @@ namespace MonEndoVue.Server.Controllers;
 /// </summary>
 [Route("Agenda/liaison")]
 [ApiController]
-public class LiaisonAgendaController(LiaisonAgendaService service, TimeProvider horloge) : ControllerBase
+public class LiaisonAgendaController(LiaisonAgendaService service, TimeProvider horloge, IOptions<GoogleOAuthOptions>? options = null) : ControllerBase
 {
     public const string CookieEtat = "monendo_liaison_agenda";
     private const string PageRetour = "/parametres";
+
+    private string PageParametres => string.IsNullOrWhiteSpace(options?.Value.RetourApplication) ? PageRetour : options.Value.RetourApplication;
 
     [HttpGet]
     [Authorize]
@@ -46,7 +49,7 @@ public class LiaisonAgendaController(LiaisonAgendaService service, TimeProvider 
         var resultat = await service.FinaliserAsync(Request.Cookies[CookieEtat], state, code, error, cancellationToken);
         // État à usage unique, quelle que soit l'issue.
         Response.Cookies.Delete(CookieEtat, OptionsCookie(null));
-        return Redirect($"{PageRetour}?agenda={(resultat.Statut == StatutOperation.Succes ? "lie" : "echec")}");
+        return Redirect($"{PageParametres}?agenda={(resultat.Statut == StatutOperation.Succes ? "lie" : "echec")}");
     }
 
     [HttpDelete]

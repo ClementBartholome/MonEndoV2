@@ -11,6 +11,12 @@ versions en [SemVer](https://semver.org/lang/fr/) (voir la section Déploiement 
   pour décrire ce qui s'est passé. L'adresse est aussi affichée, avec un bouton « Copier », si ton appareil n'a pas de
   messagerie. Rien de ton suivi n'est joint ; la page rappelle qu'une capture d'écran peut montrer tes données.
 
+- Agenda Google : depuis les Paramètres, tu peux lier ton compte Google (connexion Google, sans mot de passe à donner à MonEndo)
+  puis choisir **le calendrier à afficher**, par exemple un calendrier réservé à tes rendez-vous médicaux. MonEndo ne lit que ce
+  calendrier, en lecture seule ; ton prochain rendez-vous apparaît sur l'accueil et l'ensemble sur la page Agenda. Tu peux changer de
+  calendrier ou délier ton agenda à tout moment (l'accès est alors retiré chez Google). Google affiche d'abord un écran « application
+  non validée » : l'application l'explique avant de t'y envoyer.
+
 ### Modifié
 - Politique de confidentialité mise à jour (1er octobre 2026) : elle explique ce que devient un e-mail envoyé à
   l'éditeur (conservé au plus 12 mois, utilisé seulement pour te répondre).

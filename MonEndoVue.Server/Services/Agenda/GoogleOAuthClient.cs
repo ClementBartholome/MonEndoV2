@@ -5,7 +5,8 @@ using Microsoft.Extensions.Options;
 namespace MonEndoVue.Server.Services.Agenda;
 
 /// <summary>Jetons renvoyés par Google ; le jeton d'actualisation n'est présent qu'à l'échange du code.</summary>
-public sealed record JetonsGoogle(string JetonAcces, string? JetonActualisation, TimeSpan Validite);
+/// <param name="Portee">Portées réellement accordées (liste séparée par des espaces) : l'utilisatrice peut en décocher à l'écran de Google.</param>
+public sealed record JetonsGoogle(string JetonAcces, string? JetonActualisation, TimeSpan Validite, string? Portee = null);
 
 /// <summary>Échec d'un appel de jeton : <see cref="Revoque"/> quand Google indique que l'accord n'est plus valide.</summary>
 public sealed record EchecJetonGoogle(bool Revoque);
@@ -17,8 +18,17 @@ public class GoogleOAuthClient(HttpClient httpClient, IOptions<GoogleOAuthOption
     public const string UrlJeton = "https://oauth2.googleapis.com/token";
     public const string UrlRevocation = "https://oauth2.googleapis.com/revoke";
 
-    /// <summary>Lecture des événements uniquement : la portée la plus étroite qui suffit à lister ceux du calendrier principal.</summary>
-    public const string Portee = "https://www.googleapis.com/auth/calendar.events.readonly";
+    /// <summary>Lecture des événements d'un calendrier : la portée la plus étroite qui suffit à les lister.</summary>
+    public const string PorteeEvenements = "https://www.googleapis.com/auth/calendar.events.readonly";
+
+    /// <summary>Lecture de la liste des calendriers (identifiant et nom), pour que l'utilisatrice choisisse celui qui est lu.</summary>
+    public const string PorteeListeCalendriers = "https://www.googleapis.com/auth/calendar.calendarlist.readonly";
+
+    public static readonly string[] PorteesRequises = [PorteeEvenements, PorteeListeCalendriers];
+
+    /// <summary>Vrai si les deux portées ont été accordées (Google permet de n'en accepter qu'une partie).</summary>
+    public static bool PorteesAccordees(string? portee) =>
+        portee is not null && PorteesRequises.All(requise => portee.Split(' ').Contains(requise));
 
     public string UrlAutorisationPour(string etat, string defiPkce)
     {
@@ -27,7 +37,7 @@ public class GoogleOAuthClient(HttpClient httpClient, IOptions<GoogleOAuthOption
             ["client_id"] = options.Value.ClientId!,
             ["redirect_uri"] = options.Value.RedirectUri!,
             ["response_type"] = "code",
-            ["scope"] = Portee,
+            ["scope"] = string.Join(' ', PorteesRequises),
             ["state"] = etat,
             ["code_challenge"] = defiPkce,
             ["code_challenge_method"] = "S256",
@@ -91,7 +101,7 @@ public class GoogleOAuthClient(HttpClient httpClient, IOptions<GoogleOAuthOption
             var contenu = await reponse.Content.ReadFromJsonAsync<ReponseJeton>(ct);
             return string.IsNullOrEmpty(contenu?.AccessToken)
                 ? (null, new EchecJetonGoogle(false))
-                : (new JetonsGoogle(contenu.AccessToken, contenu.RefreshToken, TimeSpan.FromSeconds(contenu.ExpiresIn)), null);
+                : (new JetonsGoogle(contenu.AccessToken, contenu.RefreshToken, TimeSpan.FromSeconds(contenu.ExpiresIn), contenu.Scope), null);
         }
         catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException or System.Text.Json.JsonException && !ct.IsCancellationRequested)
         {
@@ -115,7 +125,8 @@ public class GoogleOAuthClient(HttpClient httpClient, IOptions<GoogleOAuthOption
     private sealed record ReponseJeton(
         [property: JsonPropertyName("access_token")] string? AccessToken,
         [property: JsonPropertyName("refresh_token")] string? RefreshToken,
-        [property: JsonPropertyName("expires_in")] int ExpiresIn);
+        [property: JsonPropertyName("expires_in")] int ExpiresIn,
+        [property: JsonPropertyName("scope")] string? Scope = null);
 
     private sealed record ReponseErreur([property: JsonPropertyName("error")] string? Error);
 }
