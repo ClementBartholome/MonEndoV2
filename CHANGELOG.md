@@ -5,6 +5,16 @@ versions en [SemVer](https://semver.org/lang/fr/) (voir la section Déploiement 
 
 ## [1.4.0] - non publiée
 
+### Ajouté
+- Page « Une suggestion ? Un bug ? » (menu « Plus » : « Suggestion ou bug ») : deux boutons qui préparent un e-mail à
+  l'éditeur, avec l'objet, la page d'où tu viens, la version de MonEndo et ton appareil déjà indiqués, et des conseils
+  pour décrire ce qui s'est passé. L'adresse est aussi affichée, avec un bouton « Copier », si ton appareil n'a pas de
+  messagerie. Rien de ton suivi n'est joint ; la page rappelle qu'une capture d'écran peut montrer tes données.
+
+### Modifié
+- Politique de confidentialité mise à jour (1er octobre 2026) : elle explique ce que devient un e-mail envoyé à
+  l'éditeur (conservé au plus 12 mois, utilisé seulement pour te répondre).
+
 ### Corrigé
 - Actualiser la page Cycle ou la page Activité affichait un message technique à la place de la page.
 - Après une mise à jour de MonEndo, une indisponibilité de quelques secondes ne déconnecte plus : la session est

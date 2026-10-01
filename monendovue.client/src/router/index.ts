@@ -15,6 +15,7 @@ import RegisterPage from "@/features/auth/pages/RegisterPage.vue";
 import CyclePage from "@/features/cycle/pages/CyclePage.vue";
 import PolitiqueConfidentialitePage from "@/features/legal/pages/PolitiqueConfidentialitePage.vue";
 import MentionsLegalesPage from "@/features/legal/pages/MentionsLegalesPage.vue";
+import RetoursPage from '@/features/retours/pages/RetoursPage.vue'
 import ConsentementPage from "@/features/legal/pages/ConsentementPage.vue";
 
 const router = createRouter({
@@ -86,6 +87,11 @@ const router = createRouter({
             path: '/cycle',
             name: 'cycle',
             component: CyclePage
+        },
+        {
+            path: '/suggestions',
+            name: 'suggestions',
+            component: RetoursPage
         },
         {
             path: '/confidentialite',

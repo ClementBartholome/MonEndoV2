@@ -34,6 +34,7 @@ export const navigationSecondaire: EntreeNavigation[] = [
     { libelle: 'Activité', icone: 'directions_run', vers: '/activite', detail: 'Séances et types d\'activité', teinte: 'bilan' },
     { libelle: 'Préparer un rendez-vous', icone: 'picture_as_pdf', vers: '/export', detail: 'Synthèse PDF pour la consultation', teinte: 'neutre' },
     { libelle: 'Transit', icone: 'gastroenterology', vers: '/transit', detail: 'Ancien suivi, en lecture', teinte: 'neutre' },
+    { libelle: 'Suggestion ou bug', icone: 'feedback', vers: '/suggestions', detail: 'Écrire à l\'éditeur', teinte: 'symptome' },
 ];
 
 export const navigationCompte: EntreeNavigation = { libelle: 'Paramètres', icone: 'settings', vers: '/parametres' };
