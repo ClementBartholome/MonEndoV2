@@ -94,6 +94,10 @@ dotnet ef migrations add NomEnPascalCase --project MonEndoVue.Server
   rubrique, prises des traitements, règles, détail jour par jour, **sans interprétation**). Période 1 mois / 3 mois /
   libre, rubriques au choix, « Mes questions » (texte libre gardé sur l'appareil, jamais envoyé, en première page).
   `CarnetSanteController` et ses vues (carnet par id, dernières entrées, export du mois) ont été retirés : plus aucun appel client.
+- Page « Une suggestion ? Un bug ? » `/suggestions` (`features/retours/`, entrée « Suggestion ou bug » du menu « Plus ») : de
+  simples liens `mailto:` vers l'adresse de l'éditeur (`features/legal/config/editeur.ts`), objet et corps préremplis
+  avec la page d'origine, la version et l'appareil ; aucun formulaire, rien stocké côté serveur. Les e-mails reçus sont
+  décrits dans la politique de confidentialité (conservation 12 mois au plus).
 - Pages publiques (sans compte, `meta: { public: true }` dans le routeur) : connexion, inscription, politique de
   confidentialité `/confidentialite` et mentions légales `/mentions-legales` (`features/legal/`). **Consentement explicite**
   aux données de santé (`ApplicationUser.ConsentementDonneesSanteLe`, version de la politique acceptée) : case à l'inscription,
