@@ -206,6 +206,9 @@ lecture seule (liste par jour, `SelecteurMois`, suppression en deux temps), plus
 - Page Agenda (`features/schedule/`, `useAgenda`) : états `chargement` / `non-lie` / `sans-calendrier` / `indisponible` / `pret` (le statut de la liaison décide avant tout
   appel d'événements) ; liste « à venir » par fenêtres de 62 jours (maximum accepté par le serveur), « Voir plus loin » ajoute la suivante. Plus de FullCalendar :
   la grille du mois est dessinée par `CalendrierMois`. L'export lit `history.state` (`rdv`, `depuis`) à l'arrivée depuis l'agenda.
+- Parcours d'arrivée : les deux drapeaux (`monendo-deja-venue`, `monendo-premiers-pas`) sont dans `features/auth/utils/parcours.ts`, dont les accès au `localStorage`
+  tolèrent un stockage indisponible. Le routeur ramène vers `bienvenue` ou `login` selon `dejaVenue()` ; `scrollBehavior` ouvre chaque page en haut.
+  Les champs d'arrivée passent par `ChampTexte` (libellé, erreur liée au champ, œil du mot de passe) ; la case de consentement ouvre la politique dans un autre onglet.
 - Session sans consentement (`user.consentementAJour === false`, ou 403 `consentement-requis` de l'API traité dans
   `apiService`) : seule `/consentement` est accessible (avec les pages publiques). `meta: { sansNavigation: true }` masque
   la navigation.

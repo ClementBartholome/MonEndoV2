@@ -6,6 +6,10 @@ versions en [SemVer](https://semver.org/lang/fr/) (voir la section Déploiement 
 ## [1.4.0] - non publiée
 
 ### Ajouté
+- Accueil des nouvelles utilisatrices : une page de bienvenue (« Ta douleur, noir sur blanc. ») pour une première visite, une inscription
+  repensée (les engagements sur tes données avant la case de consentement, règles du mot de passe cochées pendant la saisie, œil pour
+  l'afficher, messages d'erreur clairs et au bon endroit), puis une étape facultative pour activer le rappel du bilan du soir (sur iPhone,
+  elle explique d'abord l'installation sur l'écran d'accueil) et une carte « Pour bien démarrer » sur l'accueil, que l'on peut fermer.
 - Page « Une suggestion ? Un bug ? » (menu « Plus » : « Suggestion ou bug ») : deux boutons qui préparent un e-mail à
   l'éditeur, avec l'objet, la page d'où tu viens, la version de MonEndo et ton appareil déjà indiqués, et des conseils
   pour décrire ce qui s'est passé. L'adresse est aussi affichée, avec un bouton « Copier », si ton appareil n'a pas de
@@ -22,6 +26,7 @@ versions en [SemVer](https://semver.org/lang/fr/) (voir la section Déploiement 
   questions prêtes à être saisies. Rien du rendez-vous n'apparaît dans l'adresse de la page.
 
 ### Modifié
+- Page de connexion refaite dans le même style ; les pages s'ouvrent désormais en haut de l'écran au lieu de garder le défilement de la précédente.
 - Page Agenda repensée : la liste des rendez-vous à venir, regroupés par jour (demain, cette semaine, plus tard), remplace le calendrier
   d'origine ; chaque rendez-vous s'ouvre dans un panneau (lieu, itinéraire, lien vers Google Agenda). Le calendrier du mois, plus lisible
   sur téléphone, devient une vue secondaire. L'Agenda a sa place dans le menu « Plus » et l'accueil y renvoie. Des messages clairs

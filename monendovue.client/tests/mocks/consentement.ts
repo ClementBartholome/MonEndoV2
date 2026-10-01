@@ -10,7 +10,9 @@ export function simulerConsentement(serveur: FauxServeur) {
     .on('POST', /^Account\/register$/, ({ corps }) => (corps?.consentementDonneesSante
       ? { body: { userName: corps.email, carnetSanteId: CARNET_ID, tokenExpiry: JETON_LOINTAIN, consentementAJour: true } }
       : { status: 400, body: { $values: ['Ton accord est nécessaire pour créer un compte.'] } }))
-    .on('POST', /^Account\/consentement$/, () => ({ body: { tokenExpiry: JETON_LOINTAIN, consentementAJour: true } }));
+    .on('POST', /^Account\/consentement$/, () => ({ body: { tokenExpiry: JETON_LOINTAIN, consentementAJour: true } }))
+    // Notifications non configurées : l'étape « rappel » qui suit l'inscription se passe d'elle-même.
+    .on('GET', /^Notifications\/cle-publique$/, () => ({ status: 404 }));
 }
 
 /** Refus de l'API pour un compte sans consentement à jour (`ExigeConsentementFilter`). */

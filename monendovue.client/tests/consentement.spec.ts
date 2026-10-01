@@ -9,8 +9,11 @@ test.describe('Consentement aux données de santé', () => {
     await consentementPage.ouvrirInscription();
     await consentementPage.remplirIdentifiants('nouvelle@test.local', 'MotDePasse1!');
 
+    // Jamais cochée d'avance ; sans l'accord, rien n'est envoyé et la case le dit.
     await expect(consentementPage.caseAccord).not.toBeChecked();
-    await expect(consentementPage.boutonInscription).toBeDisabled();
+    await consentementPage.boutonInscription.click();
+    await expect(page.getByText('Coche cette case pour créer ton compte.')).toBeVisible();
+    expect(serveur.appelsVers('POST', /^Account\/register$/)).toHaveLength(0);
 
     await consentementPage.caseAccord.check();
     await consentementPage.boutonInscription.click();

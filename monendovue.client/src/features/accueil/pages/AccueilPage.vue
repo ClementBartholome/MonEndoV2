@@ -14,6 +14,8 @@
       </div>
     </header>
 
+    <CarteDemarrage v-if="premiersPas" @masquer="masquerPremiersPas"/>
+
     <div v-if="chargement" class="flex flex-col gap-3.5" aria-busy="true" aria-label="Chargement de l'accueil">
       <Skeleton class="h-40 rounded-carte"/>
       <Skeleton class="h-28 rounded-carte"/>
@@ -38,7 +40,7 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted } from 'vue';
+import { onMounted, ref } from 'vue';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { Button } from '@/shared/components/ui/button';
@@ -47,13 +49,22 @@ import { useToast } from '@/shared/components/ui/toast';
 import { materialSymbols } from '@/shared/config/materialSymbols';
 import type { PrisePrevue } from '@/features/medicament/types/traitements';
 import { heureAffichee } from '@/features/medicament/utils/prises';
+import { premiersPasActifs, terminerPremiersPas } from '@/features/auth/utils/parcours';
 import CarteBilanDuJour from '../components/CarteBilanDuJour.vue';
+import CarteDemarrage from '../components/CarteDemarrage.vue';
 import CarteTraitementsDuJour from '../components/CarteTraitementsDuJour.vue';
 import TuilesAjout from '../components/TuilesAjout.vue';
 import CarteRendezVous from '../components/CarteRendezVous.vue';
 import CarteSemaine from '../components/CarteSemaine.vue';
 import { useAujourdhui } from '../composables/useAujourdhui';
 const { toast } = useToast();
+
+/** « Pour bien démarrer » : posée à l'inscription, retirée dès qu'on s'en sert ou qu'on la ferme. */
+const premiersPas = ref(premiersPasActifs());
+function masquerPremiersPas() {
+  terminerPremiersPas();
+  premiersPas.value = false;
+}
 const { aujourdhui, prochainRendezVous, chargement, erreur, priseEnCours, phrases, charger, prendre } = useAujourdhui();
 
 const jour = format(new Date(), 'EEEE d MMMM', { locale: fr });
