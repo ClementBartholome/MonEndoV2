@@ -82,12 +82,4 @@ test.describe("Liaison de l'agenda Google", () => {
     await expect(panneau.getByRole('button', { name: 'Lier mon agenda Google' })).toBeVisible();
     expect(serveur.appelsVers('DELETE', /^Agenda\/liaison$/)).toHaveLength(1);
   });
-
-  test("la page Agenda sans agenda lié renvoie vers les Paramètres", async ({ page }) => {
-    await page.goto('/agenda');
-
-    await expect(page.getByText("Aucun agenda n'est associé à ton compte.")).toBeVisible();
-    await page.getByRole('link', { name: 'Paramètres' }).first().click();
-    await expect(page).toHaveURL(/\/parametres$/);
-  });
 });

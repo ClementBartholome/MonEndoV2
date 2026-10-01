@@ -109,6 +109,7 @@ modifiables, jamais `Entry(dto).State = Modified`, jamais de changement de `Carn
   enregistre le choix **après l'avoir recherché dans cette liste** (un identifiant qui n'y figure pas est refusé : jamais pris tel quel du client).
 - `GoogleOAuth:RetourApplication` (optionnelle, dev seulement) : adresse absolue de `/parametres` du front quand il n'est pas servi par l'API (Vite sur 5173) ;
   absente, le callback redirige vers le chemin relatif `/parametres`.
+- `GET Agenda/precedent?avant=` : dernier rendez-vous à heure fixe commencé avant la date (un an en arrière au plus, liste de zéro ou un élément) ; sert à régler « Préparer ce rendez-vous ».
 - Portées `calendar.events.readonly` et `calendar.calendarlist.readonly` (les plus étroites suffisantes) : Google permet de n'en accorder qu'une
   partie, la liaison est donc refusée (et l'accord révoqué) si l'une manque dans la réponse de l'échange du code.
 - `NavigationVersSpa` exempte `/Agenda/liaison/callback` : le retour de Google est une navigation `Accept: text/html` vers l'API, qui répond elle-même
