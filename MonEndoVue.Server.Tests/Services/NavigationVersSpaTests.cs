@@ -47,6 +47,8 @@ public class NavigationVersSpaTests
 
     [Theory]
     [InlineData("/health")]
+    [InlineData("/Agenda/liaison/callback")]
+    [InlineData("/agenda/liaison/callback")]
     [InlineData("/swagger/index.html")]
     [InlineData("/assets/index-abc.js")]
     public void Appliquer_CheminDuServeurOuFichier_NeChangeRien(string chemin)

@@ -8,7 +8,11 @@ namespace MonEndoVue.Server.Services;
 /// </summary>
 public static class NavigationVersSpa
 {
-    private static readonly string[] CheminsDuServeur = ["/health", "/swagger"];
+    /// <summary>
+    /// Chemins servis par le serveur même pour une navigation : sonde, documentation, et retour de Google lors de la liaison de
+    /// l'agenda (redirection du navigateur vers l'API, qui répond elle-même par une redirection vers Paramètres).
+    /// </summary>
+    private static readonly string[] CheminsDuServeur = ["/health", "/swagger", "/Agenda/liaison/callback"];
 
     public static bool EstNavigationDePage(HttpRequest requete) =>
         (HttpMethods.IsGet(requete.Method) || HttpMethods.IsHead(requete.Method))
