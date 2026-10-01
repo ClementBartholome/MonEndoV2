@@ -21,6 +21,8 @@ Les secrets ne sont **jamais** dans ce dossier (dépôt public). Ils restent sur
 ## Liaison de l'agenda Google (OAuth)
 Activée par trois valeurs dans `~/app/config/app.env` (sans elles, la ligne « Agenda Google » n'apparaît pas dans les Paramètres) :
 `GoogleOAuth__ClientId=...`, `GoogleOAuth__ClientSecret=...`, `GoogleOAuth__RedirectUri=https://monendoapp.fr/Agenda/liaison/callback`.
+Le script `configurer-google-oauth.sh` les demande à l'invite (saisie masquée, seules les longueurs sont affichées, rien n'est écrit sans confirmation) :
+`curl -fsSL https://raw.githubusercontent.com/ClementBartholome/MonEndoV2/main/deploy/configurer-google-oauth.sh -o ~/app/configurer-google-oauth.sh && bash ~/app/configurer-google-oauth.sh`.
 Le secret est copié depuis la console Google **directement sur le VPS** (jamais dans le dépôt, un chat ou un fichier versionné), puis le
 conteneur `app` est recréé (`docker compose -f docker-compose.prod.yml up -d --force-recreate app`).
 
