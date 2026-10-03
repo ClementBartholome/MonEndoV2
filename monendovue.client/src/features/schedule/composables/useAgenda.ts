@@ -10,8 +10,11 @@ export type VueAgenda = 'liste' | 'mois';
 /** Ce que la page montre : chargement, un état particulier (agenda à lier, calendrier à choisir, panne), ou les rendez-vous. */
 export type EtatAgenda = 'chargement' | 'non-lie' | 'sans-calendrier' | 'indisponible' | 'pret';
 
-/** Le serveur refuse une période de plus de 62 jours : la liste « à venir » avance par fenêtres de cette taille. */
-const JOURS_PAR_FENETRE = 62;
+/**
+ * Le serveur refuse une période de plus de 62 jours (en UTC) : la liste « à venir » avance par fenêtres de 60 jours,
+ * ce qui laisse la marge d'une heure de changement d'heure (62 jours locaux en font 62 et une heure à l'automne).
+ */
+const JOURS_PAR_FENETRE = 60;
 const FENETRES_MAXIMUM = 4;
 
 interface Options {
@@ -36,6 +39,7 @@ export function useAgenda({ maintenant = () => new Date() }: Options = {}) {
     const evenementsMois = ref<EvenementAgenda[]>([]);
     const chargementMois = ref(false);
     const erreurMois = ref(false);
+    let derniereDemandeMois = 0;
     const jourChoisi = ref(startOfDay(maintenant()));
 
     const selection = ref<EvenementAgenda | null>(null);
@@ -94,7 +98,9 @@ export function useAgenda({ maintenant = () => new Date() }: Options = {}) {
         erreurSuite.value = false;
         try {
             const suite = await lireFenetre(fenetres.value);
-            evenements.value = [...evenements.value, ...(suite ?? [])];
+            // Google renvoie tout événement qui chevauche le début de la fenêtre : un événement à cheval sur deux fenêtres revient deux fois.
+            const dejaLus = new Set(evenements.value.map((evenement) => evenement.id));
+            evenements.value = [...evenements.value, ...(suite ?? []).filter((evenement) => !dejaLus.has(evenement.id))];
             fenetres.value += 1;
         } catch {
             erreurSuite.value = true;
@@ -105,17 +111,22 @@ export function useAgenda({ maintenant = () => new Date() }: Options = {}) {
 
     /** Six semaines au plus autour du mois affiché (lundi en premier), soit moins de 62 jours. */
     async function chargerMois() {
+        // Seule la dernière demande compte : deux clics rapides sur « mois suivant » ne doivent pas laisser la réponse la plus lente l'emporter.
+        const numero = ++derniereDemandeMois;
         chargementMois.value = true;
         erreurMois.value = false;
         const debut = startOfWeek(moisAffiche.value, { weekStartsOn: 1 });
         const fin = addDays(endOfWeek(endOfMonth(moisAffiche.value), { weekStartsOn: 1 }), 1);
         try {
-            evenementsMois.value = (await apiService.getEvenementsAgenda(debut, fin)) ?? [];
+            const lus = (await apiService.getEvenementsAgenda(debut, fin)) ?? [];
+            if (numero === derniereDemandeMois) evenementsMois.value = lus;
         } catch {
-            erreurMois.value = true;
-            evenementsMois.value = [];
+            if (numero === derniereDemandeMois) {
+                erreurMois.value = true;
+                evenementsMois.value = [];
+            }
         } finally {
-            chargementMois.value = false;
+            if (numero === derniereDemandeMois) chargementMois.value = false;
         }
     }
 

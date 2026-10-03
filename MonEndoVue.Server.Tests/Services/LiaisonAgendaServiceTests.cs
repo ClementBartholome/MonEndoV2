@@ -246,14 +246,17 @@ public sealed class LiaisonAgendaServiceTests : IDisposable
     }
 
     [Fact]
-    public async Task FinaliserAsync_SansJetonDActualisation_Indisponible()
+    public async Task FinaliserAsync_SansJetonDActualisation_IndisponibleEtRevoqueLAcces()
     {
-        var service = Service(LiaisonAgendaDeTest.FauxGoogle(_ => LiaisonAgendaDeTest.Jetons(actualisation: null)));
+        var google = LiaisonAgendaDeTest.FauxGoogle(_ => LiaisonAgendaDeTest.Jetons(actualisation: null));
+        var service = Service(google);
 
         var resultat = await Lier(service);
 
         Assert.Equal(StatutOperation.Indisponible, resultat.Statut);
         Assert.False(await _carnet.Context.LiaisonsAgenda.AnyAsync());
+        Assert.Equal(GoogleOAuthClient.UrlRevocation, google.Requetes[^1].RequestUri!.ToString());
+        Assert.Equal($"token={LiaisonAgendaDeTest.JetonAcces}", google.Corps[^1]);
     }
 
     [Fact]
@@ -270,20 +273,46 @@ public sealed class LiaisonAgendaServiceTests : IDisposable
     }
 
     [Fact]
-    public async Task FinaliserAsync_DejaLiee_RemplaceLeJetonEtRevoqueLAncien()
+    public async Task FinaliserAsync_DejaLiee_RemplaceLeJetonSansRevoquer()
     {
         var calls = 0;
         var google = LiaisonAgendaDeTest.FauxGoogle(_ =>
             ++calls == 1 ? LiaisonAgendaDeTest.Jetons(actualisation: "ancien") : LiaisonAgendaDeTest.Jetons(actualisation: "nouveau"));
         var service = Service(google);
-        await Lier(service);
+        // Deux départs avant tout retour (deux onglets) : les deux retours aboutissent.
+        var premier = (await service.DemarrerAsync(UserId, CancellationToken.None)).Valeur!;
+        var second = (await service.DemarrerAsync(UserId, CancellationToken.None)).Valeur!;
+        await service.FinaliserAsync(premier.CookieEtat, Parametre(premier.UrlAutorisation, "state"), LiaisonAgendaDeTest.Code, null, CancellationToken.None);
 
-        await Lier(service);
+        await service.FinaliserAsync(second.CookieEtat, Parametre(second.UrlAutorisation, "state"), LiaisonAgendaDeTest.Code, null, CancellationToken.None);
 
         var liaison = await _carnet.Context.LiaisonsAgenda.SingleAsync();
         Assert.Equal("nouveau", _protection.CreateProtector("LiaisonAgenda.JetonActualisation").Unprotect(liaison.JetonActualisationProtege));
-        Assert.Equal(GoogleOAuthClient.UrlRevocation, google.Requetes[^1].RequestUri!.ToString());
-        Assert.Equal("token=ancien", google.Corps[^1]);
+        // Chez Google, révoquer l'ancien jeton retirerait aussi l'accord du nouveau : aucune révocation.
+        Assert.DoesNotContain(google.Requetes, r => r.RequestUri!.ToString() == GoogleOAuthClient.UrlRevocation);
+    }
+
+    [Fact]
+    public async Task DemarrerAsync_DejaLiee_Invalide()
+    {
+        var service = Service(LiaisonAgendaDeTest.FauxGoogle());
+        await Lier(service);
+
+        var resultat = await service.DemarrerAsync(UserId, CancellationToken.None);
+
+        Assert.Equal(StatutOperation.Invalide, resultat.Statut);
+        Assert.Null(resultat.Valeur);
+    }
+
+    [Fact]
+    public async Task FinaliserAsync_ValiditeDuJetonTropCourte_LieSansErreur()
+    {
+        var service = Service(LiaisonAgendaDeTest.FauxGoogle(_ => LiaisonAgendaDeTest.Jetons(validite: 30)));
+
+        var resultat = await Lier(service);
+
+        Assert.Equal(StatutOperation.Succes, resultat.Statut);
+        Assert.True(await _carnet.Context.LiaisonsAgenda.AnyAsync());
     }
 
     [Fact]
@@ -316,10 +345,12 @@ public sealed class LiaisonAgendaServiceTests : IDisposable
     public async Task FinaliserAsync_NouvelleLiaison_OublieLeCalendrierChoisi()
     {
         var service = Service(LiaisonAgendaDeTest.FauxGoogle());
+        // Un second départ commencé avant la première liaison (deux onglets) : son retour remplace la liaison.
+        var second = (await service.DemarrerAsync(UserId, CancellationToken.None)).Valeur!;
         await Lier(service);
         await service.EnregistrerCalendrierAsync(UserId, "ancien@example.com", CancellationToken.None);
 
-        await Lier(service);
+        await service.FinaliserAsync(second.CookieEtat, Parametre(second.UrlAutorisation, "state"), LiaisonAgendaDeTest.Code, null, CancellationToken.None);
 
         Assert.Null(await service.CalendrierChoisiAsync(UserId, CancellationToken.None));
     }

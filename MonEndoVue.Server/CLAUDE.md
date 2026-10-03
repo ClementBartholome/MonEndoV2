@@ -96,6 +96,9 @@ modifiables, jamais `Entry(dto).State = Modified`, jamais de changement de `Carn
 ## Liaison de l'agenda Google (OAuth)
 - `LiaisonAgendaController` (`Agenda/liaison`) / `LiaisonAgendaService` / `GoogleOAuthClient` (`Services/Agenda/`). Flux : `POST demarrer`
   (authentifié) renvoie l'URL Google et pose un **cookie d'état** ; Google redirige vers `GET callback` ; `DELETE` délie et révoque.
+  **Pas de révocation lors d'un remplacement** : chez Google, révoquer un jeton retire tout l'accord du compte, nouveau jeton compris ;
+  `POST demarrer` est donc refusé (400) tant qu'une liaison existe, et on délie avant de changer de compte. L'API Agenda refuse une période
+  de plus de 62 jours en UTC : côté client, des fenêtres de 60 jours (le changement d'heure ajoute une heure à 62 jours locaux).
 - **Le cookie de session est SameSite=Strict : il n'accompagne pas le retour de Google.** Le callback est donc anonyme
   (`[AllowAnonymous]`, justifié) et identifie l'utilisatrice par le cookie d'état (`EtatLiaison` : Data Protection, 10 min,
   HttpOnly, Secure, SameSite=Lax, Path `/Agenda/liaison`) qui porte `state`, vérificateur PKCE (S256) et identifiant : un état ou

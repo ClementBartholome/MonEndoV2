@@ -64,6 +64,8 @@ export function simulerRendezVous(
     .on('GET', /^Agenda\/evenements$/, ({ url }) => {
       const debut = new Date(url.searchParams.get('debut') ?? '').getTime();
       const fin = new Date(url.searchParams.get('fin') ?? '').getTime();
+      // Comme le serveur : une période de plus de 62 jours (en UTC, donc changement d'heure compris) est refusée.
+      if (fin <= debut || fin - debut > 62 * 24 * 3600 * 1000) return { status: 400, body: { message: 'La période demandée est invalide.' } };
       return { body: evenements.filter((e) => new Date(e.debut).getTime() >= debut && new Date(e.debut).getTime() < fin) };
     })
     .on('GET', /^Agenda\/precedent$/, () => ({ body: precedent ? [precedent] : [] }));
