@@ -27,7 +27,7 @@ test.describe('Navigation principale', () => {
 
     await navigationPage.principale.getByRole('button', { name: 'Plus' }).click();
 
-    for (const rubrique of ['Traitements', 'Activité', 'Agenda', 'Préparer un rendez-vous', 'Transit', 'Suggestion ou bug', 'Paramètres']) {
+    for (const rubrique of ['Traitements', 'Activité', 'Agenda', 'Préparer un rendez-vous', 'Transit', "S'informer", 'Suggestion ou bug', 'Paramètres']) {
       await expect(navigationPage.menuPlus.getByRole('link', { name: rubrique })).toBeVisible();
     }
     await navigationPage.menuPlus.getByRole('button', { name: 'Fermer' }).click();
