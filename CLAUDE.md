@@ -89,11 +89,27 @@ dotnet ef migrations add NomEnPascalCase --project MonEndoVue.Server
   par `features/bilan-quotidien/utils/humeur.ts`, qui prend en compte les deux.
 - Accueil `/` « Aujourd'hui » (`GET Accueil/aujourdhui?jour=AAAA-MM-JJ`, jour local envoyé par le client, carnet de la
   session : cycle déduit des jours de règles sans prédiction, bilan du jour, prises prévues ce jour-là (heure et réponse) et
-  traitements au besoin, faits descriptifs des 7 derniers jours ; prise notée en un geste par `POST Traitements/{id}/prises`), agenda `/agenda` (Google Calendar en lecture via le serveur, seulement pour une utilisatrice associée à un calendrier dans la configuration `Agenda`), « Préparer un rendez-vous » `/export` : PDF créé dans le navigateur (jsPDF, chargé à la demande) depuis
+  traitements au besoin, faits descriptifs des 7 derniers jours ; prise notée en un geste par `POST Traitements/{id}/prises`), agenda `/agenda` (Google Calendar en lecture via le serveur : l'utilisatrice lie son compte Google depuis `/parametres` (OAuth, `Agenda/liaison`, portées `calendar.events.readonly` et `calendar.calendarlist.readonly`), puis choisit **le calendrier lu**, le seul (idéalement un calendrier de rendez-vous médicaux) ; sans liaison, repli temporaire sur l'entrée de configuration `Agenda` ; sans calendrier choisi, rien n'est lu). Page `/agenda` (`features/schedule/`) : **liste par jour** (vue par défaut) et vue Mois, détail dans un panneau ; « Préparer ce rendez-vous » ouvre `/export` avec, dans l'**état de la navigation** (`history.state`, jamais dans l'adresse), la date du rendez-vous et celle du précédent (`GET Agenda/precedent?avant=`) : période « depuis le dernier RDV » jusqu'à aujourd'hui (l'export ne dépasse pas aujourd'hui), « Préparer un rendez-vous » `/export` : PDF créé dans le navigateur (jsPDF, chargé à la demande) depuis
   `GET Synthese?du=&au=` (`SyntheseRendezVousService`, carnet de la session, un an au plus : comptes et moyennes par
   rubrique, prises des traitements, règles, détail jour par jour, **sans interprétation**). Période 1 mois / 3 mois /
   libre, rubriques au choix, « Mes questions » (texte libre gardé sur l'appareil, jamais envoyé, en première page).
   `CarnetSanteController` et ses vues (carnet par id, dernières entrées, export du mois) ont été retirés : plus aucun appel client.
+- Page « Une suggestion ? Un bug ? » `/suggestions` (`features/retours/`, entrée « Suggestion ou bug » du menu « Plus ») : de
+  simples liens `mailto:` vers l'adresse de l'éditeur (`features/legal/config/editeur.ts`), objet et corps préremplis
+  avec la page d'origine, la version et l'appareil ; aucun formulaire, rien stocké côté serveur. Les e-mails reçus sont
+  décrits dans la politique de confidentialité (conservation 12 mois au plus).
+- Page « S'informer sur l'endométriose » `/s-informer` (`features/informer/`, entrée « S'informer » du menu « Plus » et lien dans la carte
+  « Pour bien démarrer ») : trois repères validants et des **liens** vers des sources publiques, listés dans
+  `config/sources.ts` (groupes, date de consultation affichée). **Aucun contenu médical maison** ; tout lien ajouté doit figurer dans
+  `.claude/skills/endometriose/sources.md`, s'ouvre avec `target="_blank" rel="noopener noreferrer"` (le serveur envoie
+  `Referrer-Policy: strict-origin-when-cross-origin` : sans `noreferrer`, le site tiers saurait que l'app est une app d'endométriose)
+  et ne porte aucun paramètre. Les URL d'Ameli changent parfois : les revérifier à chaque version.
+- **Accueil des nouvelles utilisatrices** (`features/auth/`, `features/onboarding/`) : `/bienvenue` (publique, première visite : une personne déjà connectée sur
+  l'appareil, drapeau `monendo-deja-venue` du `localStorage`, arrive sur `/login`), inscription `/register` (engagements sur les données **avant** la case de
+  consentement, jamais cochée d'avance ; règles du mot de passe = celles d'Identity), puis `/bienvenue/rappel` (étape **facultative** du rappel du bilan : s'efface
+  seule si l'appareil ne reçoit pas de notification, explique l'installation sur iPhone hors écran d'accueil, expose le refus de permission), puis l'accueil avec la
+  carte « Pour bien démarrer » (drapeau local `monendo-premiers-pas`, aucune progression ni tâche à finir). Rien n'est stocké côté serveur pour ce parcours ; il ne
+  concerne que les inscriptions (jamais les comptes existants).
 - Pages publiques (sans compte, `meta: { public: true }` dans le routeur) : connexion, inscription, politique de
   confidentialité `/confidentialite` et mentions légales `/mentions-legales` (`features/legal/`). **Consentement explicite**
   aux données de santé (`ApplicationUser.ConsentementDonneesSanteLe`, version de la politique acceptée) : case à l'inscription,

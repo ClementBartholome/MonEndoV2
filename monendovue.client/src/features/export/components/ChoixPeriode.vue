@@ -2,8 +2,8 @@
   <fieldset class="m-0 border-0 p-0">
     <legend class="mb-2.5 p-0 text-corps font-semibold text-texte">Période</legend>
     <div class="grid grid-cols-3 gap-2">
-      <button v-for="option in OPTIONS" :key="option.valeur" type="button"
-              class="min-h-11 rounded-controle border-[1.5px] text-sm"
+      <button v-for="option in options" :key="option.valeur" type="button"
+              class="min-h-11 rounded-controle border-[1.5px] px-1 text-sm"
               :class="choix === option.valeur ? 'border-texte bg-texte font-medium text-fond' : 'border-contour bg-surface text-texte'"
               :aria-pressed="choix === option.valeur"
               @click="choix = option.valeur">{{ option.libelle }}</button>
@@ -32,11 +32,5 @@ import type { ChoixPeriode } from '../composables/usePreparationRendezVous';
 const choix = defineModel<ChoixPeriode>('choix', { required: true });
 const du = defineModel<string>('du', { required: true });
 const au = defineModel<string>('au', { required: true });
-defineProps<{ aujourdhui: string; libelle: string; erreur: string | null }>();
-
-const OPTIONS: { valeur: ChoixPeriode; libelle: string }[] = [
-  { valeur: '1mois', libelle: '1 mois' },
-  { valeur: '3mois', libelle: '3 mois' },
-  { valeur: 'autre', libelle: 'Autre' },
-];
+defineProps<{ aujourdhui: string; libelle: string; erreur: string | null; options: { valeur: ChoixPeriode; libelle: string }[] }>();
 </script>

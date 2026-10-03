@@ -188,6 +188,9 @@ public class ExportDonneesService(
             rappels = await context.Rappels.AsNoTracking().Where(r => r.CarnetSanteId == carnetId)
                 .Select(r => new { r.Type, r.Actif, r.Heure, r.JourSemaine, r.FuseauHoraire })
                 .ToListAsync(ct),
+            agendaGoogle = await context.LiaisonsAgenda.AsNoTracking().Where(l => l.CarnetSanteId == carnetId)
+                .Select(l => new { lieeLe = l.LieeLe, calendrierId = l.CalendrierId })
+                .FirstOrDefaultAsync(ct),
             appareilsAbonnesAuxRappels = await context.AbonnementsPush.AsNoTracking().Where(a => a.CarnetSanteId == carnetId)
                 .Select(a => new { abonneLe = a.CreeLe, serviceDeNotification = a.Endpoint })
                 .ToListAsync(ct),

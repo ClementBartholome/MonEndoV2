@@ -598,6 +598,36 @@ namespace MonEndoVue.Server.Migrations
                     b.ToTable("JourRegles");
                 });
 
+            modelBuilder.Entity("MonEndoVue.Server.Models.LiaisonAgenda", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("CalendrierId")
+                        .HasMaxLength(1024)
+                        .HasColumnType("nvarchar(1024)");
+
+                    b.Property<int>("CarnetSanteId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("JetonActualisationProtege")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("LieeLe")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CarnetSanteId")
+                        .IsUnique();
+
+                    b.ToTable("LiaisonsAgenda", (string)null);
+                });
+
             modelBuilder.Entity("MonEndoVue.Server.Models.Medicament", b =>
                 {
                     b.Property<int>("Id")
@@ -911,6 +941,17 @@ namespace MonEndoVue.Server.Migrations
                         .HasForeignKey("CarnetSanteId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("MonEndoVue.Server.Models.LiaisonAgenda", b =>
+                {
+                    b.HasOne("MonEndoVue.Server.Models.CarnetSante", "CarnetSante")
+                        .WithMany()
+                        .HasForeignKey("CarnetSanteId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("CarnetSante");
                 });
 
             modelBuilder.Entity("MonEndoVue.Server.Models.Medicament", b =>

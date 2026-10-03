@@ -84,6 +84,10 @@ namespace MonEndoVue.Server
             // Agenda Google en lecture : clé API côté serveur, calendrier associé à une utilisatrice par la configuration
             builder.Services.Configure<AgendaOptions>(builder.Configuration.GetSection(AgendaOptions.Section));
             builder.Services.AddHttpClient<AgendaService>(client => client.Timeout = TimeSpan.FromSeconds(10));
+            // Liaison OAuth de l'agenda Google (section GoogleOAuth ; sans elle, liaison désactivée)
+            builder.Services.Configure<GoogleOAuthOptions>(builder.Configuration.GetSection(GoogleOAuthOptions.Section));
+            builder.Services.AddHttpClient<GoogleOAuthClient>(client => client.Timeout = TimeSpan.FromSeconds(10));
+            builder.Services.AddScoped<LiaisonAgendaService>();
 
             builder.Services.AddCors(options =>
             {

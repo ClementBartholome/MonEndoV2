@@ -21,7 +21,7 @@ export class ConsentementPage {
     this.titre = page.getByRole('heading', { name: 'Ton accord pour tes données de santé' });
     this.caseAccord = page.getByRole('checkbox', { name: /J'accepte que MonEndo enregistre/ });
     this.boutonAccord = page.getByRole('button', { name: "J'accepte et je continue" });
-    this.boutonInscription = page.getByRole('button', { name: 'Créer un compte' });
+    this.boutonInscription = page.getByRole('button', { name: 'Créer mon compte' });
     this.navigation = page.getByRole('link', { name: 'Douleurs' });
     this.boutonDeconnexion = page.getByRole('button', { name: 'Me déconnecter' });
   }

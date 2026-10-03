@@ -1,71 +1,57 @@
-﻿
 <template>
-  <form
-      class="flex flex-col rounded-card items-center justify-center gap-4 w-full max-w-md mx-auto mt-20 mb-20 bg-[var(--background-clearer)] p-14"
-      @submit="onSubmit">
-    <FormField v-slot="{ componentField }" name="email">
-      <img src="@/images/MonEndo_transparent.png" alt="Logo MonEndo" class="max-w-44 max-h-44">
-      <FormItem class="w-full">
-        <FormLabel>Email</FormLabel>
-        <FormControl>
-          <Input type="text" placeholder="mail@gmail.com" v-bind="componentField"/>
-        </FormControl>
-        <FormMessage/>
-      </FormItem>
-    </FormField>
-    <FormField v-slot="{ componentField }" name="password">
-      <FormItem class="w-full">
-        <FormLabel>Mot de passe</FormLabel>
-        <FormControl>
-          <Input type="password" placeholder="********" v-bind="componentField"/>
-        </FormControl>
-        <FormMessage/>
-      </FormItem>
-    </FormField>
-    <Button type="submit">
-      Connexion
-    </Button>
-    <p class="mt-4">
-      Pas de compte ? <router-link to="/register" class="!text-highlight">Créez-en un</router-link>
+  <main class="mx-auto flex min-h-dvh w-full max-w-md flex-col gap-6 px-6 pb-8 pt-6">
+    <router-link to="/bienvenue" aria-label="Retour" class="-ml-3 flex h-11 w-11 items-center justify-center text-texte no-underline">
+      <i class="material-symbols-outlined" aria-hidden="true">arrow_back</i>
+    </router-link>
+
+    <header class="flex flex-col gap-1.5 text-left">
+      <h1 class="m-0 text-titre-page font-semibold leading-tight tracking-normal text-texte">Content de te revoir</h1>
+      <p class="m-0 text-corps leading-normal text-texte-2">Connecte-toi pour retrouver ton suivi.</p>
+    </header>
+
+    <form class="flex flex-col gap-4" novalidate @submit.prevent="onSubmit">
+      <ChampTexte v-model="email" label="Adresse e-mail" name="email" type="email" inputmode="email" autocomplete="username"/>
+      <ChampTexte v-model="password" label="Mot de passe" name="password" type="password" autocomplete="current-password"/>
+      <button type="submit" :disabled="envoiEnCours"
+              class="inline-flex min-h-[54px] items-center justify-center rounded-[16px] bg-button text-base font-semibold text-texte disabled:opacity-70">
+        Connexion
+      </button>
+    </form>
+
+    <p class="m-0 text-center text-sm text-texte-2">
+      Pas encore de compte ? <router-link to="/register" class="inline-flex min-h-11 items-center font-medium !text-lien">Créer mon compte</router-link>
     </p>
     <LiensLegaux/>
-  </form>
+  </main>
 </template>
 
 <script setup lang="ts">
+import { onMounted, ref } from 'vue';
 import LiensLegaux from '@/features/legal/components/LiensLegaux.vue';
-import {Button} from '@/shared/components/ui/button'
-import {
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@/shared/components/ui/form'
-import {Input} from '@/shared/components/ui/input'
-import {useToast} from '@/shared/components/ui/toast'
-import {useAuthStore} from '@/features/auth/store/auth';
-import router from "@/router";
-import { onMounted } from 'vue';
+import { useToast } from '@/shared/components/ui/toast';
+import { useAuthStore } from '@/features/auth/store/auth';
+import router from '@/router';
+import ChampTexte from '../components/ChampTexte.vue';
 
 const auth = useAuthStore();
-const {toast} = useToast();
+const { toast } = useToast();
+
+const email = ref('');
+const password = ref('');
+const envoiEnCours = ref(false);
 
 onMounted(() => {
   if (auth.user) {
     router.push('/');
   }
 });
-const onSubmit = async (event: any) => {
-  event.preventDefault();
-  const form = event.target;
-  const email = form.email.value;
-  const password = form.password.value;
 
+async function onSubmit() {
+  if (envoiEnCours.value) return;
+  envoiEnCours.value = true;
   let user;
   try {
-    user = await auth.login(email, password);
+    user = await auth.login(email.value.trim(), password.value);
   } catch (error: any) {
     toast({
       title: 'Connexion impossible pour le moment',
@@ -75,6 +61,8 @@ const onSubmit = async (event: any) => {
       variant: 'custom'
     });
     return;
+  } finally {
+    envoiEnCours.value = false;
   }
   if (user) {
     router.push('/');

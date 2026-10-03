@@ -3,6 +3,49 @@
 Toutes les évolutions notables de MonEndo. Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/),
 versions en [SemVer](https://semver.org/lang/fr/) (voir la section Déploiement de `CLAUDE.md`).
 
+## [1.4.0] - 2026-10-03
+
+### Ajouté
+- Accueil des nouvelles utilisatrices : une page de bienvenue (« Ta douleur, noir sur blanc. ») pour une première visite, une inscription
+  repensée (les engagements sur tes données avant la case de consentement, règles du mot de passe cochées pendant la saisie, œil pour
+  l'afficher, messages d'erreur clairs et au bon endroit), puis une étape facultative pour activer le rappel du bilan du soir (sur iPhone,
+  elle explique d'abord l'installation sur l'écran d'accueil) et une carte « Pour bien démarrer » sur l'accueil, que l'on peut fermer.
+- Page « Une suggestion ? Un bug ? » (menu « Plus » : « Suggestion ou bug ») : deux boutons qui préparent un e-mail à
+  l'éditeur, avec l'objet, la page d'où tu viens, la version de MonEndo et ton appareil déjà indiqués, et des conseils
+  pour décrire ce qui s'est passé. L'adresse est aussi affichée, avec un bouton « Copier », si ton appareil n'a pas de
+  messagerie. Rien de ton suivi n'est joint ; la page rappelle qu'une capture d'écran peut montrer tes données.
+- Page « S'informer sur l'endométriose » (menu « Plus », et lien dans la carte « Pour bien démarrer ») : quelques repères validants et
+  des liens classés vers des sources publiques fiables (Ameli, Santé.fr, HAS, OMS, associations) pour comprendre la maladie, parler de
+  sa douleur en consultation et connaître ses droits. Les liens s'ouvrent dans un nouvel onglet, sans rien transmettre de ton suivi.
+
+- Agenda Google : depuis les Paramètres, tu peux lier ton compte Google (connexion Google, sans mot de passe à donner à MonEndo)
+  puis choisir **le calendrier à afficher**, par exemple un calendrier réservé à tes rendez-vous médicaux. MonEndo ne lit que ce
+  calendrier, en lecture seule ; ton prochain rendez-vous apparaît sur l'accueil et l'ensemble sur la page Agenda. Tu peux changer de
+  calendrier ou délier ton agenda à tout moment (l'accès est alors retiré chez Google). Google affiche d'abord un écran « application
+  non validée » : l'application l'explique avant de t'y envoyer.
+
+- Préparer un rendez-vous depuis l'agenda : un bouton « Préparer ce rendez-vous » (sur le prochain rendez-vous et dans le détail de
+  chacun) ouvre l'export du PDF avec la période réglée du rendez-vous précédent jusqu'à aujourd'hui, le rappel du rendez-vous visé et tes
+  questions prêtes à être saisies. Rien du rendez-vous n'apparaît dans l'adresse de la page.
+
+### Modifié
+- Page de connexion refaite dans le même style ; les pages s'ouvrent désormais en haut de l'écran au lieu de garder le défilement de la précédente.
+- Page Agenda repensée : la liste des rendez-vous à venir, regroupés par jour (demain, cette semaine, plus tard), remplace le calendrier
+  d'origine ; chaque rendez-vous s'ouvre dans un panneau (lieu, itinéraire, lien vers Google Agenda). Le calendrier du mois, plus lisible
+  sur téléphone, devient une vue secondaire. L'Agenda a sa place dans le menu « Plus » et l'accueil y renvoie. Des messages clairs
+  expliquent quand l'agenda n'est pas lié, qu'aucun calendrier n'est choisi, qu'il n'y a rien à venir ou que Google ne répond pas.
+- Politique de confidentialité mise à jour (1er octobre 2026) : elle explique ce que devient un e-mail envoyé à
+  l'éditeur (conservé au plus 12 mois, utilisé seulement pour te répondre).
+
+### Corrigé
+- Actualiser la page Cycle ou la page Activité affichait un message technique à la place de la page.
+- Après une mise à jour de MonEndo, une indisponibilité de quelques secondes ne déconnecte plus : la session est
+  conservée et l'application réessaie. Si la connexion échoue parce que le service est momentanément indisponible,
+  le message ne met plus en cause l'email ou le mot de passe.
+
+### Modifié
+- Nettoyage interne : retrait d'anciennes routes de l'API qui n'étaient plus utilisées.
+
 ## [1.3.0] - 2026-09-30
 
 ### Ajouté

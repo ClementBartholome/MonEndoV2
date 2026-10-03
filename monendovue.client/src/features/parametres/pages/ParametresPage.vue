@@ -7,6 +7,11 @@
                       teinte="bilan" @ouvrir="panneau = 'notifications'"/>
     </GroupeParametres>
 
+    <GroupeParametres v-if="agenda.statut.value?.disponible" titre="Agenda">
+      <LigneParametre titre="Agenda Google" :detail="detailAgenda"
+                      icone="calendar_month" teinte="bilan" @ouvrir="panneau = 'agenda'"/>
+    </GroupeParametres>
+
     <GroupeParametres titre="Suivi">
       <LigneParametre titre="Repères personnels" detail="Hydratation, pas, stress…" icone="flag"
                       teinte="traitement" @ouvrir="panneau = 'reperes'"/>
@@ -40,29 +45,38 @@
     <PanneauBas v-model:open="motDePasseOuvert" titre="Mot de passe">
       <MotDePasse @change="panneau = null"/>
     </PanneauBas>
+    <PanneauBas v-model:open="agendaOuvert" titre="Agenda Google">
+      <LiaisonAgenda :agenda="agenda"/>
+    </PanneauBas>
     <SuppressionCompte v-model:open="suppressionOuverte"/>
   </main>
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue';
-import { useRouter } from 'vue-router';
+import { computed, onMounted, ref } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
+import { useToast } from '@/shared/components/ui/toast';
 import LiensLegaux from '@/features/legal/components/LiensLegaux.vue';
 import { useAuthStore } from '@/features/auth/store/auth';
 import PanneauBas from '@/shared/components/PanneauBas.vue';
 import GroupeParametres from '../components/GroupeParametres.vue';
 import LigneParametre from '../components/LigneParametre.vue';
+import LiaisonAgenda from '../components/LiaisonAgenda.vue';
 import MotDePasse from '../components/MotDePasse.vue';
 import NotificationSettings from '../components/NotificationSettings.vue';
 import ReperesPersonnels from '../components/ReperesPersonnels.vue';
 import SuppressionCompte from '../components/SuppressionCompte.vue';
 import { useExportDonnees } from '../composables/useExportDonnees';
+import { useLiaisonAgenda } from '../composables/useLiaisonAgenda';
 
-type Panneau = 'notifications' | 'reperes' | 'mot-de-passe' | 'suppression';
+type Panneau = 'notifications' | 'reperes' | 'mot-de-passe' | 'suppression' | 'agenda';
 
 const version = __APP_VERSION__;
 const router = useRouter();
+const route = useRoute();
+const { toast } = useToast();
 const auth = useAuthStore();
+const agenda = useLiaisonAgenda();
 const { exportEnCours, erreurExport, telechargerMesDonnees } = useExportDonnees();
 
 /** Un seul panneau ouvert à la fois ; chaque contenu n'est monté (et ne charge ses données) qu'à l'ouverture. */
@@ -75,6 +89,26 @@ const notificationsOuvertes = ouvertSi('notifications');
 const reperesOuverts = ouvertSi('reperes');
 const motDePasseOuvert = ouvertSi('mot-de-passe');
 const suppressionOuverte = ouvertSi('suppression');
+const agendaOuvert = ouvertSi('agenda');
+
+const detailAgenda = computed(() => {
+  const statut = agenda.statut.value;
+  if (!statut?.liee) return 'Non lié';
+  return statut.calendrierId ? 'Lié · prochains rendez-vous sur l\'accueil' : 'Lié · choisis un calendrier';
+});
+
+/** Retour de Google : le serveur redirige ici avec `?agenda=lie` ou `?agenda=echec` ; l'indication est lue puis retirée de l'adresse. */
+onMounted(async () => {
+  const retour = route.query.agenda;
+  if (retour === 'lie') {
+    toast({ title: 'Agenda lié', description: 'Choisis maintenant le calendrier à afficher.', variant: 'custom' });
+    panneau.value = 'agenda';
+  } else if (retour === 'echec') {
+    toast({ title: 'La liaison n\'a pas abouti', description: 'Tu peux réessayer depuis « Agenda Google ».', variant: 'custom' });
+  }
+  if (retour !== undefined) await router.replace({ query: {} });
+  await agenda.charger();
+});
 
 async function deconnecter() {
   await auth.logout();

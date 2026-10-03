@@ -12,3 +12,19 @@ export interface EvenementAgenda {
     lieu: string | null;
     lien: string | null;
 }
+
+/** Statut de la liaison de l'agenda Google (`StatutLiaison` côté serveur) : `disponible` faux tant que Google n'est pas configuré. */
+export interface StatutLiaisonAgenda {
+    disponible: boolean;
+    liee: boolean;
+    lieeLe: string | null;
+    /** Calendrier choisi (le seul qui est lu), ou null tant qu'aucun n'est choisi. */
+    calendrierId: string | null;
+}
+
+/** Calendrier Google proposé au choix (`CalendrierViewModel` côté serveur). */
+export interface CalendrierAgenda {
+    id: string;
+    nom: string;
+    principal: boolean;
+}

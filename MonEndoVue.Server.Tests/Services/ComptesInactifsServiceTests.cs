@@ -11,6 +11,7 @@ public sealed class ComptesInactifsServiceTests : IDisposable
 
     private readonly IdentityDeTest _identity = new();
     private readonly FauxStockagePhotos _photos = new();
+    private readonly FauxGoogleCalendar _google = LiaisonAgendaDeTest.FauxGoogle();
 
     [Fact]
     public async Task SupprimerAsync_SupprimeSeulementLesComptesInactifsDepuisPlusDeDeuxAns()
@@ -45,7 +46,7 @@ public sealed class ComptesInactifsServiceTests : IDisposable
 
     private ComptesInactifsService Service() => new(
         _identity.Context,
-        new SuppressionCompteService(_identity.Context, _identity.UserManager, _photos, NullLogger<SuppressionCompteService>.Instance),
+        new SuppressionCompteService(_identity.Context, _identity.UserManager, _photos, LiaisonAgendaDeTest.Service(_identity.Context, _google), NullLogger<SuppressionCompteService>.Instance),
         new HorlogeFixe(Maintenant),
         NullLogger<ComptesInactifsService>.Instance);
 

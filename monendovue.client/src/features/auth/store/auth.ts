@@ -2,6 +2,7 @@
 import authService from '@/features/auth/services/authService';
 import type { User } from '@/features/auth/types/user';
 import { effacerQuestions } from '@/features/export/services/questionsRendezVous';
+import { marquerDejaVenue } from '@/features/auth/utils/parcours';
 
 export const useAuthStore = defineStore({
     id: 'auth',
@@ -50,6 +51,8 @@ export const useAuthStore = defineStore({
             if (userItem) {
          
                 this.user = JSON.parse(userItem);
+                // Une session ouverte avant l'accueil guidé : elle n'a pas à revoir la page de bienvenue.
+                marquerDejaVenue();
 
             }
         },
@@ -63,6 +66,7 @@ export const useAuthStore = defineStore({
         },
         setAuth(user: User | null) {
             this.user = user;
+            if (user) marquerDejaVenue();
             localStorage.setItem('user', JSON.stringify(user));
         },
         /** Consentement enregistré par le serveur (nouveau jeton) ou refusé par l'API (403 consentement-requis). */

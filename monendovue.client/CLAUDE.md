@@ -200,6 +200,15 @@ lecture seule (liste par jour, `SelecteurMois`, suppression en deux temps), plus
   déconnecte**. Serveur injoignable, 5xx ou 429 (déploiement en cours) : 3 nouveaux essais espacés, puis l'appel échoue sans
   toucher à la session. Un seul renouvellement pour plusieurs appels simultanés (chaque renouvellement remplace le jeton
   côté serveur). Connexion : `authService.login` renvoie `null` seulement pour un 401, le reste est remonté à la page.
+- Liaison de l'agenda Google (`features/parametres/`, `useLiaisonAgenda` + `LiaisonAgenda.vue`) : la ligne « Agenda Google » n'apparaît que si le
+  serveur la dit `disponible` (Google configuré). Le départ envoie le navigateur chez Google **seulement** si l'adresse reçue commence par
+  `https://accounts.google.com/`. Retour de Google : `/parametres?agenda=lie|echec` (toast, adresse nettoyée, panneau ouvert pour choisir le calendrier).
+- Page Agenda (`features/schedule/`, `useAgenda`) : états `chargement` / `non-lie` / `sans-calendrier` / `indisponible` / `pret` (le statut de la liaison décide avant tout
+  appel d'événements) ; liste « à venir » par fenêtres de 62 jours (maximum accepté par le serveur), « Voir plus loin » ajoute la suivante. Plus de FullCalendar :
+  la grille du mois est dessinée par `CalendrierMois`. L'export lit `history.state` (`rdv`, `depuis`) à l'arrivée depuis l'agenda.
+- Parcours d'arrivée : les deux drapeaux (`monendo-deja-venue`, `monendo-premiers-pas`) sont dans `features/auth/utils/parcours.ts`, dont les accès au `localStorage`
+  tolèrent un stockage indisponible. Le routeur ramène vers `bienvenue` ou `login` selon `dejaVenue()` ; `scrollBehavior` ouvre chaque page en haut.
+  Les champs d'arrivée passent par `ChampTexte` (libellé, erreur liée au champ, œil du mot de passe) ; la case de consentement ouvre la politique dans un autre onglet.
 - Session sans consentement (`user.consentementAJour === false`, ou 403 `consentement-requis` de l'API traité dans
   `apiService`) : seule `/consentement` est accessible (avec les pages publiques). `meta: { sansNavigation: true }` masque
   la navigation.
