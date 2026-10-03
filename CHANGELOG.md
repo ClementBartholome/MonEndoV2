@@ -3,7 +3,7 @@
 Toutes les évolutions notables de MonEndo. Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/),
 versions en [SemVer](https://semver.org/lang/fr/) (voir la section Déploiement de `CLAUDE.md`).
 
-## [1.4.0] - non publiée
+## [1.4.0] - 2026-10-03
 
 ### Ajouté
 - Accueil des nouvelles utilisatrices : une page de bienvenue (« Ta douleur, noir sur blanc. ») pour une première visite, une inscription
