@@ -25,11 +25,12 @@
 <script setup lang="ts">
 import { materialSymbols } from '@/shared/config/materialSymbols';
 
-/** Carte du premier jour : deux saisies à portée de main, sans progression ni tâche à finir. Se masque dès qu'on l'utilise ou la ferme. */
+/** Carte du premier jour : deux saisies et un lien vers des sources fiables à portée de main, sans progression ni tâche à finir. Se masque dès qu'on l'utilise ou la ferme. */
 const emit = defineEmits<{ masquer: [] }>();
 
 const ACTIONS = [
   { libelle: 'Noter une douleur', icone: 'sick', vers: '/douleurs?ajouter', teinte: 'bg-teinte-douleur-fond text-teinte-douleur' },
   { libelle: 'Noter mes règles', icone: materialSymbols.cycle, vers: '/cycle?onglet=cycles', teinte: 'bg-teinte-regles-fond text-teinte-regles' },
+  { libelle: 'Des sources fiables sur l\'endométriose', icone: 'menu_book', vers: '/s-informer', teinte: 'bg-teinte-neutre-fond text-teinte-neutre' },
 ];
 </script>

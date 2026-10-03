@@ -14,6 +14,8 @@ MonEndoV2 est une application destinée aux personnes souffrant d'endométriose,
 - Accueil des nouvelles utilisatrices : page de bienvenue, inscription guidée, étape facultative du rappel du bilan, carte « Pour bien démarrer ».
 - Retours : page « Une suggestion ? Un bug ? » (`/suggestions`), qui prépare un e-mail à l'éditeur (contexte technique
   seulement, aucune donnée de santé).
+- S'informer : page `/s-informer` de repères courts et de liens vers des sources publiques fiables (Ameli, Santé.fr, HAS, OMS,
+  associations), sans contenu médical propre.
 - Confidentialité : politique de confidentialité et mentions légales publiques (`/confidentialite`, `/mentions-legales`) ;
   consentement explicite aux données de santé à l'inscription, redemandé si la politique change de façon importante ;
   export de toutes ses données (JSON lisible + photos) et suppression définitive du compte depuis Paramètres.

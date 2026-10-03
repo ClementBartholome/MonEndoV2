@@ -130,6 +130,7 @@ test.describe('Onboarding', () => {
       await expect(carte).toBeVisible();
       await expect(carte.getByRole('link', { name: 'Noter une douleur' })).toBeVisible();
       await expect(carte.getByRole('link', { name: 'Noter mes règles' })).toBeVisible();
+      await expect(carte.getByRole('link', { name: "Des sources fiables sur l'endométriose" })).toBeVisible();
       // Sans progression ni tâche à terminer.
       await expect(carte.getByRole('progressbar')).toHaveCount(0);
     });

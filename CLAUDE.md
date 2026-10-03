@@ -98,6 +98,12 @@ dotnet ef migrations add NomEnPascalCase --project MonEndoVue.Server
   simples liens `mailto:` vers l'adresse de l'éditeur (`features/legal/config/editeur.ts`), objet et corps préremplis
   avec la page d'origine, la version et l'appareil ; aucun formulaire, rien stocké côté serveur. Les e-mails reçus sont
   décrits dans la politique de confidentialité (conservation 12 mois au plus).
+- Page « S'informer sur l'endométriose » `/s-informer` (`features/informer/`, entrée « S'informer » du menu « Plus » et lien dans la carte
+  « Pour bien démarrer ») : trois repères validants et des **liens** vers des sources publiques, listés dans
+  `config/sources.ts` (groupes, date de consultation affichée). **Aucun contenu médical maison** ; tout lien ajouté doit figurer dans
+  `.claude/skills/endometriose/sources.md`, s'ouvre avec `target="_blank" rel="noopener noreferrer"` (le serveur envoie
+  `Referrer-Policy: strict-origin-when-cross-origin` : sans `noreferrer`, le site tiers saurait que l'app est une app d'endométriose)
+  et ne porte aucun paramètre. Les URL d'Ameli changent parfois : les revérifier à chaque version.
 - **Accueil des nouvelles utilisatrices** (`features/auth/`, `features/onboarding/`) : `/bienvenue` (publique, première visite : une personne déjà connectée sur
   l'appareil, drapeau `monendo-deja-venue` du `localStorage`, arrive sur `/login`), inscription `/register` (engagements sur les données **avant** la case de
   consentement, jamais cochée d'avance ; règles du mot de passe = celles d'Identity), puis `/bienvenue/rappel` (étape **facultative** du rappel du bilan : s'efface

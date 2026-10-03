@@ -35,6 +35,7 @@ export const navigationSecondaire: EntreeNavigation[] = [
     { libelle: 'Agenda', icone: 'calendar_month', vers: '/agenda', detail: 'Tes rendez-vous', teinte: 'bilan' },
     { libelle: 'Préparer un rendez-vous', icone: 'picture_as_pdf', vers: '/export', detail: 'Synthèse PDF pour la consultation', teinte: 'neutre' },
     { libelle: 'Transit', icone: 'gastroenterology', vers: '/transit', detail: 'Ancien suivi, en lecture', teinte: 'neutre' },
+    { libelle: 'S\'informer', icone: 'menu_book', vers: '/s-informer', detail: 'Comprendre l\'endométriose, sources fiables', teinte: 'neutre' },
     { libelle: 'Suggestion ou bug', icone: 'feedback', vers: '/suggestions', detail: 'Écrire à l\'éditeur', teinte: 'symptome' },
 ];
 

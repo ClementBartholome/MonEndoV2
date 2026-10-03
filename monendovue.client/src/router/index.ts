@@ -16,6 +16,7 @@ import CyclePage from "@/features/cycle/pages/CyclePage.vue";
 import PolitiqueConfidentialitePage from "@/features/legal/pages/PolitiqueConfidentialitePage.vue";
 import MentionsLegalesPage from "@/features/legal/pages/MentionsLegalesPage.vue";
 import RetoursPage from '@/features/retours/pages/RetoursPage.vue'
+import InformerPage from '@/features/informer/pages/InformerPage.vue'
 import BienvenuePage from '@/features/auth/pages/BienvenuePage.vue'
 import RappelBienvenuePage from '@/features/onboarding/pages/RappelBienvenuePage.vue'
 import {dejaVenue} from '@/features/auth/utils/parcours'
@@ -104,6 +105,11 @@ const router = createRouter({
             name: 'rappel-bienvenue',
             component: RappelBienvenuePage,
             meta: {sansNavigation: true}
+        },
+        {
+            path: '/s-informer',
+            name: 's-informer',
+            component: InformerPage
         },
         {
             path: '/suggestions',

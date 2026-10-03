@@ -14,6 +14,9 @@ versions en [SemVer](https://semver.org/lang/fr/) (voir la section Déploiement 
   l'éditeur, avec l'objet, la page d'où tu viens, la version de MonEndo et ton appareil déjà indiqués, et des conseils
   pour décrire ce qui s'est passé. L'adresse est aussi affichée, avec un bouton « Copier », si ton appareil n'a pas de
   messagerie. Rien de ton suivi n'est joint ; la page rappelle qu'une capture d'écran peut montrer tes données.
+- Page « S'informer sur l'endométriose » (menu « Plus », et lien dans la carte « Pour bien démarrer ») : quelques repères validants et
+  des liens classés vers des sources publiques fiables (Ameli, Santé.fr, HAS, OMS, associations) pour comprendre la maladie, parler de
+  sa douleur en consultation et connaître ses droits. Les liens s'ouvrent dans un nouvel onglet, sans rien transmettre de ton suivi.
 
 - Agenda Google : depuis les Paramètres, tu peux lier ton compte Google (connexion Google, sans mot de passe à donner à MonEndo)
   puis choisir **le calendrier à afficher**, par exemple un calendrier réservé à tes rendez-vous médicaux. MonEndo ne lit que ce
