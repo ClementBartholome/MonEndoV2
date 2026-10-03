@@ -13,6 +13,7 @@ Consultées le 2026-09-27. Date de la page ou de publication entre parenthèses 
 - ESHRE — [Guideline: endometriosis](https://pmc.ncbi.nlm.nih.gov/articles/PMC8951218/) (2022) : fin de la cœlioscopie comme référence diagnostique, journal de symptômes.
 - EndoFrance — [Le diagnostic de l'endométriose](https://www.endofrance.org/diagnostic-endometriose/).
 - EndoFrance — [Parcours de soins et qualité de vie (enquête EndoVie, Ipsos, 2020)](https://www.endofrance.org/nos-actions/le-parcours-de-soins-et-la-qualite-de-vie-des-femmes-atteintes-dendometriose/) : 1 557 répondantes, 7 ans de délai moyen.
+- EndoFrance — [Accueil du site](https://www.endofrance.org/) : écoute, groupes et informations (lien de la page « S'informer »).
 - EndoFrance — [Les applis endo et douleur](https://www.endofrance.org/la-maladie-endometriose/les-applis-endo-et-douleur/).
 - Fondation pour la Recherche sur l'Endométriose — [Qualité de vie et santé mentale](https://www.fondation-endometriose.org/endometriose/qualite-de-vie/).
 - HUG (Genève) — [Consignes pour le carnet de suivi](https://www.hug.ch/gynecologie/consignes-pour-carnet-suivi) : contenu d'un carnet quotidien (douleurs, digestif, urinaire, saignements, traitements).
