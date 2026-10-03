@@ -51,6 +51,8 @@ export const useAuthStore = defineStore({
             if (userItem) {
          
                 this.user = JSON.parse(userItem);
+                // Une session ouverte avant l'accueil guidé : elle n'a pas à revoir la page de bienvenue.
+                marquerDejaVenue();
 
             }
         },

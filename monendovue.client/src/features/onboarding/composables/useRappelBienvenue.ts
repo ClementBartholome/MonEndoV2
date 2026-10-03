@@ -50,6 +50,10 @@ export function useRappelBienvenue() {
     /** Appelé directement depuis le clic : iOS exige un geste pour demander la permission. */
     async function activer() {
         erreur.value = null;
+        if (!heure.value) {
+            erreur.value = 'Choisis une heure pour le rappel.';
+            return;
+        }
         try {
             await push.activer();
             if (push.etat.value === 'actif') {

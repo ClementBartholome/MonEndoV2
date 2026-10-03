@@ -87,7 +87,6 @@ export function useInscription() {
             lancerPremiersPas();
             return true;
         } catch (erreur) {
-            console.error(erreur);
             classerErreur(erreur);
             return false;
         } finally {
