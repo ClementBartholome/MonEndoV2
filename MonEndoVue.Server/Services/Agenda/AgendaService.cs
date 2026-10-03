@@ -27,6 +27,7 @@ public class AgendaService(
 
     /** Remontée maximale pour retrouver le rendez-vous précédent : la période la plus longue de l'export (un an). */
     public static readonly TimeSpan RemonteeRendezVousPrecedent = TimeSpan.FromDays(366);
+    private static readonly TimeSpan FenetrePrecedent = TimeSpan.FromDays(92);
 
     public const int NombreProchains = 3;
     private const int ProchainsCandidats = 20; // les événements sur la journée entière sont écartés ensuite
@@ -156,18 +157,31 @@ public class AgendaService(
                 StatutOperation.Invalide, "La date demandée est invalide.");
         }
 
-        var resultat = await LireAsync(
-            acces.Valeur!, avant - RemonteeRendezVousPrecedent, avant, EvenementsParPage, PagesMax, cancellationToken);
-        if (resultat.Statut != StatutOperation.Succes)
+        // On remonte par fenêtres de trois mois : Google trie du plus ancien au plus récent et la lecture s'arrête après
+        // quelques pages, donc une seule grande fenêtre manquerait le vrai rendez-vous précédent d'un agenda chargé.
+        var limite = avant - RemonteeRendezVousPrecedent;
+        for (var fin = avant; fin > limite;)
         {
-            return resultat;
+            var debutFenetre = fin - FenetrePrecedent > limite ? fin - FenetrePrecedent : limite;
+            var resultat = await LireAsync(acces.Valeur!, debutFenetre, fin, EvenementsParPage, PagesMax, cancellationToken);
+            if (resultat.Statut != StatutOperation.Succes)
+            {
+                return resultat;
+            }
+
+            var dernier = resultat.Valeur!
+                .Where(e => !e.JourneeEntiere && DateTimeOffset.TryParse(e.Debut, CultureInfo.InvariantCulture, out var debut) && debut < avant)
+                .OrderBy(e => DateTimeOffset.Parse(e.Debut, CultureInfo.InvariantCulture))
+                .LastOrDefault();
+            if (dernier is not null)
+            {
+                return ResultatOperation<IReadOnlyList<EvenementAgendaViewModel>>.Succes([dernier]);
+            }
+
+            fin = debutFenetre;
         }
 
-        var dernier = resultat.Valeur!
-            .Where(e => !e.JourneeEntiere && DateTimeOffset.TryParse(e.Debut, CultureInfo.InvariantCulture, out var debut) && debut < avant)
-            .OrderBy(e => DateTimeOffset.Parse(e.Debut, CultureInfo.InvariantCulture))
-            .LastOrDefault();
-        return ResultatOperation<IReadOnlyList<EvenementAgendaViewModel>>.Succes(dernier is null ? [] : [dernier]);
+        return ResultatOperation<IReadOnlyList<EvenementAgendaViewModel>>.Succes([]);
     }
 
     /// <summary>La liaison OAuth prime ; sans liaison, l'entrée de configuration (clé API) ; sinon Introuvable.</summary>
@@ -286,7 +300,8 @@ public class AgendaService(
             e.End?.DateTime ?? e.End?.Date,
             e.Start?.DateTime is null,
             string.IsNullOrWhiteSpace(e.Location) ? null : e.Location,
-            e.HtmlLink);
+            // Lien généré par Google : gardé seulement s'il s'agit d'une adresse https.
+            e.HtmlLink is not null && e.HtmlLink.StartsWith("https://", StringComparison.OrdinalIgnoreCase) ? e.HtmlLink : null);
     }
 
     private sealed record ReponseListeGoogle([property: JsonPropertyName("items")] List<CalendrierGoogle>? Items);

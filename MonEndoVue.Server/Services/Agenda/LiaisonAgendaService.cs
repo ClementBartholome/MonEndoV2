@@ -51,6 +51,12 @@ public class LiaisonAgendaService(
             return ResultatOperation<DebutLiaison>.Echec(StatutOperation.NonAuthentifie);
         }
 
+        // Pour changer de compte Google, on délie d'abord : la déliaison révoque l'accord chez Google.
+        if (await LiaisonDeAsync(userId, ct) is not null)
+        {
+            return ResultatOperation<DebutLiaison>.Echec(StatutOperation.Invalide, "Ton agenda est déjà lié. Délie-le d'abord pour en lier un autre.");
+        }
+
         var etat = EtatLiaison.Creer(userId, horloge.GetUtcNow());
         return ResultatOperation<DebutLiaison>.Succes(
             new DebutLiaison(google.UrlAutorisationPour(etat.Etat, etat.DefiPkce), etat.Proteger(ProtecteurEtat)));
@@ -93,11 +99,11 @@ public class LiaisonAgendaService(
         if (string.IsNullOrEmpty(jetons.JetonActualisation))
         {
             logger.LogWarning("Google Calendar linking failed: no refresh token returned");
+            await google.RevoquerAsync(jetons.JetonAcces, ct);
             return ResultatOperation.Echec(StatutOperation.Indisponible, MessageEchec);
         }
 
         var liaison = await context.LiaisonsAgenda.FirstOrDefaultAsync(l => l.CarnetSanteId == carnetId, ct);
-        var ancienJeton = liaison is null ? null : Reveler(liaison);
         if (liaison is null)
         {
             liaison = new LiaisonAgenda { CarnetSanteId = carnetId.Value };
@@ -108,10 +114,19 @@ public class LiaisonAgendaService(
         liaison.LieeLe = horloge.GetUtcNow().UtcDateTime;
         // Nouveau compte Google possible : l'ancien choix n'a plus de sens, rien n'est lu avant qu'elle en fasse un.
         liaison.CalendrierId = null;
-        await context.SaveChangesAsync(ct);
-        MemoriserJetonAcces(carnetId.Value, jetons);
+        try
+        {
+            await context.SaveChangesAsync(ct);
+        }
+        catch (DbUpdateException)
+        {
+            // Deux retours de Google en même temps : l'index unique laisse passer le premier seul.
+            logger.LogWarning("Google Calendar linking failed: concurrent link for carnet {CarnetSanteId}", carnetId);
+            return ResultatOperation.Echec(StatutOperation.Indisponible, MessageEchec);
+        }
 
-        if (ancienJeton is not null) await google.RevoquerAsync(ancienJeton, ct);
+        // Pas de révocation de l'éventuel ancien jeton : chez Google elle retirerait tout l'accord du compte, nouveau jeton compris.
+        MemoriserJetonAcces(carnetId.Value, jetons);
         logger.LogInformation("Google Calendar linked for carnet {CarnetSanteId}", carnetId);
         return ResultatOperation.Succes();
     }
@@ -197,14 +212,26 @@ public class LiaisonAgendaService(
     private async Task<ResultatOperation<string>> OublierAsync(LiaisonAgenda liaison, CancellationToken ct)
     {
         context.LiaisonsAgenda.Remove(liaison);
-        await context.SaveChangesAsync(ct);
+        try
+        {
+            await context.SaveChangesAsync(ct);
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            // Une requête simultanée a déjà oublié cette liaison : le résultat est le même.
+        }
+
         cache.Remove(CleCache(liaison.CarnetSanteId));
         logger.LogInformation("Google Calendar link of carnet {CarnetSanteId} dropped (access no longer valid)", liaison.CarnetSanteId);
         return ResultatOperation<string>.Echec(StatutOperation.Introuvable);
     }
 
-    private void MemoriserJetonAcces(int carnetId, JetonsGoogle jetons) =>
-        cache.Set(CleCache(carnetId), jetons.JetonAcces, jetons.Validite - TimeSpan.FromMinutes(1));
+    private void MemoriserJetonAcces(int carnetId, JetonsGoogle jetons)
+    {
+        // Marge d'une minute ; une validité absente ou trop courte n'est pas mise en cache (durée négative refusée par le cache).
+        var duree = jetons.Validite - TimeSpan.FromMinutes(1);
+        if (duree > TimeSpan.Zero) cache.Set(CleCache(carnetId), jetons.JetonAcces, duree);
+    }
 
     private string? Reveler(LiaisonAgenda liaison)
     {

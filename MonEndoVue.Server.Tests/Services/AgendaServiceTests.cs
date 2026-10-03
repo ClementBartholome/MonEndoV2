@@ -130,6 +130,37 @@ public class AgendaServiceTests
     }
 
     [Fact]
+    public async Task GetPrecedentAsync_RemonteParFenetresJusquAuRendezVousPrecedent()
+    {
+        var ancien = AgendaDeTest.Evenement("ancien", "Ancien", "2026-04-20T09:00:00+02:00");
+        var avant = new DateTimeOffset(2026, 10, 14, 14, 30, 0, TimeSpan.FromHours(2));
+        // Google ne renvoie l'événement que si sa fenêtre le contient : le premier trimestre est vide.
+        var (service, calendrier) = await AvecLiaison(repondre: requete =>
+        {
+            var parametres = System.Web.HttpUtility.ParseQueryString(requete.RequestUri!.Query);
+            var contient = DateTimeOffset.Parse(parametres["timeMin"]!) <= new DateTimeOffset(2026, 4, 20, 9, 0, 0, TimeSpan.FromHours(2))
+                           && new DateTimeOffset(2026, 4, 20, 9, 0, 0, TimeSpan.FromHours(2)) < DateTimeOffset.Parse(parametres["timeMax"]!);
+            return AgendaDeTest.Reponse(contient ? ancien : "");
+        });
+
+        var resultat = await service.GetPrecedentAsync(CarnetDeTest.UserId, avant, CancellationToken.None);
+
+        Assert.Equal(["ancien"], resultat.Valeur!.Select(e => e.Id));
+        Assert.Equal(2, calendrier.Requetes.Count);
+    }
+
+    [Fact]
+    public async Task GetEvenementsAsync_LienNonHttps_NEstPasRenvoye()
+    {
+        var item = AgendaDeTest.Evenement("a", "Rendez-vous", "2026-09-10T09:00:00+02:00").Replace("https://calendar.example/a", "javascript:alert(1)");
+        var (service, _) = await AvecLiaison(item);
+
+        var resultat = await service.GetEvenementsAsync(CarnetDeTest.UserId, Debut, Fin, CancellationToken.None);
+
+        Assert.Null(Assert.Single(resultat.Valeur!).Lien);
+    }
+
+    [Fact]
     public async Task GetPrecedentAsync_AucunRendezVous_ListeVideSansErreur()
     {
         var (service, _) = await AvecLiaison();
