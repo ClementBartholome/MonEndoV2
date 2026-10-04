@@ -52,6 +52,12 @@ Complète le [CLAUDE.md racine](../CLAUDE.md). S'applique à tout le code de `Mo
     lit par `IStockagePhotos`, vérifie le carnet en base et déduit le type de l'extension ; les view models exposent ce chemin
     (`AcneService.CheminPhoto`), jamais `PhotoUrl`. Le conteneur Azure doit rester **privé** (réglage à vérifier sur le portail) ;
     la CSP n'autorise plus aucun domaine de stockage pour les images.
+  - **Photos** : le format se reconnaît par le **contenu** (`SignaturePhoto`, `ValidationPhoto` dans `Services/Photos/`), jamais par le nom ou le MIME
+    du client ; l'extension du blob et le type servi en découlent. Un nouvel endroit qui reçoit une image passe par `ValidationPhoto.Valider`.
+  - **Action sensible d'une session ouverte** (changement de mot de passe, suppression du compte) : vérifier le mot de passe avec
+    `userManager.VerifierAsync` (`VerificationMotDePasse`), qui compte les échecs et verrouille comme la connexion (429 `TropDeTentatives`),
+    jamais `CheckPasswordAsync` seul.
+  - Dates saisies d'une prise ou d'une séance : `DateSaisieValidator` (2000 à demain UTC) ; bilans : `BilanDateValidator`.
   - Limites de débit (`PolitiquesDebit`) : une fenêtre **par utilisatrice** (ou par adresse pour un anonyme, lue dans
     `X-Forwarded-For` de nginx), jamais une fenêtre commune à toute l'application.
   - `AzureBlobStorageService` : lecture et suppression par URL passent par `IStockagePhotos` (`Services/Photos/`,

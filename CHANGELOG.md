@@ -5,7 +5,14 @@ versions en [SemVer](https://semver.org/lang/fr/) (voir la section Déploiement 
 
 ## [1.5.0] - non publiée
 
-_Version en préparation : voir le plan de la release._
+### Sécurité
+- Changer son mot de passe ou supprimer son compte compte désormais les mots de passe erronés comme à la connexion : après plusieurs
+  essais ratés, la fonction est bloquée quelques minutes, y compris avec le bon mot de passe.
+- Les photos sont reconnues d'après leur contenu réel et non d'après leur nom ou le type annoncé par l'appareil : un fichier qui n'est pas une
+  image (JPEG, PNG, WebP ou HEIC) est refusé.
+- Les dates des prises et des séances de soin doivent être plausibles (ni avant 2000, ni après demain).
+- L'authentification n'accepte plus les adresses locales de développement en production, la clé de signature des sessions est lue à un seul
+  endroit et les échecs d'authentification ordinaires ne sont plus journalisés comme des erreurs.
 
 ## [1.4.0] - 2026-10-03
 
