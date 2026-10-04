@@ -53,6 +53,11 @@ dotnet ef migrations add NomEnPascalCase --project MonEndoVue.Server
   **`JourRegle`** (jours de règles) — page `/cycle`, onglets Règles (`?onglet=cycles`), Symptômes et Acné.
   Règles via `CycleController` (carnet de la session) : `GET Cycle?jour=&mois=` (jours du mois, cycle en cours,
   6 derniers cycles et moyenne dès deux cycles) et `PUT`/`DELETE Cycle/regles/{jour}` (un jour à la fois, jamais à venir).
+  Chaque jour de règles porte deux détails **facultatifs** (null = non précisé, jamais compté comme un niveau ni comme « non ») : le **flux**
+  (`FluxRegles` : Traces, Léger, Moyen, Abondant, stocké en texte) et les **caillots** (oui / non), via `PUT Cycle/regles/{jour}/details`
+  (un jour déjà noté ; les deux champs remplacent les précédents) ; `GET Cycle` renvoie `detailsJours` pour le mois. Ils apparaissent dans le
+  calendrier (points), l'export des données et la synthèse du PDF (jours par niveau, caillots oui / non). Rubriques et sources :
+  `.claude/skills/endometriose/sources.md` ; maquettes de la 1.5.0 dans le plan privé.
   Règles = jours notés consécutifs, un oubli d'un jour toléré ; un écart de plus de 60 jours n'est ni listé ni compté
   (`HistoriqueCycles`, même seuils que `CycleDuJour`). **Aucune prédiction** de prochaines règles.
   Acné : **`EpisodeAcne`** (début, fin vide = en cours ; un seul en cours, sans chevauchement) via `AcneController`

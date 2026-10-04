@@ -5,6 +5,11 @@ versions en [SemVer](https://semver.org/lang/fr/) (voir la section Déploiement 
 
 ## [1.5.0] - non publiée
 
+### Ajouté
+- Règles : tu peux préciser le **flux** de chaque jour de règles (traces, léger, moyen, abondant) et noter s'il y a eu des **caillots**. C'est
+  facultatif, enregistré dès que tu touches un choix, et le calendrier montre le flux par des points. Ces précisions apparaissent dans ton
+  export de données et dans la synthèse pour ton rendez-vous (nombre de jours par niveau, jamais d'interprétation).
+
 ### Corrigé
 - Se connecter sur un appareil ne déconnecte plus les autres : chaque appareil (téléphone, ordinateur…) a sa propre session, qui se
   renouvelle seule. Si l'application est coupée au moment d'un renouvellement, elle retrouve sa session au lieu de te redemander
