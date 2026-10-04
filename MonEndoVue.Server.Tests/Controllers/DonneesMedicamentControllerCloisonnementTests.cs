@@ -15,7 +15,7 @@ public sealed class DonneesMedicamentControllerCloisonnementTests : IDisposable
 
     public DonneesMedicamentControllerCloisonnementTests()
     {
-        _controller = new DonneesMedicamentController(_carnet.Context, _carnet.CarnetSanteService)
+        _controller = new DonneesMedicamentController(_carnet.Context, _carnet.CarnetSanteService, TimeProvider.System)
         {
             ControllerContext = CarnetDeTest.ContexteAuthentifie(),
         };

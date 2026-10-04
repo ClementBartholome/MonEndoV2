@@ -93,10 +93,12 @@ namespace MonEndoVue.Server
             {
                 options.AddPolicy("CorsPolicy", policyBuilder =>
                 {
-                    policyBuilder.WithOrigins("https://localhost:7206/", "https://localhost:5173",
-                            "http://localhost:5173",
-                            "https://monendoapp.fr",
-                            "https://localhost:5175")
+                    // Les origines locales (Vite) ne sont autorisées qu'en développement : en production, avec des cookies
+                    // transmis (credentials), seule l'origine publique de l'application compte.
+                    string[] origines = builder.Environment.IsDevelopment()
+                        ? ["https://localhost:7206", "https://localhost:5173", "http://localhost:5173", "https://localhost:5175"]
+                        : ["https://monendoapp.fr"];
+                    policyBuilder.WithOrigins(origines)
                         .AllowAnyMethod()
                         .AllowAnyHeader()
                         .WithExposedHeaders("Access-Control-Allow-Origin")
@@ -182,7 +184,6 @@ namespace MonEndoVue.Server
                     var validIssuer = builder.Configuration["Authentication:Schemes:Bearer:ValidIssuer"];
                     var validAudiences = builder.Configuration
                         .GetSection("Authentication:Schemes:Bearer:ValidAudiences").Get<string[]>();
-                    var secret = builder.Configuration["Authentication:Schemes:Bearer:Secret"];
 
                     var hasIssuer = !string.IsNullOrWhiteSpace(validIssuer);
                     var hasAudiences = validAudiences is { Length: > 0 };
@@ -196,7 +197,7 @@ namespace MonEndoVue.Server
                         ClockSkew = TimeSpan.FromMinutes(1),
                         ValidIssuer = validIssuer,
                         ValidAudiences = validAudiences,
-                        IssuerSigningKey = new SymmetricSecurityKey(Encoding.ASCII.GetBytes(secret))
+                        IssuerSigningKey = new SymmetricSecurityKey(CleSignatureJwt.Lire(builder.Configuration))
                     };
 
                     options.Events = new JwtBearerEvents
@@ -204,15 +205,10 @@ namespace MonEndoVue.Server
                         OnAuthenticationFailed = context =>
                         {
                             var logger = context.HttpContext.RequestServices.GetRequiredService<ILogger<Program>>();
-                            logger.LogError(context.Exception, "Authentication failed.");
+                            // Un jeton expiré ou absent est un cas courant (la session se renouvelle) : pas d'erreur ni de pile.
+                            logger.LogWarning("Authentication failed: {Raison}", context.Exception.GetType().Name);
                             return Task.CompletedTask;
                         },
-                        OnTokenValidated = context =>
-                        {
-                            var logger = context.HttpContext.RequestServices.GetRequiredService<ILogger<Program>>();
-                            logger.LogInformation("Token validated.");
-                            return Task.CompletedTask;
-                        }
                     };
                 });
 
@@ -272,6 +268,11 @@ namespace MonEndoVue.Server
             builder.Services.AddSingleton<IConfiguration>(builder.Configuration);
 
             var app = builder.Build();
+
+            if (builder.Configuration[CleSignatureJwt.Reglage]?.Length < CleSignatureJwt.LongueurRecommandee)
+            {
+                app.Logger.LogWarning("La clé de signature des jetons est courte (moins de {Longueur} caractères) : la régénérer", CleSignatureJwt.LongueurRecommandee);
+            }
 
             var erreurWebPush = app.Services.GetRequiredService<IOptions<WebPushOptions>>().Value.Erreur();
             if (erreurWebPush is not null)

@@ -14,7 +14,7 @@ namespace MonEndoVue.Server.Services
         public (string token, DateTime expiry) GenerateAccessToken(ApplicationUser user)
         {
             var tokenHandler = new JwtSecurityTokenHandler();
-            var key = Encoding.ASCII.GetBytes(configuration["Jwt:Key"] ?? string.Empty);
+            var key = CleSignatureJwt.Lire(configuration);
             var issuer = configuration["Authentication:Schemes:Bearer:ValidIssuer"];
             var audience = configuration
                 .GetSection("Authentication:Schemes:Bearer:ValidAudiences")
@@ -23,7 +23,7 @@ namespace MonEndoVue.Server.Services
             var tokenDescriptor = new SecurityTokenDescriptor
             {
                 Subject = new ClaimsIdentity(ClaimsDe(user)),
-                Expires = DateTime.Now.AddMinutes(30),
+                Expires = DateTime.UtcNow.AddMinutes(30),
                 Issuer = issuer,
                 Audience = audience,
                 SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)

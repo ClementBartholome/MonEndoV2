@@ -26,9 +26,12 @@ public class SuppressionCompteService(
     {
         var user = await userManager.FindByIdAsync(userId);
         if (user == null) return ResultatOperation.Echec(StatutOperation.NonAuthentifie);
-        if (!await userManager.CheckPasswordAsync(user, motDePasse))
+        switch (await userManager.VerifierAsync(user, motDePasse))
         {
-            return ResultatOperation.Echec(StatutOperation.Invalide, MessageMotDePasseIncorrect);
+            case IssueVerificationMotDePasse.Verrouille:
+                return ResultatOperation.Echec(StatutOperation.TropDeTentatives, VerificationMotDePasse.MessageTropDeTentatives);
+            case IssueVerificationMotDePasse.Incorrect:
+                return ResultatOperation.Echec(StatutOperation.Invalide, MessageMotDePasseIncorrect);
         }
 
         return await SupprimerDefinitivementAsync(user, ct);

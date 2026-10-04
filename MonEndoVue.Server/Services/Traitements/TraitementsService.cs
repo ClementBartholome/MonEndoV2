@@ -130,6 +130,7 @@ public class TraitementsService(AppDbContext context, CarnetSanteService carnetS
         if (echec != null) return ResultatOperation<int>.Echec(echec.Statut, echec.Message);
         if (traitement!.Type != TypeTraitement.Medicamenteux) return ResultatOperation<int>.Echec(StatutOperation.Invalide, "Un soin se note par séance.");
         if (!Enum.IsDefined(dto.Statut)) return ResultatOperation<int>.Echec(StatutOperation.Invalide, "Statut de prise inconnu.");
+        if (!DateSaisieValidator.EstValide(dto.Date, horloge.GetUtcNow())) return ResultatOperation<int>.Echec(StatutOperation.Invalide, DateSaisieValidator.Message);
 
         if (dto.HeurePrevue is { } heure)
         {
@@ -188,6 +189,7 @@ public class TraitementsService(AppDbContext context, CarnetSanteService carnetS
         var (traitement, echec) = await TraitementDeAsync(userId, traitementId, ct);
         if (echec != null) return ResultatOperation<int>.Echec(echec.Statut, echec.Message);
         if (traitement!.Type != TypeTraitement.NonMedicamenteux) return ResultatOperation<int>.Echec(StatutOperation.Invalide, "Un médicament se note par prise.");
+        if (!DateSaisieValidator.EstValide(dto.Date, horloge.GetUtcNow())) return ResultatOperation<int>.Echec(StatutOperation.Invalide, DateSaisieValidator.Message);
 
         var seance = new DonneesTraitementNonMedicamenteux
         {

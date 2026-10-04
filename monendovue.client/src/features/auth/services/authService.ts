@@ -79,6 +79,9 @@ const authService = {
             if (error.response && error.response.status === 400) {
                 throw new Error(error.response.data?.$values?.[0] ?? "Requête invalide.");
             }
+            if (error.response && error.response.status === 429) {
+                throw new Error(error.response.data?.message ?? "Trop d'essais. Réessaie dans quelques minutes.");
+            }
             throw error;
         }
     }

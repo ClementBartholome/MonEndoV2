@@ -85,7 +85,7 @@ public class ConsentementTests
     }
 
     private static TokenService Jetons() => new(new ConfigurationBuilder()
-        .AddInMemoryCollection(new Dictionary<string, string?> { ["Jwt:Key"] = "cle-de-test-uniquement-pour-les-tests-unitaires" })
+        .AddInMemoryCollection(new Dictionary<string, string?> { [CleSignatureJwt.Reglage] = "cle-de-test-uniquement-pour-les-tests-unitaires" })
         .Build());
 
     private static ApplicationUser Utilisatrice(string? version) =>

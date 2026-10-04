@@ -75,6 +75,22 @@ public sealed class SuppressionCompteServiceTests : IDisposable
     }
 
     [Fact]
+    public async Task SupprimerAsync_TropDeMotsDePasseErrones_VerrouilleEtNeSupprimeRien()
+    {
+        var (user, carnetId) = await CreerCompteRempli("a-supprimer@local", Photo);
+        for (var i = 0; i < OptionsIdentite.EchecsAvantVerrouillage; i++)
+        {
+            await Service().SupprimerAsync(user.Id, IdentityDeTest.MotDePasseValide + "-erreur", CancellationToken.None);
+        }
+
+        var resultat = await Service().SupprimerAsync(user.Id, IdentityDeTest.MotDePasseValide, CancellationToken.None);
+
+        Assert.Equal(StatutOperation.TropDeTentatives, resultat.Statut);
+        Assert.True(await _identity.Context.CarnetSantes.AnyAsync(c => c.Id == carnetId));
+        Assert.Contains(Photo, _photos.Contenus.Keys);
+    }
+
+    [Fact]
     public async Task SupprimerAsync_StockageIndisponible_NeSupprimeRienEnBase()
     {
         var (user, carnetId) = await CreerCompteRempli("a-supprimer@local", Photo);
