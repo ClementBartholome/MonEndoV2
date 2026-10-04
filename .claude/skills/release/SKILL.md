@@ -88,4 +88,6 @@ Points d'attention connus :
   horaires en base mais que l'ancienne image les traite tous comme des traitements sans planning. Les photos restent lisibles
   par l'ancienne image seulement si le conteneur de stockage est redevenu public : **ne pas le rendre public pour un retour**,
   mieux vaut corriger en avant. Plus ancien point de retour possible après la 1.3.0 : la 1.2.1.
+- **Retour de la 1.5.0 vers la 1.4.0** : la table `SessionsAppareil` est ignorée par l'ancienne image, mais les sessions ouvertes depuis la 1.5.0 n'ont plus de
+  jeton en clair sur `AspNetUsers` : chaque utilisatrice devra se reconnecter une fois. Rien à exécuter.
 - Toute version qui rend un champ nullable ou supprime une table ajoute ici sa propre consigne de retour arrière.
