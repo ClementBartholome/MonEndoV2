@@ -35,7 +35,7 @@ public sealed class IdentityDeTest : IDisposable
         var configuration = new ConfigurationBuilder()
             .AddInMemoryCollection(new Dictionary<string, string?>
             {
-                ["Jwt:Key"] = "cle-de-test-uniquement-pour-les-tests-unitaires",
+                [CleSignatureJwt.Reglage] = "cle-de-test-uniquement-pour-les-tests-unitaires",
             })
             .Build();
 

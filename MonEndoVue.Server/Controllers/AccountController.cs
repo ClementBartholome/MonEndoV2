@@ -96,7 +96,7 @@ namespace MonEndoVue.Server.Controllers
             }
 
             // Un compte sans expiration (jeton jamais émis) ne peut pas ouvrir de session par ce chemin.
-            if (user.RefreshTokenExpiryTime is not { } expiration || expiration <= DateTime.Now)
+            if (user.RefreshTokenExpiryTime is not { } expiration || expiration <= horloge.GetUtcNow().UtcDateTime)
             {
                 logger.LogWarning("Expired refresh token");
                 return BadRequest("Expired refresh token");
@@ -192,17 +192,18 @@ namespace MonEndoVue.Server.Controllers
             var refreshToken = tokenService.GenerateRefreshToken();
 
             user.RefreshToken = refreshToken;
-            user.RefreshTokenExpiryTime = DateTime.Now.AddDays(2);
-            user.DerniereActiviteLe = horloge.GetUtcNow().UtcDateTime;
+            var maintenant = horloge.GetUtcNow();
+            user.RefreshTokenExpiryTime = maintenant.UtcDateTime.AddDays(2);
+            user.DerniereActiviteLe = maintenant.UtcDateTime;
             await userManager.UpdateAsync(user);
 
-            Response.Cookies.Append("accessToken", accessToken, CookieSession(DateTime.Now.AddMinutes(30)));
-            Response.Cookies.Append("refreshToken", refreshToken, CookieSession(DateTime.Now.AddDays(2)));
+            Response.Cookies.Append("accessToken", accessToken, CookieSession(maintenant.AddMinutes(30)));
+            Response.Cookies.Append("refreshToken", refreshToken, CookieSession(maintenant.AddDays(2)));
 
             return (accessToken, refreshToken, tokenExpiry);
         }
 
-        private static CookieOptions CookieSession(DateTime expiration) => new()
+        private static CookieOptions CookieSession(DateTimeOffset expiration) => new()
         {
             HttpOnly = true,
             Secure = true,
