@@ -90,6 +90,7 @@ class Redaction {
         if (rubriques.cycle) this.symptomes();
         if (rubriques.traitements) this.traitements();
         if (rubriques.bilans) this.bilans();
+        if (rubriques.rapports) this.rapports();
         if (rubriques.activite) this.activite();
         this.joursParMois();
         if (rubriques.bilans) this.notes();
@@ -237,6 +238,66 @@ class Redaction {
         if (bilans.joursBallonnements || bilans.joursCrampes) {
             this.paragraphe(`Transit : ballonnements ${pluriel(bilans.joursBallonnements, 'jour')}, crampes d'estomac ${pluriel(bilans.joursCrampes, 'jour')}.`);
         }
+        this.categoriesDuBilan();
+    }
+
+    /** Catégories facultatives du bilan : chaque ligne donne le nombre de jours renseignés, rien n'est interprété. */
+    private categoriesDuBilan(): void {
+        const { categories } = this.synthese.bilans;
+        const sur = (notes: number) => `sur ${pluriel(notes, 'jour')} renseigné${notes > 1 ? 's' : ''}`;
+
+        const digestif = categories.digestif;
+        if (digestif.joursNotes > 0) {
+            this.paragraphe(
+                `Transit (suite), ${sur(digestif.joursNotes)} : douleur en allant à la selle ${pluriel(digestif.joursDouleurSelle, 'jour')}, ` +
+                `nausées ${pluriel(digestif.joursNausees, 'jour')}, traces de sang dans les selles ${pluriel(digestif.joursSangSelles, 'jour')}.`);
+        }
+
+        const urinaire = categories.urinaire;
+        if (urinaire.joursNotes > 0) {
+            this.paragraphe(
+                `Urinaire, ${sur(urinaire.joursNotes)} : douleur en urinant ${pluriel(urinaire.joursDouleurUriner, 'jour')}, ` +
+                `envies fréquentes ou pressantes ${pluriel(urinaire.joursEnvies, 'jour')}, difficulté à vider la vessie ${pluriel(urinaire.joursDifficulteVider, 'jour')}.`);
+            if (urinaire.joursSangVisible.length > 0) {
+                const jours = urinaire.joursSangVisible.map((j) => `${jourCourt(j.jour)}${j.pendantRegles ? ' (jour de règles)' : ''}`).join(', ');
+                this.paragraphe(`Sang visible dans les urines : ${pluriel(urinaire.joursSangVisible.length, 'jour')} (${jours}).`);
+            }
+        }
+
+        const saignements = categories.saignementsHorsRegles;
+        if (saignements.joursNotes > 0) {
+            const details = saignements.jours > 0
+                ? ` (traces ${saignements.traces}, légers ${saignements.legers}, abondants ${saignements.abondants})` : '';
+            this.paragraphe(`Saignements hors règles, ${sur(saignements.joursNotes)} : ${pluriel(saignements.jours, 'jour')}${details}.`);
+        }
+
+        const nuit = categories.nuitEtJournee;
+        if (nuit.nuitsNotees > 0) {
+            this.paragraphe(
+                `Nuits, ${pluriel(nuit.nuitsNotees, 'nuit')} renseignée${nuit.nuitsNotees > 1 ? 's' : ''} : bonne ${nuit.nuitsBonnes}, moyenne ${nuit.nuitsMoyennes}, ` +
+                `difficile ${nuit.nuitsDifficiles} ; réveils à cause de la douleur : ${pluriel(nuit.nuitsReveilsDouleur, 'nuit')}.`);
+        }
+        if (nuit.journeesNotees > 0) {
+            this.paragraphe(
+                `Journées, ${pluriel(nuit.journeesNotees, 'journée')} renseignée${nuit.journeesNotees > 1 ? 's' : ''} : pas limitées ${nuit.journeesPasLimitees}, ` +
+                `un peu limitées ${nuit.journeesPeuLimitees}, très limitées ${nuit.journeesTresLimitees}.`);
+        }
+        if (nuit.joursAbsence > 0 || nuit.joursActiviteAnnulee > 0) {
+            this.paragraphe(`Absences au travail ou en cours : ${pluriel(nuit.joursAbsence, 'jour')} ; activités annulées ou reportées : ${pluriel(nuit.joursActiviteAnnulee, 'jour')}.`);
+        }
+    }
+
+    /** Rubrique discrète, imprimée seulement si elle est cochée. */
+    private rapports(): void {
+        const { rapports } = this.synthese.bilans.categories;
+        this.titre('Rapports');
+        if (rapports.joursNotes === 0) {
+            this.paragraphe('Aucune réponse notée sur la période.');
+            return;
+        }
+        this.paragraphe(
+            `Douleur pendant ou après un rapport, ${pluriel(rapports.joursNotes, 'jour')} renseigné${rapports.joursNotes > 1 ? 's' : ''} : ` +
+            `oui ${rapports.avecDouleur}, non ${rapports.sansDouleur}, pas de rapport ${rapports.pasDeRapport}.`);
     }
 
     private activite(): void {

@@ -93,6 +93,10 @@ dotnet ef migrations add NomEnPascalCase --project MonEndoVue.Server
   Les **catégories facultatives** (Corps, Notes, puis Urinaire, Saignements hors règles, Nuit et journée, Rapports) s'affichent selon un réglage de
   l'appareil (`Paramètres › Catégories du bilan`, `localStorage`, `features/bilan-quotidien/config/categories.ts`) : masquer une catégorie ne supprime
   aucune réponse (historique, export et PDF la gardent). Douleur, émotions, fatigue et stress sont toujours présents.
+  Les questions de ces catégories (libellés, choix, suite d'intensité) sont décrites dans `config/questions.ts` et affichées par `QuestionsBilan` ;
+  chaque champ est **nullable** côté serveur (`BilanQuotidien`, `BilanCategoriesValidator`). Résumé d'un bloc replié = nombre de réponses, jamais
+  leur contenu ; **« Rapports » est discrète** (désactivée par défaut, rubrique du PDF décochée par défaut). Rubriques et sources :
+  `.claude/skills/endometriose/sources.md`.
   Les bilans antérieurs gardent leur ancienne humeur `Mood` (`Heureuse`/`Neutre`/`Triste`) : tout calcul d'humeur passe
   par `features/bilan-quotidien/utils/humeur.ts`, qui prend en compte les deux.
 - Accueil `/` « Aujourd'hui » (`GET Accueil/aujourdhui?jour=AAAA-MM-JJ`, jour local envoyé par le client, carnet de la

@@ -31,5 +31,6 @@ const RUBRIQUES: { cle: Rubrique; titre: string; detail: string }[] = [
   { cle: 'bilans', titre: 'Bilans quotidiens', detail: 'Émotions, fatigue, stress, transit, notes' },
   { cle: 'activite', titre: 'Activité physique', detail: 'Séances et effet sur la douleur' },
   { cle: 'transit', titre: 'Ancien suivi du transit', detail: 'Avant les bilans quotidiens' },
+  { cle: 'rapports', titre: 'Rapports', detail: 'Douleur pendant ou après un rapport (décochée par défaut)' },
 ];
 </script>
