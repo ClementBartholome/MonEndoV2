@@ -67,6 +67,7 @@ public class SuppressionCompteService(
             await MarquerDonneesDuCarnetAsync(id, ct);
         }
 
+        context.SessionsAppareil.RemoveRange(await context.SessionsAppareil.Where(s => s.UserId == user.Id).ToListAsync(ct));
         context.Users.Remove(user);
         await context.SaveChangesAsync(ct);
 

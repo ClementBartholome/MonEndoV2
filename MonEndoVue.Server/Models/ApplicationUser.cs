@@ -5,6 +5,7 @@ namespace MonEndoVue.Server.Models;
 
 public class ApplicationUser : IdentityUser
 {
+    /// <summary>Ancien jeton de renouvellement unique, en clair : remplacé par <see cref="SessionAppareil"/> et lu seulement pour convertir les sessions ouvertes avant la 1.5.0 (colonnes à supprimer en 1.6.0).</summary>
     public string RefreshToken { get; set; } = string.Empty;
     public DateTime? RefreshTokenExpiryTime { get; set; }
     public CarnetSante? CarnetSante { get; set; }

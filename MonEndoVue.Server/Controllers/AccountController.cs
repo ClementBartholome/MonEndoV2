@@ -7,6 +7,7 @@ using MonEndoVue.Server.Dto;
 using MonEndoVue.Server.Models;
 using MonEndoVue.Server.Services;
 using MonEndoVue.Server.Services.Consentement;
+using MonEndoVue.Server.Services.Sessions;
 
 namespace MonEndoVue.Server.Controllers
 {
@@ -18,6 +19,7 @@ namespace MonEndoVue.Server.Controllers
         SignInManager<ApplicationUser> signInManager,
         CarnetSanteService carnetSanteService, TokenService tokenService,
         TimeProvider horloge,
+        SessionsService sessions,
         ILogger<AccountController> logger
         )
         : ControllerBase
@@ -44,7 +46,7 @@ namespace MonEndoVue.Server.Controllers
             }
             await carnetSanteService.CreateCarnetSante(user.Id);
 
-            var (_, _, tokenExpiry) = await OuvrirSessionAsync(user);
+            var tokenExpiry = await OuvrirSessionAsync(user);
 
             var carnetSante = await carnetSanteService.GetCarnetSanteByUserId(user.Id);
             return Ok(new { TokenExpiry = tokenExpiry, user.UserName, CarnetSanteId = carnetSante.Id, ConsentementAJour = PolitiqueConfidentialite.EstAJour(user) });
@@ -66,7 +68,7 @@ namespace MonEndoVue.Server.Controllers
                 var result = await signInManager.CheckPasswordSignInAsync(user, identifiants.Password, lockoutOnFailure: true);
                 if (!result.Succeeded) return Unauthorized();
 
-                var (_, _, tokenExpiry) = await OuvrirSessionAsync(user);
+                var tokenExpiry = await OuvrirSessionAsync(user);
 
                 var carnetSante = await carnetSanteService.GetCarnetSanteByUserId(user.Id);
                 return Ok(new { TokenExpiry = tokenExpiry, user.UserName, CarnetSanteId = carnetSante.Id, ConsentementAJour = PolitiqueConfidentialite.EstAJour(user) });
@@ -88,21 +90,22 @@ namespace MonEndoVue.Server.Controllers
                 return BadRequest("Refresh token is not provided");
             }
 
-            var user = await userManager.Users.SingleOrDefaultAsync(u => u.RefreshToken == refreshToken);
-            if (user == null)
-            {
-                logger.LogWarning("Invalid refresh token");
-                return BadRequest("Invalid refresh token");
-            }
-
-            // Un compte sans expiration (jeton jamais émis) ne peut pas ouvrir de session par ce chemin.
-            if (user.RefreshTokenExpiryTime is not { } expiration || expiration <= horloge.GetUtcNow().UtcDateTime)
+            // Seule la session de cet appareil est renouvelée : se connecter ailleurs ne la ferme pas.
+            var renouvellement = await sessions.RenouvelerAsync(refreshToken);
+            if (renouvellement.Issue == IssueRenouvellement.Expiree)
             {
                 logger.LogWarning("Expired refresh token");
                 return BadRequest("Expired refresh token");
             }
 
-            var (_, _, tokenExpiry) = await OuvrirSessionAsync(user);
+            var user = renouvellement.UserId is null ? null : await userManager.FindByIdAsync(renouvellement.UserId);
+            if (user == null || renouvellement.Session is not { } session)
+            {
+                logger.LogWarning("Invalid refresh token");
+                return BadRequest("Invalid refresh token");
+            }
+
+            var tokenExpiry = await PoserSessionAsync(user, session);
 
             logger.LogInformation("Refresh token successfully generated for user: {UserId}", user.Id);
             return Ok(new { TokenExpiry = tokenExpiry });
@@ -114,12 +117,9 @@ namespace MonEndoVue.Server.Controllers
             await signInManager.SignOutAsync();
 
             // Le jeton de renouvellement meurt avec la session : un cookie recopié ne rouvrirait rien.
-            if (Request.Cookies["refreshToken"] is { Length: > 0 } cookie
-                && await userManager.Users.SingleOrDefaultAsync(u => u.RefreshToken == cookie) is { } utilisatrice)
+            if (Request.Cookies["refreshToken"] is { Length: > 0 } cookie)
             {
-                utilisatrice.RefreshToken = string.Empty;
-                utilisatrice.RefreshTokenExpiryTime = null;
-                await userManager.UpdateAsync(utilisatrice);
+                await sessions.RevoquerAsync(cookie);
             }
             
             // Efface les cookies actuels (Path=/)
@@ -145,7 +145,11 @@ namespace MonEndoVue.Server.Controllers
             if (user == null) return Unauthorized();
 
             PolitiqueConfidentialite.Enregistrer(user, horloge.GetUtcNow());
-            var (_, _, tokenExpiry) = await OuvrirSessionAsync(user);
+            // Un nouveau jeton d'accès (il porte la version acceptée) sur la session de cet appareil, sans en ouvrir une autre.
+            var courante = Request.Cookies["refreshToken"] is { Length: > 0 } cookie ? await sessions.RenouvelerAsync(cookie) : null;
+            var tokenExpiry = courante is { Issue: IssueRenouvellement.Renouvelee, UserId: not null, Session: { } existante } && courante.UserId == user.Id
+                ? await PoserSessionAsync(user, existante)
+                : await PoserSessionAsync(user, await sessions.OuvrirAsync(user.Id));
 
             logger.LogInformation("Consentement aux données de santé enregistré pour {UserId}", user.Id);
             return Ok(new { TokenExpiry = tokenExpiry, ConsentementAJour = true });
@@ -174,6 +178,8 @@ namespace MonEndoVue.Server.Controllers
             var result = await userManager.ChangePasswordAsync(user, changement.CurrentPassword, changement.NewPassword);
             if (result.Succeeded)
             {
+                // Une session volée ne survit pas au changement de mot de passe : seuls les autres appareils sont déconnectés.
+                await sessions.RevoquerAutresAsync(user.Id, Request.Cookies["refreshToken"]);
                 return Ok();
             }
             
@@ -182,25 +188,27 @@ namespace MonEndoVue.Server.Controllers
             return BadRequest(errors);
         }
         
+        /// <summary>Ouvre la session d’un nouvel appareil (connexion, inscription).</summary>
+        private async Task<DateTime> OuvrirSessionAsync(ApplicationUser user) =>
+            await PoserSessionAsync(user, await sessions.OuvrirAsync(user.Id));
+
         /// <summary>
-        /// Émet un jeton d'accès (30 min) et un refresh token (2 jours), enregistre ce dernier sur l'utilisatrice et les pose
-        /// en cookies HttpOnly (Path=/, SameSite=Strict).
+        /// Émet un jeton d'accès (30 min) et pose avec le jeton de renouvellement de l'appareil (2 jours glissants) en cookies
+        /// HttpOnly (Path=/, SameSite=Strict). Le jeton de renouvellement n'est jamais écrit sur l'utilisatrice : seule son empreinte
+        /// est en base (<see cref="SessionsService"/>).
         /// </summary>
-        private async Task<(string accessToken, string refreshToken, DateTime tokenExpiry)> OuvrirSessionAsync(ApplicationUser user)
+        private async Task<DateTime> PoserSessionAsync(ApplicationUser user, JetonSession session)
         {
             var (accessToken, tokenExpiry) = tokenService.GenerateAccessToken(user);
-            var refreshToken = tokenService.GenerateRefreshToken();
 
-            user.RefreshToken = refreshToken;
             var maintenant = horloge.GetUtcNow();
-            user.RefreshTokenExpiryTime = maintenant.UtcDateTime.AddDays(2);
             user.DerniereActiviteLe = maintenant.UtcDateTime;
             await userManager.UpdateAsync(user);
 
             Response.Cookies.Append("accessToken", accessToken, CookieSession(maintenant.AddMinutes(30)));
-            Response.Cookies.Append("refreshToken", refreshToken, CookieSession(maintenant.AddDays(2)));
+            Response.Cookies.Append("refreshToken", session.Jeton, CookieSession(new DateTimeOffset(DateTime.SpecifyKind(session.Expiration, DateTimeKind.Utc))));
 
-            return (accessToken, refreshToken, tokenExpiry);
+            return tokenExpiry;
         }
 
         private static CookieOptions CookieSession(DateTimeOffset expiration) => new()

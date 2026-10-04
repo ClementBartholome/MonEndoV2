@@ -10,6 +10,7 @@ using MonEndoVue.Server.Controllers;
 using MonEndoVue.Server.Data;
 using MonEndoVue.Server.Models;
 using MonEndoVue.Server.Services;
+using MonEndoVue.Server.Services.Sessions;
 
 namespace MonEndoVue.Server.Tests.Support;
 
@@ -80,6 +81,7 @@ public sealed class IdentityDeTest : IDisposable
             carnetSanteService,
             new TokenService(sp.GetRequiredService<IConfiguration>()),
             new HorlogeFixe(Maintenant),
+            new SessionsService(Context, new TokenService(sp.GetRequiredService<IConfiguration>()), new HorlogeFixe(Maintenant)),
             NullLogger<AccountController>.Instance)
         {
             ControllerContext = new ControllerContext { HttpContext = httpContext },
