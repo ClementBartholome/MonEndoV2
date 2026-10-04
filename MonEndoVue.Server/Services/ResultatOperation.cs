@@ -9,6 +9,7 @@ public enum StatutOperation
     Introuvable,
     Interdit,
     Indisponible,
+    TropDeTentatives,
 }
 
 public sealed record ResultatOperation(StatutOperation Statut, string? Message = null)

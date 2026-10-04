@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using MonEndoVue.Server.Dto;
@@ -205,6 +206,44 @@ public sealed class AccountControllerIdentifiantsTests : IDisposable
         });
 
         Assert.IsType<OkObjectResult>(resultat);
+    }
+
+    [Fact]
+    public async Task ChangePassword_TropDeMotsDePasseActuelsErrones_VerrouilleMemeAvecLeBonMotDePasse()
+    {
+        var user = await _identity.CreerUtilisatrice("session-volee@local");
+        var controller = _identity.CreerController(user.Id);
+        for (var i = 0; i < OptionsIdentite.EchecsAvantVerrouillage; i++)
+        {
+            await controller.ChangePassword(new ChangementMotDePasseDto { CurrentPassword = "Incorrect1!", NewPassword = "NouveauMotDePasse2!" });
+        }
+
+        var resultat = await controller.ChangePassword(new ChangementMotDePasseDto
+        {
+            CurrentPassword = IdentityDeTest.MotDePasseValide,
+            NewPassword = "NouveauMotDePasse2!",
+        });
+
+        var refus = Assert.IsType<ObjectResult>(resultat);
+        Assert.Equal(StatusCodes.Status429TooManyRequests, refus.StatusCode);
+        Assert.True(await _identity.UserManager.CheckPasswordAsync(user, IdentityDeTest.MotDePasseValide));
+    }
+
+    [Fact]
+    public async Task ChangePassword_QuelquesEchecsPuisBonMotDePasse_RemetLeCompteurAZero()
+    {
+        var user = await _identity.CreerUtilisatrice("distraite-2@local");
+        var controller = _identity.CreerController(user.Id);
+        await controller.ChangePassword(new ChangementMotDePasseDto { CurrentPassword = "Incorrect1!", NewPassword = "NouveauMotDePasse2!" });
+
+        var resultat = await controller.ChangePassword(new ChangementMotDePasseDto
+        {
+            CurrentPassword = IdentityDeTest.MotDePasseValide,
+            NewPassword = "NouveauMotDePasse2!",
+        });
+
+        Assert.IsType<OkResult>(resultat);
+        Assert.Equal(0, await _identity.UserManager.GetAccessFailedCountAsync(user));
     }
 
     public void Dispose() => _identity.Dispose();

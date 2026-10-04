@@ -162,6 +162,15 @@ namespace MonEndoVue.Server.Controllers
                 return BadRequest();
             }
 
+            // Les échecs comptent comme à la connexion : une session volée ne peut pas deviner le mot de passe actuel.
+            switch (await userManager.VerifierAsync(user, changement.CurrentPassword))
+            {
+                case IssueVerificationMotDePasse.Verrouille:
+                    return StatusCode(StatusCodes.Status429TooManyRequests, new { message = VerificationMotDePasse.MessageTropDeTentatives });
+                case IssueVerificationMotDePasse.Incorrect:
+                    return BadRequest(new[] { TranslateError(new IdentityError { Code = "PasswordMismatch" }) });
+            }
+
             var result = await userManager.ChangePasswordAsync(user, changement.CurrentPassword, changement.NewPassword);
             if (result.Succeeded)
             {
