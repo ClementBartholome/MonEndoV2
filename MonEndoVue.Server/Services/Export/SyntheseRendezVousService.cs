@@ -66,7 +66,7 @@ public class SyntheseRendezVousService(AppDbContext context)
             Douleurs = Douleurs(douleurs, joursDeRegles),
             Symptomes = Symptomes(symptomes, joursDeRegles),
             Traitements = await TraitementsAsync(carnetId, du, au, ct),
-            Bilans = Bilans(bilans),
+            Bilans = Bilans(bilans, joursDeRegles),
             Activite = Activite(activites),
             Transit = transit.Select(t => new SyntheseEvenementViewModel { Jour = Texte(t.Date), Type = t.TypeEvenement }).ToList(),
         });
@@ -212,8 +212,9 @@ public class SyntheseRendezVousService(AppDbContext context)
         return total;
     }
 
-    private static SyntheseBilansViewModel Bilans(List<BilanQuotidien> bilans) => new()
+    private static SyntheseBilansViewModel Bilans(List<BilanQuotidien> bilans, HashSet<DateOnly> joursDeRegles) => new()
     {
+        Categories = Categories(bilans, joursDeRegles),
         Nombre = bilans.Count,
         DouleurMoyenne = Moyenne(bilans.Select(b => (double?)b.DouleurMoyenne)),
         FatigueMoyenne = Moyenne(bilans.Select(b => (double?)b.Fatigue)),
@@ -239,6 +240,57 @@ public class SyntheseRendezVousService(AppDbContext context)
             Crampes = b.CrampesEstomac,
             Notes = string.IsNullOrWhiteSpace(b.Commentaire) ? null : b.Commentaire.Trim(),
         }).ToList(),
+    };
+
+    /// <summary>Comptes de jours des catégories facultatives ; « notés » = jours où au moins une réponse de la catégorie est renseignée.</summary>
+    private static SyntheseCategoriesViewModel Categories(List<BilanQuotidien> bilans, HashSet<DateOnly> joursDeRegles) => new()
+    {
+        Digestif = new SyntheseDigestifViewModel
+        {
+            JoursNotes = bilans.Count(b => b.DouleurSelle is not null || b.Nausees is not null || b.SangSelles is not null),
+            JoursDouleurSelle = bilans.Count(b => b.DouleurSelle == true),
+            JoursNausees = bilans.Count(b => b.Nausees == true),
+            JoursSangSelles = bilans.Count(b => b.SangSelles == true),
+        },
+        Urinaire = new SyntheseUrinaireViewModel
+        {
+            JoursNotes = bilans.Count(b => b.DouleurUriner is not null || b.EnviesUrinaires is not null || b.DifficulteVider is not null || b.SangUrines is not null),
+            JoursDouleurUriner = bilans.Count(b => b.DouleurUriner == true),
+            JoursEnvies = bilans.Count(b => b.EnviesUrinaires == true),
+            JoursDifficulteVider = bilans.Count(b => b.DifficulteVider == true),
+            JoursSangVisible = bilans.Where(b => b.SangUrines == true)
+                .Select(b => new SyntheseJourSangViewModel { Jour = Texte(b.Date), PendantRegles = joursDeRegles.Contains(Jour(b.Date)) })
+                .ToList(),
+        },
+        SaignementsHorsRegles = new SyntheseSaignementsHorsReglesViewModel
+        {
+            JoursNotes = bilans.Count(b => b.SaignementsHorsRegles is not null),
+            Jours = bilans.Count(b => b.SaignementsHorsRegles == true),
+            Traces = bilans.Count(b => b.SaignementsHorsRegles == true && b.AbondanceSaignementsHorsRegles == "Traces"),
+            Legers = bilans.Count(b => b.SaignementsHorsRegles == true && b.AbondanceSaignementsHorsRegles == "Legers"),
+            Abondants = bilans.Count(b => b.SaignementsHorsRegles == true && b.AbondanceSaignementsHorsRegles == "Abondants"),
+        },
+        NuitEtJournee = new SyntheseNuitEtJourneeViewModel
+        {
+            NuitsNotees = bilans.Count(b => b.Nuit is not null),
+            NuitsBonnes = bilans.Count(b => b.Nuit == "Bonne"),
+            NuitsMoyennes = bilans.Count(b => b.Nuit == "Moyenne"),
+            NuitsDifficiles = bilans.Count(b => b.Nuit == "Difficile"),
+            NuitsReveilsDouleur = bilans.Count(b => b.ReveilsDouleur == true),
+            JourneesNotees = bilans.Count(b => b.LimitationJournee is not null),
+            JourneesPasLimitees = bilans.Count(b => b.LimitationJournee == "PasLimitee"),
+            JourneesPeuLimitees = bilans.Count(b => b.LimitationJournee == "PeuLimitee"),
+            JourneesTresLimitees = bilans.Count(b => b.LimitationJournee == "TresLimitee"),
+            JoursAbsence = bilans.Count(b => b.AbsenceTravail == true),
+            JoursActiviteAnnulee = bilans.Count(b => b.ActiviteAnnulee == true),
+        },
+        Rapports = new SyntheseRapportsViewModel
+        {
+            JoursNotes = bilans.Count(b => b.DouleurRapport is not null),
+            AvecDouleur = bilans.Count(b => b.DouleurRapport == "Oui"),
+            SansDouleur = bilans.Count(b => b.DouleurRapport == "Non"),
+            PasDeRapport = bilans.Count(b => b.DouleurRapport == "PasDeRapport"),
+        },
     };
 
     private static SyntheseActiviteViewModel Activite(List<DonneesActivitePhysique> activites) => new()

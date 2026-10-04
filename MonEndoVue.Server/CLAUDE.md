@@ -63,6 +63,10 @@ Complète le [CLAUDE.md racine](../CLAUDE.md). S'applique à tout le code de `Mo
   - **Action sensible d'une session ouverte** (changement de mot de passe, suppression du compte) : vérifier le mot de passe avec
     `userManager.VerifierAsync` (`VerificationMotDePasse`), qui compte les échecs et verrouille comme la connexion (429 `TropDeTentatives`),
     jamais `CheckPasswordAsync` seul.
+  - **Catégories facultatives du bilan** (transit complété, urinaire, saignements hors règles, nuit et journée, rapports) : colonnes nullables de
+    `BilanQuotidien`, validées par `BilanCategoriesValidator` (intensité seulement si le symptôme est présent, choix limités à leurs valeurs) et
+    copiées par `BilanCategories.Copier` à la modification ; ajouter un champ = modèle, validateur, `Copier`, `BilanQuotidienViewModel`, export,
+    synthèse et type TS dans le même commit. Les comptes de la synthèse (`SyntheseCategoriesViewModel`) donnent toujours le nombre de jours renseignés.
   - Dates saisies d'une prise ou d'une séance : `DateSaisieValidator` (2000 à demain UTC) ; bilans : `BilanDateValidator`.
   - Limites de débit (`PolitiquesDebit`) : une fenêtre **par utilisatrice** (ou par adresse pour un anonyme, lue dans
     `X-Forwarded-For` de nginx), jamais une fenêtre commune à toute l'application.
