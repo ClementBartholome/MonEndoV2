@@ -13,6 +13,8 @@
     </GroupeParametres>
 
     <GroupeParametres titre="Suivi">
+      <LigneParametre titre="Catégories du bilan" detail="Choisir ce qui apparaît" icone="tune"
+                      teinte="bilan" @ouvrir="panneau = 'categories'"/>
       <LigneParametre titre="Repères personnels" detail="Hydratation, pas, stress…" icone="flag"
                       teinte="traitement" @ouvrir="panneau = 'reperes'"/>
     </GroupeParametres>
@@ -39,6 +41,9 @@
     <PanneauBas v-model:open="notificationsOuvertes" titre="Notifications">
       <NotificationSettings/>
     </PanneauBas>
+    <PanneauBas v-model:open="categoriesOuvertes" titre="Catégories du bilan">
+      <CategoriesBilan/>
+    </PanneauBas>
     <PanneauBas v-model:open="reperesOuverts" titre="Repères personnels">
       <ReperesPersonnels @enregistre="panneau = null"/>
     </PanneauBas>
@@ -59,6 +64,7 @@ import { useToast } from '@/shared/components/ui/toast';
 import LiensLegaux from '@/features/legal/components/LiensLegaux.vue';
 import { useAuthStore } from '@/features/auth/store/auth';
 import PanneauBas from '@/shared/components/PanneauBas.vue';
+import CategoriesBilan from '../components/CategoriesBilan.vue';
 import GroupeParametres from '../components/GroupeParametres.vue';
 import LigneParametre from '../components/LigneParametre.vue';
 import LiaisonAgenda from '../components/LiaisonAgenda.vue';
@@ -69,7 +75,7 @@ import SuppressionCompte from '../components/SuppressionCompte.vue';
 import { useExportDonnees } from '../composables/useExportDonnees';
 import { useLiaisonAgenda } from '../composables/useLiaisonAgenda';
 
-type Panneau = 'notifications' | 'reperes' | 'mot-de-passe' | 'suppression' | 'agenda';
+type Panneau = 'notifications' | 'categories' | 'reperes' | 'mot-de-passe' | 'suppression' | 'agenda';
 
 const version = __APP_VERSION__;
 const router = useRouter();
@@ -86,6 +92,7 @@ const ouvertSi = (nom: Panneau) => computed({
   set: (ouvert: boolean) => { panneau.value = ouvert ? nom : null; },
 });
 const notificationsOuvertes = ouvertSi('notifications');
+const categoriesOuvertes = ouvertSi('categories');
 const reperesOuverts = ouvertSi('reperes');
 const motDePasseOuvert = ouvertSi('mot-de-passe');
 const suppressionOuverte = ouvertSi('suppression');

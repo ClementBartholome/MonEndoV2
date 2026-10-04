@@ -9,6 +9,7 @@ import BlocRepliable from '@/features/bilan-quotidien/components/saisie/BlocRepl
 import BlocCorps from '@/features/bilan-quotidien/components/saisie/BlocCorps.vue';
 import { corpsDe, resumeCorps, useSaisieBilan } from '@/features/bilan-quotidien/composables/useSaisieBilan';
 import { useConfirmationSortie } from '@/features/bilan-quotidien/composables/useConfirmationSortie';
+import { useCategoriesBilan } from '@/features/bilan-quotidien/composables/useCategoriesBilan';
 import { DOULEUR_MAX, ECHELLE_MAX, reperesEchelles } from '@/features/bilan-quotidien/config/saisie';
 import { anciennesHumeurs, COMMENTAIRE_MAX } from '@/features/bilan-quotidien/config/emotions';
 import type { BilanQuotidien } from '@/features/bilan-quotidien/types/bilan-quotidien';
@@ -40,6 +41,9 @@ const saisie = useSaisieBilan({
 const { formulaire, manquants, transitComplet, estEnregistrable, estModifie, enregistrement, veilleDisponible } = saisie;
 
 const confirmation = useConfirmationSortie(estModifie);
+
+// Catégories facultatives affichées (réglage de l'appareil) : masquer n'efface aucune réponse déjà enregistrée.
+const { estActive } = useCategoriesBilan();
 
 const corpsOuvert = ref(saisie.corpsInitialRenseigne);
 const notesOuvertes = ref(formulaire.value.commentaire !== '');
@@ -127,18 +131,19 @@ const annuler = () => confirmation.demanderSiNecessaire(() => emit('annule'));
         />
       </div>
 
-      <div v-if="veilleDisponible" class="flex flex-wrap items-center gap-2">
+      <div v-if="veilleDisponible && estActive('corps')" class="flex flex-wrap items-center gap-2">
         <button type="button" class="inline-flex min-h-11 items-center justify-center gap-2 rounded-controle border-[1.5px] border-contour px-3.5 text-sm font-medium text-texte" @click="reprendreHier">
           <i class="material-symbols-outlined text-lg" aria-hidden="true">content_copy</i>Comme hier
         </button>
         <span class="text-xs text-texte-2">Reprend le transit, l'alimentation, les pas et l'hydratation de la veille.</span>
       </div>
 
-      <BlocRepliable v-model:ouvert="corpsOuvert" titre="Corps" icone="accessibility_new" :resume="resumeCorps(corps)">
+      <BlocRepliable v-if="estActive('corps')" v-model:ouvert="corpsOuvert" titre="Corps" icone="accessibility_new" :resume="resumeCorps(corps)">
         <BlocCorps v-model="corps"/>
       </BlocRepliable>
 
       <BlocRepliable
+          v-if="estActive('notes')"
           v-model:ouvert="notesOuvertes"
           titre="Notes"
           icone="edit_note"

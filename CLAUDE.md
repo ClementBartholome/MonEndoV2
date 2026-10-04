@@ -90,6 +90,9 @@ dotnet ef migrations add NomEnPascalCase --project MonEndoVue.Server
   La page s'ouvre sur l'historique ; la saisie du jour ne s'ouvre d'office qu'avec `?ajouter` (accueil, rappel).
   Saisie en un écran (`components/saisie/`) : douleur et émotions obligatoires, stress, fatigue, pas et hydratation
   **nullables** (null = non renseigné, jamais compté pour 0) ; **un seul bilan par jour** et aucun jour futur (409 / 400).
+  Les **catégories facultatives** (Corps, Notes, puis Urinaire, Saignements hors règles, Nuit et journée, Rapports) s'affichent selon un réglage de
+  l'appareil (`Paramètres › Catégories du bilan`, `localStorage`, `features/bilan-quotidien/config/categories.ts`) : masquer une catégorie ne supprime
+  aucune réponse (historique, export et PDF la gardent). Douleur, émotions, fatigue et stress sont toujours présents.
   Les bilans antérieurs gardent leur ancienne humeur `Mood` (`Heureuse`/`Neutre`/`Triste`) : tout calcul d'humeur passe
   par `features/bilan-quotidien/utils/humeur.ts`, qui prend en compte les deux.
 - Accueil `/` « Aujourd'hui » (`GET Accueil/aujourdhui?jour=AAAA-MM-JJ`, jour local envoyé par le client, carnet de la

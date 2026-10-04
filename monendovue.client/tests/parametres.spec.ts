@@ -13,7 +13,7 @@ test.describe('Paramètres', () => {
     for (const groupe of ['Rappels', 'Suivi', 'Compte', 'Mes données']) {
       await expect(page.getByRole('heading', { level: 2, name: groupe })).toBeVisible();
     }
-    for (const ligne of ['Notifications', 'Repères personnels', 'Mot de passe', 'Se déconnecter', 'Télécharger mes données', 'Supprimer mon compte']) {
+    for (const ligne of ['Notifications', 'Catégories du bilan', 'Repères personnels', 'Mot de passe', 'Se déconnecter', 'Télécharger mes données', 'Supprimer mon compte']) {
       await expect(parametresPage.ligne(ligne)).toBeVisible();
     }
     await expect(page.getByText(/^MonEndo v\d/)).toBeVisible();
@@ -26,6 +26,33 @@ test.describe('Paramètres', () => {
 
     await expect(parametresPage.panneau('Notifications')).toBeVisible();
     await expect(parametresPage.panneau('Notifications')).toContainText(/ne sont pas disponibles|ne permet pas/);
+  });
+
+  test('choisit les catégories du bilan, enregistrées sur cet appareil dès le geste', async ({ parametresPage, page }) => {
+    await parametresPage.ouvrir();
+
+    await parametresPage.ligne('Catégories du bilan').click();
+    const panneau = parametresPage.panneau('Catégories du bilan');
+    await expect(panneau.getByRole('switch', { name: 'Afficher Corps dans le bilan' })).toBeChecked();
+    await expect(panneau.getByRole('switch', { name: 'Afficher Notes dans le bilan' })).toBeChecked();
+    await expect(panneau).toContainText('Tes réponses déjà enregistrées sont conservées');
+
+    await panneau.getByRole('switch', { name: 'Afficher Notes dans le bilan' }).click();
+
+    await expect(panneau.getByRole('switch', { name: 'Afficher Notes dans le bilan' })).not.toBeChecked();
+    expect(await page.evaluate(() => JSON.parse(localStorage.getItem('monendo-categories-bilan') ?? '{}'))).toMatchObject({ corps: true, notes: false });
+
+    await panneau.getByRole('button', { name: 'Rétablir les réglages par défaut' }).click();
+    await expect(panneau.getByRole('switch', { name: 'Afficher Notes dans le bilan' })).toBeChecked();
+  });
+
+  test('un réglage abîmé du stockage revient aux catégories par défaut', async ({ parametresPage, page }) => {
+    await page.addInitScript(() => localStorage.setItem('monendo-categories-bilan', '{"corps":"oui","notes":'));
+    await parametresPage.ouvrir();
+
+    await parametresPage.ligne('Catégories du bilan').click();
+
+    await expect(parametresPage.panneau('Catégories du bilan').getByRole('switch', { name: 'Afficher Corps dans le bilan' })).toBeChecked();
   });
 
   test('enregistre des repères personnels sur cet appareil', async ({ parametresPage, page }) => {

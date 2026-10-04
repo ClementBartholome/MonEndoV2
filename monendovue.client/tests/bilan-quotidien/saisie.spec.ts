@@ -24,6 +24,20 @@ test.describe('Bilan quotidien — saisie du jour', () => {
     await expect(bilanPage.aideSaisie).toHaveText('À renseigner : douleur, une émotion');
   });
 
+  test('une catégorie masquée dans Paramètres disparaît de la saisie, la douleur et les émotions restent', async ({ bilanQuotidienPage: bilanPage, page, serveur }) => {
+    simulerBilans(serveur);
+    await page.addInitScript(() => localStorage.setItem('monendo-categories-bilan', JSON.stringify({ corps: false, notes: true })));
+
+    await bilanPage.ouvrirSaisie();
+
+    await expect(bilanPage.titreSaisie).toBeVisible();
+    await expect(page.getByRole('button', { name: /^Corps/ })).toHaveCount(0);
+    await expect(bilanPage.boutonCommeHier).toHaveCount(0);
+    await expect(page.getByRole('button', { name: /^Notes/ })).toBeVisible();
+    await expect(bilanPage.pastille('Douleur', 4)).toBeVisible();
+    await expect(bilanPage.emotions).toBeVisible();
+  });
+
   test('enregistre un bilan avec seulement la douleur et une émotion', async ({ bilanQuotidienPage: bilanPage, page, serveur }) => {
     const bilans = simulerBilans(serveur);
     await bilanPage.ouvrirSaisie();
