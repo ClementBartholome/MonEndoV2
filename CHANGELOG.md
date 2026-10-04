@@ -9,6 +9,8 @@ versions en [SemVer](https://semver.org/lang/fr/) (voir la section Déploiement 
 - Bilan quotidien : de nouvelles catégories **facultatives** à compléter si tu le souhaites (urinaire, suite du transit, saignements hors règles,
   nuit et journée, rapports). Les données sont prêtes côté serveur (enregistrement, historique, export, synthèse du PDF) ; l'écran de saisie
   suit dans la même version.
+- Paramètres › **Catégories du bilan** : tu choisis ce qui apparaît dans ton bilan quotidien (un interrupteur par catégorie, réglage gardé sur
+  ton appareil). Masquer une catégorie n'efface rien : tes réponses déjà enregistrées restent dans l'historique et dans ton export.
 - Règles : tu peux préciser le **flux** de chaque jour de règles (traces, léger, moyen, abondant) et noter s'il y a eu des **caillots**. C'est
   facultatif, enregistré dès que tu touches un choix, et le calendrier montre le flux par des points. Ces précisions apparaissent dans ton
   export de données et dans la synthèse pour ton rendez-vous (nombre de jours par niveau, jamais d'interprétation).
