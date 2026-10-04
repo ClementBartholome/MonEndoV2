@@ -3,6 +3,10 @@
 Toutes les évolutions notables de MonEndo. Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/),
 versions en [SemVer](https://semver.org/lang/fr/) (voir la section Déploiement de `CLAUDE.md`).
 
+## [1.5.0] - non publiée
+
+_Version en préparation : voir le plan de la release._
+
 ## [1.4.0] - 2026-10-03
 
 ### Ajouté
