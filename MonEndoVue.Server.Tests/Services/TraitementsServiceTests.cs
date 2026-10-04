@@ -180,5 +180,23 @@ public sealed class TraitementsServiceTests : IDisposable
         Assert.IsType<NoContentResult>(await controller.Arreter(id, Jour, CancellationToken.None));
     }
 
+    [Theory]
+    [InlineData("0001-01-01")]
+    [InlineData("2027-01-01")]
+    public async Task NoterPriseEtSeance_DateAbsurdeOuFuture_EstRefusee(string date)
+    {
+        var id = await Creer(Quotidien());
+        var kine = (await Service().CreerAsync(CarnetDeTest.UserId, new TraitementDto { Nom = "Kiné", Type = TypeTraitement.NonMedicamenteux, DateDebut = Jour.AddDays(-7) }, CancellationToken.None)).Valeur;
+        var jour = DateTime.Parse(date);
+
+        var prise = await Service().NoterPriseAsync(CarnetDeTest.UserId, id, new PriseDto { Statut = StatutPrise.Pris, Date = jour }, CancellationToken.None);
+        var seance = await Service().NoterSeanceAsync(CarnetDeTest.UserId, kine, new SeanceDto { Date = jour }, CancellationToken.None);
+
+        Assert.Equal(StatutOperation.Invalide, prise.Statut);
+        Assert.Equal(StatutOperation.Invalide, seance.Statut);
+        Assert.False(await _carnet.Context.DonneesMedicaments.AnyAsync(p => p.Date == jour));
+        Assert.False(await _carnet.Context.DonneesTraitementNonMedicamenteux.AnyAsync(s => s.Date == jour));
+    }
+
     public void Dispose() => _carnet.Dispose();
 }
