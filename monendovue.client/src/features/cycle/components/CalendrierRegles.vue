@@ -9,15 +9,22 @@
     <div class="grid grid-cols-7 gap-1">
       <span v-for="n in calendrier.decalage" :key="`vide-${n}`" aria-hidden="true"></span>
       <button v-for="jour in calendrier.cases" :key="jour.cle" type="button"
-              class="flex min-h-11 items-center justify-center rounded-full p-0 text-sm disabled:cursor-default"
+              class="flex min-h-11 flex-col items-center justify-center rounded-full p-0 text-sm disabled:cursor-default"
               :class="classes(jour)"
               :disabled="jour.futur || enCoursDEnvoi.has(jour.cle)"
               :aria-pressed="jour.regles"
               :aria-label="libelle(jour)"
-              @click="emit('basculer', jour)">{{ jour.numero }}</button>
+              @click="emit('basculer', jour)">
+        {{ jour.numero }}
+        <!-- Flux noté : un point vide pour des traces, puis 1 à 3 points (léger, moyen, abondant). -->
+        <span v-if="jour.regles && jour.flux" class="mt-px flex h-1.5 items-center gap-0.5" aria-hidden="true">
+          <span v-if="points(jour.flux) === 0" class="h-1.5 w-1.5 rounded-full border border-sur-fonce"></span>
+          <span v-for="n in points(jour.flux)" v-else :key="n" class="h-1.5 w-1.5 rounded-full bg-sur-fonce"></span>
+        </span>
+      </button>
     </div>
     <p class="m-0 mt-1 flex items-center gap-1.5 text-xs text-texte-2">
-      <span aria-hidden="true" class="h-3 w-3 rounded-full bg-teinte-regles"></span>Règles · touche un jour pour l'ajouter ou le retirer.
+      <span aria-hidden="true" class="h-3 w-3 shrink-0 rounded-full bg-teinte-regles"></span>Règles · touche un jour pour l'ajouter ou le retirer. Flux noté : ○ traces, ● léger, ●● moyen, ●●● abondant.
     </p>
   </section>
 </template>
@@ -27,6 +34,8 @@ import { computed } from 'vue';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import SelecteurMois from '@/shared/components/SelecteurMois.vue';
+import { niveauxDeFlux, libelleDeFlux } from '../config/flux';
+import type { FluxRegles } from '../types/cycle';
 import type { CaseCalendrier } from '../utils/cycle';
 import { jourEnToutesLettres } from '../utils/cycle';
 
@@ -51,8 +60,10 @@ function classes(jour: CaseCalendrier): string[] {
   return liste;
 }
 
+const points = (flux: FluxRegles): number => niveauxDeFlux.find((n) => n.valeur === flux)?.points ?? 0;
+
 function libelle(jour: CaseCalendrier): string {
   const texte = jourEnToutesLettres(jour.cle);
-  return `${texte.charAt(0).toUpperCase()}${texte.slice(1)}${jour.aujourdhui ? ', aujourd\'hui' : ''}${jour.regles ? ', règles' : ''}`;
+  return `${texte.charAt(0).toUpperCase()}${texte.slice(1)}${jour.aujourdhui ? ', aujourd\'hui' : ''}${jour.regles ? ', règles' : ''}${jour.regles && jour.flux ? `, flux ${libelleDeFlux(jour.flux)}` : ''}`;
 }
 </script>

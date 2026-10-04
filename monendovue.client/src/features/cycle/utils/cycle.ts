@@ -1,23 +1,27 @@
 import { addDays, format, getDaysInMonth } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import type { DetailJourRegles, FluxRegles } from '../types/cycle';
 
 export interface CaseCalendrier {
     /** AAAA-MM-JJ */
     cle: string;
     numero: number;
     regles: boolean;
+    /** Flux noté ce jour-là ; null = non précisé. */
+    flux: FluxRegles | null;
     aujourdhui: boolean;
     /** Un jour à venir ne peut pas être noté. */
     futur: boolean;
 }
 
 /** Cases du mois, semaines commençant le lundi : `decalage` cases vides avant le 1er. */
-export function calendrierDuMois(mois: Date, joursDeRegles: string[], maintenant: Date): { decalage: number; cases: CaseCalendrier[] } {
+export function calendrierDuMois(mois: Date, joursDeRegles: string[], maintenant: Date, details: DetailJourRegles[] = []): { decalage: number; cases: CaseCalendrier[] } {
     const regles = new Set(joursDeRegles);
+    const flux = new Map(details.map((d) => [d.jour, d.flux]));
     const aujourdhui = format(maintenant, 'yyyy-MM-dd');
     const cases = Array.from({ length: getDaysInMonth(mois) }, (_, index) => {
         const cle = format(new Date(mois.getFullYear(), mois.getMonth(), index + 1), 'yyyy-MM-dd');
-        return { cle, numero: index + 1, regles: regles.has(cle), aujourdhui: cle === aujourdhui, futur: cle > aujourdhui };
+        return { cle, numero: index + 1, regles: regles.has(cle), flux: flux.get(cle) ?? null, aujourdhui: cle === aujourdhui, futur: cle > aujourdhui };
     });
     // getDay : 0 = dimanche ; lundi en premier.
     const decalage = (new Date(mois.getFullYear(), mois.getMonth(), 1).getDay() + 6) % 7;

@@ -175,7 +175,7 @@ modifiables, jamais `Entry(dto).State = Modified`, jamais de changement de `Carn
   un `[EnableRateLimiting(PolitiquesDebit.Auth)]` sur une action est donc réellement appliqué. À mettre sur tout endpoint
   d'authentification ou d'envoi coûteux. Vérifier en local par une rafale de requêtes (429 attendu au-delà de la limite).
 - Identifiants et mots de passe dans le **corps** des requêtes, jamais en query string.
-- Uploads photo : réutiliser `IsPhotoValid`/`ResolveFileExtension` (`SymptomesCycleController`) et `AzureBlobStorageService`
+- Uploads photo : réutiliser `ValidationPhoto.Valider` (`Services/Photos/`) et `AzureBlobStorageService`
   (chemin `symptomes/{carnetSanteId}/{guid}{ext}`). Ne jamais supprimer un blob à partir d'une URL fournie par le client.
 - `/health` est anonyme et hors rate limit (sonde du déploiement) : ne pas y exposer d'information.
 

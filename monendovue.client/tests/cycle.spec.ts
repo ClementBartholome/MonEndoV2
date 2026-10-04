@@ -84,6 +84,74 @@ test.describe('Cycle · règles', () => {
     expect(serveur.appelsVers('GET', /^Cycle$/).at(-1)!.parametres.get('mois')).toBe('2025-03-01');
   });
 
+  test('précise le flux et les caillots d\'un jour noté, enregistrés dès le geste', async ({ cyclePage, serveur }) => {
+    const details = new Map();
+    simulerRegles(serveur, ['2026-09-14', '2026-09-15'], {}, details);
+    await cyclePage.ouvrir();
+
+    // Le dernier jour noté est proposé d'office ; rien n'est précisé par défaut.
+    await expect(cyclePage.detailDuJour).toContainText('Mardi 15 septembre');
+    await expect(cyclePage.detailDuJour.getByRole('button', { name: 'Moyen' })).toHaveAttribute('aria-pressed', 'false');
+
+    await cyclePage.detailDuJour.getByRole('button', { name: 'Moyen' }).click();
+    await expect(cyclePage.detailDuJour.getByRole('button', { name: 'Moyen' })).toHaveAttribute('aria-pressed', 'true');
+    await expect(cyclePage.jour('Mardi 15 septembre')).toHaveAccessibleName('Mardi 15 septembre, aujourd\'hui, règles, flux moyen');
+    expect(serveur.appelsVers('PUT', /^Cycle\/regles\/2026-09-15\/details$/).at(-1)!.corps).toEqual({ flux: 'Moyen', caillots: null });
+
+    await cyclePage.detailDuJour.getByRole('button', { name: 'Oui' }).click();
+    expect(serveur.appelsVers('PUT', /^Cycle\/regles\/2026-09-15\/details$/).at(-1)!.corps).toEqual({ flux: 'Moyen', caillots: true });
+
+    // Re-toucher un choix le retire : le flux revient à « non précisé », les caillots restent.
+    await cyclePage.detailDuJour.getByRole('button', { name: 'Moyen' }).click();
+    expect(serveur.appelsVers('PUT', /^Cycle\/regles\/2026-09-15\/details$/).at(-1)!.corps).toEqual({ flux: null, caillots: true });
+    await expect(cyclePage.jour('Mardi 15 septembre')).toHaveAccessibleName('Mardi 15 septembre, aujourd\'hui, règles');
+  });
+
+  test('plusieurs jours notés : on choisit celui dont on précise le flux', async ({ cyclePage, serveur }) => {
+    const details = new Map([['2026-09-14', { flux: 'Abondant' as const, caillots: false }]]);
+    simulerRegles(serveur, ['2026-09-14', '2026-09-15'], {}, details);
+    await cyclePage.ouvrir();
+    await expect(cyclePage.jour('Lundi 14 septembre')).toHaveAccessibleName('Lundi 14 septembre, règles, flux abondant');
+
+    await cyclePage.detailDuJour.getByRole('button', { name: 'lundi 14 septembre' }).click();
+
+    await expect(cyclePage.detailDuJour).toContainText('Lundi 14 septembre');
+    await expect(cyclePage.detailDuJour.getByRole('button', { name: 'Abondant' })).toHaveAttribute('aria-pressed', 'true');
+    await expect(cyclePage.detailDuJour.getByRole('button', { name: 'Non' })).toHaveAttribute('aria-pressed', 'true');
+  });
+
+  test('un nouveau jour noté devient le jour à préciser ; sans jour noté, la carte disparaît', async ({ cyclePage, serveur }) => {
+    simulerRegles(serveur);
+    await cyclePage.ouvrir();
+    await expect(cyclePage.detailDuJour).toHaveCount(0);
+
+    await cyclePage.jour('Jeudi 10 septembre').click();
+    await expect(cyclePage.detailDuJour).toContainText('Jeudi 10 septembre');
+
+    await cyclePage.jour('Jeudi 10 septembre').click();
+    await expect(cyclePage.detailDuJour).toHaveCount(0);
+  });
+
+  test('les séries de choix sont nommées pour un lecteur d\'écran', async ({ cyclePage, serveur, page }) => {
+    simulerRegles(serveur, ['2026-09-15']);
+    await cyclePage.ouvrir();
+
+    await expect(cyclePage.detailDuJour.getByRole('group', { name: 'Quel flux ?' })).toBeVisible();
+    await expect(cyclePage.detailDuJour.getByRole('group', { name: 'Des caillots ?' })).toBeVisible();
+    await expect(page.getByText('Repère du carnet de suivi des HUG')).toBeVisible();
+  });
+
+  test('un échec d\'enregistrement du flux remet le choix dans son état', async ({ cyclePage, serveur, page }) => {
+    simulerRegles(serveur, ['2026-09-15']);
+    serveur.on('PUT', /^Cycle\/regles\/[\d-]+\/details$/, () => ({ status: 500 }));
+    await cyclePage.ouvrir();
+
+    await cyclePage.detailDuJour.getByRole('button', { name: 'Léger' }).click();
+
+    await expect(page.getByText('Le jour n\'a pas pu être enregistré. Réessaie dans un instant.').first()).toBeVisible();
+    await expect(cyclePage.detailDuJour.getByRole('button', { name: 'Léger' })).toHaveAttribute('aria-pressed', 'false');
+  });
+
   test('un échec d\'enregistrement remet le jour dans son état', async ({ cyclePage, serveur, page }) => {
     simulerRegles(serveur);
     serveur.on('PUT', /^Cycle\/regles\//, () => ({ status: 500 }));

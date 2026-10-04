@@ -32,13 +32,11 @@ public class SyntheseRendezVousService(AppDbContext context)
         var fin = au.AddDays(1).ToDateTime(TimeOnly.MinValue);
 
         // Tous les jours de règles (quelques-uns par mois) : les cycles de la période dépendent des règles voisines.
-        var toutesLesRegles = (await context.JourRegles.AsNoTracking()
-                .Where(j => j.CarnetSanteId == carnetId)
-                .Select(j => j.Date)
-                .ToListAsync(ct))
-            .Select(DateOnly.FromDateTime)
-            .Distinct()
-            .ToList();
+        var lignesRegles = await context.JourRegles.AsNoTracking()
+            .Where(j => j.CarnetSanteId == carnetId)
+            .Select(j => new { j.Date, j.Flux, j.Caillots })
+            .ToListAsync(ct);
+        var toutesLesRegles = lignesRegles.Select(j => DateOnly.FromDateTime(j.Date)).Distinct().ToList();
         var joursDeRegles = toutesLesRegles.Where(j => j >= du && j <= au).ToHashSet();
 
         var douleurs = await context.DonneesDouleurs.AsNoTracking()
@@ -63,7 +61,8 @@ public class SyntheseRendezVousService(AppDbContext context)
         {
             Du = Texte(du),
             Au = Texte(au),
-            Regles = Regles(toutesLesRegles, joursDeRegles, du, au),
+            Regles = Regles(toutesLesRegles, joursDeRegles, du, au,
+                lignesRegles.Where(j => joursDeRegles.Contains(DateOnly.FromDateTime(j.Date))).Select(j => (DateOnly.FromDateTime(j.Date), j.Flux, j.Caillots))),
             Douleurs = Douleurs(douleurs, joursDeRegles),
             Symptomes = Symptomes(symptomes, joursDeRegles),
             Traitements = await TraitementsAsync(carnetId, du, au, ct),
@@ -73,8 +72,13 @@ public class SyntheseRendezVousService(AppDbContext context)
         });
     }
 
-    private static SyntheseReglesViewModel Regles(IReadOnlyList<DateOnly> toutes, HashSet<DateOnly> dansLaPeriode, DateOnly du, DateOnly au)
+    private static SyntheseReglesViewModel Regles(IReadOnlyList<DateOnly> toutes, HashSet<DateOnly> dansLaPeriode, DateOnly du, DateOnly au,
+        IEnumerable<(DateOnly Jour, FluxRegles? Flux, bool? Caillots)> details)
     {
+        // Un jour par jour de règles, même si d'anciennes saisies en ont dupliqué la ligne.
+        var parJour = details.GroupBy(d => d.Jour).Select(g => (
+            Flux: g.Select(d => d.Flux).FirstOrDefault(f => f is not null),
+            Caillots: g.Select(d => d.Caillots).FirstOrDefault(c => c is not null))).ToList();
         var regles = HistoriqueCycles.Regrouper(toutes);
         var cycles = HistoriqueCycles.Cycles(regles, int.MaxValue).Where(c => c.Debut >= du && c.Debut <= au).ToList();
         return new SyntheseReglesViewModel
@@ -83,6 +87,16 @@ public class SyntheseRendezVousService(AppDbContext context)
             Debuts = regles.Where(r => r.Debut >= du && r.Debut <= au).Select(r => Texte(r.Debut)).ToList(),
             CycleMoyen = HistoriqueCycles.DureeMoyenne(cycles),
             ReglesMoyenne = HistoriqueCycles.ReglesMoyenne(cycles),
+            Flux = new SyntheseFluxViewModel
+            {
+                Traces = parJour.Count(j => j.Flux == FluxRegles.Traces),
+                Leger = parJour.Count(j => j.Flux == FluxRegles.Leger),
+                Moyen = parJour.Count(j => j.Flux == FluxRegles.Moyen),
+                Abondant = parJour.Count(j => j.Flux == FluxRegles.Abondant),
+                NonPrecise = dansLaPeriode.Count - parJour.Count(j => j.Flux is not null),
+                JoursAvecCaillots = parJour.Count(j => j.Caillots == true),
+                JoursSansCaillots = parJour.Count(j => j.Caillots == false),
+            },
         };
     }
 

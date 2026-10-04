@@ -27,6 +27,21 @@ public class SyntheseReglesViewModel
     /// <summary>Durée moyenne des cycles commencés dans la période ; null avant deux cycles terminés.</summary>
     public int? CycleMoyen { get; init; }
     public int? ReglesMoyenne { get; init; }
+    /// <summary>Flux et caillots notés sur les jours de règles de la période (jours, jamais une moyenne).</summary>
+    public required SyntheseFluxViewModel Flux { get; init; }
+}
+
+public class SyntheseFluxViewModel
+{
+    public int Traces { get; init; }
+    public int Leger { get; init; }
+    public int Moyen { get; init; }
+    public int Abondant { get; init; }
+    /// <summary>Jours de règles dont le flux n'est pas précisé.</summary>
+    public int NonPrecise { get; init; }
+    /// <summary>Jours de règles avec caillots, et jours où la personne a répondu « non » (les autres ne sont pas précisés).</summary>
+    public int JoursAvecCaillots { get; init; }
+    public int JoursSansCaillots { get; init; }
 }
 
 public class SyntheseDouleursViewModel

@@ -21,6 +21,18 @@ export interface SyntheseRegles {
     /** null avant deux cycles terminés dans la période. */
     cycleMoyen: number | null;
     reglesMoyenne: number | null;
+    flux: SyntheseFlux;
+}
+
+/** Jours de règles de la période par flux noté ; `nonPrecise` = jours sans flux précisé. Caillots : jours « oui » et « non » (le reste n'est pas précisé). */
+export interface SyntheseFlux {
+    traces: number;
+    leger: number;
+    moyen: number;
+    abondant: number;
+    nonPrecise: number;
+    joursAvecCaillots: number;
+    joursSansCaillots: number;
 }
 
 export interface EntreeIntensite {

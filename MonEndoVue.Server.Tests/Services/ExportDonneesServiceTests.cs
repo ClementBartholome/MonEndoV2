@@ -35,6 +35,9 @@ public sealed class ExportDonneesServiceTests : IDisposable
             Emotions = [new EmotionBilan { Emotion = Emotion.Calme }],
         });
         _carnet.Context.EpisodesAcne.Add(new EpisodeAcne { CarnetSanteId = CarnetDeTest.CarnetSanteId, Debut = new DateOnly(2026, 8, 1), Fin = new DateOnly(2026, 8, 20) });
+        _carnet.Context.JourRegles.AddRange(
+            new JourRegle { CarnetSanteId = CarnetDeTest.CarnetSanteId, Date = new DateTime(2026, 9, 5), Flux = FluxRegles.Moyen, Caillots = true },
+            new JourRegle { CarnetSanteId = CarnetDeTest.CarnetSanteId, Date = new DateTime(2026, 9, 6) });
         await _carnet.Context.SaveChangesAsync();
         _carnet.Context.DonneesMedicaments.Add(new DonneesMedicament { CarnetSanteId = CarnetDeTest.CarnetSanteId, MedicamentId = traitement.Id, NombreComprimes = 1, Date = new DateTime(2026, 9, 4) });
         await _carnet.Context.SaveChangesAsync();
@@ -51,6 +54,10 @@ public sealed class ExportDonneesServiceTests : IDisposable
         Assert.Equal("photos/2026-09-02-10.png", donnees.GetProperty("symptomesDuCycle")[0].GetProperty("photo").GetString());
         Assert.Equal(3, zip.GetEntry("photos/2026-09-02-10.png")!.Length);
         Assert.Equal("2026-08-20", donnees.GetProperty("episodesAcne")[0].GetProperty("fin").GetString());
+        var regles = donnees.GetProperty("joursDeRegles");
+        Assert.Equal("Moyen", regles[0].GetProperty("flux").GetString());
+        Assert.True(regles[0].GetProperty("caillots").GetBoolean());
+        Assert.Equal(System.Text.Json.JsonValueKind.Null, regles[1].GetProperty("flux").ValueKind);
         Assert.NotNull(zip.GetEntry("LISEZMOI.txt"));
     }
 

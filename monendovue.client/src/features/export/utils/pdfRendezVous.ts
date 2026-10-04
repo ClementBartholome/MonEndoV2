@@ -6,7 +6,7 @@ import { presentationEmotion } from '@/features/bilan-quotidien/config/emotions'
 import type { CodeEmotion } from '@/features/bilan-quotidien/types/bilan-quotidien';
 import { libelleCourt } from '@/features/douleurs/utils/douleurs';
 import { resumeFrequence } from '@/features/medicament/utils/prises';
-import type { BilanDuJour, OptionsPdf, SyntheseRendezVous } from '../types/synthese';
+import type { BilanDuJour, OptionsPdf, SyntheseFlux, SyntheseRendezVous } from '../types/synthese';
 
 /**
  * PDF « Préparer un rendez-vous » : une première page de synthèse (questions, règles, douleurs par type, traitements,
@@ -138,6 +138,21 @@ class Redaction {
         if (regles.cycleMoyen !== null) {
             const dureeRegles = regles.reglesMoyenne === null ? '' : `, règles de ${regles.reglesMoyenne} jours en moyenne`;
             this.paragraphe(`Cycle de ${regles.cycleMoyen} jours en moyenne${dureeRegles} (cycles commencés sur la période).`);
+        }
+        this.fluxEtCaillots(regles.flux);
+    }
+
+    /** Flux noté (jours par niveau, les niveaux jamais notés sont omis) puis caillots ; rien si rien n'a été précisé. */
+    private fluxEtCaillots(flux: SyntheseFlux): void {
+        const niveaux = [
+            ['traces', flux.traces], ['léger', flux.leger], ['moyen', flux.moyen], ['abondant', flux.abondant],
+        ].filter(([, jours]) => (jours as number) > 0).map(([nom, jours]) => `${nom} ${pluriel(jours as number, 'jour')}`);
+        if (niveaux.length > 0) {
+            const nonPrecise = flux.nonPrecise > 0 ? ` · non précisé ${pluriel(flux.nonPrecise, 'jour')}` : '';
+            this.paragraphe(`Flux noté : ${niveaux.join(' · ')}${nonPrecise}.`);
+        }
+        if (flux.joursAvecCaillots + flux.joursSansCaillots > 0) {
+            this.paragraphe(`Caillots : ${pluriel(flux.joursAvecCaillots, 'jour')} avec, ${pluriel(flux.joursSansCaillots, 'jour')} sans (les autres jours ne sont pas précisés).`);
         }
     }
 

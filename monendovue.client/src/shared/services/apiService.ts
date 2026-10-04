@@ -18,7 +18,7 @@ import { enTableau, sansReferences } from '@/shared/utils/json';
 import { API_URL } from '@/shared/services/apiBase';
 import type { SyntheseRendezVous } from '@/features/export/types/synthese';
 import type { ReponseConsentement } from '@/features/auth/types/user';
-import type { CycleDuMois, CycleTermine } from '@/features/cycle/types/cycle';
+import type { CycleDuMois, CycleTermine, DetailJourRegles } from '@/features/cycle/types/cycle';
 import type { Activite, ActiviteSaisie } from '@/features/activite/types/activite';
 import type { Acne, EpisodeAcne, EpisodeAcneSaisie, SuiviAcne } from '@/features/cycle/types/acne';
 import type { SymptomeCycle, SymptomeSaisie } from '@/features/cycle/types/symptome-cycle';
@@ -163,9 +163,11 @@ class ApiService {
 
     /** Onglet Règles : jours de règles du mois (1er du mois), cycle en cours au jour local et historique des cycles. */
     async getCycle(jour: string, mois: string, cycles = 6): Promise<CycleDuMois> {
-        type CycleRecu = Omit<CycleDuMois, 'joursDeRegles' | 'cycles'> & { joursDeRegles: Liste<string>; cycles: Liste<CycleTermine> };
+        type CycleRecu = Omit<CycleDuMois, 'joursDeRegles' | 'cycles' | 'detailsJours'> & {
+            joursDeRegles: Liste<string>; cycles: Liste<CycleTermine>; detailsJours?: Liste<DetailJourRegles>;
+        };
         const recu = await this.request<CycleRecu>('GET', `Cycle?jour=${jour}&mois=${mois}&cycles=${cycles}`);
-        return { ...recu, joursDeRegles: enTableau(recu.joursDeRegles), cycles: enTableau(recu.cycles) };
+        return { ...recu, joursDeRegles: enTableau(recu.joursDeRegles), cycles: enTableau(recu.cycles), detailsJours: enTableau(recu.detailsJours ?? []) };
     }
 
     /** Activités d'un mois (1er du mois, AAAA-MM-JJ), carnet déduit de la session. */
@@ -213,6 +215,11 @@ class ApiService {
     /** Note un jour de règles (AAAA-MM-JJ) ; sans effet s'il l'est déjà. */
     async putJourDeRegles(jour: string): Promise<void> {
         await this.request('PUT', `Cycle/regles/${jour}`);
+    }
+
+    /** Flux et caillots d'un jour de règles noté ; les deux champs remplacent les précédents (null = non précisé). */
+    async putDetailsJourDeRegles(jour: string, details: Pick<DetailJourRegles, 'flux' | 'caillots'>): Promise<void> {
+        await this.request('PUT', `Cycle/regles/${jour}/details`, details);
     }
 
     async deleteJourDeRegles(jour: string): Promise<void> {

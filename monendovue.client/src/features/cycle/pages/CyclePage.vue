@@ -33,6 +33,9 @@
                              @noter-aujourdhui="noter(regles.noterAujourdhui)"/>
           <CalendrierRegles :mois="regles.mois.value" :calendrier="regles.calendrier.value" :en-cours-d-envoi="regles.enCoursDEnvoi.value"
                             @basculer="(jour) => noter(() => regles.basculer(jour))" @changer="regles.allerAuMois"/>
+          <DetailJourRegles v-if="regles.jourDetail.value" :jours="regles.joursNotes.value" :selection="regles.jourDetail.value"
+                            :detail="regles.detailDuJour.value" :envoi="regles.enCoursDeDetail.value"
+                            @selectionner="regles.choisirJour" @changer="(changement) => noter(() => regles.preciser(changement))"/>
           <ListeCycles :cycles="regles.donnees.value.cycles" :resume="regles.donnees.value"
                        :plus-anciens="regles.donnees.value.cyclesPlusAnciens" @voir-plus="regles.voirPlusDeCycles"/>
         </template>
@@ -112,6 +115,7 @@ import SaisieEpisodeAcne, { type ActionsEpisodeAcne, type ModeEpisode } from '..
 import SuiviPhotosAcne from '../components/SuiviPhotosAcne.vue';
 import CalendrierRegles from '../components/CalendrierRegles.vue';
 import CarteCycleEnCours from '../components/CarteCycleEnCours.vue';
+import DetailJourRegles from '../components/DetailJourRegles.vue';
 import ListeCycles from '../components/ListeCycles.vue';
 import ListeSymptomes from '../components/ListeSymptomes.vue';
 import SaisieSymptome, { type ActionsSaisieSymptome } from '../components/SaisieSymptome.vue';

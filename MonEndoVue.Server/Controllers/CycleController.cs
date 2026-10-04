@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using MonEndoVue.Server.Dto;
 using MonEndoVue.Server.Services;
 using MonEndoVue.Server.Services.Cycle;
 
@@ -25,6 +26,11 @@ public class CycleController(CycleService service) : ControllerBase
     [HttpPut("regles/{jour}")]
     public async Task<IActionResult> AjouterJour(DateOnly jour, CancellationToken ct) =>
         this.VersReponse(await service.AjouterJourAsync(User.GetCurrentUserId(), jour, ct), NoContent);
+
+    /// <summary>Flux et caillots d'un jour de règles noté (les deux champs remplacent les précédents ; nul = non précisé).</summary>
+    [HttpPut("regles/{jour}/details")]
+    public async Task<IActionResult> EnregistrerDetails(DateOnly jour, [FromBody] DetailsJourReglesDto details, CancellationToken ct) =>
+        this.VersReponse(await service.EnregistrerDetailsAsync(User.GetCurrentUserId(), jour, details, ct), NoContent);
 
     [HttpDelete("regles/{jour}")]
     public async Task<IActionResult> RetirerJour(DateOnly jour, CancellationToken ct) =>
