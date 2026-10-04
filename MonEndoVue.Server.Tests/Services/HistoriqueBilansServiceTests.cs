@@ -160,5 +160,24 @@ public sealed class HistoriqueBilansServiceTests : IDisposable
         Assert.IsType<BadRequestObjectResult>(reponse);
     }
 
+    [Fact]
+    public async Task GetPeriode_RenvoieLesCategoriesFacultativesTellesQuEnregistrees()
+    {
+        _carnet.Context.BilansQuotidiens.Add(new BilanQuotidien
+        {
+            CarnetSanteId = CarnetDeTest.CarnetSanteId, Date = new DateTime(2026, 9, 15), DouleurMoyenne = 3,
+            DouleurUriner = true, IntensiteDouleurUriner = "Modérée", Nuit = "Moyenne", DouleurRapport = "Non",
+        });
+        await _carnet.Context.SaveChangesAsync();
+
+        var resultat = await new HistoriqueBilansService(_carnet.Context).GetPeriodeAsync(
+            CarnetDeTest.UserId, new DateOnly(2026, 9, 14), new DateOnly(2026, 9, 16), CancellationToken.None);
+
+        var bilan = Assert.Single(resultat.Valeur!.Bilans);
+        Assert.Equal((true, "Modérée", "Moyenne", "Non"), (bilan.DouleurUriner, bilan.IntensiteDouleurUriner, bilan.Nuit, bilan.DouleurRapport));
+        Assert.Null(bilan.SangUrines);
+        Assert.Null(bilan.AbsenceTravail);
+    }
+
     public void Dispose() => _carnet.Dispose();
 }

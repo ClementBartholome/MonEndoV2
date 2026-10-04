@@ -33,6 +33,7 @@ public sealed class ExportDonneesServiceTests : IDisposable
         {
             CarnetSanteId = CarnetDeTest.CarnetSanteId, Date = new DateTime(2026, 9, 3), DouleurMoyenne = 3,
             Emotions = [new EmotionBilan { Emotion = Emotion.Calme }],
+            DouleurUriner = true, IntensiteDouleurUriner = "Légère", Nuit = "Difficile", LimitationJournee = "TresLimitee", DouleurRapport = "PasDeRapport",
         });
         _carnet.Context.EpisodesAcne.Add(new EpisodeAcne { CarnetSanteId = CarnetDeTest.CarnetSanteId, Debut = new DateOnly(2026, 8, 1), Fin = new DateOnly(2026, 8, 20) });
         _carnet.Context.JourRegles.AddRange(
@@ -51,6 +52,12 @@ public sealed class ExportDonneesServiceTests : IDisposable
         Assert.Equal(6, donnees.GetProperty("douleurs")[0].GetProperty("intensite").GetInt32());
         Assert.Equal("Dienogest", donnees.GetProperty("prisesDeTraitement")[0].GetProperty("traitement").GetString());
         Assert.Equal("Calme", donnees.GetProperty("bilansQuotidiens")[0].GetProperty("emotions")[0].GetString());
+        // Les catégories facultatives du bilan font partie de l'export, y compris la catégorie discrète.
+        var bilan = donnees.GetProperty("bilansQuotidiens")[0];
+        Assert.Equal(("Légère", "Difficile", "TresLimitee", "PasDeRapport"),
+            (bilan.GetProperty("intensiteDouleurUriner").GetString(), bilan.GetProperty("nuit").GetString(),
+             bilan.GetProperty("limitationJournee").GetString(), bilan.GetProperty("douleurRapport").GetString()));
+        Assert.Equal(System.Text.Json.JsonValueKind.Null, bilan.GetProperty("sangUrines").ValueKind);
         Assert.Equal("photos/2026-09-02-10.png", donnees.GetProperty("symptomesDuCycle")[0].GetProperty("photo").GetString());
         Assert.Equal(3, zip.GetEntry("photos/2026-09-02-10.png")!.Length);
         Assert.Equal("2026-08-20", donnees.GetProperty("episodesAcne")[0].GetProperty("fin").GetString());

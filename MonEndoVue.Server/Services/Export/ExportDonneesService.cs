@@ -185,6 +185,11 @@ public class ExportDonneesService(
                     b.IntensiteCrampes,
                     b.Ballonnements,
                     b.IntensiteBallonnements,
+                    b.DouleurSelle, b.IntensiteDouleurSelle, b.Nausees, b.SangSelles,
+                    b.DouleurUriner, b.IntensiteDouleurUriner, b.EnviesUrinaires, b.DifficulteVider, b.SangUrines,
+                    b.SaignementsHorsRegles, b.AbondanceSaignementsHorsRegles,
+                    b.Nuit, b.ReveilsDouleur, b.LimitationJournee, b.AbsenceTravail, b.ActiviteAnnulee,
+                    b.DouleurRapport,
                     notes = b.Commentaire,
                 }),
             rappels = await context.Rappels.AsNoTracking().Where(r => r.CarnetSanteId == carnetId)

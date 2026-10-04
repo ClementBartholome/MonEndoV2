@@ -35,6 +35,23 @@ public class BilanQuotidienViewModel
     public string? IntensiteCrampes { get; set; }
     public bool? Ballonnements { get; set; }
     public string? IntensiteBallonnements { get; set; }
+    public bool? DouleurSelle { get; set; }
+    public string? IntensiteDouleurSelle { get; set; }
+    public bool? Nausees { get; set; }
+    public bool? SangSelles { get; set; }
+    public bool? DouleurUriner { get; set; }
+    public string? IntensiteDouleurUriner { get; set; }
+    public bool? EnviesUrinaires { get; set; }
+    public bool? DifficulteVider { get; set; }
+    public bool? SangUrines { get; set; }
+    public bool? SaignementsHorsRegles { get; set; }
+    public string? AbondanceSaignementsHorsRegles { get; set; }
+    public string? Nuit { get; set; }
+    public bool? ReveilsDouleur { get; set; }
+    public string? LimitationJournee { get; set; }
+    public bool? AbsenceTravail { get; set; }
+    public bool? ActiviteAnnulee { get; set; }
+    public string? DouleurRapport { get; set; }
 
     public static BilanQuotidienViewModel Depuis(BilanQuotidien bilan) => new()
     {
@@ -59,6 +76,23 @@ public class BilanQuotidienViewModel
         IntensiteCrampes = bilan.IntensiteCrampes,
         Ballonnements = bilan.Ballonnements,
         IntensiteBallonnements = bilan.IntensiteBallonnements,
+        DouleurSelle = bilan.DouleurSelle,
+        IntensiteDouleurSelle = bilan.IntensiteDouleurSelle,
+        Nausees = bilan.Nausees,
+        SangSelles = bilan.SangSelles,
+        DouleurUriner = bilan.DouleurUriner,
+        IntensiteDouleurUriner = bilan.IntensiteDouleurUriner,
+        EnviesUrinaires = bilan.EnviesUrinaires,
+        DifficulteVider = bilan.DifficulteVider,
+        SangUrines = bilan.SangUrines,
+        SaignementsHorsRegles = bilan.SaignementsHorsRegles,
+        AbondanceSaignementsHorsRegles = bilan.AbondanceSaignementsHorsRegles,
+        Nuit = bilan.Nuit,
+        ReveilsDouleur = bilan.ReveilsDouleur,
+        LimitationJournee = bilan.LimitationJournee,
+        AbsenceTravail = bilan.AbsenceTravail,
+        ActiviteAnnulee = bilan.ActiviteAnnulee,
+        DouleurRapport = bilan.DouleurRapport,
     };
 }
 

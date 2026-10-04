@@ -110,6 +110,75 @@ public class SyntheseBilansViewModel
     /// <summary>Émotions les plus souvent choisies, de la plus fréquente à la moins fréquente (5 au plus).</summary>
     public required IReadOnlyList<SyntheseEmotionViewModel> Emotions { get; init; }
     public required IReadOnlyList<SyntheseBilanDuJourViewModel> Jours { get; init; }
+    /// <summary>Catégories facultatives du bilan : des comptes de jours, toujours avec le nombre de jours où la personne a répondu.</summary>
+    public required SyntheseCategoriesViewModel Categories { get; init; }
+}
+
+public class SyntheseCategoriesViewModel
+{
+    public required SyntheseDigestifViewModel Digestif { get; init; }
+    public required SyntheseUrinaireViewModel Urinaire { get; init; }
+    public required SyntheseSaignementsHorsReglesViewModel SaignementsHorsRegles { get; init; }
+    public required SyntheseNuitEtJourneeViewModel NuitEtJournee { get; init; }
+    /// <summary>Catégorie discrète : le client ne l'imprime que si la personne coche la rubrique.</summary>
+    public required SyntheseRapportsViewModel Rapports { get; init; }
+}
+
+/// <summary>Suite du transit (douleur en allant à la selle, nausées, traces de sang) ; crampes et ballonnements restent au niveau du bilan.</summary>
+public class SyntheseDigestifViewModel
+{
+    public int JoursNotes { get; init; }
+    public int JoursDouleurSelle { get; init; }
+    public int JoursNausees { get; init; }
+    public int JoursSangSelles { get; init; }
+}
+
+public class SyntheseUrinaireViewModel
+{
+    public int JoursNotes { get; init; }
+    public int JoursDouleurUriner { get; init; }
+    public int JoursEnvies { get; init; }
+    public int JoursDifficulteVider { get; init; }
+    /// <summary>Jours avec du sang visible dans les urines, et pour chacun s'il tombe un jour de règles (un fait, sans interprétation).</summary>
+    public required IReadOnlyList<SyntheseJourSangViewModel> JoursSangVisible { get; init; }
+}
+
+public class SyntheseJourSangViewModel
+{
+    public required string Jour { get; init; }
+    public bool PendantRegles { get; init; }
+}
+
+public class SyntheseSaignementsHorsReglesViewModel
+{
+    public int JoursNotes { get; init; }
+    public int Jours { get; init; }
+    public int Traces { get; init; }
+    public int Legers { get; init; }
+    public int Abondants { get; init; }
+}
+
+public class SyntheseNuitEtJourneeViewModel
+{
+    public int NuitsNotees { get; init; }
+    public int NuitsBonnes { get; init; }
+    public int NuitsMoyennes { get; init; }
+    public int NuitsDifficiles { get; init; }
+    public int NuitsReveilsDouleur { get; init; }
+    public int JourneesNotees { get; init; }
+    public int JourneesPasLimitees { get; init; }
+    public int JourneesPeuLimitees { get; init; }
+    public int JourneesTresLimitees { get; init; }
+    public int JoursAbsence { get; init; }
+    public int JoursActiviteAnnulee { get; init; }
+}
+
+public class SyntheseRapportsViewModel
+{
+    public int JoursNotes { get; init; }
+    public int AvecDouleur { get; init; }
+    public int SansDouleur { get; init; }
+    public int PasDeRapport { get; init; }
 }
 
 public class SyntheseEmotionViewModel
