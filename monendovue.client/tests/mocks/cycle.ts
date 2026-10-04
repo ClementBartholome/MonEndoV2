@@ -1,4 +1,4 @@
-import type { CycleDuMois } from '../../src/features/cycle/types/cycle';
+import type { CycleDuMois, DetailJourRegles } from '../../src/features/cycle/types/cycle';
 import type { SymptomeCycle } from '../../src/features/cycle/types/symptome-cycle';
 import type { EpisodeAcne, SuiviAcne } from '../../src/features/cycle/types/acne';
 import { CARNET_ID } from './session';
@@ -8,7 +8,13 @@ import { liste, type FauxServeur } from './faux-serveur';
  * Routes simulées de `CycleController`, avec les jours de règles comme état du test. Le cycle en cours et l'historique
  * sont fournis tels quels (leur calcul est testé côté serveur, `HistoriqueCyclesTests`) ; seuls les jours changent.
  */
-export function simulerRegles(serveur: FauxServeur, initiaux: string[] = [], vue: Partial<Omit<CycleDuMois, 'joursDeRegles'>> = {}) {
+export function simulerRegles(
+  serveur: FauxServeur,
+  initiaux: string[] = [],
+  vue: Partial<Omit<CycleDuMois, 'joursDeRegles' | 'detailsJours'>> = {},
+  /** Détails (flux, caillots) par jour de règles, état du test : le faux serveur les met à jour comme le vrai. */
+  details: Map<string, Pick<DetailJourRegles, 'flux' | 'caillots'>> = new Map(),
+) {
   const jours = new Set(initiaux);
   serveur
     .on('GET', /^Cycle$/, ({ url }) => {
@@ -26,8 +32,15 @@ export function simulerRegles(serveur: FauxServeur, initiaux: string[] = [], vue
           cycles: liste((vue.cycles ?? []).slice(0, Number(url.searchParams.get('cycles') ?? 6)).map((c) => ({ ...c, joursDouleurForte: liste(c.joursDouleurForte ?? []) }))),
           cyclesPlusAnciens: Math.max(0, (vue.cycles ?? []).length - Number(url.searchParams.get('cycles') ?? 6)),
           joursDeRegles: liste([...jours].filter((j) => j.startsWith(mois)).sort((a, b) => a.localeCompare(b))),
+          detailsJours: liste([...details].filter(([j]) => jours.has(j) && j.startsWith(mois)).sort(([a], [b]) => a.localeCompare(b)).map(([jour, d]) => ({ jour, ...d }))),
         },
       };
+    })
+    // Comme le serveur : seul un jour déjà noté a des détails ; les deux champs remplacent les précédents.
+    .on('PUT', /^Cycle\/regles\/([\d-]+)\/details$/, ({ params: [jour], corps }) => {
+      if (!jours.has(jour)) return { status: 404 };
+      details.set(jour, { flux: corps.flux ?? null, caillots: corps.caillots ?? null });
+      return { status: 204 };
     })
     .on('PUT', /^Cycle\/regles\/([\d-]+)$/, ({ params: [jour] }) => {
       jours.add(jour);
@@ -35,6 +48,7 @@ export function simulerRegles(serveur: FauxServeur, initiaux: string[] = [], vue
     })
     .on('DELETE', /^Cycle\/regles\/([\d-]+)$/, ({ params: [jour] }) => {
       jours.delete(jour);
+      details.delete(jour);
       return { status: 204 };
     });
   return jours;

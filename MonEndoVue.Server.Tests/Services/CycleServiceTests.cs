@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using MonEndoVue.Server.Dto;
 using MonEndoVue.Server.Models;
 using MonEndoVue.Server.Services;
 using MonEndoVue.Server.Services.Cycle;
@@ -45,6 +46,93 @@ public sealed class CycleServiceTests : IDisposable
         Assert.Equal([31, 31], vue.Cycles.Select(c => c.Duree));
         Assert.Equal([3, 2], vue.Cycles.Select(c => c.JoursDeRegles));
         Assert.Equal(31, vue.DureeMoyenne);
+    }
+
+    [Fact]
+    public async Task Details_FluxEtCaillots_SontEnregistresPuisRenvoyesPourLeMoisSeulement()
+    {
+        await Noter(CarnetDeTest.CarnetSanteId, new DateTime(2026, 8, 30), new DateTime(2026, 9, 14), new DateTime(2026, 9, 15));
+
+        var enregistre = await Service().EnregistrerDetailsAsync(CarnetDeTest.UserId, new DateOnly(2026, 9, 14),
+            new DetailsJourReglesDto { Flux = FluxRegles.Abondant, Caillots = true }, CancellationToken.None);
+        await Service().EnregistrerDetailsAsync(CarnetDeTest.UserId, new DateOnly(2026, 8, 30),
+            new DetailsJourReglesDto { Flux = FluxRegles.Traces }, CancellationToken.None);
+
+        Assert.Equal(StatutOperation.Succes, enregistre.Statut);
+        var vue = (await Service().GetAsync(CarnetDeTest.UserId, Jour, Septembre, CancellationToken.None)).Valeur!;
+        var detail = Assert.Single(vue.DetailsJours);
+        Assert.Equal(("2026-09-14", FluxRegles.Abondant, true), (detail.Jour, detail.Flux, detail.Caillots));
+        // Le 15 n'a aucun détail précisé : il n'apparaît pas (non renseigné, jamais un niveau par défaut).
+        Assert.Equal(["2026-09-14", "2026-09-15"], vue.JoursDeRegles);
+    }
+
+    [Fact]
+    public async Task Details_NulRemplacent_LesPrecedents()
+    {
+        await Noter(CarnetDeTest.CarnetSanteId, new DateTime(2026, 9, 14));
+        await Service().EnregistrerDetailsAsync(CarnetDeTest.UserId, new DateOnly(2026, 9, 14),
+            new DetailsJourReglesDto { Flux = FluxRegles.Moyen, Caillots = false }, CancellationToken.None);
+
+        await Service().EnregistrerDetailsAsync(CarnetDeTest.UserId, new DateOnly(2026, 9, 14),
+            new DetailsJourReglesDto { Flux = null, Caillots = false }, CancellationToken.None);
+
+        var ligne = await _carnet.Context.JourRegles.SingleAsync();
+        Assert.Null(ligne.Flux);
+        Assert.False(ligne.Caillots);
+    }
+
+    [Fact]
+    public async Task Details_JourNonNote_EstIntrouvableEtNeCreeRien()
+    {
+        var resultat = await Service().EnregistrerDetailsAsync(CarnetDeTest.UserId, new DateOnly(2026, 9, 14),
+            new DetailsJourReglesDto { Flux = FluxRegles.Leger }, CancellationToken.None);
+
+        Assert.Equal(StatutOperation.Introuvable, resultat.Statut);
+        Assert.Empty(await _carnet.Context.JourRegles.ToListAsync());
+    }
+
+    [Fact]
+    public async Task Details_NeTouchentJamaisLeCarnetDUneAutre()
+    {
+        await Noter(CarnetDeTest.AutreCarnetSanteId, new DateTime(2026, 9, 14));
+
+        var resultat = await Service().EnregistrerDetailsAsync(CarnetDeTest.UserId, new DateOnly(2026, 9, 14),
+            new DetailsJourReglesDto { Flux = FluxRegles.Abondant, Caillots = true }, CancellationToken.None);
+
+        Assert.Equal(StatutOperation.Introuvable, resultat.Statut);
+        var autre = await _carnet.Context.JourRegles.SingleAsync();
+        Assert.Null(autre.Flux);
+        Assert.Null(autre.Caillots);
+    }
+
+    [Fact]
+    public async Task Details_FluxInconnu_EstRefuse()
+    {
+        await Noter(CarnetDeTest.CarnetSanteId, new DateTime(2026, 9, 14));
+
+        var resultat = await Service().EnregistrerDetailsAsync(CarnetDeTest.UserId, new DateOnly(2026, 9, 14),
+            new DetailsJourReglesDto { Flux = (FluxRegles)42 }, CancellationToken.None);
+
+        Assert.Equal(StatutOperation.Invalide, resultat.Statut);
+    }
+
+    [Fact]
+    public async Task Details_UtilisatriceInconnue_NonAuthentifiee()
+    {
+        var resultat = await Service().EnregistrerDetailsAsync("inconnue", new DateOnly(2026, 9, 14), new DetailsJourReglesDto(), CancellationToken.None);
+
+        Assert.Equal(StatutOperation.NonAuthentifie, resultat.Statut);
+    }
+
+    [Fact]
+    public async Task Details_AncienneSaisieAvecUneHeure_EstMiseAJourPourSonJour()
+    {
+        await Noter(CarnetDeTest.CarnetSanteId, new DateTime(2026, 9, 14, 8, 30, 0));
+
+        await Service().EnregistrerDetailsAsync(CarnetDeTest.UserId, new DateOnly(2026, 9, 14),
+            new DetailsJourReglesDto { Flux = FluxRegles.Leger }, CancellationToken.None);
+
+        Assert.Equal(FluxRegles.Leger, (await _carnet.Context.JourRegles.SingleAsync()).Flux);
     }
 
     [Fact]

@@ -1,6 +1,19 @@
 /** Miroir de `CycleViewModel` (GET Cycle?jour=…&mois=…) : dates « AAAA-MM-JJ ». */
+/** Miroir de l'énumération C# `FluxRegles`. */
+export type FluxRegles = 'Traces' | 'Leger' | 'Moyen' | 'Abondant';
+
+/** Détails facultatifs d'un jour de règles : null = non précisé (jamais compté comme un niveau ni comme « non »). */
+export interface DetailJourRegles {
+    /** AAAA-MM-JJ */
+    jour: string;
+    flux: FluxRegles | null;
+    caillots: boolean | null;
+}
+
 export interface CycleDuMois {
     joursDeRegles: string[];
+    /** Jours du mois dont le flux ou les caillots sont précisés. */
+    detailsJours: DetailJourRegles[];
     enCours: CycleEnCours | null;
     cycles: CycleTermine[];
     /** Moyenne des 6 derniers cycles ; null avant deux cycles terminés. */

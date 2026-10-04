@@ -52,7 +52,10 @@ export function syntheseRealiste(du: string, au: string): SyntheseRendezVous {
 
   return {
     du, au,
-    regles: { jours: regles, debuts, cycleMoyen: debuts.length >= 3 ? 29 : null, reglesMoyenne: debuts.length >= 3 ? 5 : null },
+    regles: {
+      jours: regles, debuts, cycleMoyen: debuts.length >= 3 ? 29 : null, reglesMoyenne: debuts.length >= 3 ? 5 : null,
+      flux: { traces: 0, leger: 0, moyen: 0, abondant: 0, nonPrecise: regles.length, joursAvecCaillots: 0, joursSansCaillots: 0 },
+    },
     douleurs: {
       jours: new Set(douleurs.map((d) => d.jour)).size,
       joursDouleurForte: joursForts.size,

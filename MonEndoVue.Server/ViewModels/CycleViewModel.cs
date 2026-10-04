@@ -6,6 +6,9 @@ public class CycleViewModel
     /// <summary>Jours de règles notés dans le mois demandé (« yyyy-MM-dd »).</summary>
     public List<string> JoursDeRegles { get; set; } = [];
 
+    /// <summary>Détails (flux, caillots) des jours de règles du mois demandé ; seulement les jours où l'un des deux est précisé.</summary>
+    public List<DetailJourReglesViewModel> DetailsJours { get; set; } = [];
+
     /// <summary>Cycle en cours le jour local de l'utilisatrice ; null sans règles notées depuis 60 jours.</summary>
     public CycleEnCoursViewModel? EnCours { get; set; }
 
@@ -25,6 +28,17 @@ public class CycleViewModel
 
     /// <summary>Cycles terminés plus anciens que ceux listés, à demander avec <c>cycles=</c> (« Voir plus »).</summary>
     public int CyclesPlusAnciens { get; set; }
+}
+
+public class DetailJourReglesViewModel
+{
+    /// <summary>« yyyy-MM-dd »</summary>
+    public string Jour { get; set; } = string.Empty;
+
+    [System.Text.Json.Serialization.JsonConverter(typeof(System.Text.Json.Serialization.JsonStringEnumConverter))]
+    public Models.FluxRegles? Flux { get; set; }
+
+    public bool? Caillots { get; set; }
 }
 
 public class CycleEnCoursViewModel

@@ -65,6 +65,27 @@ public sealed class SyntheseRendezVousServiceTests : IDisposable
     }
 
     [Fact]
+    public async Task Regles_FluxEtCaillots_ComptesParJourSurLaPeriodeSeulement()
+    {
+        _carnet.Context.JourRegles.AddRange(
+            new JourRegle { CarnetSanteId = CarnetDeTest.CarnetSanteId, Date = new DateTime(2026, 9, 8), Flux = FluxRegles.Traces, Caillots = false },
+            new JourRegle { CarnetSanteId = CarnetDeTest.CarnetSanteId, Date = new DateTime(2026, 9, 9), Flux = FluxRegles.Abondant, Caillots = true },
+            new JourRegle { CarnetSanteId = CarnetDeTest.CarnetSanteId, Date = new DateTime(2026, 9, 10), Flux = FluxRegles.Abondant },
+            new JourRegle { CarnetSanteId = CarnetDeTest.CarnetSanteId, Date = new DateTime(2026, 9, 11) },
+            // Hors période, ou d'un autre carnet : jamais comptés.
+            new JourRegle { CarnetSanteId = CarnetDeTest.CarnetSanteId, Date = new DateTime(2026, 8, 20), Flux = FluxRegles.Moyen, Caillots = true },
+            new JourRegle { CarnetSanteId = CarnetDeTest.AutreCarnetSanteId, Date = new DateTime(2026, 9, 9), Flux = FluxRegles.Leger, Caillots = true });
+        await _carnet.Context.SaveChangesAsync();
+
+        var flux = (await Synthese()).Regles.Flux;
+
+        Assert.Equal((1, 0, 0, 2), (flux.Traces, flux.Leger, flux.Moyen, flux.Abondant));
+        // Un jour sans flux précisé n'est ni « léger » ni rien d'autre : il est compté à part.
+        Assert.Equal(1, flux.NonPrecise);
+        Assert.Equal((1, 1), (flux.JoursAvecCaillots, flux.JoursSansCaillots));
+    }
+
+    [Fact]
     public async Task Traitements_PrisesPrevuesFaitesIgnoreesEtSeances()
     {
         var quotidien = new Medicament

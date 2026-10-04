@@ -67,6 +67,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : IdentityDbCo
         });
         modelBuilder.Entity<Medicament>().Property(m => m.Frequence).HasConversion<string>().HasMaxLength(20)
             .HasDefaultValue(FrequencePrise.AuBesoin).HasSentinel((FrequencePrise)(-1));
+        modelBuilder.Entity<JourRegle>().Property(j => j.Flux).HasConversion<string>().HasMaxLength(10);
         modelBuilder.Entity<DonneesMedicament>().Property(p => p.Statut).HasConversion<string>().HasMaxLength(10)
             .HasDefaultValue(StatutPrise.Pris).HasSentinel((StatutPrise)(-1));
 
