@@ -52,6 +52,12 @@ Complète le [CLAUDE.md racine](../CLAUDE.md). S'applique à tout le code de `Mo
     lit par `IStockagePhotos`, vérifie le carnet en base et déduit le type de l'extension ; les view models exposent ce chemin
     (`AcneService.CheminPhoto`), jamais `PhotoUrl`. Le conteneur Azure doit rester **privé** (réglage à vérifier sur le portail) ;
     la CSP n'autorise plus aucun domaine de stockage pour les images.
+  - **Sessions par appareil** (`SessionsService`, table `SessionsAppareil`) : une ligne par appareil, le jeton de renouvellement n'est stocké
+    que **haché** (SHA-256). Un renouvellement fait tourner le jeton de **cet** appareil seulement ; l'ancien reste accepté
+    `ToleranceReponsePerdue` (6 h) si la réponse s'est perdue (iOS coupe l'app). `JetonHache` est un jeton de concurrence : deux renouvellements
+    simultanés réessaient une fois. Logout = cet appareil ; changement de mot de passe = les **autres** appareils ; suppression du compte = toutes.
+    `ApplicationUser.RefreshToken` / `RefreshTokenExpiryTime` ne servent plus qu'à convertir les sessions ouvertes avant la 1.5.0 (colonnes à
+    supprimer en 1.6.0). Le contrôleur ne génère jamais lui-même de jeton de renouvellement : toujours `sessions.OuvrirAsync` / `RenouvelerAsync`.
   - **Photos** : le format se reconnaît par le **contenu** (`SignaturePhoto`, `ValidationPhoto` dans `Services/Photos/`), jamais par le nom ou le MIME
     du client ; l'extension du blob et le type servi en découlent. Un nouvel endroit qui reçoit une image passe par `ValidationPhoto.Valider`.
   - **Action sensible d'une session ouverte** (changement de mot de passe, suppression du compte) : vérifier le mot de passe avec

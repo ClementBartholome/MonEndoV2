@@ -61,12 +61,7 @@ public sealed class AccountControllerIdentifiantsTests : IDisposable
     [InlineData("jeton-inconnu")]
     public async Task RefreshToken_CookieVideOuInconnu_NOuvreAucuneSession(string cookie)
     {
-        // Compte dont le jeton n'a jamais été émis : sa valeur vide ne doit pas correspondre à un cookie vide.
         await _identity.CreerUtilisatrice("sans-jeton@local");
-        var utilisatrice = (await _identity.UserManager.FindByEmailAsync("sans-jeton@local"))!;
-        utilisatrice.RefreshToken = string.Empty;
-        utilisatrice.RefreshTokenExpiryTime = null;
-        await _identity.UserManager.UpdateAsync(utilisatrice);
         var controller = _identity.CreerController();
         controller.ControllerContext.HttpContext.Request.Headers.Cookie = $"refreshToken={cookie}";
 
@@ -77,21 +72,22 @@ public sealed class AccountControllerIdentifiantsTests : IDisposable
     }
 
     [Fact]
-    public async Task Logout_RevoqueLeJetonDeRenouvellement()
+    public async Task Logout_RevoqueLaSessionDeLAppareil()
     {
         await _identity.CreerUtilisatrice("sortie@local");
         var controller = _identity.CreerController();
         await controller.Login(new IdentifiantsDto { Email = "sortie@local", Password = IdentityDeTest.MotDePasseValide });
-        var jeton = (await _identity.UserManager.FindByEmailAsync("sortie@local"))!.RefreshToken;
+        var jeton = Services.SessionsServiceTests.JetonPose(controller);
         Assert.NotEmpty(jeton);
 
         var sortie = _identity.CreerController();
         sortie.ControllerContext.HttpContext.Request.Headers.Cookie = $"refreshToken={jeton}";
         await sortie.Logout();
 
-        var apres = (await _identity.UserManager.FindByEmailAsync("sortie@local"))!;
-        Assert.Empty(apres.RefreshToken);
-        Assert.Null(apres.RefreshTokenExpiryTime);
+        var apres = _identity.CreerController();
+        apres.ControllerContext.HttpContext.Request.Headers.Cookie = $"refreshToken={jeton}";
+        Assert.IsType<BadRequestObjectResult>(await apres.RefreshToken());
+        Assert.Empty(await _identity.Context.SessionsAppareil.ToListAsync());
     }
 
     [Fact]

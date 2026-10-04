@@ -20,6 +20,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : IdentityDbCo
     public DbSet<Rappel> Rappels { get; set; }
     public DbSet<LiaisonAgenda> LiaisonsAgenda { get; set; }
     public DbSet<EpisodeAcne> EpisodesAcne { get; set; }
+    public DbSet<SessionAppareil> SessionsAppareil { get; set; }
     
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -158,6 +159,20 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : IdentityDbCo
                 .HasForeignKey(l => l.CarnetSanteId)
                 .OnDelete(DeleteBehavior.Cascade);
             entity.Property(l => l.CalendrierId).HasMaxLength(1024);
+        });
+
+        // Sessions par appareil : supprimées avec le compte ; empreinte unique, vérifiée à l'écriture (renouvellements simultanés)
+        modelBuilder.Entity<SessionAppareil>(entity =>
+        {
+            entity.ToTable("SessionsAppareil");
+            entity.HasIndex(s => s.JetonHache).IsUnique();
+            entity.HasIndex(s => s.JetonPrecedentHache);
+            entity.HasIndex(s => s.UserId);
+            entity.Property(s => s.JetonHache).IsConcurrencyToken();
+            entity.HasOne(s => s.User)
+                .WithMany()
+                .HasForeignKey(s => s.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
         });
 
         modelBuilder.Entity<EpisodeAcne>(entity =>

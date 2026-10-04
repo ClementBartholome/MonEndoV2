@@ -5,7 +5,14 @@ versions en [SemVer](https://semver.org/lang/fr/) (voir la section Déploiement 
 
 ## [1.5.0] - non publiée
 
+### Corrigé
+- Se connecter sur un appareil ne déconnecte plus les autres : chaque appareil (téléphone, ordinateur…) a sa propre session, qui se
+  renouvelle seule. Si l'application est coupée au moment d'un renouvellement, elle retrouve sa session au lieu de te redemander
+  ton mot de passe.
+
 ### Sécurité
+- Les sessions des appareils sont stockées sous forme d'empreinte (plus aucun jeton en clair en base) et un changement de mot de passe
+  déconnecte les autres appareils, pas celui que tu utilises.
 - Changer son mot de passe ou supprimer son compte compte désormais les mots de passe erronés comme à la connexion : après plusieurs
   essais ratés, la fonction est bloquée quelques minutes, y compris avec le bon mot de passe.
 - Les photos sont reconnues d'après leur contenu réel et non d'après leur nom ou le type annoncé par l'appareil : un fichier qui n'est pas une
