@@ -78,6 +78,8 @@ export function usePreparationRendezVous() {
 
     const rubriques = ref<Record<Rubrique, boolean>>({
         douleurs: true, cycle: true, traitements: true, bilans: true, activite: false, transit: false,
+        // Discrète : jamais imprimée sans que la personne la coche.
+        rapports: false,
     });
     const aucuneRubrique = computed(() => !Object.values(rubriques.value).some(Boolean));
 

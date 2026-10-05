@@ -87,6 +87,24 @@ export interface SyntheseBilans {
     joursCrampes: number;
     emotions: { emotion: string; jours: number }[];
     jours: BilanDuJour[];
+    categories: SyntheseCategories;
+}
+
+/** Catégories facultatives du bilan : des comptes de jours, toujours avec le nombre de jours où la personne a répondu. */
+export interface SyntheseCategories {
+    digestif: { joursNotes: number; joursDouleurSelle: number; joursNausees: number; joursSangSelles: number };
+    urinaire: {
+        joursNotes: number; joursDouleurUriner: number; joursEnvies: number; joursDifficulteVider: number;
+        joursSangVisible: { jour: string; pendantRegles: boolean }[];
+    };
+    saignementsHorsRegles: { joursNotes: number; jours: number; traces: number; legers: number; abondants: number };
+    nuitEtJournee: {
+        nuitsNotees: number; nuitsBonnes: number; nuitsMoyennes: number; nuitsDifficiles: number; nuitsReveilsDouleur: number;
+        journeesNotees: number; journeesPasLimitees: number; journeesPeuLimitees: number; journeesTresLimitees: number;
+        joursAbsence: number; joursActiviteAnnulee: number;
+    };
+    /** Catégorie discrète : imprimée seulement si la rubrique est cochée. */
+    rapports: { joursNotes: number; avecDouleur: number; sansDouleur: number; pasDeRapport: number };
 }
 
 export interface SyntheseActivite {
@@ -101,7 +119,7 @@ export interface SyntheseActivite {
 }
 
 /** Rubriques que l'utilisatrice choisit d'inclure dans le PDF. */
-export type Rubrique = 'douleurs' | 'cycle' | 'traitements' | 'bilans' | 'activite' | 'transit';
+export type Rubrique = 'douleurs' | 'cycle' | 'traitements' | 'bilans' | 'activite' | 'transit' | 'rapports';
 
 export interface OptionsPdf {
     rubriques: Record<Rubrique, boolean>;

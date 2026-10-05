@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { Button } from '@/shared/components/ui/button';
+import QuestionsBilan from '@/features/bilan-quotidien/components/saisie/QuestionsBilan.vue';
+import { questionsTransitSuite } from '@/features/bilan-quotidien/config/questions';
 import { echelleBristol, intensitesTransit } from '@/features/bilan-quotidien/config/transit';
 import type { IntensiteTransit, TransitBilan } from '@/features/bilan-quotidien/types/bilan-quotidien';
 
@@ -107,6 +109,9 @@ const choisirIntensite = (champ: ChampIntensite, intensite: IntensiteTransit) =>
         </button>
       </div>
     </section>
+
+    <!-- Suite du transit : douleur en allant à la selle, nausées, traces de sang -->
+    <QuestionsBilan v-model="transit" :questions="questionsTransitSuite"/>
 
     <!-- Crampes et ballonnements -->
     <section v-for="symptome in symptomes" :key="symptome.cle" class="flex flex-col gap-2">

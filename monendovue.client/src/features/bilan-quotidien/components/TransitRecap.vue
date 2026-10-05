@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue';
+import { lignesDeRecap, questionsTransitSuite } from '@/features/bilan-quotidien/config/questions';
 import { libelleBristol } from '@/features/bilan-quotidien/config/transit';
 import type { BilanQuotidien, IntensiteTransit } from '@/features/bilan-quotidien/types/bilan-quotidien';
 
@@ -19,7 +20,9 @@ const lignes = computed(() => {
     { icone: 'gastroenterology', libelle: 'Selles', valeur: sellesTexte },
     { icone: 'pulse_alert', libelle: "Crampes d'estomac", valeur: libelleSymptome(crampesEstomac, intensiteCrampes) },
     { icone: 'bubble_chart', libelle: 'Ballonnements', valeur: libelleSymptome(ballonnements, intensiteBallonnements) },
-  ].filter((ligne) => ligne.valeur !== null);
+  ].filter((ligne) => ligne.valeur !== null).concat(
+    lignesDeRecap(questionsTransitSuite, props.bilan).map((ligne) => ({ icone: 'gastroenterology', libelle: ligne.libelle, valeur: ligne.valeur })),
+  );
 });
 </script>
 
