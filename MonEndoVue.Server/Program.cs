@@ -26,6 +26,7 @@ using MonEndoVue.Server.Services.Sessions;
 using MonEndoVue.Server.Services.SuppressionCompte;
 using MonEndoVue.Server.Services.Activite;
 using MonEndoVue.Server.Services.Cycle;
+using MonEndoVue.Server.Services.Email;
 using MonEndoVue.Server.Services.Traitements;
 using Serilog;
 using Serilog.Events;
@@ -74,6 +75,9 @@ namespace MonEndoVue.Server
             builder.Services.AddScoped<HistoriqueBilansService>();
             // Notifications Web Push (clés VAPID dans la section WebPush ; sans elles, envoi désactivé)
             builder.Services.Configure<WebPushOptions>(builder.Configuration.GetSection(WebPushOptions.Section));
+            // Relais SMTP des e-mails de compte (section Email ; sans elle, l'envoi est désactivé)
+            builder.Services.Configure<EmailOptions>(builder.Configuration.GetSection(EmailOptions.Section));
+            builder.Services.AddSingleton<IEnvoiEmail, EnvoiEmailSmtp>();
             builder.Services.AddHttpClient<IEnvoiPush, WebPushService>();
             builder.Services.AddSingleton(TimeProvider.System);
             builder.Services.AddScoped<NotificationsPushService>();
@@ -274,6 +278,12 @@ namespace MonEndoVue.Server
             if (builder.Configuration[CleSignatureJwt.Reglage]?.Length < CleSignatureJwt.LongueurRecommandee)
             {
                 app.Logger.LogWarning("La clé de signature des jetons est courte (moins de {Longueur} caractères) : la régénérer", CleSignatureJwt.LongueurRecommandee);
+            }
+
+            var erreurEmail = app.Services.GetRequiredService<IOptions<EmailOptions>>().Value.Erreur();
+            if (erreurEmail is not null)
+            {
+                app.Logger.LogWarning("E-mails de compte désactivés : {Raison}", erreurEmail);
             }
 
             var erreurWebPush = app.Services.GetRequiredService<IOptions<WebPushOptions>>().Value.Erreur();
