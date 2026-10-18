@@ -35,7 +35,7 @@
               <h2 id="titre-frise" class="m-0 text-legende font-semibold uppercase tracking-wider text-texte-2">Les 30 derniers jours</h2>
               <span class="text-legende text-texte-2">Douleur · règles</span>
             </div>
-            <Frise :jours="regles.frise.value"/>
+            <FriseDesJours :jours="regles.frise.value"/>
           </section>
           <CalendrierRegles :mois="regles.mois.value" :calendrier="regles.calendrier.value" :en-cours-d-envoi="regles.enCoursDEnvoi.value"
                             @basculer="(jour) => noter(() => regles.basculer(jour))" @changer="regles.allerAuMois"/>
@@ -95,7 +95,7 @@ import { Skeleton } from '@/shared/components/ui/skeleton';
 import { useToast } from '@/shared/components/ui/toast';
 import EmptyStateAction from '@/shared/components/EmptyStateAction.vue';
 import SelecteurMois from '@/shared/components/SelecteurMois.vue';
-import Frise from '@/shared/components/Frise.vue';
+import FriseDesJours from '@/shared/components/FriseDesJours.vue';
 import { useAuthStore } from '@/features/auth/store/auth';
 import CalendrierRegles from '../components/CalendrierRegles.vue';
 import CarteCycleEnCours from '../components/CarteCycleEnCours.vue';

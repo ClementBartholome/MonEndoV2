@@ -9,7 +9,7 @@
     <p v-else-if="erreur" class="m-0 text-sm text-texte-2">L'aperçu n'a pas pu être chargé. Tu peux quand même créer le PDF.</p>
 
     <template v-else-if="synthese && chiffres">
-      <Frise :jours="frise"/>
+      <FriseDesJours :jours="frise"/>
       <dl class="m-0 grid grid-cols-2 gap-x-4 gap-y-3.5">
         <div class="flex flex-col gap-1">
           <dt class="order-2 text-legende text-texte-2">jours avec une douleur notée</dt>
@@ -41,7 +41,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue';
-import Frise from '@/shared/components/Frise.vue';
+import FriseDesJours from '@/shared/components/FriseDesJours.vue';
 import { Skeleton } from '@/shared/components/ui/skeleton';
 import type { SyntheseRendezVous } from '../types/synthese';
 import { coupDOeil } from '../utils/coupDOeil';
