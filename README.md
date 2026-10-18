@@ -64,12 +64,13 @@ Sur ordinateur, la navigation passe dans une barre latérale et les pages gagnen
   personnels atteints et observations factuelles sur la douleur et les règles, sans note ni score.
 - **Douleurs** : type, intensité 0-10, moment et commentaire ; chiffres du mois, graphique de l'intensité la plus forte jour par
   jour avec les règles en repère, saisie rapide depuis le bas de l'écran.
-- **Cycle** (onglets *Règles*, *Symptômes*, *Acné*) :
+- **Cycle** (onglets *Règles* et *Symptômes*) :
   - *Règles* : le cycle en cours, un calendrier où un toucher ajoute ou retire un jour de règles, et l'historique des cycles
     (durée moyenne du cycle et des règles, écart entre le plus court et le plus long, jours de douleur forte), sans prédiction ;
-  - *Symptômes* : saisie rapide, regroupés par jour ;
-  - *Acné* : un épisode dure de « L'acné revient » à « Ça s'est calmé », plus rien à noter chaque jour ; photo de suivi
-    hebdomadaire, comparaison avant / après sur 1, 3 ou 6 mois et historique des épisodes.
+  - *Symptômes* : saisie rapide, regroupés par jour.
+- **Acné** (page à part, menu « Plus ») : un épisode dure de « L'acné revient » à « Ça s'est calmé », plus rien à noter chaque
+  jour ; photo de suivi hebdomadaire, comparaison avant / après sur 1, 3 ou 6 mois et historique des épisodes. Pendant un
+  épisode, l'accueil rappelle sa durée et la dernière photo, et permet d'en ajouter une en un geste.
 - **Traitements** : à la manière de l'app Santé d'Apple, chaque traitement a sa fréquence (tous les jours, certains jours de la
   semaine, tous les N jours, au besoin) et jusqu'à six horaires. La page ne montre que les prises prévues aujourd'hui, à noter
   « Pris » ou « Ignorer » (et à annuler). Traitements au besoin, soins non médicamenteux (kiné, ostéo…), traitements terminés et

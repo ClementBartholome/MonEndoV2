@@ -9,6 +9,7 @@ export const ACCUEIL_VIDE: Aujourdhui = {
   prisesPrevues: [],
   auBesoin: [],
   semaine: { joursAvecDouleur: 0, joursAvecDouleurPendantRegles: 0, fatigueMoyenne: null, fatigueMoyennePrecedente: null },
+  acne: null,
 };
 
 /**

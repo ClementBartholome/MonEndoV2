@@ -1,6 +1,8 @@
+using System.Globalization;
 using Microsoft.EntityFrameworkCore;
 using MonEndoVue.Server.Data;
 using MonEndoVue.Server.Models;
+using MonEndoVue.Server.Services.Cycle;
 using MonEndoVue.Server.Services.Traitements;
 using MonEndoVue.Server.ViewModels;
 
@@ -64,8 +66,33 @@ public class AccueilService(AppDbContext context, TimeProvider horloge, Traiteme
             PrisesPrevues = planning.PrisesPrevues,
             AuBesoin = planning.AuBesoin,
             Semaine = Semaine(jour, bilans, joursDouleursNotees, joursDeRegles),
+            Acne = await AcneEnCoursAsync(id, jour, finExclue, ct),
         });
     }
+
+    /// <summary>Épisode d'acné en cours au jour demandé et jour de la dernière photo de suivi.</summary>
+    private async Task<AcneAujourdhuiViewModel?> AcneEnCoursAsync(int carnetId, DateOnly jour, DateTime finExclue, CancellationToken ct)
+    {
+        var debut = await context.EpisodesAcne.AsNoTracking()
+            .Where(e => e.CarnetSanteId == carnetId && e.Fin == null && e.Debut <= jour)
+            .Select(e => (DateOnly?)e.Debut)
+            .FirstOrDefaultAsync(ct);
+        if (debut is not { } d) return null;
+
+        var dernierePhoto = await context.SymptomesCycles.AsNoTracking()
+            .Where(s => s.CarnetSanteId == carnetId && s.TypeSymptome == AcneService.TypeAcne
+                        && s.PhotoUrl != null && s.PhotoUrl != "" && s.Date < finExclue)
+            .MaxAsync(s => (DateTime?)s.Date, ct);
+
+        return new AcneAujourdhuiViewModel
+        {
+            Debut = Texte(d),
+            Jours = jour.DayNumber - d.DayNumber + 1,
+            DernierePhoto = dernierePhoto is { } p ? Texte(DateOnly.FromDateTime(p)) : null,
+        };
+    }
+
+    private static string Texte(DateOnly jour) => jour.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
 
     /// <summary>
     /// 7 derniers jours (jour compris) : jours où une douleur a été notée (entrée de douleur ou bilan avec une douleur

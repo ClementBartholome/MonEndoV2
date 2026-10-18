@@ -104,7 +104,7 @@ export interface ActionsSaisieSymptome {
   supprimer: (id: number) => Promise<void>;
 }
 
-/** `acne` : saisie depuis l'onglet Acné (type imposé, photo proposée). */
+/** `acne` : saisie depuis la page Acné (type imposé, photo proposée). */
 const props = defineProps<{ entree: SymptomeCycle | null; acne: boolean; actions: ActionsSaisieSymptome }>();
 
 const form = useSaisieSymptome();

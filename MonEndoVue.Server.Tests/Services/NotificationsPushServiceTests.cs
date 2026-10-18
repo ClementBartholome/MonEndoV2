@@ -121,7 +121,7 @@ public sealed class NotificationsPushServiceTests : IDisposable
     }
 
     [Fact]
-    public async Task Rappels_AcneLeBonJour_EnvoieVersLOngletAcne()
+    public async Task Rappels_AcneLeBonJour_EnvoieVersLaPageAcne()
     {
         // Le rappel de la photo n'est envoyé que pendant un épisode d'acné.
         _carnet.Context.EpisodesAcne.Add(new EpisodeAcne { CarnetSanteId = CarnetDeTest.CarnetSanteId, Debut = new DateOnly(2026, 9, 1) });
@@ -130,7 +130,7 @@ public sealed class NotificationsPushServiceTests : IDisposable
         Abonnement();
 
         Assert.Equal(1, await Service().EnvoyerRappelsDusAsync(CancellationToken.None));
-        Assert.Equal("/cycle?onglet=acne", Assert.Single(_envoi.Envois).Message.Url);
+        Assert.Equal("/acne", Assert.Single(_envoi.Envois).Message.Url);
     }
 
     [Fact]

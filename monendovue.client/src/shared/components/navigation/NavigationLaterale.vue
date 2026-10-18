@@ -4,16 +4,20 @@
     <router-link to="/" class="mb-4 self-center" aria-label="Accueil MonEndo">
       <img src="@/images/MonEndo_transparent.png" alt="" class="h-24 w-24">
     </router-link>
-    <router-link
-        v-for="entree in entrees"
-        :key="entree.vers"
-        :to="entree.vers"
-        class="flex min-h-11 items-center gap-3 rounded-controle px-3 text-sm"
-        :class="estActive(entree, route.path) ? 'bg-surface-2 font-semibold text-texte' : 'text-texte-2 hover:bg-surface-2'"
-        :aria-current="estActive(entree, route.path) ? 'page' : undefined">
-      <i class="material-symbols-outlined text-xl" :class="{ remplie: estActive(entree, route.path) }" aria-hidden="true">{{ entree.icone }}</i>
-      {{ entree.libelle }}
-    </router-link>
+    <template v-for="(groupe, index) in groupes" :key="index">
+      <!-- Simple texte, pas un titre : la barre latérale ne doit pas entrer dans le plan de la page. -->
+      <p v-if="groupe.titre" class="m-0 mt-3 px-3 text-xs font-semibold text-texte-3">{{ groupe.titre }}</p>
+      <router-link
+          v-for="entree in groupe.entrees"
+          :key="entree.vers"
+          :to="entree.vers"
+          class="flex min-h-11 items-center gap-3 rounded-controle px-3 text-sm"
+          :class="estActive(entree, route.path) ? 'bg-surface-2 font-semibold text-texte' : 'text-texte-2 hover:bg-surface-2'"
+          :aria-current="estActive(entree, route.path) ? 'page' : undefined">
+        <i class="material-symbols-outlined text-xl" :class="{ remplie: estActive(entree, route.path) }" aria-hidden="true">{{ entree.icone }}</i>
+        {{ entree.libelle }}
+      </router-link>
+    </template>
   </nav>
 </template>
 
@@ -22,7 +26,12 @@ import {useRoute} from 'vue-router';
 import {estActive, navigationCompte, navigationPrincipale, navigationSecondaire} from '@/shared/config/navigation';
 
 const route = useRoute();
-const entrees = [...navigationPrincipale, ...navigationSecondaire, navigationCompte];
+/** Suivis du quotidien sans titre, puis les groupes du menu « Plus », puis les paramètres. */
+const groupes = [
+  { titre: '', entrees: navigationPrincipale },
+  ...navigationSecondaire,
+  { titre: '', entrees: [navigationCompte] },
+];
 </script>
 
 <style scoped>

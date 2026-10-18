@@ -25,6 +25,12 @@ versions en [SemVer](https://semver.org/lang/fr/) (voir la section Déploiement 
 - Règles : tu peux préciser le **flux** de chaque jour de règles (traces, léger, moyen, abondant) et noter s'il y a eu des **caillots**. C'est
   facultatif, enregistré dès que tu touches un choix, et le calendrier montre le flux par des points. Ces précisions apparaissent dans ton
   export de données et dans la synthèse pour ton rendez-vous (nombre de jours par niveau, jamais d'interprétation).
+- Accueil : pendant un épisode d'acné, une carte rappelle depuis quand il dure et la date de ta dernière photo, avec « Ajouter une photo ».
+
+### Modifié
+- **L'acné a sa propre page**, accessible depuis le menu « Plus » (et un raccourci sous l'onglet Symptômes du cycle). La page Cycle garde
+  les onglets Règles et Symptômes. Les anciens liens et la notification de la photo de suivi mènent à la nouvelle page.
+- Le menu « Plus » (et la barre latérale sur ordinateur) est rangé en trois groupes : **Mes suivis**, **Mes rendez-vous** et **Aide**.
 
 ### Corrigé
 - Se connecter sur un appareil ne déconnecte plus les autres : chaque appareil (téléphone, ordinateur…) a sa propre session, qui se

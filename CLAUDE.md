@@ -51,7 +51,8 @@ dotnet ef migrations add NomEnPascalCase --project MonEndoVue.Server
   Chaque entité porte un `CarnetSanteId` : c'est la clé du cloisonnement.
 - **`DonneesDouleur`** (type, intensité 0-10, date, commentaire) — page `/douleurs`.
 - **`SymptomeCycle`** (type, intensité, date, commentaire, photo optionnelle) dont l'**acné** avec suivi photo ;
-  **`JourRegle`** (jours de règles) — page `/cycle`, onglets Règles (`?onglet=cycles`), Symptômes et Acné.
+  **`JourRegle`** (jours de règles) — page `/cycle`, onglets Règles (`?onglet=cycles`) et Symptômes ; l'acné a sa page `/acne`
+  (menu « Plus », groupe « Mes suivis », raccourci sous l'onglet Symptômes ; l'ancien `/cycle?onglet=acne` y est redirigé par le routeur).
   Règles via `CycleController` (carnet de la session) : `GET Cycle?jour=&mois=` (jours du mois, cycle en cours,
   6 derniers cycles et moyenne dès deux cycles) et `PUT`/`DELETE Cycle/regles/{jour}` (un jour à la fois, jamais à venir).
   Chaque jour de règles porte deux détails **facultatifs** (null = non précisé, jamais compté comme un niveau ni comme « non ») : le **flux**
@@ -64,6 +65,7 @@ dotnet ef migrations add NomEnPascalCase --project MonEndoVue.Server
   Acné : **`EpisodeAcne`** (début, fin vide = en cours ; un seul en cours, sans chevauchement) via `AcneController`
   (`GET Acne?jour=`, `POST/PUT/DELETE Acne/episodes`, `POST Acne/episodes/{id}/fin`) : rien à noter chaque jour
   tant qu'il dure. Le point de suivi hebdomadaire (photo, intensité) reste un `SymptomeCycle` « Acné » avec photo.
+  Pendant un épisode en cours, l'accueil affiche une carte (durée, dernière photo, « Ajouter une photo » → `/acne?ajouter`).
   Les anciens jours d'acné (une entrée par jour) ont été regroupés en épisodes par la migration `AjouteEpisodesAcne`
   et sont conservés tels quels.
 - **`Medicament`** (traitement, `TypeTraitement` médicamenteux ou non, en cours ou passé, avec une **fréquence** à la
@@ -101,7 +103,7 @@ dotnet ef migrations add NomEnPascalCase --project MonEndoVue.Server
   Les bilans antérieurs gardent leur ancienne humeur `Mood` (`Heureuse`/`Neutre`/`Triste`) : tout calcul d'humeur passe
   par `features/bilan-quotidien/utils/humeur.ts`, qui prend en compte les deux.
 - Accueil `/` « Aujourd'hui » (`GET Accueil/aujourdhui?jour=AAAA-MM-JJ`, jour local envoyé par le client, carnet de la
-  session : cycle déduit des jours de règles sans prédiction, bilan du jour, prises prévues ce jour-là (heure et réponse) et
+  session : cycle déduit des jours de règles sans prédiction, bilan du jour, épisode d'acné en cours (durée, jour de la dernière photo), prises prévues ce jour-là (heure et réponse) et
   traitements au besoin, faits descriptifs des 7 derniers jours ; prise notée en un geste par `POST Traitements/{id}/prises`), agenda `/agenda` (Google Calendar en lecture via le serveur : l'utilisatrice lie son compte Google depuis `/parametres` (OAuth, `Agenda/liaison`, portées `calendar.events.readonly` et `calendar.calendarlist.readonly`), puis choisit **le calendrier lu**, le seul (idéalement un calendrier de rendez-vous médicaux) ; sans liaison, repli temporaire sur l'entrée de configuration `Agenda` ; sans calendrier choisi, rien n'est lu). Page `/agenda` (`features/schedule/`) : **liste par jour** (vue par défaut) et vue Mois, détail dans un panneau ; « Préparer ce rendez-vous » ouvre `/export` avec, dans l'**état de la navigation** (`history.state`, jamais dans l'adresse), la date du rendez-vous et celle du précédent (`GET Agenda/precedent?avant=`) : période « depuis le dernier RDV » jusqu'à aujourd'hui (l'export ne dépasse pas aujourd'hui), « Préparer un rendez-vous » `/export` : PDF créé dans le navigateur (jsPDF, chargé à la demande) depuis
   `GET Synthese?du=&au=` (`SyntheseRendezVousService`, carnet de la session, un an au plus : comptes et moyennes par
   rubrique, prises des traitements, règles, détail jour par jour, **sans interprétation**). Période 1 mois / 3 mois /
@@ -141,7 +143,7 @@ dotnet ef migrations add NomEnPascalCase --project MonEndoVue.Server
 - Notifications **Web Push standard** envoyées par le serveur (clés VAPID, sans service tiers) : chaque appareil s'abonne
   depuis `/parametres` ; rappels réglables (job Quartz toutes les 15 min), chacun omis si le suivi est déjà fait :
   bilan quotidien (bilan du jour pas encore rempli, ouvre `/bilan-quotidien?ajouter`) et photo de suivi de l'acné hebdomadaire
-  (**seulement pendant un épisode d'acné en cours**, si aucune photo depuis 7 jours ; ouvre `/cycle?onglet=acne`), et **veille d'un rendez-vous**
+  (**seulement pendant un épisode d'acné en cours**, si aucune photo depuis 7 jours ; ouvre `/acne`), et **veille d'un rendez-vous**
   (`RappelRendezVous`, 19 h par défaut : seulement si le calendrier choisi de l'agenda Google lié contient un rendez-vous à heure fixe le lendemain local ;
   omis sans agenda, sans calendrier ou si Google ne répond pas ; notification sans titre ni lieu, ouvre `/agenda`). Sur iOS (16.4+), uniquement dans l'app ajoutée à l'écran d'accueil.
   Entités : **`AbonnementPush`** (un par appareil, endpoint unique, rattaché au carnet) et **`Rappel`** (un par carnet et

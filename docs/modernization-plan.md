@@ -213,7 +213,9 @@ Regles:
 - Personnalisation Analyse & Tendances:
   - `ParametresPage.vue`: section "Objectifs bien-etre" (hydratation, pas, stress, fatigue, douleur)
   - `DashboardBilanQuotidien.vue`: calcul des objectifs/insights pilote par ces cibles utilisateur
-- Separation UX du suivi acné (dans `CyclePage.vue`):
+- 1.5.0 : l'acné quitte la page Cycle pour sa page `/acne` (`AcnePage.vue`), carte « Acné en cours » sur l'accueil, menu « Plus »
+  et barre latérale en groupes titrés (Mes suivis, Mes rendez-vous, Aide) ; l'ancien onglet `/cycle?onglet=acne` est redirigé.
+- Separation UX du suivi acné (dans `CyclePage.vue`, remplacée en 1.5.0 par la page `/acne`):
   - onglet dedie `Acné` distinct des autres symptomes
   - conservation du quick-add acné et des actions de periode en cours dans cet onglet
   - nouvelle galerie "Evolution photo" avec comparaison rapide de 2 photos

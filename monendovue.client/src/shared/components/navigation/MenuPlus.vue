@@ -1,12 +1,14 @@
 <template>
   <PanneauBas v-model:open="ouvert" titre="Plus">
-    <nav aria-label="Autres rubriques" class="flex flex-col rounded-carte bg-surface shadow-elevation">
+    <section v-for="groupe in navigationSecondaire" :key="groupe.titre" class="flex flex-col gap-2">
+    <h2 class="m-0 px-1 text-sm font-semibold tracking-normal text-texte-2">{{ groupe.titre }}</h2>
+    <nav :aria-label="groupe.titre" class="flex flex-col rounded-carte bg-surface shadow-elevation">
       <router-link
-          v-for="(entree, index) in navigationSecondaire"
+          v-for="(entree, index) in groupe.entrees"
           :key="entree.vers"
           :to="entree.vers"
           class="flex min-h-16 items-center gap-3 px-4 text-texte"
-          :class="{ 'border-b border-trait': index < navigationSecondaire.length - 1 }"
+          :class="{ 'border-b border-trait': index < groupe.entrees.length - 1 }"
           @click="ouvert = false">
         <i class="material-symbols-outlined rounded-controle p-1.5 text-titre-2" :class="teintesRubrique[entree.teinte ?? 'neutre']" aria-hidden="true">{{ entree.icone }}</i>
         <span class="flex grow flex-col">
@@ -16,6 +18,7 @@
         <i class="material-symbols-outlined text-texte-3" aria-hidden="true">chevron_right</i>
       </router-link>
     </nav>
+    </section>
 
     <nav aria-label="Compte" class="flex flex-col rounded-carte bg-surface shadow-elevation">
       <router-link :to="navigationCompte.vers" class="flex min-h-14 items-center gap-3 border-b border-trait px-4 text-texte" @click="ouvert = false">
