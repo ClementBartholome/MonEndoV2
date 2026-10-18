@@ -50,12 +50,12 @@ lecture seule (liste par jour, `SelecteurMois`, suppression en deux temps), plus
    `useMonthData({ fetchFunction, transformData })` + `useCrudOperations(entries)` + `useDialogForm`, formulaire
    vee-validate avec `toTypedSchema(z.object(...))` et messages d'erreur en français, `GenericCardList` en mobile
    (`md:hidden`) et `Datatable` en desktop (`hidden md:block`), `SectionKpiHeader`, `EmptyStateAction`, `Skeleton` pendant le chargement.
-2. **Fonctionnalité riche** — modèle : la chaîne acné de `features/cycle/`.
-   - `types/acne-tab.ts` : contrat `XxxModel` (état en lecture seule) + `XxxActions` (signatures des actions).
-   - `composables/useAcneTracking.ts` : `useXxx(options)` qui gère état, appels API, toasts et renvoie
-     `{ model: computed<XxxModel>, actions: XxxActions }` ; options par callbacks (`onChanged`, `onRequest…`).
-   - `components/AcneTabSection.vue` : conteneur qui instancie le composable et relie callbacks ↔ emits.
-   - `components/AcneTabContent.vue` : présentation pure, deux props (`model`, `actions`), aucun état ni appel API.
+2. **Fonctionnalité riche** — modèle : la page Acné de `features/cycle/`.
+   - `types/acne.ts` : miroir des ViewModels C# (`Acne`, `EpisodeAcne`…).
+   - `composables/useAcne.ts` : état (données, chargement, erreur), appels API et calculs dérivés ; chaque écriture recharge.
+   - `pages/AcnePage.vue` : orchestre (composables, panneaux de saisie, toasts, lien profond `?ajouter`).
+   - `components/CarteEpisodeAcne.vue`, `SuiviPhotosAcne.vue`, `ListeEpisodesAcne.vue` : présentation par props et emits,
+     sans appel API ; les saisies reçoivent leurs actions en prop (`ActionsEpisodeAcne`).
 
 ## SOLID côté client
 - **Responsabilité unique** :
@@ -228,8 +228,11 @@ lecture seule (liste par jour, `SelecteurMois`, suppression en deux temps), plus
   `components/NotificationSettings.vue` ; le worker `public/push-sw.js` ne fait qu'afficher les notifications (aucun cache).
 - Rappels : une carte `ReglageRappelCard.vue` par type renvoyé par `GET Notifications/rappels` ; libellés dans
   `config/rappels.ts` (un type sans entrée n'est pas affiché). Jours : 0 = dimanche, comme `DayOfWeek` côté serveur.
-- Une notification ouvre `data.url` : une page à onglets doit accepter un lien profond (`/cycle?onglet=acne|symptomes|cycles`,
-  lu dans `CyclePage.vue` au montage).
+- Une notification ouvre `data.url` : une page à onglets doit accepter un lien profond (`/cycle?onglet=symptomes|cycles`,
+  lu dans `CyclePage.vue` au montage). Une adresse déjà envoyée dans des notifications ne disparaît pas : la rediriger dans le
+  routeur (ex. `/cycle?onglet=acne` → `/acne`, `beforeEnter`).
+- Navigation : `shared/config/navigation.ts` est la seule liste ; le menu « Plus » et la barre latérale lisent les mêmes
+  **groupes titrés** (`navigationSecondaire` : Mes suivis, Mes rendez-vous, Aide). Une nouvelle rubrique s'ajoute à son groupe.
 - La clé publique VAPID vient de l'API (`GET Notifications/cle-publique`), jamais d'une variable `VITE_*`.
 - **iOS** : push disponible seulement dans l'app ouverte depuis l'écran d'accueil (iOS 16.4+), sinon afficher le guide
   d'installation. `Notification.requestPermission()` doit être le **premier `await`** d'un gestionnaire de clic (geste utilisateur),
