@@ -3,7 +3,7 @@
     <h1 class="m-0 text-left text-titre-page font-semibold tracking-normal text-texte">Paramètres</h1>
 
     <GroupeParametres titre="Rappels">
-      <LigneParametre titre="Notifications" detail="Bilan du jour · photo de l'acné" icone="notifications"
+      <LigneParametre titre="Notifications" detail="Bilan du jour · photo de l'acné · rendez-vous" icone="notifications"
                       teinte="bilan" @ouvrir="panneau = 'notifications'"/>
     </GroupeParametres>
 

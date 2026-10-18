@@ -5,6 +5,7 @@ import type { FauxServeur } from './faux-serveur';
 const RAPPELS = [
   { type: 'BilanQuotidien', estHebdomadaire: false, actif: false, heure: '20:00', jourSemaine: null, fuseauHoraire: 'Europe/Paris' },
   { type: 'SuiviAcne', estHebdomadaire: true, actif: false, heure: '19:00', jourSemaine: 0, fuseauHoraire: 'Europe/Paris' },
+  { type: 'RendezVous', estHebdomadaire: false, actif: false, heure: '19:00', jourSemaine: null, fuseauHoraire: 'Europe/Paris' },
 ];
 
 /** Notifications configurées sur le serveur : clé publique, abonnement d'appareil, rappels (le dernier PUT du bilan est gardé). */

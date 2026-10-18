@@ -5,6 +5,7 @@ public enum TypeRappel
 {
     BilanQuotidien,
     SuiviAcne,
+    RendezVous,
 }
 
 /// <summary>Réglage d'un rappel pour un carnet : un seul par type et par carnet.</summary>

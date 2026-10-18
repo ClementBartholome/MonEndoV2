@@ -5,7 +5,7 @@ export interface AbonnementPush {
     auth: string;
 }
 
-export type TypeRappel = 'BilanQuotidien' | 'SuiviAcne';
+export type TypeRappel = 'BilanQuotidien' | 'SuiviAcne' | 'RendezVous';
 
 /**
  * Réglage d'un rappel : heure locale HH:mm dans un fuseau IANA ; jour (0 = dimanche … 6 = samedi) pour un rappel hebdomadaire.

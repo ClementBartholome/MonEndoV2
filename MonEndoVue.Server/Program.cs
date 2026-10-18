@@ -90,6 +90,7 @@ namespace MonEndoVue.Server
             // Un rappel = une règle (ajouter un type : nouvelle implémentation de IRegleRappel)
             builder.Services.AddScoped<IRegleRappel, RappelBilanQuotidien>();
             builder.Services.AddScoped<IRegleRappel, RappelSuiviAcne>();
+            builder.Services.AddScoped<IRegleRappel, RappelRendezVous>();
 
             // Agenda Google en lecture : clé API côté serveur, calendrier associé à une utilisatrice par la configuration
             builder.Services.Configure<AgendaOptions>(builder.Configuration.GetSection(AgendaOptions.Section));
