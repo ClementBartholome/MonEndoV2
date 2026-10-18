@@ -11,6 +11,18 @@ export interface Aujourdhui {
     /** Traitements « au besoin » en cours. */
     auBesoin: TraitementAuBesoin[];
     semaine: Semaine;
+    /** Épisode d'acné en cours ; null sans épisode en cours. */
+    acne: AcneAujourdhui | null;
+}
+
+/** Miroir de `AcneAujourdhuiViewModel`. */
+export interface AcneAujourdhui {
+    /** Début de l'épisode (AAAA-MM-JJ). */
+    debut: string;
+    /** Durée jusqu'à aujourd'hui, jour de début compris. */
+    jours: number;
+    /** Jour de la dernière photo de suivi (AAAA-MM-JJ), null sans photo. */
+    dernierePhoto: string | null;
 }
 
 export interface CycleAujourdhui {

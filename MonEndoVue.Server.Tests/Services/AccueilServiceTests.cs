@@ -65,6 +65,53 @@ public sealed class AccueilServiceTests : IDisposable
     }
 
     [Fact]
+    public async Task GetAujourdhui_EpisodeDAcneEnCours_DureeEtDernierePhoto()
+    {
+        var ctx = _carnet.Context;
+        const int c = CarnetDeTest.CarnetSanteId;
+        ctx.EpisodesAcne.AddRange(
+            new EpisodeAcne { CarnetSanteId = c, Debut = Jour.AddDays(-60), Fin = Jour.AddDays(-40) },
+            new EpisodeAcne { CarnetSanteId = c, Debut = Jour.AddDays(-16) },
+            new EpisodeAcne { CarnetSanteId = CarnetDeTest.AutreCarnetSanteId, Debut = Jour.AddDays(-2) });
+        ctx.SymptomesCycles.AddRange(
+            new SymptomeCycle { CarnetSanteId = c, TypeSymptome = "Acné", Intensite = 3, Date = A(-8), PhotoUrl = "photo-1" },
+            // Sans photo, autre symptôme, autre carnet : ignorés.
+            new SymptomeCycle { CarnetSanteId = c, TypeSymptome = "Acné", Intensite = 3, Date = A(-2), PhotoUrl = null },
+            new SymptomeCycle { CarnetSanteId = c, TypeSymptome = "Nausée", Intensite = 3, Date = A(-1), PhotoUrl = "photo-2" },
+            new SymptomeCycle { CarnetSanteId = CarnetDeTest.AutreCarnetSanteId, TypeSymptome = "Acné", Intensite = 3, Date = A(-1), PhotoUrl = "photo-3" });
+        await ctx.SaveChangesAsync();
+
+        var acne = (await Obtenir()).Acne!;
+
+        Assert.Equal("2026-09-12", acne.Debut);
+        Assert.Equal(17, acne.Jours);
+        Assert.Equal("2026-09-20", acne.DernierePhoto);
+    }
+
+    [Fact]
+    public async Task GetAujourdhui_EpisodeDAcneTermineOuDUnAutreCarnet_RienSurLAccueil()
+    {
+        _carnet.Context.EpisodesAcne.AddRange(
+            new EpisodeAcne { CarnetSanteId = CarnetDeTest.CarnetSanteId, Debut = Jour.AddDays(-30), Fin = Jour.AddDays(-3) },
+            new EpisodeAcne { CarnetSanteId = CarnetDeTest.AutreCarnetSanteId, Debut = Jour.AddDays(-5) });
+        await _carnet.Context.SaveChangesAsync();
+
+        Assert.Null((await Obtenir()).Acne);
+    }
+
+    [Fact]
+    public async Task GetAujourdhui_EpisodeSansPhoto_DernierePhotoVide()
+    {
+        _carnet.Context.EpisodesAcne.Add(new EpisodeAcne { CarnetSanteId = CarnetDeTest.CarnetSanteId, Debut = Jour });
+        await _carnet.Context.SaveChangesAsync();
+
+        var acne = (await Obtenir()).Acne!;
+
+        Assert.Equal(1, acne.Jours);
+        Assert.Null(acne.DernierePhoto);
+    }
+
+    [Fact]
     public async Task GetAujourdhui_SansDonnees_RienAAfficher()
     {
         var aujourdhui = await Obtenir();
@@ -76,6 +123,7 @@ public sealed class AccueilServiceTests : IDisposable
         Assert.Null(aujourdhui.Cycle.JourDuCycle);
         Assert.Equal(0, aujourdhui.Semaine.JoursAvecDouleur);
         Assert.Null(aujourdhui.Semaine.FatigueMoyenne);
+        Assert.Null(aujourdhui.Acne);
     }
 
     [Fact]

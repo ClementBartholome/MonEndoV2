@@ -13,6 +13,18 @@ public class AujourdhuiViewModel
     /// <summary>Traitements « au besoin » en cours.</summary>
     public required IReadOnlyList<TraitementAuBesoinViewModel> AuBesoin { get; init; }
     public required SemaineViewModel Semaine { get; init; }
+    /// <summary>Épisode d'acné en cours (null sans épisode en cours) : l'accueil n'en parle que pendant un épisode.</summary>
+    public AcneAujourdhuiViewModel? Acne { get; init; }
+}
+
+public class AcneAujourdhuiViewModel
+{
+    /// <summary>Début de l'épisode en cours (AAAA-MM-JJ).</summary>
+    public required string Debut { get; init; }
+    /// <summary>Durée de l'épisode jusqu'au jour demandé, jour de début compris.</summary>
+    public int Jours { get; init; }
+    /// <summary>Jour de la dernière photo de suivi (AAAA-MM-JJ), toutes périodes confondues ; null sans photo.</summary>
+    public string? DernierePhoto { get; init; }
 }
 
 public class CycleAujourdhuiViewModel
