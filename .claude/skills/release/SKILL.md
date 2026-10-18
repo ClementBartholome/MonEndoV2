@@ -93,3 +93,10 @@ Points d'attention connus :
 - **Retour de la 1.5.0 vers la 1.4.0 (rappels)** : l'ancienne image ne connaît pas le type de rappel `RendezVous` (stocké en texte) et
   échouerait en lisant les rappels du carnet concerné. Avant de repointer l'image : `DELETE FROM Rappels WHERE Type = 'RendezVous'`.
 - Toute version qui rend un champ nullable ou supprime une table ajoute ici sa propre consigne de retour arrière.
+
+## Piège : une règle nouvelle appliquée aux données existantes
+Avant de livrer, chercher toute règle qui **lit un champ jusque-là ignoré** et peut bloquer ou supprimer des comptes existants
+(1.5.0 : confirmation d'adresse obligatoire et suppression des comptes non confirmés à 7 jours, alors que tous les comptes
+existants avaient `EmailConfirmed` à 0 ; corrigé par la migration `ConfirmeLesComptesExistants` avant la livraison). Sur la
+base jetable, insérer des lignes **telles que l'ancienne version les écrivait** (pas des valeurs « propres »), puis vérifier
+qu'elles restent utilisables : connexion, jobs Quartz (suppression, rappels).
