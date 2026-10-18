@@ -1,7 +1,7 @@
 <template>
   <main class="mx-auto flex w-full max-w-xl flex-col gap-5 px-5 pb-40 pt-24 lg:pb-12 lg:pt-10">
     <header class="flex flex-col gap-2">
-      <h1 class="m-0 text-left text-titre-page font-semibold tracking-normal text-texte">Une suggestion&nbsp;? Un&nbsp;bug&nbsp;?</h1>
+      <h1 class="m-0 text-left text-titre-page font-medium tracking-normal text-texte">Une suggestion&nbsp;? Un&nbsp;bug&nbsp;?</h1>
       <p class="m-0 text-left text-corps text-texte-2">
         MonEndo est fait par une seule personne, et ton avis compte. Une idée pour l'améliorer, ou quelque chose qui ne
         marche pas comme tu l'attends ? Écris-moi, je lis tout.

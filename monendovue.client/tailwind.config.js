@@ -23,6 +23,11 @@ module.exports = {
             },
         },
         extend: {
+            // Polices (assets/polices.css) : font-sans = interface, font-serif = titres de page et chiffres.
+            fontFamily: {
+                sans: ['Lexend', 'Arial', 'Helvetica', 'sans-serif'],
+                serif: ['Literata', 'Georgia', 'serif'],
+            },
             // Tailles de texte des pages refaites, en rem : elles suivent la racine (16 px, 20 px dès 768 px) comme
             // text-sm / text-base. Jamais de text-[Npx], qui resterait figé sur ordinateur. Les icônes reprennent ces pas.
             fontSize: {

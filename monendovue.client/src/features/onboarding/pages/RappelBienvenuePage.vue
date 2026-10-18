@@ -1,7 +1,7 @@
 <template>
   <main class="mx-auto flex min-h-dvh w-full max-w-md flex-col gap-6 px-6 pb-6 pt-14">
     <header class="flex flex-col gap-3 text-left">
-      <h1 class="m-0 text-titre-page font-semibold leading-tight tracking-normal text-texte">Ton compte est créé.<br>Un rappel, si tu veux ?</h1>
+      <h1 class="m-0 text-titre-page font-medium leading-tight tracking-normal text-texte">Ton compte est créé.<br>Un rappel, si tu veux ?</h1>
       <p v-if="etat === 'ios-a-installer'" class="m-0 text-corps leading-relaxed text-texte-2">
         Sur iPhone, les rappels n'arrivent que si MonEndo est installé sur ton écran d'accueil. Cela se fait une fois.
       </p>
@@ -38,11 +38,11 @@
         <div role="group" aria-label="Heure du rappel" class="grid grid-cols-4 gap-2">
           <button v-for="proposee in HEURES_PROPOSEES" :key="proposee" type="button" :aria-pressed="heureProposee && heure === proposee"
                   class="min-h-11 rounded-controle border-[1.5px] text-sm"
-                  :class="heureProposee && heure === proposee ? 'border-texte bg-texte font-semibold text-fond' : 'border-contour bg-surface font-medium text-texte'"
+                  :class="heureProposee && heure === proposee ? 'choix-actif font-semibold' : 'border-contour bg-surface font-medium text-texte'"
                   @click="choisirHeure(proposee)">{{ heureLisible(proposee) }}</button>
           <button type="button" :aria-pressed="autreHeure"
                   class="min-h-11 rounded-controle border-[1.5px] text-sm"
-                  :class="autreHeure ? 'border-texte bg-texte font-semibold text-fond' : 'border-contour bg-surface font-medium text-texte'"
+                  :class="autreHeure ? 'choix-actif font-semibold' : 'border-contour bg-surface font-medium text-texte'"
                   @click="autreHeure = true">Autre</button>
         </div>
         <label v-if="autreHeure" class="flex flex-col gap-1 text-sm font-medium text-texte">Heure du rappel

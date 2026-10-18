@@ -73,7 +73,7 @@ const cellules = computed<Cellule[]>(() => {
 });
 
 function classes(cellule: Cellule): string {
-  if (cellule.choisi) return 'border-texte bg-texte font-semibold text-fond';
+  if (cellule.choisi) return 'choix-actif font-semibold';
   if (cellule.aujourdhui) return 'border-texte font-semibold text-texte';
   return `border-transparent ${cellule.horsMois ? 'text-texte-3' : 'text-texte'}`;
 }

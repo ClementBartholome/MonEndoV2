@@ -6,7 +6,7 @@
         <div class="grid grid-cols-3 gap-2">
           <button v-for="t in types" :key="t.valeur" type="button"
                   class="flex min-h-14 flex-col items-center justify-center gap-0.5 rounded-controle border-[1.5px] px-1 text-legende"
-                  :class="form.type.value === t.valeur ? 'border-texte bg-texte font-medium text-fond' : 'border-contour bg-surface text-texte'"
+                  :class="form.type.value === t.valeur ? 'choix-actif font-semibold' : 'border-contour bg-surface text-texte'"
                   :aria-pressed="form.type.value === t.valeur"
                   :aria-label="t.valeur === 'Autre' ? 'Autre activité' : undefined"
                   @click="form.type.value = t.valeur">
@@ -24,7 +24,7 @@
         <div class="grid grid-cols-4 gap-2">
           <button v-for="minutes in DUREES" :key="minutes" type="button"
                   class="min-h-11 rounded-controle border-[1.5px] text-sm"
-                  :class="form.duree.value === minutes ? 'border-texte bg-texte font-medium text-fond' : 'border-contour bg-surface text-texte'"
+                  :class="form.duree.value === minutes ? 'choix-actif font-semibold' : 'border-contour bg-surface text-texte'"
                   :aria-pressed="form.duree.value === minutes"
                   @click="form.duree.value = minutes">{{ duree(minutes) }}</button>
         </div>
@@ -40,7 +40,7 @@
         <div class="grid grid-cols-3 gap-2">
           <button v-for="n in NIVEAUX" :key="n.valeur" type="button"
                   class="min-h-11 rounded-controle border-[1.5px] text-sm"
-                  :class="form.niveau.value === n.valeur ? 'border-texte bg-texte font-medium text-fond' : 'border-contour bg-surface text-texte'"
+                  :class="form.niveau.value === n.valeur ? 'choix-actif font-semibold' : 'border-contour bg-surface text-texte'"
                   :aria-pressed="form.niveau.value === n.valeur"
                   @click="form.niveau.value = n.valeur">{{ n.libelle }}</button>
         </div>
@@ -51,7 +51,7 @@
         <div class="grid grid-cols-3 gap-2">
           <button v-for="e in EFFETS" :key="e.valeur" type="button"
                   class="min-h-11 rounded-controle border-[1.5px] text-sm"
-                  :class="form.effet.value === e.valeur ? 'border-texte bg-texte font-medium text-fond' : 'border-contour bg-surface text-texte'"
+                  :class="form.effet.value === e.valeur ? 'choix-actif font-semibold' : 'border-contour bg-surface text-texte'"
                   :aria-pressed="form.effet.value === e.valeur"
                   @click="form.effet.value = form.effet.value === e.valeur ? 'NonRenseigne' : e.valeur">{{ e.libelle }}</button>
         </div>
@@ -62,7 +62,7 @@
         <div class="grid grid-cols-3 gap-2">
           <button v-for="m in moments" :key="m.valeur" type="button"
                   class="min-h-11 rounded-controle border-[1.5px] text-sm"
-                  :class="form.moment.value === m.valeur ? 'border-texte bg-texte font-medium text-fond' : 'border-contour bg-surface text-texte'"
+                  :class="form.moment.value === m.valeur ? 'choix-actif font-semibold' : 'border-contour bg-surface text-texte'"
                   :aria-pressed="form.moment.value === m.valeur"
                   :aria-label="m.valeur === 'autre' ? 'Autre jour' : undefined"
                   @click="form.moment.value = m.valeur">{{ m.libelle }}</button>

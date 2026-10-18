@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue';
-import { anciennesHumeurs, presentationEmotion } from '@/features/bilan-quotidien/config/emotions';
+import { anciennesHumeurs, pastilleTonalite, presentationEmotion } from '@/features/bilan-quotidien/config/emotions';
 import { emotionsDuBilan } from '@/features/bilan-quotidien/utils/humeur';
 import type { BilanQuotidien } from '@/features/bilan-quotidien/types/bilan-quotidien';
 
@@ -23,7 +23,7 @@ const ancienne = computed(() => (props.bilan.mood ? anciennesHumeurs[props.bilan
           :key="emotion.code"
           class="inline-flex items-center gap-1 rounded-controle bg-surface px-2 py-1 text-xs text-texte"
       >
-        <span aria-hidden="true">{{ emotion.emoji }}</span>{{ emotion.libelle }}
+        <span class="h-2 w-2 shrink-0 rounded-full" :class="pastilleTonalite[emotion.tonalite]" aria-hidden="true"></span>{{ emotion.libelle }}
       </li>
     </ul>
     <p v-else class="text-base font-semibold text-texte mt-1">{{ ancienne?.libelle ?? '-' }}</p>

@@ -17,8 +17,8 @@ export const buttonVariants = cva(
         ghost: 'hover:bg-accent hover:text-accent-foreground',
         link: 'text-primary underline-offset-4 hover:underline',
         custom: 'bg-button font-semibold text-texte hover:opacity-90 transition-opacity',
-        // Choix sélectionné (règles « Formes et états » du CLAUDE.md client) : fond foncé, texte clair.
-        selected: 'border-[1.5px] border-texte bg-texte text-fond',
+        // Choix sélectionné (règles « Formes et états » du CLAUDE.md client) : fond rosé, contour prune, texte encre.
+        selected: 'choix-actif border-[1.5px] font-semibold',
       },
       size: {
         default: 'h-10 px-4 py-2',

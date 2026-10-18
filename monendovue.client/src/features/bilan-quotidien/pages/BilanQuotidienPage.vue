@@ -96,8 +96,7 @@ const tendances = computed(() => calculerTendances(model.value.jours, model.valu
   <main class="mx-auto flex w-full max-w-xl flex-col gap-3.5 px-5 pb-40 pt-24 lg:pb-12 lg:pt-10">
     <!-- Pendant la saisie, le titre de page reste lu (sr-only) : la saisie a son propre titre visible. -->
     <header class="flex items-center gap-3" :class="{ 'sr-only': saisie }">
-      <i class="material-symbols-outlined rounded-controle bg-teinte-bilan-fond p-2 text-titre-page text-teinte-bilan" aria-hidden="true">event_note</i>
-      <h1 class="m-0 grow text-titre-page font-semibold tracking-normal text-texte">Bilan</h1>
+      <h1 class="m-0 grow text-titre-page font-medium tracking-normal text-texte">Bilan</h1>
     </header>
 
     <div v-if="isLoading" class="flex flex-col gap-3.5" aria-busy="true" aria-label="Chargement des bilans">

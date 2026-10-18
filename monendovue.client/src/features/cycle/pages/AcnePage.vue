@@ -1,8 +1,7 @@
 <template>
   <main class="mx-auto flex w-full max-w-xl flex-col gap-3.5 px-5 pb-40 pt-24 lg:pb-12 lg:pt-10">
     <header class="flex items-center gap-3">
-      <i class="material-symbols-outlined rounded-controle bg-teinte-symptome-fond p-2 text-titre-page text-teinte-symptome" aria-hidden="true">face</i>
-      <h1 class="m-0 grow text-titre-page font-semibold tracking-normal text-texte">Acné</h1>
+      <h1 class="m-0 grow text-titre-page font-medium tracking-normal text-texte">Acné</h1>
     </header>
 
     <div v-if="acne.chargement.value" class="flex flex-col gap-3.5" aria-busy="true" aria-label="Chargement du suivi de l'acné">
