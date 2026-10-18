@@ -11,6 +11,11 @@ Complète le [CLAUDE.md racine](../CLAUDE.md). S'applique à tout le code de `Mo
 - `Data/AppDbContext.cs` : DbSets + relations en Fluent API. `Migrations/` : migrations EF (SQL Server uniquement).
 - `Jobs/` (Quartz : `RappelBilanJob` toutes les 15 min, `SuppressionComptesInactifsJob` chaque nuit à 3 h 30) et `Services/WebPush/` (envoi Web Push derrière `IEnvoiPush`,
   logique des endpoints dans `NotificationsService`, boucle d'envoi des rappels dans `NotificationsPushService`).
+- **E-mails de compte** (`Services/Email/`) : `IEnvoiEmail` (une abstraction parce que l'envoi sort du processus : `FauxEnvoiEmail` en test),
+  `EnvoiEmailSmtp` (MailKit, STARTTLS, relais interchangeable par configuration, section `Email`), `ModelesEmail` (messages sans donnée de santé).
+  Une implémentation **ne journalise jamais** l'adresse, l'objet ni le contenu, ni `ex.Message`. Les liens envoyés portent le jeton dans le **fragment**
+  (`#email=…&jeton=…`), jamais en query string : le fragment n'atteint ni le serveur, ni les journaux nginx, ni le `Referer` ; la page le lit et le poste
+  en corps JSON. Sans configuration valide, `Disponible` est faux : refuser l'opération qui en dépend plutôt que la perdre.
 - **Ajouter un type de rappel** : une valeur de `TypeRappel`, une classe `IRegleRappel` dans `Services/WebPush/Rappels/`
   (calendrier par défaut, message avec l'URL à ouvrir, « suivi déjà fait ? »), son `AddScoped<IRegleRappel, …>` dans
   `Program.cs` et ses tests ; côté client, une entrée dans `features/parametres/config/rappels.ts`. Rien d'autre à toucher.
