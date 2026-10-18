@@ -5,8 +5,8 @@
     </router-link>
 
     <header class="flex flex-col gap-1.5 text-left">
-      <h1 class="m-0 text-titre-page font-semibold leading-tight tracking-normal text-texte">Content de te revoir</h1>
-      <p class="m-0 text-corps leading-normal text-texte-2">Connecte-toi pour retrouver ton suivi.</p>
+      <h1 class="m-0 text-titre-page font-medium leading-tight tracking-normal text-texte">Bon retour</h1>
+      <p class="m-0 text-corps leading-normal text-texte-2">Connecte-toi pour retrouver ton carnet.</p>
     </header>
 
     <form class="flex flex-col gap-4" novalidate @submit.prevent="onSubmit">

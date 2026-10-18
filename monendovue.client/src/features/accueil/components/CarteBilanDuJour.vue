@@ -19,18 +19,21 @@
       Faire mon bilan
     </router-link>
 
-    <dl v-else class="m-0 grid grid-cols-3 gap-2">
-      <div class="flex flex-col rounded-controle bg-fond p-2.5">
-        <dt class="text-xs text-texte-3">Douleur</dt>
-        <dd class="m-0 text-base font-semibold text-texte">{{ bilan.douleurMoyenne }}/10</dd>
+    <dl v-else class="m-0 flex flex-col">
+      <div class="flex min-h-11 items-center justify-between gap-3 border-b border-trait">
+        <dt class="text-sm text-texte-2">Douleur</dt>
+        <dd class="m-0 text-texte"><span class="chiffre text-lg font-semibold">{{ bilan.douleurMoyenne }}</span><span class="text-sm text-texte-2">/10</span></dd>
       </div>
-      <div class="flex min-w-0 flex-col rounded-controle bg-fond p-2.5">
-        <dt class="text-xs text-texte-3">Émotions</dt>
-        <dd class="m-0 truncate text-sm font-semibold leading-6 text-texte">{{ libellesEmotions }}</dd>
+      <div class="flex min-h-11 items-center justify-between gap-3 border-b border-trait">
+        <dt class="shrink-0 text-sm text-texte-2">Émotions</dt>
+        <dd class="m-0 min-w-0 truncate text-right text-sm font-medium text-texte">{{ libellesEmotions }}</dd>
       </div>
-      <div class="flex flex-col rounded-controle bg-fond p-2.5">
-        <dt class="text-xs text-texte-3">Fatigue</dt>
-        <dd class="m-0 text-base font-semibold text-texte">{{ bilan.fatigue !== null ? `${bilan.fatigue}/5` : '—' }}</dd>
+      <div class="flex min-h-11 items-center justify-between gap-3">
+        <dt class="text-sm text-texte-2">Fatigue</dt>
+        <dd class="m-0 text-texte">
+          <template v-if="bilan.fatigue !== null"><span class="chiffre text-lg font-semibold">{{ bilan.fatigue }}</span><span class="text-sm text-texte-2">/5</span></template>
+          <span v-else class="text-sm text-texte-3">—</span>
+        </dd>
       </div>
     </dl>
   </section>

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { Button } from '@/shared/components/ui/button';
-import { EMOTIONS_MAX, emotions } from '@/features/bilan-quotidien/config/emotions';
+import { EMOTIONS_MAX, emotions, pastilleTonalite } from '@/features/bilan-quotidien/config/emotions';
 import type { CodeEmotion } from '@/features/bilan-quotidien/types/bilan-quotidien';
 
 const selection = defineModel<CodeEmotion[]>({ required: true });
@@ -30,13 +30,13 @@ const basculer = (code: CodeEmotion) => {
           v-for="emotion in emotions"
           :key="emotion.code"
           type="button"
-          class="h-11 w-full justify-start gap-1.5 px-2.5"
+          class="h-11 w-full justify-start gap-2 px-3"
           :variant="selection.includes(emotion.code) ? 'selected' : 'outline'"
           :aria-pressed="selection.includes(emotion.code)"
           :disabled="complet && !selection.includes(emotion.code)"
           @click="basculer(emotion.code)"
       >
-        <span class="text-lg" aria-hidden="true">{{ emotion.emoji }}</span>
+        <span class="h-2.5 w-2.5 shrink-0 rounded-full" :class="pastilleTonalite[emotion.tonalite]" aria-hidden="true"></span>
         {{ emotion.libelle }}
       </Button>
     </div>

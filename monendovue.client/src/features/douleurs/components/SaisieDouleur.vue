@@ -6,7 +6,7 @@
         <div class="grid grid-cols-2 gap-2">
           <button v-for="t in TYPES_DOULEUR" :key="t.valeur" type="button"
                   class="min-h-12 rounded-controle px-3 text-sm"
-                  :class="form.type.value === t.valeur ? 'border-[1.5px] border-texte bg-texte font-medium text-fond' : 'border-[1.5px] border-contour bg-surface text-texte'"
+                  :class="form.type.value === t.valeur ? 'border-[1.5px] choix-actif font-semibold' : 'border-[1.5px] border-contour bg-surface text-texte'"
                   :aria-pressed="form.type.value === t.valeur"
                   @click="form.type.value = t.valeur">{{ t.libelle }}</button>
         </div>
@@ -19,7 +19,7 @@
         <div class="grid grid-cols-3 gap-2">
           <button v-for="m in moments" :key="m.valeur" type="button"
                   class="min-h-11 rounded-controle text-sm"
-                  :class="form.moment.value === m.valeur ? 'border-[1.5px] border-texte bg-texte font-medium text-fond' : 'border-[1.5px] border-contour bg-surface text-texte'"
+                  :class="form.moment.value === m.valeur ? 'border-[1.5px] choix-actif font-semibold' : 'border-[1.5px] border-contour bg-surface text-texte'"
                   :aria-pressed="form.moment.value === m.valeur"
                   :aria-label="m.valeur === 'autre' ? 'Autre moment' : undefined"
                   @click="form.moment.value = m.valeur">{{ m.libelle }}</button>

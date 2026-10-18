@@ -93,6 +93,8 @@ test.describe('Captures du README', () => {
       ],
       auBesoin: [{ id: 3, nom: 'Ibuprofène', dose: '400 mg', dernierePrise: null }],
       semaine: { joursAvecDouleur: 5, joursAvecDouleurPendantRegles: 2, fatigueMoyenne: 2.5, fatigueMoyennePrecedente: 3.5 },
+      // Frise cohérente avec la semaine : 5 jours de douleur, dont les 2 jours de règles.
+      frise: [2, null, 3, 6, null, 5, 4].map((douleur, i) => ({ jour: `2026-09-${String(9 + i).padStart(2, '0')}`, douleur, regles: i >= 5 })),
     });
   });
 

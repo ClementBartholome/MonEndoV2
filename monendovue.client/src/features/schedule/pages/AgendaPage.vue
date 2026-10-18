@@ -1,7 +1,7 @@
 <template>
   <main class="mx-auto flex w-full max-w-xl flex-col gap-5 px-5 pb-40 pt-24 lg:pb-12 lg:pt-10">
     <header class="flex items-center justify-between gap-3">
-      <h1 class="m-0 text-left text-titre-page font-semibold tracking-normal text-texte">Agenda</h1>
+      <h1 class="m-0 text-left text-titre-page font-medium tracking-normal text-texte">Agenda</h1>
       <button v-if="etat === 'pret'" type="button" aria-label="Actualiser" class="-mr-2 flex h-11 w-11 items-center justify-center rounded-full text-texte hover:bg-surface-2" @click="actualiser">
         <i class="material-symbols-outlined" aria-hidden="true">refresh</i>
       </button>
@@ -14,10 +14,11 @@
     </div>
 
     <template v-else-if="etat === 'pret'">
-      <div role="group" aria-label="Vue" class="grid grid-cols-3 gap-2">
+      <!-- Bascule de vue = segment, comme Semaine / Mois du bilan (CLAUDE.md client, « Formes et états »). -->
+      <div role="group" aria-label="Vue" class="grid grid-cols-3 gap-1 rounded-controle bg-surface-2 p-1">
         <button v-for="option in VUES" :key="option.valeur" type="button" :aria-pressed="vue === option.valeur"
-                class="min-h-11 rounded-controle border-[1.5px] text-sm"
-                :class="vue === option.valeur ? 'border-texte bg-texte font-semibold text-fond' : 'border-contour bg-surface font-medium text-texte'"
+                class="min-h-11 rounded-controle text-sm"
+                :class="vue === option.valeur ? 'bg-surface font-semibold text-texte shadow-elevation' : 'text-texte-2'"
                 @click="changerVue(option.valeur)">{{ option.libelle }}</button>
       </div>
 

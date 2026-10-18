@@ -6,7 +6,7 @@
     <div class="grid grid-cols-10 gap-[3px]">
       <!-- Choisie : pleine dans sa couleur. Sinon : neutre, avec un trait de sa couleur pour lire l'échelle. -->
       <button v-for="n in 10" :key="n" type="button"
-              class="relative min-h-12 overflow-hidden rounded-controle border-[1.5px] p-0 text-sm font-semibold"
+              class="chiffre relative min-h-12 overflow-hidden rounded-controle border-[1.5px] p-0 text-base font-semibold"
               :class="intensite === n ? '' : 'border-contour bg-surface text-texte-2'"
               :style="intensite === n ? couleursIntensite(n) : undefined"
               :aria-label="`Intensité ${n} sur 10`" :aria-pressed="intensite === n"

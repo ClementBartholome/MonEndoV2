@@ -15,6 +15,8 @@ public class AujourdhuiViewModel
     public required SemaineViewModel Semaine { get; init; }
     /// <summary>Épisode d'acné en cours (null sans épisode en cours) : l'accueil n'en parle que pendant un épisode.</summary>
     public AcneAujourdhuiViewModel? Acne { get; init; }
+    /// <summary>Frise des 7 derniers jours, aujourd'hui compris (voir <c>FriseService</c>).</summary>
+    public required IReadOnlyList<JourFriseViewModel> Frise { get; init; }
 }
 
 public class AcneAujourdhuiViewModel

@@ -1,6 +1,6 @@
 <template>
   <main class="mx-auto flex w-full max-w-xl flex-col gap-5 px-5 pb-40 pt-24 lg:pb-12 lg:pt-10">
-    <h1 class="m-0 text-left text-titre-page font-semibold tracking-normal text-texte">Paramètres</h1>
+    <h1 class="m-0 text-left text-titre-page font-medium tracking-normal text-texte">Paramètres</h1>
 
     <GroupeParametres titre="Rappels">
       <LigneParametre titre="Notifications" detail="Bilan du jour · photo de l'acné · rendez-vous" icone="notifications"

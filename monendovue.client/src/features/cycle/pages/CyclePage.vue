@@ -1,8 +1,7 @@
 <template>
   <main class="mx-auto flex w-full max-w-xl flex-col gap-3.5 px-5 pb-40 pt-24 lg:pb-12 lg:pt-10">
     <header class="flex items-center gap-3">
-      <i class="material-symbols-outlined rounded-controle bg-teinte-regles-fond p-2 text-titre-page text-teinte-regles" aria-hidden="true">menstrual_health</i>
-      <h1 class="m-0 grow text-titre-page font-semibold tracking-normal text-texte">Cycle</h1>
+      <h1 class="m-0 grow text-titre-page font-medium tracking-normal text-texte">Cycle</h1>
       <button v-if="onglet === 'symptomes'" type="button"
               class="hidden min-h-11 items-center gap-2 rounded-controle bg-button px-4 font-semibold text-texte lg:inline-flex"
               @click="ouvrirAjout">
@@ -31,6 +30,13 @@
         <template v-else-if="regles.donnees.value">
           <CarteCycleEnCours :en-cours="regles.donnees.value.enCours" :envoi="regles.enCoursDEnvoi.value.size > 0"
                              @noter-aujourdhui="noter(regles.noterAujourdhui)"/>
+          <section v-if="regles.frise.value.length" aria-labelledby="titre-frise" class="flex flex-col gap-2.5 border-y border-trait py-3.5">
+            <div class="flex items-baseline justify-between gap-2">
+              <h2 id="titre-frise" class="m-0 text-legende font-semibold uppercase tracking-wider text-texte-2">Les 30 derniers jours</h2>
+              <span class="text-legende text-texte-2">Douleur · règles</span>
+            </div>
+            <Frise :jours="regles.frise.value"/>
+          </section>
           <CalendrierRegles :mois="regles.mois.value" :calendrier="regles.calendrier.value" :en-cours-d-envoi="regles.enCoursDEnvoi.value"
                             @basculer="(jour) => noter(() => regles.basculer(jour))" @changer="regles.allerAuMois"/>
           <DetailJourRegles v-if="regles.jourDetail.value" :jours="regles.joursNotes.value" :selection="regles.jourDetail.value"
@@ -89,6 +95,7 @@ import { Skeleton } from '@/shared/components/ui/skeleton';
 import { useToast } from '@/shared/components/ui/toast';
 import EmptyStateAction from '@/shared/components/EmptyStateAction.vue';
 import SelecteurMois from '@/shared/components/SelecteurMois.vue';
+import Frise from '@/shared/components/Frise.vue';
 import { useAuthStore } from '@/features/auth/store/auth';
 import CalendrierRegles from '../components/CalendrierRegles.vue';
 import CarteCycleEnCours from '../components/CarteCycleEnCours.vue';

@@ -6,7 +6,7 @@
         <div class="grid grid-cols-2 gap-2">
           <button v-for="t in types" :key="t.valeur" type="button"
                   class="min-h-11 rounded-controle text-sm"
-                  :class="form.type.value === t.valeur ? 'border-[1.5px] border-texte bg-texte font-medium text-fond' : 'border-[1.5px] border-contour bg-surface text-texte'"
+                  :class="form.type.value === t.valeur ? 'border-[1.5px] choix-actif font-semibold' : 'border-[1.5px] border-contour bg-surface text-texte'"
                   :aria-pressed="form.type.value === t.valeur"
                   @click="choisirType(t.valeur)">{{ t.libelle }}</button>
         </div>
@@ -31,7 +31,7 @@
           <div class="grid grid-cols-2 gap-2">
             <button v-for="f in frequences" :key="f.valeur" type="button"
                     class="min-h-11 rounded-controle px-2 text-sm"
-                    :class="form.frequence.value === f.valeur ? 'border-[1.5px] border-texte bg-texte font-medium text-fond' : 'border-[1.5px] border-contour bg-surface text-texte'"
+                    :class="form.frequence.value === f.valeur ? 'border-[1.5px] choix-actif font-semibold' : 'border-[1.5px] border-contour bg-surface text-texte'"
                     :aria-pressed="form.frequence.value === f.valeur"
                     @click="form.frequence.value = f.valeur">{{ f.libelle }}</button>
           </div>
@@ -40,7 +40,7 @@
             <legend class="sr-only">Jours de prise</legend>
             <button v-for="jour in JOURS_SEMAINE" :key="jour" type="button"
                     class="min-h-11 rounded-full p-0 text-legende"
-                    :class="form.joursSemaine.value.includes(jour) ? 'bg-texte font-semibold text-fond' : 'border-[1.5px] border-contour bg-surface text-texte'"
+                    :class="form.joursSemaine.value.includes(jour) ? 'choix-actif font-semibold' : 'border-[1.5px] border-contour bg-surface text-texte'"
                     :aria-label="jour" :aria-pressed="form.joursSemaine.value.includes(jour)"
                     @click="form.basculerJour(jour)">{{ jour.charAt(0) }}</button>
           </fieldset>

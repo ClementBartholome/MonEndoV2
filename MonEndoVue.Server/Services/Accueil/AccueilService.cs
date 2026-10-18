@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using MonEndoVue.Server.Data;
 using MonEndoVue.Server.Models;
 using MonEndoVue.Server.Services.Cycle;
+using MonEndoVue.Server.Services.Frise;
 using MonEndoVue.Server.Services.Traitements;
 using MonEndoVue.Server.ViewModels;
 
@@ -12,7 +13,7 @@ namespace MonEndoVue.Server.Services.Accueil;
 /// Accueil « Aujourd'hui » de l'utilisatrice connectée (carnet déduit de la session). Le jour vient du client : les dates
 /// sont enregistrées sans fuseau, au jour calendaire local, et le serveur ne connaît pas le fuseau de l'utilisatrice.
 /// </summary>
-public class AccueilService(AppDbContext context, TimeProvider horloge, TraitementsService traitements)
+public class AccueilService(AppDbContext context, TimeProvider horloge, TraitementsService traitements, FriseService frise)
 {
     /// <summary>Écart toléré entre le jour demandé et la date du serveur (fuseaux horaires).</summary>
     private const int EcartMaximalJours = 2;
@@ -67,6 +68,7 @@ public class AccueilService(AppDbContext context, TimeProvider horloge, Traiteme
             AuBesoin = planning.AuBesoin,
             Semaine = Semaine(jour, bilans, joursDouleursNotees, joursDeRegles),
             Acne = await AcneEnCoursAsync(id, jour, finExclue, ct),
+            Frise = await frise.JoursAsync(id, jour.AddDays(-6), jour, ct),
         });
     }
 

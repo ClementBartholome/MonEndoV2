@@ -1,11 +1,11 @@
 <template>
   <section aria-label="Ce mois-ci" class="grid grid-cols-2 rounded-carte bg-surface shadow-elevation">
     <div class="flex flex-col gap-0.5 px-4 py-3.5">
-      <span class="text-2xl font-semibold leading-tight text-texte">{{ chiffres.nombre }}</span>
+      <span class="chiffre text-2xl font-semibold leading-tight text-texte">{{ chiffres.nombre }}</span>
       <span class="text-xs leading-snug text-texte-3">{{ chiffres.nombre > 1 ? 'symptômes notés' : 'symptôme noté' }}</span>
     </div>
     <div class="flex flex-col gap-0.5 border-l border-trait px-4 py-3.5">
-      <span class="text-2xl font-semibold leading-tight text-texte">{{ chiffres.jours }}</span>
+      <span class="chiffre text-2xl font-semibold leading-tight text-texte">{{ chiffres.jours }}</span>
       <span class="text-xs leading-snug text-texte-3">{{ chiffres.jours > 1 ? 'jours concernés' : 'jour concerné' }}</span>
     </div>
   </section>

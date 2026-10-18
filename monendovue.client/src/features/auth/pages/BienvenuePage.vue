@@ -3,7 +3,7 @@
     <img src="@/images/MonEndo_transparent.png" alt="MonEndo" class="h-14 w-auto self-start">
 
     <header class="mt-7 flex flex-col gap-3.5 text-left">
-      <h1 class="m-0 text-[2.125rem] font-semibold leading-[1.15] tracking-tight text-texte">Ta douleur, noir sur blanc.</h1>
+      <h1 class="m-0 text-[2.125rem] font-medium leading-[1.15] tracking-tight text-texte">Ta douleur, noir sur blanc.</h1>
       <p class="m-0 text-base leading-relaxed text-texte-2">
         Note ton quotidien, repère ce qui revient, et arrive à tes rendez-vous avec un récit clair.
       </p>
@@ -17,7 +17,7 @@
       <div class="grid grid-cols-3 gap-3 text-left">
         <div class="flex flex-col rounded-2xl bg-teinte-douleur-fond px-3 py-2.5 text-teinte-douleur">
           <span class="text-legende">Douleur</span>
-          <span class="text-titre-2 font-semibold leading-tight">4<span class="text-sm font-medium">/10</span></span>
+          <span class="chiffre text-titre-2 font-semibold leading-tight">4<span class="text-sm font-medium">/10</span></span>
         </div>
         <div class="flex flex-col rounded-2xl bg-teinte-symptome-fond px-3 py-2.5 text-teinte-symptome">
           <span class="text-legende">Émotion</span>

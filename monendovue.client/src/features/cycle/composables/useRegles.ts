@@ -4,11 +4,17 @@ import apiService from '@/shared/services/apiService';
 import { derniereDemande } from '@/shared/utils/derniereDemande';
 import type { CycleDuMois, DetailJourRegles } from '../types/cycle';
 import { calendrierDuMois, type CaseCalendrier } from '../utils/cycle';
+import type { JourFrise } from '@/shared/types/frise';
+
+/** Frise de la page Cycle : les 30 derniers jours. */
+const JOURS_FRISE = 30;
 
 /** Onglet Règles : mois affiché, cycle en cours, historique, et jours de règles ajoutés ou retirés d'un geste. */
 export function useRegles({ maintenant = () => new Date() }: { maintenant?: () => Date } = {}) {
     const mois = ref(startOfMonth(maintenant()));
     const donnees = ref<CycleDuMois | null>(null);
+    /** Frise des 30 derniers jours (douleur, règles) ; vide si elle n'a pas pu être lue (elle n'est alors pas affichée). */
+    const frise = ref<JourFrise[]>([]);
     const chargement = ref(true);
     const erreur = ref(false);
     /** Jours (AAAA-MM-JJ) dont l'ajout ou le retrait est en cours d'envoi. */
@@ -34,8 +40,14 @@ export function useRegles({ maintenant = () => new Date() }: { maintenant?: () =
         chargement.value = donnees.value === null;
         erreur.value = false;
         try {
-            const recu = await apiService.getCycle(aujourdhui(), format(mois.value, 'yyyy-MM-dd'), nombreCycles.value);
-            if (estCourante()) donnees.value = recu;
+            const [recu, jours] = await Promise.all([
+                apiService.getCycle(aujourdhui(), format(mois.value, 'yyyy-MM-dd'), nombreCycles.value),
+                apiService.getFrise(aujourdhui(), JOURS_FRISE).catch(() => [] as JourFrise[]),
+            ]);
+            if (estCourante()) {
+                donnees.value = recu;
+                frise.value = jours;
+            }
         } catch {
             if (estCourante()) erreur.value = true;
         } finally {
@@ -112,7 +124,7 @@ export function useRegles({ maintenant = () => new Date() }: { maintenant?: () =
     const noterAujourdhui = () => basculer({ cle: aujourdhui(), regles: false, futur: false });
 
     return {
-        mois, donnees, chargement, erreur, enCoursDEnvoi, calendrier, aujourdhuiNote, charger, allerAuMois, basculer, noterAujourdhui, voirPlusDeCycles,
+        mois, donnees, frise, chargement, erreur, enCoursDEnvoi, calendrier, aujourdhuiNote, charger, allerAuMois, basculer, noterAujourdhui, voirPlusDeCycles,
         joursNotes, jourDetail, detailDuJour, enCoursDeDetail, choisirJour, preciser,
     };
 }

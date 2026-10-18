@@ -17,10 +17,10 @@ import type { BilanDuJour, OptionsPdf, SyntheseFlux, SyntheseRendezVous } from '
 type Rvb = [number, number, number];
 type AutoTable = (doc: jsPDF, options: UserOptions) => void;
 
-const TEXTE: Rvb = [51, 39, 42];
-const TEXTE_2: Rvb = [89, 74, 78];
-const TRAIT: Rvb = [239, 220, 211];
-const SURFACE_2: Rvb = [243, 227, 219];
+const TEXTE: Rvb = [43, 34, 38];
+const TEXTE_2: Rvb = [94, 80, 85];
+const TRAIT: Rvb = [234, 217, 207];
+const SURFACE_2: Rvb = [239, 226, 217];
 const REGLES: Rvb = [163, 50, 79];
 /** Échelle d'intensité de l'application (`--intensite-0` à `--intensite-10`). */
 const INTENSITES: Rvb[] = [
@@ -52,6 +52,28 @@ const jourLong = (cle: string) => format(parseISO(cle), 'd MMMM yyyy', { locale:
 const jourCourt = (cle: string) => format(parseISO(cle), 'd MMM', { locale: fr });
 const nombre = (valeur: number) => valeur.toLocaleString('fr-FR', { maximumFractionDigits: 1 });
 const pluriel = (n: number, mot: string) => `${n} ${mot}${n > 1 ? 's' : ''}`;
+
+/** Un jour de la frise du PDF : douleur la plus forte notée (bilan ou entrée de douleur), null si rien ; règles. */
+export interface JourFrisePdf {
+    jour: string;
+    douleur: number | null;
+    regles: boolean;
+}
+
+/** Frise de la période, jour par jour, calculée depuis la synthèse (même règle que la frise de l'application). */
+export function friseDeLaSynthese(synthese: Pick<SyntheseRendezVous, 'du' | 'au' | 'regles' | 'douleurs' | 'bilans'>): JourFrisePdf[] {
+    const douleurs = new Map<string, number>();
+    const noter = (jour: string, intensite: number) => douleurs.set(jour, Math.max(douleurs.get(jour) ?? 0, intensite));
+    synthese.bilans.jours.forEach((bilan) => noter(bilan.jour, bilan.douleur));
+    synthese.douleurs.entrees.forEach((entree) => noter(entree.jour, entree.intensite));
+    const regles = new Set(synthese.regles.jours);
+    const jours: JourFrisePdf[] = [];
+    for (let date = parseISO(synthese.du); format(date, 'yyyy-MM-dd') <= synthese.au; date = addDays(date, 1)) {
+        const jour = format(date, 'yyyy-MM-dd');
+        jours.push({ jour, douleur: douleurs.get(jour) ?? null, regles: regles.has(jour) });
+    }
+    return jours;
+}
 
 /** « Du 15 juin au 15 septembre 2026 » */
 export function libellePeriode(du: string, au: string): string {
@@ -85,6 +107,7 @@ class Redaction {
         const { rubriques } = this.options;
         this.entete();
         this.questions();
+        if (rubriques.douleurs) this.frise();
         if (rubriques.cycle) this.regles();
         if (rubriques.douleurs) this.douleurs();
         if (rubriques.cycle) this.symptomes();
@@ -125,6 +148,61 @@ class Redaction {
         this.doc.setFillColor(...SURFACE_2).roundedRect(MARGE, this.y, this.largeur() - 2 * MARGE, hauteur, 2, 2, 'F');
         this.doc.setTextColor(...TEXTE).text(lignes, MARGE + 4, this.y + 6.5);
         this.y += hauteur + 6;
+    }
+
+    /**
+     * La frise de la période, comme dans l'application : un trait par jour, plus foncé quand la douleur notée était plus
+     * forte, trait clair si rien n'est noté, et un ruban sous les jours de règles (seulement si la rubrique Cycle est
+     * cochée : une rubrique décochée ne réapparaît pas ici).
+     */
+    private frise(): void {
+        const jours = friseDeLaSynthese(this.synthese);
+        if (jours.length === 0) return;
+        const avecRegles = this.options.rubriques.cycle;
+        this.titre('Douleur jour par jour');
+        this.placePour(30);
+        const largeur = this.largeur() - 2 * MARGE;
+        const colonne = largeur / jours.length;
+        const trait = Math.min(Math.max(colonne * 0.6, 0.25), 3);
+        const hauteurTrait = 14;
+        const { doc } = this;
+
+        jours.forEach((jour, index) => {
+            const x = MARGE + index * colonne + (colonne - trait) / 2;
+            doc.setFillColor(...(jour.douleur === null ? TRAIT : INTENSITES[Math.min(10, Math.max(0, jour.douleur))]));
+            doc.rect(x, this.y, trait, hauteurTrait, 'F');
+        });
+
+        let yRuban = this.y + hauteurTrait + 1.2;
+        if (avecRegles) {
+            doc.setFillColor(...REGLES);
+            let debut = -1;
+            jours.forEach((jour, index) => {
+                if (jour.regles && debut < 0) debut = index;
+                const finSerie = jour.regles && (index === jours.length - 1 || !jours[index + 1].regles);
+                if (finSerie) {
+                    doc.rect(MARGE + debut * colonne, yRuban, (index - debut + 1) * colonne, 1.2, 'F');
+                    debut = -1;
+                }
+            });
+            yRuban += 1.2;
+        }
+
+        // Repères de dates : le début de chaque mois (et le premier jour), sans chevauchement.
+        doc.setFont('helvetica', 'normal').setFontSize(8).setTextColor(...TEXTE_2);
+        let dernierX = -Infinity;
+        jours.forEach((jour, index) => {
+            if (index !== 0 && !jour.jour.endsWith('-01')) return;
+            const x = MARGE + index * colonne;
+            if (x - dernierX < 16) return;
+            doc.text(jourCourt(jour.jour), x, yRuban + 4);
+            dernierX = x;
+        });
+        this.y = yRuban + 10;
+        this.note(avecRegles
+            ? 'Plus le trait est foncé, plus la douleur notée ce jour-là était forte (trait clair : rien de noté). Ruban : jours de règles.'
+            : 'Plus le trait est foncé, plus la douleur notée ce jour-là était forte (trait clair : rien de noté).');
+        this.y += 2;
     }
 
     private regles(): void {

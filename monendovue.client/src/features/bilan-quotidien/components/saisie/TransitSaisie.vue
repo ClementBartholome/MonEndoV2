@@ -83,7 +83,7 @@ const choisirIntensite = (champ: ChampIntensite, intensite: IntensiteTransit) =>
           <span
               :class="[
                 'shrink-0 w-7 h-7 rounded-controle flex items-center justify-center text-sm font-semibold',
-                transit.typeBristol === bristol.type ? 'bg-texte text-fond' : 'bg-surface-2 text-texte'
+                transit.typeBristol === bristol.type ? 'choix-actif' : 'bg-surface-2 text-texte'
               ]"
           >
             {{ bristol.type }}
@@ -101,7 +101,7 @@ const choisirIntensite = (champ: ChampIntensite, intensite: IntensiteTransit) =>
             :aria-pressed="transit.typeBristol === null"
             :class="[
               'min-h-[44px] px-3 rounded-controle border-[1.5px] text-sm transition-colors',
-              transit.typeBristol === null ? 'border-texte bg-texte font-medium text-fond' : 'border-contour bg-surface text-texte'
+              transit.typeBristol === null ? 'choix-actif font-semibold' : 'border-contour bg-surface text-texte'
             ]"
             @click="choisirBristol(null)"
         >

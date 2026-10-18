@@ -27,7 +27,8 @@ export type TendanceSemaine = 'agreable' | 'difficile' | 'mitigee';
 
 export interface EmotionSemaine {
   tendance: TendanceSemaine;
-  emoji: string;
+  /** Icône Material Symbols de la tendance (visage souriant, neutre ou triste). */
+  icone: string;
   libelle: string;
   /** Émotions les plus citées (3 au plus), des plus fréquentes aux moins fréquentes. */
   principales: CodeEmotion[];
@@ -36,10 +37,10 @@ export interface EmotionSemaine {
 
 const SEUIL_MAJORITE = 0.6;
 
-const PRESENTATION_TENDANCE: Record<TendanceSemaine, { emoji: string; libelle: string }> = {
-  agreable: { emoji: '😊', libelle: 'Plutôt agréable' },
-  difficile: { emoji: '😔', libelle: 'Plus difficile' },
-  mitigee: { emoji: '😕', libelle: 'En demi-teinte' },
+const PRESENTATION_TENDANCE: Record<TendanceSemaine, { icone: string; libelle: string }> = {
+  agreable: { icone: 'sentiment_satisfied', libelle: 'Plutôt agréable' },
+  difficile: { icone: 'sentiment_dissatisfied', libelle: 'Plus difficile' },
+  mitigee: { icone: 'sentiment_neutral', libelle: 'En demi-teinte' },
 };
 
 /**

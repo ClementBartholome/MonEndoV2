@@ -5,7 +5,7 @@
     </router-link>
 
     <header class="flex flex-col gap-1.5 text-left">
-      <h1 class="m-0 text-titre-page font-semibold leading-tight tracking-normal text-texte">Crée ton compte</h1>
+      <h1 class="m-0 text-titre-page font-medium leading-tight tracking-normal text-texte">Crée ton compte</h1>
       <p class="m-0 text-corps leading-normal text-texte-2">Une adresse e-mail et un mot de passe : c'est tout.</p>
     </header>
 

@@ -38,7 +38,7 @@
 
     <section>
       <h2>Crédits</h2>
-      <p>Police Poppins (licence SIL Open Font License) et icônes Material Symbols de Google (licence Apache 2.0).</p>
+      <p>Polices Lexend (Bonnie Shaver-Troup et Thomas Jockin) et Literata (TypeTogether pour Google), sous licence SIL Open Font License, et icônes Material Symbols de Google (licence Apache 2.0).</p>
     </section>
   </DocumentLegal>
 </template>

@@ -2,8 +2,7 @@
   <main class="mx-auto flex w-full max-w-xl flex-col gap-[18px] px-5 pb-32 pt-24 lg:pb-12 lg:pt-10">
     <header class="flex flex-col gap-3">
       <div class="flex items-center gap-3">
-        <i class="material-symbols-outlined rounded-controle bg-teinte-neutre-fond p-2 text-titre-page text-teinte-neutre" aria-hidden="true">picture_as_pdf</i>
-        <h1 class="m-0 text-titre-page font-semibold leading-tight tracking-normal text-texte">Préparer un rendez-vous</h1>
+        <h1 class="m-0 text-titre-page font-medium leading-tight tracking-normal text-texte">Préparer un rendez-vous</h1>
       </div>
       <p class="m-0 text-left text-sm leading-normal text-texte-2">
         Une synthèse claire à montrer ou à envoyer à ton médecin : ce que tu as noté, jour par jour, sans interprétation.

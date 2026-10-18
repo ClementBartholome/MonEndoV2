@@ -6,7 +6,7 @@
         <div class="grid grid-cols-2 gap-2">
           <button v-for="t in TYPES_SYMPTOME" :key="t.valeur" type="button"
                   class="inline-flex min-h-12 items-center justify-center gap-2 rounded-controle border-[1.5px] px-3 text-sm"
-                  :class="form.type.value === t.valeur ? 'border-texte bg-texte font-medium text-fond' : 'border-contour bg-surface text-texte'"
+                  :class="form.type.value === t.valeur ? 'choix-actif font-semibold' : 'border-contour bg-surface text-texte'"
                   :aria-pressed="form.type.value === t.valeur"
                   @click="form.type.value = t.valeur">
             <i class="material-symbols-outlined text-xl" aria-hidden="true">{{ t.icone }}</i>{{ t.valeur }}
@@ -21,7 +21,7 @@
         <div class="grid grid-cols-3 gap-2">
           <button v-for="m in moments" :key="m.valeur" type="button"
                   class="min-h-11 rounded-controle border-[1.5px] text-sm"
-                  :class="form.moment.value === m.valeur ? 'border-texte bg-texte font-medium text-fond' : 'border-contour bg-surface text-texte'"
+                  :class="form.moment.value === m.valeur ? 'choix-actif font-semibold' : 'border-contour bg-surface text-texte'"
                   :aria-pressed="form.moment.value === m.valeur"
                   :aria-label="m.valeur === 'autre' ? 'Autre moment' : undefined"
                   @click="form.moment.value = m.valeur">{{ m.libelle }}</button>

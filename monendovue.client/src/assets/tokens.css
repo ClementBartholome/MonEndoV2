@@ -1,29 +1,38 @@
 /*
- * Tokens de design MonEndo (palette validée au lot 0 de la 1.3.0, contrastes vérifiés WCAG AA).
+ * Tokens de design MonEndo (palette de la 1.3.0, revue en 1.5.0 pour l'identité « Carnet de bord » ; contrastes vérifiés WCAG AA).
  * Seule source des couleurs, rayons et élévation : les classes Tailwind (tailwind.config.js) et les anciens noms
  * (--headline, --paragraph…) pointent ici. Ne pas écrire de couleur en dur ni de couleur Tailwind brute (blue-100…).
  */
 :root {
-    /* Fonds et surfaces */
-    --couleur-fond: #faeee7;
-    --couleur-surface: #fffaf7;
-    --couleur-surface-2: #f3e3db;
-    --couleur-trait: #efdcd3;
+    /* Fonds et surfaces : le papier du carnet */
+    --couleur-fond: #f7efe8;
+    --couleur-surface: #fffbf7;
+    --couleur-surface-2: #efe2d9;
+    --couleur-trait: #ead9cf;
 
-    /* Textes (sur fond ou surface : texte 12.6:1, texte-2 7.3:1, texte-3 ≥ 5.4:1) */
-    --couleur-texte: #33272a;
-    --couleur-texte-2: #594a4e;
+    /* Textes, l'encre (sur fond ou surface : texte 13.6:1, texte-2 6.7:1, texte-3 ≥ 5.6:1) */
+    --couleur-texte: #2b2226;
+    --couleur-texte-2: #5e5055;
     --couleur-texte-3: #6b585d;
-    --couleur-lien: #a3324f;
-    --couleur-lien-survol: #7d2440;
+    /* Liens : prune (8.7:1 sur le fond). Le rouge des règles (--teinte-regles) leur reste réservé. */
+    --couleur-lien: #6e2c47;
+    --couleur-lien-survol: #561f37;
 
     /*
-     * Accent : rose poudré (adouci au test de la 1.3.0, l'ancien #ff8ba7 tranchait trop), en FOND uniquement, avec du
-     * texte foncé (8.2:1) ; jamais de texte blanc dessus ni de texte rose.
+     * Bouton principal : rose soutenu, en FOND uniquement, avec du texte encre (5.4:1) ; jamais de texte blanc dessus ni
+     * de texte rose. Choisi en 1.5.0 : l'ancien rose poudré (#f2b3c2) faisait paraître les boutons désactivés, le prune
+     * essayé ensuite refroidissait l'app.
      */
-    --couleur-accent: #f2b3c2;
-    --couleur-accent-rgb: 242 179 194;
-    --couleur-sur-accent: #33272a;
+    --couleur-accent: #e07a95;
+    --couleur-accent-rgb: 224 122 149;
+    --couleur-sur-accent: #2b2226;
+
+    /*
+     * Choix sélectionné (une note, une émotion, une vue) : l'ancien rose poudré, avec un contour prune et du texte encre
+     * (8.8:1). Il se distingue du bouton principal par sa clarté et son contour.
+     */
+    --couleur-selection: #f2b3c2;
+    --couleur-selection-contour: #6e2c47;
 
     /* Contour des champs et contrôles (≥ 3:1 sur fond, surface et surface-2) */
     --couleur-contour: #8f7872;

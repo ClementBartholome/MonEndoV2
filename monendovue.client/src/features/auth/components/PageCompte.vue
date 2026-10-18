@@ -6,7 +6,7 @@
 
     <header class="flex flex-col gap-1.5 text-left">
       <i v-if="icone" class="material-symbols-outlined mb-1 self-start rounded-controle bg-teinte-bilan-fond p-2 text-titre-page text-teinte-bilan" aria-hidden="true">{{ icone }}</i>
-      <h1 class="m-0 text-titre-page font-semibold leading-tight tracking-normal text-texte">{{ titre }}</h1>
+      <h1 class="m-0 text-titre-page font-medium leading-tight tracking-normal text-texte">{{ titre }}</h1>
       <p v-if="sousTitre" class="m-0 text-corps leading-normal text-texte-2">{{ sousTitre }}</p>
     </header>
 
