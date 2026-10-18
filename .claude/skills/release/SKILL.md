@@ -90,4 +90,6 @@ Points d'attention connus :
   mieux vaut corriger en avant. Plus ancien point de retour possible après la 1.3.0 : la 1.2.1.
 - **Retour de la 1.5.0 vers la 1.4.0** : la table `SessionsAppareil` est ignorée par l'ancienne image, mais les sessions ouvertes depuis la 1.5.0 n'ont plus de
   jeton en clair sur `AspNetUsers` : chaque utilisatrice devra se reconnecter une fois. Rien à exécuter.
+- **Retour de la 1.5.0 vers la 1.4.0 (rappels)** : l'ancienne image ne connaît pas le type de rappel `RendezVous` (stocké en texte) et
+  échouerait en lisant les rappels du carnet concerné. Avant de repointer l'image : `DELETE FROM Rappels WHERE Type = 'RendezVous'`.
 - Toute version qui rend un champ nullable ou supprime une table ajoute ici sa propre consigne de retour arrière.

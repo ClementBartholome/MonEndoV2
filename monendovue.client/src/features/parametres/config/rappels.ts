@@ -18,6 +18,11 @@ export const presentationRappels: Record<TypeRappel, PresentationRappel> = {
     description: "Une fois par semaine, seulement si tu n'as pas ajouté de photo d'acné depuis 7 jours.",
     icone: 'photo_camera',
   },
+  RendezVous: {
+    titre: 'Rappel de rendez-vous',
+    description: "Envoyé la veille, seulement si un rendez-vous est prévu le lendemain dans le calendrier choisi de ton agenda Google. La notification ne dit ni le titre ni le lieu.",
+    icone: 'event',
+  },
 };
 
 /** Jours dans l'ordre français (lundi → dimanche) ; valeur 0 = dimanche, comme côté serveur. */
