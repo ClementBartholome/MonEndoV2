@@ -30,6 +30,32 @@ public sealed class ComptesInactifsServiceTests : IDisposable
     }
 
     [Fact]
+    public async Task SupprimerNonConfirmesAsync_SupprimeLesComptesJamaisConfirmesApresSeptJours()
+    {
+        var ancienne = await CreerNonConfirmee("ancienne@local", Maintenant.UtcDateTime - MonEndoVue.Server.Services.Comptes.ComptesService.DelaiConfirmation - TimeSpan.FromHours(1));
+        var recente = await CreerNonConfirmee("recente@local", Maintenant.UtcDateTime - TimeSpan.FromDays(2));
+        var confirmee = await _identity.CreerUtilisatrice("confirmee@local");
+        confirmee.ConsentementDonneesSanteLe = Maintenant.UtcDateTime - TimeSpan.FromDays(400);
+        await _identity.UserManager.UpdateAsync(confirmee);
+
+        var supprimes = await Service().SupprimerNonConfirmesAsync(CancellationToken.None);
+
+        Assert.Equal(1, supprimes);
+        Assert.Null(await _identity.UserManager.FindByIdAsync(ancienne));
+        Assert.NotNull(await _identity.UserManager.FindByIdAsync(recente));
+        Assert.NotNull(await _identity.UserManager.FindByIdAsync(confirmee.Id));
+    }
+
+    private async Task<string> CreerNonConfirmee(string email, DateTime inscription)
+    {
+        var user = await _identity.CreerUtilisatrice(email);
+        user.EmailConfirmed = false;
+        user.ConsentementDonneesSanteLe = inscription;
+        await _identity.UserManager.UpdateAsync(user);
+        return user.Id;
+    }
+
+    [Fact]
     public async Task Login_MetAJourLaDerniereActivite()
     {
         await _identity.CreerUtilisatrice("active@local");
