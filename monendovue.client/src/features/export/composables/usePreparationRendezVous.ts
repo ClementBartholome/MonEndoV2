@@ -8,10 +8,14 @@ import { creerPdf, libellePeriode, nomDuFichier } from '../utils/pdfRendezVous';
 
 export type ChoixPeriode = '1mois' | '3mois' | 'autre' | 'depuis';
 
-/** Ce que la page Agenda transmet dans l'état de la navigation (jamais dans l'adresse) : le rendez-vous préparé et le précédent. */
+/**
+ * Ce que la page Agenda transmet dans l'état de la navigation (jamais dans l'adresse) : le rendez-vous préparé, le précédent et,
+ * pour un rendez-vous passé dont on refait le résumé, son jour (fin de la période).
+ */
 interface EtatNavigation {
     rdv?: unknown;
     depuis?: unknown;
+    jusquau?: unknown;
 }
 
 const OPTIONS_HABITUELLES: { valeur: ChoixPeriode; libelle: string }[] = [
@@ -42,12 +46,14 @@ const cle = (date: Date) => format(date, 'yyyy-MM-dd');
 /** Préparation du PDF d'un rendez-vous : période, rubriques à inclure, questions, puis création du document. */
 export function usePreparationRendezVous() {
     const aujourdhui = cle(new Date());
-    const ilYA = (mois: number) => cle(addDays(addMonths(parseISO(aujourdhui), -mois), 1));
 
-    // Arrivée depuis « Préparer ce rendez-vous » de l'agenda : rendez-vous visé et début de la période (rendez-vous précédent).
+    // Arrivée depuis l'agenda (« Préparer ce rendez-vous », « Refaire le résumé ») : rendez-vous visé, début de la période
+    // (rendez-vous précédent) et, pour un rendez-vous passé, sa date comme fin de période.
     const venu = (window.history.state ?? {}) as EtatNavigation;
     const rendezVous = typeof venu.rdv === 'string' ? libelleRendezVous(venu.rdv) : null;
-    const debutDepuis = typeof venu.depuis === 'string' && venu.depuis <= aujourdhui ? venu.depuis : null;
+    const fin = typeof venu.jusquau === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(venu.jusquau) && venu.jusquau <= aujourdhui ? venu.jusquau : aujourdhui;
+    const ilYA = (mois: number) => cle(addDays(addMonths(parseISO(fin), -mois), 1));
+    const debutDepuis = typeof venu.depuis === 'string' && venu.depuis <= fin ? venu.depuis : null;
     // Une période ne dépasse pas un an : un rendez-vous plus ancien est ramené à il y a un an.
     const depuis = debutDepuis && debutDepuis > ilYA(12) ? debutDepuis : (debutDepuis ? ilYA(12) : null);
     const options = depuis ? OPTIONS_DEPUIS_LE_DERNIER : OPTIONS_HABITUELLES;
@@ -55,12 +61,12 @@ export function usePreparationRendezVous() {
     const choix = ref<ChoixPeriode>(depuis ? 'depuis' : '3mois');
     /** Bornes de la période « Autre » (AAAA-MM-JJ). */
     const du = ref(ilYA(6));
-    const au = ref(aujourdhui);
+    const au = ref(fin);
 
     const periode = computed(() => {
-        if (choix.value === '1mois') return { du: ilYA(1), au: aujourdhui };
-        if (choix.value === '3mois') return { du: ilYA(3), au: aujourdhui };
-        if (choix.value === 'depuis' && depuis) return { du: depuis, au: aujourdhui };
+        if (choix.value === '1mois') return { du: ilYA(1), au: fin };
+        if (choix.value === '3mois') return { du: ilYA(3), au: fin };
+        if (choix.value === 'depuis' && depuis) return { du: depuis, au: fin };
         return { du: du.value, au: au.value };
     });
 

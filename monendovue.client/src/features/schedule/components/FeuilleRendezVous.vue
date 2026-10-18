@@ -21,6 +21,17 @@
         </p>
       </div>
 
+      <div v-else-if="passe" class="flex flex-col gap-2">
+        <button type="button" :disabled="preparationEnCours"
+                class="inline-flex min-h-12 items-center justify-center gap-2 rounded-controle border-[1.5px] border-contour bg-surface text-sm font-medium text-texte disabled:opacity-60"
+                @click="emit('preparer')">
+          <i class="material-symbols-outlined" aria-hidden="true">picture_as_pdf</i>{{ preparationEnCours ? 'Un instant…' : 'Refaire le résumé de cette période' }}
+        </button>
+        <p class="m-0 text-legende text-texte-2">
+          Recrée le PDF avec tes notes actuelles, du rendez-vous précédent jusqu'à celui-ci.
+        </p>
+      </div>
+
       <a v-if="evenement.lien" :href="evenement.lien" target="_blank" rel="noopener noreferrer"
          class="inline-flex min-h-12 items-center justify-center gap-2 rounded-controle border-[1.5px] border-contour bg-surface text-sm font-medium text-texte no-underline">
         <i class="material-symbols-outlined" aria-hidden="true">open_in_new</i>Ouvrir dans Google Agenda
@@ -36,8 +47,11 @@ import PanneauBas from '@/shared/components/PanneauBas.vue';
 import type { EvenementAgenda } from '../types/agenda';
 import { debutDe, heureDe, jourComplet } from '../utils/rendezVous';
 
-/** Détail d'un rendez-vous dans un panneau : quand, où, « Préparer ce rendez-vous » (à venir seulement), lien vers Google Agenda. */
-const props = defineProps<{ evenement: EvenementAgenda | null; aVenir: boolean; preparationEnCours: boolean }>();
+/**
+ * Détail d'un rendez-vous dans un panneau : quand, où, « Préparer ce rendez-vous » (à venir) ou « Refaire le résumé de cette
+ * période » (passé), lien vers Google Agenda.
+ */
+const props = defineProps<{ evenement: EvenementAgenda | null; aVenir: boolean; passe: boolean; preparationEnCours: boolean }>();
 const emit = defineEmits<{ preparer: [] }>();
 const ouvert = defineModel<boolean>('open', { required: true });
 

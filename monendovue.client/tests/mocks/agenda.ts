@@ -50,6 +50,12 @@ export const ECHO = rendezVous('echo', 'Échographie pelvienne', '2026-09-18T09:
 export const GYNECO = rendezVous('gyneco', 'Consultation gynécologie', '2026-10-06T14:30:00+02:00', { lieu: 'Dr Martin, Lyon 6e' });
 export const PRECEDENT = rendezVous('precedent', 'Consultation précédente', '2026-06-12T11:00:00+02:00');
 
+/** Rendez-vous passés (avant le 15 septembre 2026) : la première fenêtre de 60 jours remonte au 18 juillet. */
+export const ECHO_PASSEE = rendezVous('echo-passee', 'Échographie de contrôle', '2026-09-03T09:00:00+02:00');
+export const MEDECIN = rendezVous('medecin', 'Médecin traitant', '2026-08-20T18:00:00+02:00');
+export const CONGES = rendezVous('conges', 'Congés', '2026-08-10', { journeeEntiere: true });
+export const ALGOLOGUE = rendezVous('algologue', 'Consultation douleur', '2026-07-08T16:30:00+02:00');
+
 /**
  * Agenda lié (calendrier choisi) avec ses rendez-vous : `Agenda/evenements` ne renvoie que ceux de la période demandée,
  * `Agenda/precedent` le dernier commencé avant la date (`precedent`, ou aucun).
