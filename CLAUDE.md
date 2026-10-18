@@ -129,6 +129,9 @@ dotnet ef migrations add NomEnPascalCase --project MonEndoVue.Server
   par `IFileEmails`, relais SMTP Brevo, voir `deploy/README.md`). Les liens portent le jeton dans le **fragment** ; pages publiques `/inscription/envoyee`,
   `/confirmer-adresse`, `/mot-de-passe-oublie`, `/reinitialiser-mot-de-passe` (le fragment est lu puis retiré de la barre d'adresse). Compte jamais
   confirmé : supprimé après 7 jours (job de nuit). Le drapeau local `monendo-accueil-a-faire` fait passer la première connexion par `/bienvenue/rappel`.
+  **Inscription sur invitation** par défaut (`Inscriptions:SurInvitation`) : code de 12 caractères, empreinte seule en base (`CodesInvitation`, usages
+  et expiration), créé par `creer-code-invitation` dans le conteneur (voir `deploy/README.md`), partagé par `/register#code=…` (fragment) ;
+  `GET Account/inscription` dit à l'écran s'il faut un code. Un usage n'est compté que si le compte est réellement créé.
 - Pages publiques (sans compte, `meta: { public: true }` dans le routeur) : connexion, inscription, politique de
   confidentialité `/confidentialite` et mentions légales `/mentions-legales` (`features/legal/`). **Consentement explicite**
   aux données de santé (`ApplicationUser.ConsentementDonneesSanteLe`, version de la politique acceptée) : case à l'inscription,

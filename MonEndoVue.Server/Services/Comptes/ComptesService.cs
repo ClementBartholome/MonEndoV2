@@ -48,6 +48,8 @@ public class ComptesService(
     SessionsService sessions,
     IFileEmails emails,
     IOptions<EmailOptions> emailOptions,
+    InvitationsService invitations,
+    IOptions<InscriptionsOptions> inscriptionsOptions,
     IMemoryCache cache,
     TimeProvider horloge,
     ILogger<ComptesService> logger)
@@ -70,6 +72,9 @@ public class ComptesService(
     {
         if (!inscription.ConsentementDonneesSante) return ResultatCompte.Invalide(MessageConsentement);
         if (!emails.Disponible) return ResultatCompte.EmailIndisponible;
+        // Ouverture progressive : sans code valable, rien n'est créé ni envoyé (un code ne dit rien de l'existence d'une adresse).
+        var surInvitation = inscriptionsOptions.Value.SurInvitation;
+        if (surInvitation && !await invitations.EstValableAsync(inscription.CodeInvitation, ct)) return ResultatCompte.Invalide(InvitationsService.MessageCodeInvalide);
 
         var email = inscription.Email.Trim();
         var user = new ApplicationUser { UserName = email, Email = email, EmailConfirmed = false };
@@ -102,6 +107,7 @@ public class ComptesService(
         }
 
         await carnetSanteService.CreateCarnetSante(user.Id);
+        if (surInvitation) await invitations.ConsommerAsync(inscription.CodeInvitation!, ct);
         PeutEnvoyer(email);
         emails.Planifier(await MessageConfirmationAsync(user));
         logger.LogInformation("Compte créé, en attente de confirmation : {UserId}", user.Id);

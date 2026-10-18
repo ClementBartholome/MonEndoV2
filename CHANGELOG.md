@@ -10,6 +10,8 @@ versions en [SemVer](https://semver.org/lang/fr/) (voir la section Déploiement 
   (lien valable 24 heures, renvoi possible). La première connexion qui suit passe par l'étape du rappel du soir, comme avant.
 - **Rappel la veille d'un rendez-vous** (Paramètres › Notifications) : une notification la veille, seulement si un rendez-vous est prévu le
   lendemain dans le calendrier choisi de ton agenda Google. Elle ne dit ni le titre ni le lieu du rendez-vous.
+- **Inscription sur invitation** : pendant l'ouverture progressive de MonEndo, créer un compte demande un code d'invitation ; le lien
+  partagé préremplit le code.
 - **Mot de passe oublié** : depuis la connexion, un lien par e-mail permet d'en choisir un nouveau (valable 1 heure, une seule fois).
   Par sécurité, toutes les sessions ouvertes sont alors fermées.
 - Bilan quotidien : de nouvelles catégories **facultatives**, à compléter seulement si tu le souhaites : **urinaire** (douleur en urinant, envies

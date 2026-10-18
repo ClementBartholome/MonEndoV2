@@ -12,6 +12,10 @@
     <EngagementsDonnees/>
 
     <form class="flex flex-col gap-4" novalidate @submit.prevent="soumettre">
+      <ChampTexte v-if="surInvitation" v-model="codeInvitation" label="Code d'invitation" name="code" autocomplete="off" :erreur="erreurCode">
+        <p class="m-0 text-left text-xs text-texte-2">MonEndo s'ouvre progressivement : un code reçu d'une personne qui t'invite est nécessaire.</p>
+      </ChampTexte>
+
       <ChampTexte v-model="email" label="Adresse e-mail" name="email" type="email" inputmode="email" autocomplete="email" :erreur="erreurEmail"/>
 
       <ChampTexte v-model="motDePasse" label="Mot de passe" name="password" type="password" autocomplete="new-password" :erreur="erreurMotDePasse">
@@ -54,7 +58,7 @@ import { useInscription } from '../composables/useInscription';
 
 const router = useRouter();
 const auth = useAuthStore();
-const { email, motDePasse, consentement, criteres, envoiEnCours, erreurEmail, erreurMotDePasse, erreurConsentement, erreurGenerale, creer } = useInscription();
+const { email, motDePasse, consentement, codeInvitation, surInvitation, erreurCode, criteres, envoiEnCours, erreurEmail, erreurMotDePasse, erreurConsentement, erreurGenerale, creer } = useInscription();
 
 onMounted(() => {
   if (auth.user) router.push('/');
