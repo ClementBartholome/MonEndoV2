@@ -31,9 +31,19 @@ const authService = {
         }
     },
 
-    async register(email: string, password: string, consentementDonneesSante: boolean) {
+    /** Ce que demande l'inscription : un code d'invitation tant que l'ouverture est progressive. En cas de doute, on le demande. */
+    async inscriptionSurInvitation(): Promise<boolean> {
         try {
-            const response = await axios.post(`${API_URL}Account/register`, { email, password, consentementDonneesSante }, {
+            const response = await axios.get(`${API_URL}Account/inscription`, { withCredentials: true });
+            return response.data?.surInvitation !== false;
+        } catch {
+            return true;
+        }
+    },
+
+    async register(email: string, password: string, consentementDonneesSante: boolean, codeInvitation: string | null = null) {
+        try {
+            const response = await axios.post(`${API_URL}Account/register`, { email, password, consentementDonneesSante, codeInvitation }, {
                 headers: {
                     'Content-Type': 'application/json'
                 },

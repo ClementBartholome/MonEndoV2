@@ -421,6 +421,44 @@ namespace MonEndoVue.Server.Migrations
                     b.ToTable("CarnetSantes");
                 });
 
+            modelBuilder.Entity("MonEndoVue.Server.Models.CodeInvitation", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("CodeHache")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.Property<DateTime>("CreeLe")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("ExpireLe")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Libelle")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<int>("Usages")
+                        .IsConcurrencyToken()
+                        .HasColumnType("int");
+
+                    b.Property<int>("UsagesMax")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CodeHache")
+                        .IsUnique();
+
+                    b.ToTable("CodesInvitation", (string)null);
+                });
+
             modelBuilder.Entity("MonEndoVue.Server.Models.DonneesActivitePhysique", b =>
                 {
                     b.Property<int>("Id")

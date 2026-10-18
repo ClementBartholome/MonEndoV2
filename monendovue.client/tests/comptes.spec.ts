@@ -105,6 +105,54 @@ test.describe('Comptes sans session', () => {
     });
   });
 
+  test.describe('inscription sur invitation', () => {
+    test.beforeEach(({ serveur }) => {
+      simulerConsentement(serveur, { surInvitation: true });
+    });
+
+    test('le code du lien partagé est prérempli, retiré de l\'adresse et envoyé avec l\'inscription', async ({ page, serveur }) => {
+      await page.goto('/register#code=ABCD-EFGH-JKLM');
+
+      await expect(page.locator('input[name="code"]')).toHaveValue('ABCD-EFGH-JKLM');
+      expect(page.url()).not.toContain('ABCD');
+      await page.locator('input[name="email"]').fill('invitee@exemple.fr');
+      await page.locator('input[name="password"]').fill('MotDePasse1!');
+      await page.getByRole('checkbox', { name: /J'accepte que MonEndo enregistre/ }).check();
+      await page.getByRole('button', { name: 'Créer mon compte' }).click();
+
+      await expect(page).toHaveURL(/\/inscription\/envoyee$/);
+      expect(serveur.appelsVers('POST', /^Account\/register$/).at(-1)!.corps).toMatchObject({ codeInvitation: 'ABCD-EFGH-JKLM' });
+    });
+
+    test('sans code, rien n\'est envoyé ; un code refusé est expliqué sous le champ', async ({ page, serveur }) => {
+      await page.goto('/register');
+      await page.locator('input[name="email"]').fill('invitee@exemple.fr');
+      await page.locator('input[name="password"]').fill('MotDePasse1!');
+      await page.getByRole('checkbox', { name: /J'accepte que MonEndo enregistre/ }).check();
+
+      await page.getByRole('button', { name: 'Créer mon compte' }).click();
+      await expect(page.getByText("Saisis le code d'invitation que tu as reçu.")).toBeVisible();
+      expect(serveur.appelsVers('POST', /^Account\/register$/)).toHaveLength(0);
+
+      serveur.on('POST', /^Account\/register$/, () => ({
+        status: 400, body: { $values: ["Ce code d'invitation n'est pas valable (inconnu, expiré ou déjà utilisé). Demande un nouveau code à la personne qui t'a invitée."] },
+      }));
+      await page.locator('input[name="code"]').fill('ZZZZ-ZZZZ-ZZZZ');
+      await page.getByRole('button', { name: 'Créer mon compte' }).click();
+
+      await expect(page.getByText("Ce code d'invitation n'est pas valable")).toBeVisible();
+      await expect(page).toHaveURL(/\/register$/);
+    });
+
+    test('inscriptions ouvertes : pas de champ de code', async ({ page, serveur }) => {
+      serveur.on('GET', /^Account\/inscription$/, () => ({ body: { surInvitation: false } }));
+      await page.goto('/register');
+
+      await expect(page.locator('input[name="email"]')).toBeVisible();
+      await expect(page.locator('input[name="code"]')).toHaveCount(0);
+    });
+  });
+
   test.describe('nouveau mot de passe', () => {
     test('les règles sont vérifiées avant l\'envoi, puis le jeton part dans le corps', async ({ page, serveur }) => {
       serveur.on('POST', /^Account\/reinitialiser-mot-de-passe$/, () => ({ status: 204 }));

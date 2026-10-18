@@ -25,8 +25,8 @@ export const useAuthStore = defineStore({
             return response;
         },
         /** Crée le compte : aucune session n'est ouverte, l'adresse doit d'abord être confirmée par le lien reçu par e-mail. */
-        async register(email: string, password: string, consentementDonneesSante: boolean) {
-            return authService.register(email, password, consentementDonneesSante);
+        async register(email: string, password: string, consentementDonneesSante: boolean, codeInvitation: string | null = null) {
+            return authService.register(email, password, consentementDonneesSante, codeInvitation);
         },
         async logout() {
             await authService.logout();

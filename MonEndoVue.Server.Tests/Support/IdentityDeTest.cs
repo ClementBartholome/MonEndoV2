@@ -80,12 +80,19 @@ public sealed class IdentityDeTest : IDisposable
             new SessionsService(Context, new TokenService(sp.GetRequiredService<IConfiguration>()), new HorlogeFixe(Maintenant)),
             Emails,
             Options.Create(new EmailOptions { AdresseApplication = AdresseApplication }),
+            Invitations(),
+            Options.Create(new InscriptionsOptions { SurInvitation = SurInvitation }),
             cache ?? sp.GetRequiredService<IMemoryCache>(),
             new HorlogeFixe(Maintenant),
             NullLogger<ComptesService>.Instance);
     }
 
     public const string AdresseApplication = "https://monendoapp.test";
+
+    /// <summary>Inscriptions sur invitation : désactivé par défaut dans les tests (activé par ceux qui le vérifient).</summary>
+    public bool SurInvitation { get; set; }
+
+    public InvitationsService Invitations() => new(Context, new HorlogeFixe(Maintenant), NullLogger<InvitationsService>.Instance);
 
     public AccountController CreerController(string? userId = null)
     {

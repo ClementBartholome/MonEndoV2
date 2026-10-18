@@ -147,6 +147,8 @@ namespace MonEndoVue.Server
             builder.Services.AddScoped<AcneService>();
             builder.Services.AddScoped<SessionsService>();
             builder.Services.AddScoped<ComptesService>();
+            builder.Services.AddScoped<InvitationsService>();
+            builder.Services.Configure<InscriptionsOptions>(builder.Configuration.GetSection(InscriptionsOptions.Section));
             builder.Services.AddScoped<ActiviteService>();
             builder.Services.AddScoped<SyntheseRendezVousService>();
 
@@ -285,6 +287,14 @@ namespace MonEndoVue.Server
             if (builder.Configuration[CleSignatureJwt.Reglage]?.Length < CleSignatureJwt.LongueurRecommandee)
             {
                 app.Logger.LogWarning("La clé de signature des jetons est courte (moins de {Longueur} caractères) : la régénérer", CleSignatureJwt.LongueurRecommandee);
+            }
+
+            // Commande d'administration, lancée dans le conteneur (jamais par l'API) :
+            //   dotnet MonEndoVue.Server.dll creer-code-invitation [usages] [jours] [libellé]
+            if (args.Length > 0 && args[0] == "creer-code-invitation")
+            {
+                await CommandeCodeInvitation.ExecuterAsync(app.Services, args[1..]);
+                return;
             }
 
             var erreurEmail = app.Services.GetRequiredService<IOptions<EmailOptions>>().Value.Erreur();
