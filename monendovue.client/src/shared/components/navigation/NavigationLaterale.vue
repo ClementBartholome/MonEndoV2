@@ -1,8 +1,8 @@
 <template>
   <nav aria-label="Navigation principale"
        class="navigation-laterale fixed inset-y-0 left-0 z-30 hidden w-[200px] flex-col gap-1 overflow-y-auto border-r border-trait bg-fond px-3 py-4 lg:flex">
-    <router-link to="/" class="mb-6 mt-2 flex min-h-11 items-center px-3" aria-label="Accueil MonEndo">
-      <MotSymbole/>
+    <router-link to="/" class="mb-4 self-center" aria-label="Accueil MonEndo">
+      <img src="@/images/MonEndo_transparent.png" alt="" class="h-24 w-24">
     </router-link>
     <template v-for="(groupe, index) in groupes" :key="index">
       <!-- Simple texte, pas un titre : la barre latérale ne doit pas entrer dans le plan de la page. -->
@@ -22,7 +22,6 @@
 </template>
 
 <script setup lang="ts">
-import MotSymbole from '@/shared/components/MotSymbole.vue';
 import {useRoute} from 'vue-router';
 import {estActive, navigationCompte, navigationPrincipale, navigationSecondaire} from '@/shared/config/navigation';
 

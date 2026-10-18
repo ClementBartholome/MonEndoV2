@@ -1,6 +1,6 @@
 <template>
   <main class="mx-auto flex min-h-dvh w-full max-w-md flex-col px-6 pb-6 pt-7">
-    <p class="m-0 self-start"><MotSymbole grand/></p>
+    <img src="@/images/MonEndo_transparent.png" alt="MonEndo" class="h-14 w-auto self-start">
 
     <header class="mt-7 flex flex-col gap-3.5 text-left">
       <h1 class="m-0 text-[2.125rem] font-medium leading-[1.15] tracking-tight text-texte">Ta douleur, noir sur blanc.</h1>
@@ -42,7 +42,6 @@
 </template>
 
 <script setup lang="ts">
-import MotSymbole from '@/shared/components/MotSymbole.vue';
 import { onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import LiensLegaux from '@/features/legal/components/LiensLegaux.vue';
