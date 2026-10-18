@@ -76,6 +76,12 @@ Les mêmes parcours simulés servent aux captures du README : `npm run captures`
   - Traitements : prises du jour (prendre, ignorer, annuler), prise au besoin, séance de soin, ajout avec fréquence et
     horaires, modification, arrêt ; carte de l'accueil (seules les prises prévues du jour).
 - Parcours restants : issue #23 (connexion, cycle, paramètres, export).
+- **Accessibilité** (`tests/accessibilite.spec.ts`, axe-core via `@axe-core/playwright`) : chaque écran principal, avec des
+  données réalistes et dans ses états ouverts (saisies, menu « Plus »), est passé au crible de WCAG 2.2 A et AA et des bonnes
+  pratiques d'axe ; une violation fait échouer le test avec la règle et l'élément. S'y ajoutent le recadrage à 320 px (aucun
+  défilement horizontal, WCAG 1.4.10) et une saisie pilotée au clavier (focus dans le panneau, Échap, retour du focus).
+  **Tout écran nouveau s'ajoute à la liste de ce fichier.** axe ne couvre qu'une partie des critères : le contrôle
+  manuel au clavier et au lecteur d'écran reste nécessaire.
 
 ## Contrôles manuels (Definition of Done)
 
