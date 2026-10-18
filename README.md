@@ -86,7 +86,8 @@ Sur ordinateur, la navigation passe dans une barre latérale et les pages gagnen
   Uniquement ce qui a été noté, sans interprétation.
 - **Agenda Google (lecture seule)** : chaque utilisatrice lie son compte Google depuis les Paramètres et choisit **le calendrier
   lu** (idéalement un calendrier de rendez-vous médicaux). Liste des rendez-vous par jour, vue mois, détail avec itinéraire.
-  « Préparer ce rendez-vous » ouvre l'export avec la période « depuis le dernier rendez-vous ».
+  « Préparer ce rendez-vous » ouvre l'export avec la période « depuis le dernier rendez-vous ». Onglet *Passés* : les rendez-vous
+  passés par mois, et « Refaire le résumé de cette période » recrée le PDF du rendez-vous précédent jusqu'à celui-ci.
 
 ### Accompagnement
 - **Rappels par notification (Web Push)** : bilan du jour à l'heure choisie et photo de suivi de l'acné hebdomadaire (pendant un
