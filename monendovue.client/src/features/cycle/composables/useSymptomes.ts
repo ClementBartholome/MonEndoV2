@@ -48,7 +48,7 @@ export function useSymptomes({ carnetSanteId, maintenant = () => new Date() }: O
         await charger();
     }
 
-    /** Ajout ou modification (acné comprise, depuis son onglet) ; la liste du mois est rechargée ensuite. */
+    /** Ajout ou modification (acné comprise, depuis sa page) ; la liste du mois est rechargée ensuite. */
     async function enregistrer(saisie: SymptomeSaisie, id: number | null) {
         const carnet = carnetSanteId();
         if (!carnet) return;

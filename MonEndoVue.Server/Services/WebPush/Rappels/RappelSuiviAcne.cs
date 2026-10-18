@@ -6,7 +6,7 @@ namespace MonEndoVue.Server.Services.WebPush.Rappels;
 
 /// <summary>
 /// Rappel hebdomadaire du suivi photo de l'acné, omis si une photo d'acné a été ajoutée sur les 7 derniers jours locaux
-/// (aujourd'hui compris). Ouvre directement l'onglet Acné de la page Cycle.
+/// (aujourd'hui compris). Ouvre directement la page Acné.
 /// </summary>
 public class RappelSuiviAcne(AppDbContext context) : IRegleRappel
 {
@@ -18,7 +18,7 @@ public class RappelSuiviAcne(AppDbContext context) : IRegleRappel
     public TimeOnly HeureParDefaut => new(20, 0);
     public DayOfWeek? JourParDefaut => DayOfWeek.Sunday;
     public MessagePush Message { get; } =
-        new("MonEndo", "C'est le moment de la photo de suivi de ton acné.", "/cycle?onglet=acne");
+        new("MonEndo", "C'est le moment de la photo de suivi de ton acné.", "/acne");
 
     public async Task<bool> SuiviDejaFaitAsync(int carnetSanteId, DateOnly jourLocal, TimeZoneInfo fuseau, CancellationToken cancellationToken)
     {

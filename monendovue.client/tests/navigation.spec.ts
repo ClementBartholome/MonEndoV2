@@ -21,15 +21,24 @@ test.describe('Navigation principale', () => {
     await expect(navigationPage.menuPlus).toBeHidden();
   });
 
-  test('le menu « Plus » regroupe les autres rubriques et se ferme', async ({ navigationPage, page }) => {
+  test('le menu « Plus » regroupe les autres rubriques par thème et se ferme', async ({ navigationPage, page }) => {
     test.skip(!navigationPage.estMobile, 'menu propre au mobile');
     await page.goto('/');
 
     await navigationPage.principale.getByRole('button', { name: 'Plus' }).click();
 
-    for (const rubrique of ['Traitements', 'Activité', 'Agenda', 'Préparer un rendez-vous', 'Transit', "S'informer", 'Suggestion ou bug', 'Paramètres']) {
-      await expect(navigationPage.menuPlus.getByRole('link', { name: rubrique })).toBeVisible();
+    const groupes: Record<string, string[]> = {
+      'Mes suivis': ['Traitements', 'Acné', 'Activité', 'Transit'],
+      'Mes rendez-vous': ['Agenda', 'Préparer un rendez-vous'],
+      'Aide': ["S'informer", 'Suggestion ou bug'],
+    };
+    for (const [groupe, rubriques] of Object.entries(groupes)) {
+      await expect(navigationPage.menuPlus.getByRole('heading', { name: groupe })).toBeVisible();
+      for (const rubrique of rubriques) {
+        await expect(navigationPage.menuPlus.getByRole('navigation', { name: groupe }).getByRole('link', { name: new RegExp(`^${rubrique}`) })).toBeVisible();
+      }
     }
+    await expect(navigationPage.menuPlus.getByRole('link', { name: 'Paramètres' })).toBeVisible();
     await navigationPage.menuPlus.getByRole('button', { name: 'Fermer' }).click();
     await expect(navigationPage.menuPlus).toBeHidden();
   });

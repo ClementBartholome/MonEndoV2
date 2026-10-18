@@ -171,7 +171,7 @@ public sealed class ReglesRappelTests : IDisposable
 
         Assert.Equal((TypeRappel.BilanQuotidien, false, new TimeOnly(21, 0), (DayOfWeek?)null, "/bilan-quotidien?ajouter"),
             (bilan.Type, bilan.EstHebdomadaire, bilan.HeureParDefaut, bilan.JourParDefaut, bilan.Message.Url));
-        Assert.Equal((TypeRappel.SuiviAcne, true, new TimeOnly(20, 0), (DayOfWeek?)DayOfWeek.Sunday, "/cycle?onglet=acne"),
+        Assert.Equal((TypeRappel.SuiviAcne, true, new TimeOnly(20, 0), (DayOfWeek?)DayOfWeek.Sunday, "/acne"),
             (acne.Type, acne.EstHebdomadaire, acne.HeureParDefaut, acne.JourParDefaut, acne.Message.Url));
     }
 

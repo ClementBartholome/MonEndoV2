@@ -1,6 +1,6 @@
 import type { Locator, Page } from '@playwright/test';
 
-/** Page « Cycle » (/cycle) : onglets Règles, Symptômes et Acné ; saisie d'un symptôme dans le panneau du bas. */
+/** Page « Cycle » (/cycle) : onglets Règles et Symptômes (l'acné a sa page, /acne) ; saisie d'un symptôme dans le panneau du bas. */
 export class CyclePage {
   readonly page: Page;
 
@@ -28,7 +28,7 @@ export class CyclePage {
     await this.page.goto(`/cycle${requete}`);
   }
 
-  onglet(nom: 'Règles' | 'Symptômes' | 'Acné') {
+  onglet(nom: 'Règles' | 'Symptômes') {
     return this.page.getByRole('tab', { name: nom });
   }
 

@@ -13,6 +13,7 @@ import BilanQuotidienPage from "@/features/bilan-quotidien/pages/BilanQuotidienP
 import ParametresPage from "@/features/parametres/pages/ParametresPage.vue";
 import RegisterPage from "@/features/auth/pages/RegisterPage.vue";
 import CyclePage from "@/features/cycle/pages/CyclePage.vue";
+import AcnePage from "@/features/cycle/pages/AcnePage.vue";
 import PolitiqueConfidentialitePage from "@/features/legal/pages/PolitiqueConfidentialitePage.vue";
 import MentionsLegalesPage from "@/features/legal/pages/MentionsLegalesPage.vue";
 import RetoursPage from '@/features/retours/pages/RetoursPage.vue'
@@ -96,7 +97,16 @@ const router = createRouter({
         {
             path: '/cycle',
             name: 'cycle',
-            component: CyclePage
+            component: CyclePage,
+            // Ancien onglet Acné (notifications déjà reçues, favoris) : la page Acné a pris sa place.
+            beforeEnter: (to) => to.query.onglet === 'acne'
+                ? { path: '/acne', query: to.query.ajouter !== undefined ? { ajouter: null } : {}, replace: true }
+                : true
+        },
+        {
+            path: '/acne',
+            name: 'acne',
+            component: AcnePage
         },
         // Comptes sans session : lien de confirmation envoyé, confirmation, mot de passe oublié. Le jeton des liens reçus par
         // e-mail est dans le fragment (#), jamais dans l'URL envoyée au serveur.
