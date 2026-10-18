@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using MonEndoVue.Server.Dto;
 using MonEndoVue.Server.Models;
 using MonEndoVue.Server.Services;
@@ -35,6 +36,11 @@ namespace MonEndoVue.Server.Controllers
         /// (202) est la même si l'adresse est déjà inscrite : c'est l'e-mail qui prévient la personne. Erreurs : mot de passe ou
         /// consentement (400, liste de messages), aucun relais d'e-mails (503).
         /// </summary>
+        /// <summary>Ce que l'écran d'inscription doit demander : un code d'invitation tant que l'ouverture est progressive.</summary>
+        [HttpGet("inscription")]
+        public IActionResult Inscription([FromServices] IOptions<InscriptionsOptions> options) =>
+            Ok(new { SurInvitation = options.Value.SurInvitation });
+
         [HttpPost("register")]
         [EnableRateLimiting("auth")]
         public async Task<IActionResult> Register([FromBody] InscriptionDto identifiants, CancellationToken ct) =>

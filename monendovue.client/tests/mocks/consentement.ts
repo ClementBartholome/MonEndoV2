@@ -8,8 +8,9 @@ const JETON_LOINTAIN = new Date(2099, 0, 1).toISOString();
  * Routes simulées des comptes (`AccountController`) : inscription (202, sans session : l'adresse doit être confirmée), confirmation
  * de l'adresse, renvoi du lien, connexion, et accord d'un compte existant.
  */
-export function simulerConsentement(serveur: FauxServeur) {
+export function simulerConsentement(serveur: FauxServeur, { surInvitation = false }: { surInvitation?: boolean } = {}) {
   serveur
+    .on('GET', /^Account\/inscription$/, () => ({ body: { surInvitation } }))
     .on('POST', /^Account\/register$/, ({ corps }) => (corps?.consentementDonneesSante
       ? { status: 202, body: { confirmationRequise: true } }
       : { status: 400, body: { $values: ['Ton accord est nécessaire pour créer un compte.'] } }))

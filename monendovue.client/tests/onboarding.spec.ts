@@ -17,7 +17,8 @@ test.describe('Onboarding', () => {
       await expect(page).toHaveURL(/\/login$/);
     });
 
-    test('« Créer mon compte » mène à l\'inscription', async ({ page }) => {
+    test('« Créer mon compte » mène à l\'inscription', async ({ page, serveur }) => {
+      simulerConsentement(serveur);
       await page.goto('/bienvenue');
 
       await page.getByRole('link', { name: 'Créer mon compte' }).click();

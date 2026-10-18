@@ -1,11 +1,20 @@
-import { computed, ref } from 'vue';
+import { computed, onMounted, ref } from 'vue';
+import authService from '@/features/auth/services/authService';
 import { useAuthStore } from '@/features/auth/store/auth';
 import { lancerPremiersPas, marquerAccueilAFaire } from '../utils/parcours';
 import { CRITERES_MOT_DE_PASSE, emailPlausible, motDePasseValide } from '../utils/motDePasse';
 
 /** Message du serveur (traduit par `MessagesIdentite`) reconnu comme concernant l'adresse ou le mot de passe. */
+const MESSAGE_CODE_INVITATION = /code d'invitation/i;
 const MESSAGE_EMAIL_INVALIDE = /adresse e-mail est invalide/i;
 const MESSAGE_MOT_DE_PASSE = /mot de passe/i;
+
+/** Code d'invitation d'un lien partagé (`#code=ABCD-EFGH-JKLM`), lu une fois puis retiré de la barre d'adresse. */
+function lireCodeDuFragment(): string {
+    const code = new URLSearchParams(window.location.hash.replace(/^#/, '')).get('code') ?? '';
+    if (window.location.hash) window.history.replaceState(window.history.state, '', window.location.pathname);
+    return code;
+}
 
 /**
  * Création d'un compte : champs, règles montrées pendant la saisie, erreurs au bon endroit (adresse, mot de passe, case de
@@ -18,6 +27,14 @@ export function useInscription() {
     const motDePasse = ref('');
     /** Case non cochée par défaut : l'accord doit être un geste explicite (RGPD, art. 9.2.a). */
     const consentement = ref(false);
+    /** Code d'invitation (ouverture progressive) : prérempli depuis le lien partagé (`/register#code=…`). */
+    const codeInvitation = ref(lireCodeDuFragment());
+    const surInvitation = ref(true);
+    const erreurServeurCode = ref<string | null>(null);
+
+    onMounted(async () => {
+        surInvitation.value = await authService.inscriptionSurInvitation();
+    });
 
     const tentative = ref(false);
     const envoiEnCours = ref(false);
@@ -41,12 +58,18 @@ export function useInscription() {
         return tentative.value && !motDePasseValide(motDePasse.value) ? 'Ton mot de passe ne respecte pas encore toutes les règles.' : null;
     });
 
+    const erreurCode = computed(() => {
+        if (erreurServeurCode.value) return erreurServeurCode.value;
+        return tentative.value && surInvitation.value && !codeInvitation.value.trim() ? 'Saisis le code d\'invitation que tu as reçu.' : null;
+    });
+
     const erreurConsentement = computed(() => (tentative.value && !consentement.value ? 'Coche cette case pour créer ton compte.' : null));
 
     function reinitialiserErreursServeur() {
         erreurServeurEmail.value = null;
         erreurServeurMotDePasse.value = null;
         erreurGenerale.value = null;
+        erreurServeurCode.value = null;
     }
 
     function classerErreur(erreur: unknown) {
@@ -54,7 +77,9 @@ export function useInscription() {
         const estAxios = (erreur as { isAxiosError?: boolean })?.isAxiosError === true;
         const message = erreur instanceof Error ? erreur.message : '';
 
-        if (!estAxios && MESSAGE_EMAIL_INVALIDE.test(message)) {
+        if (!estAxios && MESSAGE_CODE_INVITATION.test(message)) {
+            erreurServeurCode.value = message;
+        } else if (!estAxios && MESSAGE_EMAIL_INVALIDE.test(message)) {
             erreurServeurEmail.value = 'Cette adresse e-mail ne semble pas valide.';
         } else if (!estAxios && MESSAGE_MOT_DE_PASSE.test(message)) {
             erreurServeurMotDePasse.value = message;
@@ -76,10 +101,11 @@ export function useInscription() {
         tentative.value = true;
         reinitialiserErreursServeur();
         if (!emailPlausible(email.value) || !motDePasseValide(motDePasse.value) || !consentement.value) return false;
+        if (surInvitation.value && !codeInvitation.value.trim()) return false;
 
         envoiEnCours.value = true;
         try {
-            await auth.register(email.value.trim(), motDePasse.value, consentement.value);
+            await auth.register(email.value.trim(), motDePasse.value, consentement.value, surInvitation.value ? codeInvitation.value.trim() : null);
             lancerPremiersPas();
             marquerAccueilAFaire();
             return true;
@@ -92,7 +118,7 @@ export function useInscription() {
     }
 
     return {
-        email, motDePasse, consentement, criteres, envoiEnCours,
+        email, motDePasse, consentement, codeInvitation, surInvitation, erreurCode, criteres, envoiEnCours,
         erreurEmail, erreurMotDePasse, erreurConsentement, erreurGenerale, creer,
     };
 }

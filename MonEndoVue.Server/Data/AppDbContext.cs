@@ -21,6 +21,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : IdentityDbCo
     public DbSet<LiaisonAgenda> LiaisonsAgenda { get; set; }
     public DbSet<EpisodeAcne> EpisodesAcne { get; set; }
     public DbSet<SessionAppareil> SessionsAppareil { get; set; }
+    public DbSet<CodeInvitation> CodesInvitation { get; set; }
     
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -174,6 +175,14 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : IdentityDbCo
                 .WithMany()
                 .HasForeignKey(s => s.UserId)
                 .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // Codes d'invitation : seule l'empreinte est stockée ; le décompte des usages est un jeton de concurrence.
+        modelBuilder.Entity<CodeInvitation>(entity =>
+        {
+            entity.ToTable("CodesInvitation");
+            entity.HasIndex(c => c.CodeHache).IsUnique();
+            entity.Property(c => c.Usages).IsConcurrencyToken();
         });
 
         modelBuilder.Entity<EpisodeAcne>(entity =>
