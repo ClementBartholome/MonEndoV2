@@ -71,7 +71,7 @@ public sealed class IdentityDeTest : IDisposable
     }
 
     /// <summary>Service des comptes branché sur la même base, la fausse file d'e-mails et une adresse d'application de test.</summary>
-    public ComptesService Comptes()
+    public ComptesService Comptes(IMemoryCache? cache = null)
     {
         var sp = _scope.ServiceProvider;
         return new ComptesService(
@@ -80,7 +80,7 @@ public sealed class IdentityDeTest : IDisposable
             new SessionsService(Context, new TokenService(sp.GetRequiredService<IConfiguration>()), new HorlogeFixe(Maintenant)),
             Emails,
             Options.Create(new EmailOptions { AdresseApplication = AdresseApplication }),
-            sp.GetRequiredService<IMemoryCache>(),
+            cache ?? sp.GetRequiredService<IMemoryCache>(),
             new HorlogeFixe(Maintenant),
             NullLogger<ComptesService>.Instance);
     }

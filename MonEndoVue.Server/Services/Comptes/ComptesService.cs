@@ -82,11 +82,19 @@ public class ComptesService(
             if (creation.Errors.All(e => MessagesIdentite.CodesAdresseDejaPrise.Contains(e.Code)))
             {
                 var existant = await userManager.FindByEmailAsync(email);
-                if (existant is not null && PeutEnvoyer(email))
+                if (existant is null) return ResultatCompte.Acceptee;
+                if (!existant.EmailConfirmed)
                 {
-                    emails.Planifier(existant.EmailConfirmed
-                        ? ModelesEmail.CompteExistant(email, $"{AdresseApplication.TrimEnd('/')}/login", $"{AdresseApplication.TrimEnd('/')}/mot-de-passe-oublie")
-                        : await MessageConfirmationAsync(existant));
+                    // Compte jamais confirmé, peut-être créé par quelqu'un d'autre avec cette adresse : le dernier mot de passe choisi le
+                    // remplace (l'empreinte de sécurité change, les anciens liens de confirmation ne valent plus) ; seule la personne qui
+                    // reçoit les e-mails pourra l'activer.
+                    await userManager.RemovePasswordAsync(existant);
+                    await userManager.AddPasswordAsync(existant, inscription.Password);
+                    if (PeutEnvoyer(email)) emails.Planifier(await MessageConfirmationAsync(existant));
+                }
+                else if (PeutEnvoyer(email))
+                {
+                    emails.Planifier(ModelesEmail.CompteExistant(email, $"{AdresseApplication.TrimEnd('/')}/login", $"{AdresseApplication.TrimEnd('/')}/mot-de-passe-oublie"));
                 }
                 return ResultatCompte.Acceptee;
             }
@@ -123,20 +131,15 @@ public class ComptesService(
     }
 
     /// <summary>
-    /// Mot de passe oublié : un lien de réinitialisation pour un compte confirmé, le lien de confirmation pour un compte qui ne l'est
-    /// pas encore, rien pour une adresse inconnue ; la réponse est toujours la même.
+    /// Mot de passe oublié : un lien de réinitialisation pour tout compte existant, rien pour une adresse inconnue ; la réponse est
+    /// toujours la même. Un compte non confirmé reçoit aussi un lien de réinitialisation (jamais de confirmation) : choisir un mot de
+    /// passe par ce lien confirme l'adresse et écarte un mot de passe posé par quelqu'un d'autre (pré-détournement de compte).
     /// </summary>
     public async Task<ResultatCompte> DemanderReinitialisationAsync(string email)
     {
         if (!emails.Disponible) return ResultatCompte.EmailIndisponible;
         var user = await userManager.FindByEmailAsync(email.Trim());
         if (user is null || !PeutEnvoyer(user.Email!)) return ResultatCompte.Acceptee;
-
-        if (!user.EmailConfirmed)
-        {
-            emails.Planifier(await MessageConfirmationAsync(user));
-            return ResultatCompte.Acceptee;
-        }
 
         var jeton = await userManager.GeneratePasswordResetTokenAsync(user);
         emails.Planifier(ModelesEmail.ReinitialisationMotDePasse(user.Email!, ModelesEmail.LienReinitialisation(AdresseApplication, user.Email!, jeton)));

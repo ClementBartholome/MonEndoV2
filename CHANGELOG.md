@@ -6,6 +6,10 @@ versions en [SemVer](https://semver.org/lang/fr/) (voir la section Déploiement 
 ## [1.5.0] - non publiée
 
 ### Ajouté
+- **Confirmation de l'adresse e-mail** : à l'inscription, un lien de confirmation arrive par e-mail ; le compte s'active en l'ouvrant
+  (lien valable 24 heures, renvoi possible). La première connexion qui suit passe par l'étape du rappel du soir, comme avant.
+- **Mot de passe oublié** : depuis la connexion, un lien par e-mail permet d'en choisir un nouveau (valable 1 heure, une seule fois).
+  Par sécurité, toutes les sessions ouvertes sont alors fermées.
 - Bilan quotidien : de nouvelles catégories **facultatives**, à compléter seulement si tu le souhaites : **urinaire** (douleur en urinant, envies
   fréquentes ou pressantes, difficulté à vider la vessie, sang visible), **suite du transit** (douleur en allant à la selle, nausées, traces de sang),
   **saignements hors règles**, **nuit et journée** (nuit, réveils dus à la douleur, journée limitée, absence, activité annulée) et **rapports**
@@ -24,6 +28,8 @@ versions en [SemVer](https://semver.org/lang/fr/) (voir la section Déploiement 
   ton mot de passe.
 
 ### Sécurité
+- Les écrans d'inscription et de mot de passe oublié répondent de la même façon qu'une adresse ait un compte ou non : c'est l'e-mail
+  reçu qui renseigne la personne. Les liens envoyés par e-mail ne transmettent jamais leur jeton dans l'adresse demandée au serveur.
 - Les sessions des appareils sont stockées sous forme d'empreinte (plus aucun jeton en clair en base) et un changement de mot de passe
   déconnecte les autres appareils, pas celui que tu utilises.
 - Changer son mot de passe ou supprimer son compte compte désormais les mots de passe erronés comme à la connexion : après plusieurs

@@ -1,10 +1,9 @@
 import { computed, ref } from 'vue';
 import { useAuthStore } from '@/features/auth/store/auth';
-import { lancerPremiersPas } from '../utils/parcours';
+import { lancerPremiersPas, marquerAccueilAFaire } from '../utils/parcours';
 import { CRITERES_MOT_DE_PASSE, emailPlausible, motDePasseValide } from '../utils/motDePasse';
 
-/** Message du serveur (traduit par `AccountController`) reconnu comme concernant l'adresse ou le mot de passe. */
-const MESSAGE_EMAIL_PRIS = /adresse e-mail est déjà utilisée|nom d'utilisateur est déjà pris/i;
+/** Message du serveur (traduit par `MessagesIdentite`) reconnu comme concernant l'adresse ou le mot de passe. */
 const MESSAGE_EMAIL_INVALIDE = /adresse e-mail est invalide/i;
 const MESSAGE_MOT_DE_PASSE = /mot de passe/i;
 
@@ -25,8 +24,6 @@ export function useInscription() {
     const erreurServeurEmail = ref<string | null>(null);
     const erreurServeurMotDePasse = ref<string | null>(null);
     const erreurGenerale = ref<string | null>(null);
-    /** Vrai quand l'adresse est déjà prise : on propose alors de se connecter. */
-    const emailDejaPris = ref(false);
 
     const criteres = computed(() => CRITERES_MOT_DE_PASSE.map((critere) => ({
         cle: critere.cle,
@@ -50,7 +47,6 @@ export function useInscription() {
         erreurServeurEmail.value = null;
         erreurServeurMotDePasse.value = null;
         erreurGenerale.value = null;
-        emailDejaPris.value = false;
     }
 
     function classerErreur(erreur: unknown) {
@@ -58,10 +54,7 @@ export function useInscription() {
         const estAxios = (erreur as { isAxiosError?: boolean })?.isAxiosError === true;
         const message = erreur instanceof Error ? erreur.message : '';
 
-        if (!estAxios && MESSAGE_EMAIL_PRIS.test(message)) {
-            erreurServeurEmail.value = 'Impossible de créer un compte avec cette adresse. Tu en as peut-être déjà un.';
-            emailDejaPris.value = true;
-        } else if (!estAxios && MESSAGE_EMAIL_INVALIDE.test(message)) {
+        if (!estAxios && MESSAGE_EMAIL_INVALIDE.test(message)) {
             erreurServeurEmail.value = 'Cette adresse e-mail ne semble pas valide.';
         } else if (!estAxios && MESSAGE_MOT_DE_PASSE.test(message)) {
             erreurServeurMotDePasse.value = message;
@@ -74,7 +67,10 @@ export function useInscription() {
         }
     }
 
-    /** Crée le compte ; vrai si c'est fait (la session est alors ouverte). */
+    /**
+     * Crée le compte ; vrai si la demande est acceptée. Aucune session n'est ouverte : un lien de confirmation part par e-mail.
+     * La réponse est la même si l'adresse est déjà inscrite (l'e-mail prévient alors la personne).
+     */
     async function creer(): Promise<boolean> {
         if (envoiEnCours.value) return false;
         tentative.value = true;
@@ -85,6 +81,7 @@ export function useInscription() {
         try {
             await auth.register(email.value.trim(), motDePasse.value, consentement.value);
             lancerPremiersPas();
+            marquerAccueilAFaire();
             return true;
         } catch (erreur) {
             classerErreur(erreur);
@@ -95,7 +92,7 @@ export function useInscription() {
     }
 
     return {
-        email, motDePasse, consentement, criteres, envoiEnCours, emailDejaPris,
+        email, motDePasse, consentement, criteres, envoiEnCours,
         erreurEmail, erreurMotDePasse, erreurConsentement, erreurGenerale, creer,
     };
 }
