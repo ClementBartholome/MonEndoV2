@@ -1,4 +1,5 @@
 import { test, expect } from './fixtures';
+import { simulerSynthese } from './mocks/synthese';
 import { ALGOLOGUE, CONGES, ECHO, ECHO_PASSEE, GYNECO, KINE, MEDECIN, PRECEDENT, simulerLiaisonAgenda, simulerRendezVous } from './mocks/agenda';
 
 test.describe('Agenda', () => {
@@ -56,6 +57,7 @@ test.describe('Agenda', () => {
 
   test('« Préparer ce rendez-vous » ouvre l\'export depuis le rendez-vous précédent, sans rien mettre dans l\'adresse', async ({ serveur, page }) => {
     simulerRendezVous(serveur, [GYNECO], { precedent: PRECEDENT });
+    simulerSynthese(serveur);
     await page.goto('/agenda');
 
     await page.getByRole('button', { name: /Consultation gynécologie/ }).click();
@@ -71,6 +73,7 @@ test.describe('Agenda', () => {
 
   test('sans rendez-vous précédent, l\'export garde sa période habituelle', async ({ serveur, page }) => {
     simulerRendezVous(serveur, [GYNECO]);
+    simulerSynthese(serveur);
     await page.goto('/agenda');
 
     await page.getByRole('button', { name: 'Préparer ce rendez-vous' }).click();
@@ -139,6 +142,7 @@ test.describe('Agenda', () => {
 
     test('« Refaire le résumé » ouvre l\'export du rendez-vous précédent jusqu\'au jour du rendez-vous', async ({ serveur, page }) => {
       simulerRendezVous(serveur, [ECHO_PASSEE], { precedent: PRECEDENT });
+      simulerSynthese(serveur);
       await page.goto('/agenda');
       await page.getByRole('button', { name: 'Passés' }).click();
 
@@ -153,6 +157,7 @@ test.describe('Agenda', () => {
 
     test('sans rendez-vous précédent, les trois mois qui précèdent le rendez-vous', async ({ serveur, page }) => {
       simulerRendezVous(serveur, [ECHO_PASSEE]);
+      simulerSynthese(serveur);
       await page.goto('/agenda');
       await page.getByRole('button', { name: 'Passés' }).click();
 

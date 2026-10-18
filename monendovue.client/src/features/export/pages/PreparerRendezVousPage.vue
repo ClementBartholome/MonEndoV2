@@ -5,7 +5,7 @@
         <h1 class="m-0 text-titre-page font-medium leading-tight tracking-normal text-texte">Préparer un rendez-vous</h1>
       </div>
       <p class="m-0 text-left text-sm leading-normal text-texte-2">
-        Une synthèse claire à montrer ou à envoyer à ton médecin : ce que tu as noté, jour par jour, sans interprétation.
+        Une synthèse claire à montrer ou à envoyer à ton médecin : ce que tu as noté, sans interprétation.
       </p>
     </header>
 
@@ -14,6 +14,7 @@
         <i class="material-symbols-outlined" aria-hidden="true">event</i>Pour ton rendez-vous du {{ rendezVous }}
       </p>
       <ChoixPeriode v-model:choix="choix" v-model:du="du" v-model:au="au" :aujourdhui="aujourdhui" :libelle="libelle" :erreur="erreurPeriode" :options="options"/>
+      <ApercuSynthese :synthese="apercu" :chargement="chargementApercu" :erreur="erreurApercu"/>
       <ChoixRubriques v-model="rubriques" :aucune="aucuneRubrique"/>
 
       <div class="flex flex-col gap-2">
@@ -43,13 +44,17 @@
 
 <script setup lang="ts">
 import { useToast } from '@/shared/components/ui/toast';
+import ApercuSynthese from '../components/ApercuSynthese.vue';
 import ChoixPeriode from '../components/ChoixPeriode.vue';
 import ChoixRubriques from '../components/ChoixRubriques.vue';
 import { usePreparationRendezVous } from '../composables/usePreparationRendezVous';
 import { QUESTIONS_MAX } from '../services/questionsRendezVous';
 
 const { toast } = useToast();
-const { aujourdhui, choix, options, rendezVous, du, au, libelle, erreurPeriode, rubriques, aucuneRubrique, questions, creation, erreur, peutCreer, creer } = usePreparationRendezVous();
+const {
+  aujourdhui, choix, options, rendezVous, du, au, libelle, erreurPeriode, rubriques, aucuneRubrique, questions, creation, erreur, peutCreer, creer,
+  apercu, chargementApercu, erreurApercu,
+} = usePreparationRendezVous();
 
 async function creerLePdf() {
   if (await creer()) toast({ title: 'PDF créé', description: 'Il est dans tes téléchargements.', variant: 'custom' });
