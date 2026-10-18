@@ -8,11 +8,12 @@ const props = defineProps<{
 </script>
 
 <template>
-  <h3
+  <!-- h2 : une carte est posée sous le titre de sa page (h1) ; un h3 sautait un niveau (règle heading-order d'axe). -->
+  <h2
     :class="
       cn('text-xl leading-none m-2', props.class)
     "
   >
     <slot />
-  </h3>
+  </h2>
 </template>
