@@ -128,6 +128,25 @@ public sealed class NotificationsControllerTests : IDisposable
     }
 
     [Fact]
+    public async Task GetRappels_AcneSansEpisodeEnCours_ExpliqueQueLeRappelAttend()
+    {
+        var sansEpisode = Rappels(await Controller().GetRappels(CancellationToken.None));
+        Assert.Null(sansEpisode.Single(r => r.Type == "BilanQuotidien").EnAttente);
+        Assert.Equal("Aucun épisode d'acné en cours : le rappel partira dès que tu en noteras un.", sansEpisode.Single(r => r.Type == "SuiviAcne").EnAttente);
+
+        // Un épisode terminé, ou en cours chez une autre utilisatrice, ne compte pas ; un épisode en cours, si.
+        _carnet.Context.EpisodesAcne.AddRange(
+            new EpisodeAcne { CarnetSanteId = CarnetDeTest.CarnetSanteId, Debut = new DateOnly(2026, 6, 1), Fin = new DateOnly(2026, 7, 1) },
+            new EpisodeAcne { CarnetSanteId = CarnetDeTest.AutreCarnetSanteId, Debut = new DateOnly(2026, 9, 1) });
+        await _carnet.Context.SaveChangesAsync();
+        Assert.NotNull(Rappels(await Controller().GetRappels(CancellationToken.None)).Single(r => r.Type == "SuiviAcne").EnAttente);
+
+        _carnet.Context.EpisodesAcne.Add(new EpisodeAcne { CarnetSanteId = CarnetDeTest.CarnetSanteId, Debut = new DateOnly(2026, 9, 10) });
+        await _carnet.Context.SaveChangesAsync();
+        Assert.Null(Rappels(await Controller().GetRappels(CancellationToken.None)).Single(r => r.Type == "SuiviAcne").EnAttente);
+    }
+
+    [Fact]
     public async Task PutRappel_ValeursValides_EnregistrePuisMetAJour()
     {
         var controller = Controller();

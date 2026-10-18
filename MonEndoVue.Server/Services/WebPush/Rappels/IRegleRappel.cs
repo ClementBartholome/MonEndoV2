@@ -17,4 +17,10 @@ public interface IRegleRappel
 
     /// <summary>Vrai si l'utilisatrice a déjà fait le suivi visé : le rappel est alors omis.</summary>
     Task<bool> SuiviDejaFaitAsync(int carnetSanteId, DateOnly jourLocal, TimeZoneInfo fuseau, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Ce qui empêche durablement le rappel de partir, à expliquer sous son réglage (ex. aucun épisode d'acné en cours) ;
+    /// null si rien ne l'empêche. Par défaut : rien.
+    /// </summary>
+    Task<string?> EnAttenteAsync(int carnetSanteId, CancellationToken cancellationToken) => Task.FromResult<string?>(null);
 }

@@ -39,4 +39,7 @@ public class RappelDto
 
     [Required]
     public string FuseauHoraire { get; set; } = "Europe/Paris";
+
+    /// <summary>En lecture : ce qui empêche le rappel de partir pour l'instant (null si rien), affiché sous le réglage.</summary>
+    public string? EnAttente { get; set; }
 }
