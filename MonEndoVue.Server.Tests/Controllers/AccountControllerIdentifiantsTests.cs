@@ -13,7 +13,7 @@ public sealed class AccountControllerIdentifiantsTests : IDisposable
     private readonly IdentityDeTest _identity = new();
 
     [Fact]
-    public async Task Register_IdentifiantsValides_CreeLUtilisatriceEtSonCarnet()
+    public async Task Register_IdentifiantsValides_CreeLeCompteNonConfirmeSansSessionEtEnvoieLeLien()
     {
         var controller = _identity.CreerController();
 
@@ -22,12 +22,16 @@ public sealed class AccountControllerIdentifiantsTests : IDisposable
             Email = "nouvelle@local",
             Password = IdentityDeTest.MotDePasseValide,
             ConsentementDonneesSante = true,
-        });
+        }, CancellationToken.None);
 
-        Assert.IsType<OkObjectResult>(resultat);
+        Assert.IsType<AcceptedResult>(resultat);
         var user = await _identity.UserManager.FindByEmailAsync("nouvelle@local");
         Assert.NotNull(user);
+        Assert.False(user.EmailConfirmed);
         Assert.True(await _identity.Context.CarnetSantes.AnyAsync(c => c.UserId == user.Id));
+        // Aucune session tant que l'adresse n'est pas confirmée.
+        Assert.DoesNotContain("refreshToken", controller.Response.Headers.SetCookie.ToString());
+        Assert.Single(_identity.Emails.Pour("nouvelle@local"));
     }
 
     [Fact]
@@ -35,7 +39,7 @@ public sealed class AccountControllerIdentifiantsTests : IDisposable
     {
         var controller = _identity.CreerController();
 
-        var resultat = await controller.Register(new InscriptionDto { Email = "faible@local", Password = "abc", ConsentementDonneesSante = true });
+        var resultat = await controller.Register(new InscriptionDto { Email = "faible@local", Password = "abc", ConsentementDonneesSante = true }, CancellationToken.None);
 
         Assert.IsType<BadRequestObjectResult>(resultat);
         Assert.Null(await _identity.UserManager.FindByEmailAsync("faible@local"));

@@ -12,12 +12,7 @@
     <EngagementsDonnees/>
 
     <form class="flex flex-col gap-4" novalidate @submit.prevent="soumettre">
-      <ChampTexte v-model="email" label="Adresse e-mail" name="email" type="email" inputmode="email" autocomplete="email" :erreur="erreurEmail">
-        <template #erreur>
-          {{ erreurEmail }}
-          <router-link v-if="emailDejaPris" to="/login" class="font-semibold !text-lien">Se connecter</router-link>
-        </template>
-      </ChampTexte>
+      <ChampTexte v-model="email" label="Adresse e-mail" name="email" type="email" inputmode="email" autocomplete="email" :erreur="erreurEmail"/>
 
       <ChampTexte v-model="motDePasse" label="Mot de passe" name="password" type="password" autocomplete="new-password" :erreur="erreurMotDePasse">
         <CriteresMotDePasse :criteres="criteres"/>
@@ -59,14 +54,14 @@ import { useInscription } from '../composables/useInscription';
 
 const router = useRouter();
 const auth = useAuthStore();
-const { email, motDePasse, consentement, criteres, envoiEnCours, emailDejaPris, erreurEmail, erreurMotDePasse, erreurConsentement, erreurGenerale, creer } = useInscription();
+const { email, motDePasse, consentement, criteres, envoiEnCours, erreurEmail, erreurMotDePasse, erreurConsentement, erreurGenerale, creer } = useInscription();
 
 onMounted(() => {
   if (auth.user) router.push('/');
 });
 
-/** Compte créé : la page de rappel propose le rappel du soir, puis ramène à l'accueil (elle passe seule si l'appareil ne peut pas en recevoir). */
+/** Compte créé : il reste à confirmer l'adresse ; l'adresse passe par l'état de la navigation, jamais par l'URL. */
 async function soumettre() {
-  if (await creer()) router.push('/bienvenue/rappel');
+  if (await creer()) router.push({ name: 'inscription-envoyee', state: { email: email.value.trim() } });
 }
 </script>

@@ -24,10 +24,12 @@
       <h2>Quelles données sont collectées ?</h2>
       <ul>
         <li><strong>Ton compte</strong> : ton adresse e-mail, ton mot de passe (enregistré sous une forme brouillée
-          irréversible, jamais en clair) et la date à laquelle tu as donné ton accord à cette politique.</li>
-        <li><strong>Ce que tu choisis de noter</strong> : douleurs, jours de règles et symptômes du cycle (dont les photos
-          de suivi de l'acné), traitements et prises, séances d'activité physique, transit, bilans quotidiens (émotions,
-          stress, fatigue, pas, hydratation, alimentation, notes).</li>
+          irréversible, jamais en clair), la date à laquelle tu as donné ton accord à cette politique, et si tu as confirmé ton
+          adresse e-mail. Les sessions de tes appareils sont enregistrées sous une forme brouillée, jamais en clair.</li>
+        <li><strong>Ce que tu choisis de noter</strong> : douleurs, jours de règles (avec, si tu les précises, le flux et les
+          caillots) et symptômes du cycle (dont les photos de suivi de l'acné), traitements et prises, séances d'activité
+          physique, transit, bilans quotidiens (émotions, stress, fatigue, pas, hydratation, alimentation, notes, et les
+          catégories facultatives que tu remplis : urinaire, saignements hors règles, nuit et journée, rapports).</li>
         <li><strong>Les rappels</strong>, si tu les actives : l'abonnement aux notifications de ton appareil (une adresse
           technique fournie par ton navigateur), l'heure choisie et ton fuseau horaire.</li>
         <li><strong>Ton agenda Google</strong>, si tu le relies : un jeton d'accès, conservé chiffré, et l'identifiant du calendrier que
@@ -79,6 +81,8 @@
           si tu actives les rappels : il achemine des notifications chiffrées, qui ne contiennent aucune donnée de santé ;</li>
         <li><strong>Google Agenda</strong>, uniquement si ton compte est relié à un agenda : MonEndo y lit tes prochains
           rendez-vous et n'y envoie aucune donnée de santé.</li>
+        <li><strong>Brevo</strong> (France) : envoie les e-mails liés à ton compte (confirmation de ton adresse, mot de passe
+          oublié). Il reçoit ton adresse e-mail et ces messages, qui ne contiennent aucune donnée de santé ;</li>
         <li><strong>Google (Gmail)</strong>, qui héberge la boîte e-mail de l'éditeur, uniquement si tu lui écris depuis la
           page « Une suggestion ? Un bug ? ».</li>
       </ul>
@@ -95,6 +99,7 @@
         <li>tes données de compte et de suivi : tant que ton compte existe ; elles sont effacées quand tu le supprimes ;</li>
         <li>un compte sans aucune connexion pendant <strong>2 ans</strong> est supprimé automatiquement, avec toutes ses
           données ;</li>
+        <li>un compte créé mais dont l'adresse n'est jamais confirmée est supprimé au bout de <strong>7 jours</strong> ;</li>
         <li>l'abonnement aux notifications : jusqu'à ce que tu désactives les rappels sur cet appareil ;</li>
         <li>les journaux techniques : <strong>30 jours</strong>, puis ils sont supprimés automatiquement ;</li>
         <li>tes e-mails à l'éditeur, si tu en envoies : supprimés une fois ta demande traitée, au plus tard

@@ -15,6 +15,38 @@ public class ComptesInactifsService(
 {
     public static readonly TimeSpan DureeInactivite = TimeSpan.FromDays(2 * 365);
 
+    /// <summary>
+    /// Comptes créés mais jamais confirmés depuis <see cref="Comptes.ComptesService.DelaiConfirmation"/> (date d'inscription = date du consentement) :
+    /// supprimés, aucune donnée n'ayant pu y être saisie sans connexion.
+    /// </summary>
+    public async Task<int> SupprimerNonConfirmesAsync(CancellationToken ct)
+    {
+        var limite = horloge.GetUtcNow().UtcDateTime - Comptes.ComptesService.DelaiConfirmation;
+        var nonConfirmes = await context.Users
+            .Where(u => !u.EmailConfirmed && u.ConsentementDonneesSanteLe != null && u.ConsentementDonneesSanteLe < limite)
+            .ToListAsync(ct);
+
+        var supprimes = 0;
+        foreach (var user in nonConfirmes)
+        {
+            try
+            {
+                if ((await suppressionCompte.SupprimerDefinitivementAsync(user, ct)).Statut == StatutOperation.Succes) supprimes++;
+            }
+            catch (Exception ex) when (ex is not OperationCanceledException)
+            {
+                logger.LogError(ex, "Suppression d'un compte non confirmé impossible");
+                context.ChangeTracker.Clear();
+            }
+        }
+
+        if (nonConfirmes.Count > 0)
+        {
+            logger.LogInformation("Comptes jamais confirmés : {Supprimes} supprimé(s) sur {Trouves}", supprimes, nonConfirmes.Count);
+        }
+        return supprimes;
+    }
+
     /// <summary>Supprime les comptes inactifs ; renvoie le nombre de comptes supprimés.</summary>
     public async Task<int> SupprimerAsync(CancellationToken ct)
     {

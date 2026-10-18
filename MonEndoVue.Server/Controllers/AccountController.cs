@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using MonEndoVue.Server.Dto;
 using MonEndoVue.Server.Models;
 using MonEndoVue.Server.Services;
+using MonEndoVue.Server.Services.Comptes;
 using MonEndoVue.Server.Services.Consentement;
 using MonEndoVue.Server.Services.Sessions;
 
@@ -20,37 +21,56 @@ namespace MonEndoVue.Server.Controllers
         CarnetSanteService carnetSanteService, TokenService tokenService,
         TimeProvider horloge,
         SessionsService sessions,
+        ComptesService comptes,
         ILogger<AccountController> logger
         )
         : ControllerBase
     {
         
+        public const string CodeAdresseNonConfirmee = "adresse-non-confirmee";
+        private const string MessageEmailIndisponible = "Ce service est momentanément indisponible. Réessaie un peu plus tard.";
+
+        /// <summary>
+        /// Inscription : le compte est créé <b>non confirmé</b>, sans session ; un lien de confirmation part par e-mail. La réponse
+        /// (202) est la même si l'adresse est déjà inscrite : c'est l'e-mail qui prévient la personne. Erreurs : mot de passe ou
+        /// consentement (400, liste de messages), aucun relais d'e-mails (503).
+        /// </summary>
         [HttpPost("register")]
         [EnableRateLimiting("auth")]
-        public async Task<IActionResult> Register([FromBody] InscriptionDto identifiants)
+        public async Task<IActionResult> Register([FromBody] InscriptionDto identifiants, CancellationToken ct) =>
+            Reponse(await comptes.InscrireAsync(identifiants, ct), () => Accepted(new { ConfirmationRequise = true }), listeDErreurs: true);
+
+        /// <summary>Confirme l'adresse avec le jeton du lien (lu dans le fragment par la page) ; sans ouvrir de session.</summary>
+        [HttpPost("confirmer-adresse")]
+        [EnableRateLimiting("auth")]
+        public async Task<IActionResult> ConfirmerAdresse([FromBody] ConfirmationAdresseDto confirmation) =>
+            Reponse(await comptes.ConfirmerAdresseAsync(confirmation.Email, confirmation.Jeton), NoContent);
+
+        /// <summary>Renvoie le lien de confirmation (202 quelle que soit l'adresse).</summary>
+        [HttpPost("renvoyer-confirmation")]
+        [EnableRateLimiting("auth")]
+        public async Task<IActionResult> RenvoyerConfirmation([FromBody] AdresseDto adresse) =>
+            Reponse(await comptes.RenvoyerConfirmationAsync(adresse.Email), Accepted);
+
+        /// <summary>Mot de passe oublié : un lien part si un compte existe (202 dans tous les cas).</summary>
+        [HttpPost("mot-de-passe-oublie")]
+        [EnableRateLimiting("auth")]
+        public async Task<IActionResult> MotDePasseOublie([FromBody] AdresseDto adresse) =>
+            Reponse(await comptes.DemanderReinitialisationAsync(adresse.Email), Accepted);
+
+        /// <summary>Nouveau mot de passe depuis le lien ; ferme toutes les sessions du compte.</summary>
+        [HttpPost("reinitialiser-mot-de-passe")]
+        [EnableRateLimiting("auth")]
+        public async Task<IActionResult> ReinitialiserMotDePasse([FromBody] ReinitialisationMotDePasseDto demande, CancellationToken ct) =>
+            Reponse(await comptes.ReinitialiserAsync(demande, ct), NoContent);
+
+        private IActionResult Reponse(ResultatCompte resultat, Func<IActionResult> succes, bool listeDErreurs = false) => resultat.Issue switch
         {
-            // Consentement explicite obligatoire (RGPD, art. 9.2.a) : même format d'erreur que les erreurs d'Identity.
-            if (!identifiants.ConsentementDonneesSante)
-            {
-                return BadRequest(new[] { "Ton accord pour l'utilisation de tes données de santé est nécessaire pour créer un compte." });
-            }
-
-            var user = new ApplicationUser { UserName = identifiants.Email, Email = identifiants.Email, EmailConfirmed = true };
-            PolitiqueConfidentialite.Enregistrer(user, horloge.GetUtcNow());
-            var result = await userManager.CreateAsync(user, identifiants.Password);
-
-            if (!result.Succeeded)
-            {
-                var translatedErrors = TranslateErrors(result.Errors);
-                return BadRequest(translatedErrors);
-            }
-            await carnetSanteService.CreateCarnetSante(user.Id);
-
-            var tokenExpiry = await OuvrirSessionAsync(user);
-
-            var carnetSante = await carnetSanteService.GetCarnetSanteByUserId(user.Id);
-            return Ok(new { TokenExpiry = tokenExpiry, user.UserName, CarnetSanteId = carnetSante.Id, ConsentementAJour = PolitiqueConfidentialite.EstAJour(user) });
-        }
+            IssueCompte.Acceptee => succes(),
+            IssueCompte.EmailIndisponible => StatusCode(StatusCodes.Status503ServiceUnavailable, new { message = MessageEmailIndisponible }),
+            // L'inscription garde son ancien format (liste de messages) ; les autres opérations renvoient { message, erreurs }.
+            _ => listeDErreurs ? BadRequest(resultat.Erreurs) : BadRequest(new { message = resultat.Erreurs.FirstOrDefault(), erreurs = resultat.Erreurs }),
+        };
 
         [HttpPost("login")]
         [EnableRateLimiting("auth")]
@@ -58,15 +78,10 @@ namespace MonEndoVue.Server.Controllers
         {
             try
             {
-                var user = await userManager.FindByEmailAsync(identifiants.Email);
-                if (user == null)
-                {
-                    return Unauthorized();
-                }
-
-                // Compte verrouillé ou mot de passe erroné : même réponse, pour ne pas révéler qu'un compte existe.
-                var result = await signInManager.CheckPasswordSignInAsync(user, identifiants.Password, lockoutOnFailure: true);
-                if (!result.Succeeded) return Unauthorized();
+                // Adresse inconnue, compte verrouillé ou mot de passe erroné : même réponse, pour ne pas révéler qu'un compte existe.
+                var (issue, user) = await comptes.VerifierConnexionAsync(identifiants.Email, identifiants.Password);
+                if (issue == IssueConnexion.AdresseNonConfirmee) return StatusCode(StatusCodes.Status403Forbidden, new { code = CodeAdresseNonConfirmee });
+                if (issue != IssueConnexion.Acceptee || user is null) return Unauthorized();
 
                 var tokenExpiry = await OuvrirSessionAsync(user);
 
@@ -172,7 +187,7 @@ namespace MonEndoVue.Server.Controllers
                 case IssueVerificationMotDePasse.Verrouille:
                     return StatusCode(StatusCodes.Status429TooManyRequests, new { message = VerificationMotDePasse.MessageTropDeTentatives });
                 case IssueVerificationMotDePasse.Incorrect:
-                    return BadRequest(new[] { TranslateError(new IdentityError { Code = "PasswordMismatch" }) });
+                    return BadRequest(new[] { MessagesIdentite.Traduire(new IdentityError { Code = "PasswordMismatch" }) });
             }
 
             var result = await userManager.ChangePasswordAsync(user, changement.CurrentPassword, changement.NewPassword);
@@ -183,7 +198,7 @@ namespace MonEndoVue.Server.Controllers
                 return Ok();
             }
             
-            var errors = TranslateErrors(result.Errors);
+            var errors = MessagesIdentite.Traduire(result.Errors);
             
             return BadRequest(errors);
         }
@@ -219,27 +234,5 @@ namespace MonEndoVue.Server.Controllers
             Path = "/",
             Expires = expiration
         };
-
-        private static string TranslateError(IdentityError error)
-        {
-            return error.Code switch
-            {
-                "PasswordTooShort" => "Le mot de passe doit contenir au moins huit caractères.",
-                "PasswordRequiresNonAlphanumeric" => "Le mot de passe doit contenir au moins un caractère spécial.",
-                "PasswordRequiresDigit" => "Le mot de passe doit contenir au moins un chiffre.",
-                "PasswordRequiresLower" => "Le mot de passe doit contenir au moins une lettre minuscule.",
-                "PasswordRequiresUpper" => "Le mot de passe doit contenir au moins une lettre majuscule.",
-                "DuplicateUserName" => "Ce nom d'utilisateur est déjà pris.",
-                "InvalidEmail" => "L'adresse e-mail est invalide.",
-                "DuplicateEmail" => "Cette adresse e-mail est déjà utilisée.",
-                "PasswordMismatch" => "Le mot de passe actuel est incorrect.",
-                _ => error.Description
-            };
-        }
-
-        private IEnumerable<string> TranslateErrors(IEnumerable<IdentityError> errors)
-        {
-            return errors.Select(TranslateError);
-        }
     }
 }

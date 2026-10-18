@@ -18,7 +18,8 @@ test.describe('Consentement aux données de santé', () => {
     await consentementPage.caseAccord.check();
     await consentementPage.boutonInscription.click();
 
-    await expect(page).toHaveURL(/\/$/);
+    // Compte créé sans session : il reste à confirmer l'adresse.
+    await expect(page).toHaveURL(/\/inscription\/envoyee$/);
     expect(serveur.appelsVers('POST', /^Account\/register$/)[0].corps).toMatchObject({ consentementDonneesSante: true });
   });
 

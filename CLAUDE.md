@@ -123,6 +123,12 @@ dotnet ef migrations add NomEnPascalCase --project MonEndoVue.Server
   seule si l'appareil ne reçoit pas de notification, explique l'installation sur iPhone hors écran d'accueil, expose le refus de permission), puis l'accueil avec la
   carte « Pour bien démarrer » (drapeau local `monendo-premiers-pas`, aucune progression ni tâche à finir). Rien n'est stocké côté serveur pour ce parcours ; il ne
   concerne que les inscriptions (jamais les comptes existants).
+- **Comptes** (`AccountController` → `ComptesService`) : l'inscription crée un compte **non confirmé, sans session** (202) et envoie un lien de
+  confirmation ; la connexion répond 403 `adresse-non-confirmee` **seulement si le mot de passe est bon** ; mot de passe oublié (lien 1 h, une fois,
+  ferme toutes les sessions). **Aucune énumération** : même réponse et même délai qu'une adresse soit inscrite ou non (e-mails envoyés en arrière-plan
+  par `IFileEmails`, relais SMTP Brevo, voir `deploy/README.md`). Les liens portent le jeton dans le **fragment** ; pages publiques `/inscription/envoyee`,
+  `/confirmer-adresse`, `/mot-de-passe-oublie`, `/reinitialiser-mot-de-passe` (le fragment est lu puis retiré de la barre d'adresse). Compte jamais
+  confirmé : supprimé après 7 jours (job de nuit). Le drapeau local `monendo-accueil-a-faire` fait passer la première connexion par `/bienvenue/rappel`.
 - Pages publiques (sans compte, `meta: { public: true }` dans le routeur) : connexion, inscription, politique de
   confidentialité `/confidentialite` et mentions légales `/mentions-legales` (`features/legal/`). **Consentement explicite**
   aux données de santé (`ApplicationUser.ConsentementDonneesSanteLe`, version de la politique acceptée) : case à l'inscription,

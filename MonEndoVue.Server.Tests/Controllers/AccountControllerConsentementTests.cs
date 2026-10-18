@@ -22,7 +22,7 @@ public sealed class AccountControllerConsentementTests : IDisposable
             Email = "sans-accord@local",
             Password = IdentityDeTest.MotDePasseValide,
             ConsentementDonneesSante = false,
-        });
+        }, CancellationToken.None);
 
         Assert.IsType<BadRequestObjectResult>(resultat);
         Assert.Null(await _identity.UserManager.FindByEmailAsync("sans-accord@local"));
@@ -38,9 +38,9 @@ public sealed class AccountControllerConsentementTests : IDisposable
             Email = "accord@local",
             Password = IdentityDeTest.MotDePasseValide,
             ConsentementDonneesSante = true,
-        });
+        }, CancellationToken.None);
 
-        Assert.True(ConsentementAJour(resultat));
+        Assert.IsType<AcceptedResult>(resultat);
         var user = await _identity.UserManager.FindByEmailAsync("accord@local");
         Assert.Equal(IdentityDeTest.Maintenant.UtcDateTime, user!.ConsentementDonneesSanteLe);
         Assert.Equal(PolitiqueConfidentialite.Version, user.VersionPolitiqueAcceptee);

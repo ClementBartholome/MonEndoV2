@@ -27,6 +27,7 @@ using MonEndoVue.Server.Services.SuppressionCompte;
 using MonEndoVue.Server.Services.Activite;
 using MonEndoVue.Server.Services.Cycle;
 using MonEndoVue.Server.Services.Email;
+using MonEndoVue.Server.Services.Comptes;
 using MonEndoVue.Server.Services.Traitements;
 using Serilog;
 using Serilog.Events;
@@ -78,6 +79,10 @@ namespace MonEndoVue.Server
             // Relais SMTP des e-mails de compte (section Email ; sans elle, l'envoi est désactivé)
             builder.Services.Configure<EmailOptions>(builder.Configuration.GetSection(EmailOptions.Section));
             builder.Services.AddSingleton<IEnvoiEmail, EnvoiEmailSmtp>();
+            // Les e-mails de compte partent en arrière-plan : la réponse ne trahit pas l'existence d'un compte par sa durée.
+            builder.Services.AddSingleton<FileEmails>();
+            builder.Services.AddSingleton<IFileEmails>(sp => sp.GetRequiredService<FileEmails>());
+            builder.Services.AddHostedService(sp => sp.GetRequiredService<FileEmails>());
             builder.Services.AddHttpClient<IEnvoiPush, WebPushService>();
             builder.Services.AddSingleton(TimeProvider.System);
             builder.Services.AddScoped<NotificationsPushService>();
@@ -113,7 +118,8 @@ namespace MonEndoVue.Server
 
             builder.Services
                 .AddDefaultIdentity<ApplicationUser>(OptionsIdentite.Appliquer)
-                .AddEntityFrameworkStores<AppDbContext>();
+                .AddEntityFrameworkStores<AppDbContext>()
+                .AjouterFournisseursDeJetons();
 
             var azureBlobOptions = new AzureBlobStorageOptions
             {
@@ -140,6 +146,7 @@ namespace MonEndoVue.Server
             builder.Services.AddScoped<CycleService>();
             builder.Services.AddScoped<AcneService>();
             builder.Services.AddScoped<SessionsService>();
+            builder.Services.AddScoped<ComptesService>();
             builder.Services.AddScoped<ActiviteService>();
             builder.Services.AddScoped<SyntheseRendezVousService>();
 
