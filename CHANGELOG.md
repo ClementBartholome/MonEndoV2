@@ -35,7 +35,8 @@ versions en [SemVer](https://semver.org/lang/fr/) (voir la section Déploiement 
   rose clair et des icônes plus douces. Moins de cases dans les cartes : les moyennes et le bilan du
   jour se lisent comme des lignes de carnet. Les émotions n'ont plus d'emoji, seulement une pastille.
 - **La frise** : sur l'accueil, un trait par jour de la semaine, plus foncé quand la douleur était plus forte, avec un ruban sous les jours de
-  règles ; la page Cycle montre la même frise sur 30 jours. Elle décrit, elle n'interprète pas.
+  règles ; la page Cycle montre la même frise sur 30 jours, et la synthèse pour ton rendez-vous l'imprime sur toute la période (avec la
+  rubrique Douleurs ; le ruban des règles seulement avec la rubrique Cycle). Elle décrit, elle n'interprète pas.
 - Connexion : « Bon retour », au lieu de « Content de te revoir ».
 - **L'acné a sa propre page**, accessible depuis le menu « Plus » (et un raccourci sous l'onglet Symptômes du cycle). La page Cycle garde
   les onglets Règles et Symptômes. Les anciens liens et la notification de la photo de suivi mènent à la nouvelle page.
