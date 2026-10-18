@@ -52,6 +52,7 @@ dans un workflow (utiliser `./node_modules/.bin/<outil>`), test sans assertion r
 
 Playwright ouvre l'application dans Chromium et la pilote comme une utilisatrice (clics, saisie, lecture de l'écran).
 Chaque test tourne deux fois : **mobile 375px** et **desktop**.
+Les mêmes parcours simulés servent aux captures du README : `npm run captures` (`tests/captures/readme.capture.ts`, hors CI) écrit les images dans `docs/images/`.
 
 - **API simulée** (`tests/mocks/faux-serveur.ts`) : l'application tourne sur un serveur Vite dédié (port 5174,
   `VITE_DOCKER=true`), ses appels API sont interceptés et reçoivent des réponses simulées. Chaque test a son propre état :

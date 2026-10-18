@@ -32,6 +32,7 @@ npm run dev          # serveur Vite https://localhost:5173
 npm run type-check   # vue-tsc (code) + tsc (tests E2E), à lancer après chaque changement significatif
 npm run test:e2e     # parcours de l'interface avec une API simulée (Playwright, mobile 375px + desktop)
 npm run build        # type-check + build (même commande que la CI et le Dockerfile)
+npm run captures     # régénère les images du README (docs/images/) avec l'API simulée et des données fictives ; à relancer quand l'interface change
 npx eslint <fichiers>  # préférer au `npm run lint`, qui fait --fix sur tout le client
 
 # Serveur (depuis la racine)
