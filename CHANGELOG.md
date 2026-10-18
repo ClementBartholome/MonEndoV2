@@ -32,7 +32,7 @@ versions en [SemVer](https://semver.org/lang/fr/) (voir la section Déploiement 
 ### Modifié
 - **Nouvelle identité visuelle, « carnet de bord »** : une seule police pour toute l'app (Lexend, plus lisible), Literata pour les titres et
   les chiffres, un papier plus chaud, un bouton principal rose plus franc (les boutons ne paraissent plus désactivés), les choix sélectionnés en
-  rose clair, des icônes plus douces, et un nouveau logo à la place du caducée. Moins de cases dans les cartes : les moyennes et le bilan du
+  rose clair et des icônes plus douces. Moins de cases dans les cartes : les moyennes et le bilan du
   jour se lisent comme des lignes de carnet. Les émotions n'ont plus d'emoji, seulement une pastille.
 - **La frise** : sur l'accueil, un trait par jour de la semaine, plus foncé quand la douleur était plus forte, avec un ruban sous les jours de
   règles ; la page Cycle montre la même frise sur 30 jours. Elle décrit, elle n'interprète pas.

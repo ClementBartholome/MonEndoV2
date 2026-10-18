@@ -105,7 +105,8 @@ lecture seule (liste par jour, `SelecteurMois`, suppression en deux temps), plus
   moyenne `font-medium`) et les chiffres saisis ou comptés (classe `chiffre` : « 4/10 », « 31 j »). Pas de tuile d'icône devant
   un titre de page ; les blocs en lecture seule sont des **sections à filets** (`border-y border-trait`, titre `text-legende
   uppercase tracking-wider text-texte-2`) plutôt que des cartes ou des cases dans des cartes : la carte reste pour ce qu'on touche.
-  Logo : `MotSymbole` (petite frise + « MonEndo » en Literata), plus de caducée. Signature : la **frise** (`shared/components/Frise.vue`,
+  Le logo reste l'image historique (`images/MonEndo_transparent.png`, décision de l'utilisatrice du 2026-10-18 : un mot-symbole
+  a été essayé puis refusé). Signature : la **frise** (`shared/components/Frise.vue`,
   un trait par jour teinté par `--intensite-N`, trait `trait` si rien n'est noté, ruban `teinte-regles` sous les jours de règles ;
   données `GET Frise` ou `frise` de l'accueil). Pas d'emoji : une émotion porte une pastille de tonalité (`pastilleTonalite`).
   Atkinson Hyperlegible, proposée par la revue, a été écartée : son zéro est toujours barré (« 2Ø26 »).
