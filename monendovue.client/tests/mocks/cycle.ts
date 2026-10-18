@@ -36,6 +36,19 @@ export function simulerRegles(
         },
       };
     })
+    // Frise (FriseController) : les N jours qui finissent à ?au=, règles d'après l'état du test, aucune douleur notée.
+    .on('GET', /^Frise$/, ({ url }) => {
+      const au = new Date(`${url.searchParams.get('au')}T12:00:00`);
+      const nombre = Number(url.searchParams.get('jours'));
+      return {
+        body: liste(Array.from({ length: nombre }, (_, i) => {
+          const date = new Date(au);
+          date.setDate(au.getDate() - (nombre - 1 - i));
+          const jour = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+          return { jour, douleur: null, regles: jours.has(jour) };
+        })),
+      };
+    })
     // Comme le serveur : seul un jour déjà noté a des détails ; les deux champs remplacent les précédents.
     .on('PUT', /^Cycle\/regles\/([\d-]+)\/details$/, ({ params: [jour], corps }) => {
       if (!jours.has(jour)) return { status: 404 };

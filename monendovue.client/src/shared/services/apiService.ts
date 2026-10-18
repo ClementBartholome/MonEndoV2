@@ -10,6 +10,7 @@ import type { BilanQuotidien, BilanQuotidienSaisie, EmotionBilan } from '@/featu
 import type { HistoriqueBilans } from '@/features/bilan-quotidien/types/historique';
 import type { CalendrierAgenda, EvenementAgenda, StatutLiaisonAgenda } from '@/features/schedule/types/agenda';
 import type { Aujourdhui, BilanAujourdhui } from '@/features/accueil/types/aujourdhui';
+import type { JourFrise } from '@/shared/types/frise';
 import type { EntreeHistoriqueTraitement, HistoriqueTraitement, JourHistoriqueTraitement, PrisePrevue, PriseSaisie, SeanceSaisie, Soin, Traitement, TraitementAuBesoin, TraitementsDuJour, TraitementSaisie } from '@/features/medicament/types/traitements';
 
 /** Liste C# sérialisée avec ReferenceHandler.Preserve. */
@@ -319,7 +320,8 @@ class ApiService {
 
     /** Accueil « Aujourd'hui » : le jour local est envoyé (le serveur ne connaît pas le fuseau de l'utilisatrice). */
     async getAujourdhui(jour: string): Promise<Aujourdhui> {
-        type Brut = Omit<Aujourdhui, 'prisesPrevues' | 'auBesoin' | 'bilan'> & {
+        type Brut = Omit<Aujourdhui, 'prisesPrevues' | 'auBesoin' | 'bilan' | 'frise'> & {
+            frise: Liste<JourFrise>;
             prisesPrevues: Liste<PrisePrevue>;
             auBesoin: Liste<TraitementAuBesoin>;
             bilan: (Omit<BilanAujourdhui, 'emotions'> & { emotions: Liste<BilanAujourdhui['emotions'][number]> }) | null;
@@ -330,7 +332,13 @@ class ApiService {
             prisesPrevues: enTableau(brut.prisesPrevues),
             auBesoin: enTableau(brut.auBesoin),
             bilan: brut.bilan ? { ...brut.bilan, emotions: enTableau(brut.bilan.emotions) } : null,
+            frise: enTableau(brut.frise),
         };
+    }
+
+    /** Frise des `jours` jours (62 au plus) qui finissent au jour local `au` (AAAA-MM-JJ), carnet de la session. */
+    async getFrise(au: string, jours: number): Promise<JourFrise[]> {
+        return enTableau(await this.request<Liste<JourFrise>>('GET', `Frise?au=${au}&jours=${jours}`));
     }
 
     /** Planning du jour local et liste des traitements (carnet de la session). */

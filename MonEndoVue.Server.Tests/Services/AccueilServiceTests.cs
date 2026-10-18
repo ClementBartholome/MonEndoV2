@@ -3,6 +3,7 @@ using MonEndoVue.Server.Controllers;
 using MonEndoVue.Server.Models;
 using MonEndoVue.Server.Services;
 using MonEndoVue.Server.Services.Accueil;
+using MonEndoVue.Server.Services.Frise;
 using MonEndoVue.Server.Services.Traitements;
 using MonEndoVue.Server.Tests.Support;
 using MonEndoVue.Server.ViewModels;
@@ -62,6 +63,10 @@ public sealed class AccueilServiceTests : IDisposable
         Assert.Equal(2, aujourdhui.Semaine.JoursAvecDouleurPendantRegles);
         Assert.Equal(2, aujourdhui.Semaine.FatigueMoyenne);
         Assert.Equal(4, aujourdhui.Semaine.FatigueMoyennePrecedente);
+        // Frise des 7 jours : J-3 lombaire (3), J-1 pelvienne (6, en règles), J0 bilan (4, en règles).
+        Assert.Equal(7, aujourdhui.Frise.Count);
+        Assert.Equal([null, null, null, 3, null, 6, 4], aujourdhui.Frise.Select(j => j.Douleur));
+        Assert.Equal([false, false, false, false, false, true, true], aujourdhui.Frise.Select(j => j.Regles));
     }
 
     [Fact]
@@ -172,7 +177,8 @@ public sealed class AccueilServiceTests : IDisposable
     }
 
     private AccueilService Service() => new(_carnet.Context, new HorlogeFixe(Maintenant),
-        new TraitementsService(_carnet.Context, _carnet.CarnetSanteService, new HorlogeFixe(Maintenant)));
+        new TraitementsService(_carnet.Context, _carnet.CarnetSanteService, new HorlogeFixe(Maintenant)),
+        new FriseService(_carnet.Context, new HorlogeFixe(Maintenant)));
 
     private async Task<AujourdhuiViewModel> Obtenir()
     {

@@ -2,7 +2,7 @@ import { test, expect } from './fixtures';
 import { champs, simulerRegles, simulerSymptomes } from './mocks/cycle';
 
 test.describe('Cycle · règles', () => {
-  test('affiche le cycle en cours, le mois et l\'historique', async ({ cyclePage, serveur }) => {
+  test('affiche le cycle en cours, le mois et l\'historique', async ({ cyclePage, serveur, page }) => {
     simulerRegles(serveur, ['2026-09-14', '2026-09-15'], {
       enCours: { debut: '2026-09-14', jourDuCycle: 2, jourDeRegles: 2 },
       cycles: [
@@ -20,6 +20,11 @@ test.describe('Cycle · règles', () => {
     await expect(cyclePage.jour('Lundi 14 septembre')).toHaveAttribute('aria-pressed', 'true');
     await expect(cyclePage.jour('Mardi 15 septembre')).toHaveAccessibleName('Mardi 15 septembre, aujourd\'hui, règles');
     await expect(cyclePage.jour('Mercredi 16 septembre')).toBeDisabled();
+    // Frise des 30 derniers jours : du 17 août au 15 septembre, règles les deux derniers jours.
+    const frise = page.getByRole('region', { name: 'Les 30 derniers jours' }).getByRole('listitem');
+    await expect(frise).toHaveCount(30);
+    await expect(frise.first()).toHaveText('lundi 17 août : rien de noté');
+    await expect(frise.last()).toHaveText('mardi 15 septembre : rien de noté, règles');
     await expect(cyclePage.mesCycles).toContainText('Cycle30 j');
     await expect(cyclePage.mesCycles).toContainText('Règles5 j');
     await expect(cyclePage.mesCycles).toContainText('Écart27–31 j');
