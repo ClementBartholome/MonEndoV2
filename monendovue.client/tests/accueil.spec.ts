@@ -1,5 +1,6 @@
 import { test, expect } from './fixtures';
 import { prisePrevue, simulerAccueil } from './mocks/accueil';
+import { simulerAcne, simulerSymptomes } from './mocks/cycle';
 
 test.describe('Accueil « Aujourd\'hui »', () => {
   test('sans données : le bilan est à faire, rien d\'autre ne s\'affiche à vide', async ({ accueilPage, page }) => {
@@ -10,6 +11,22 @@ test.describe('Accueil « Aujourd\'hui »', () => {
     await expect(page.getByRole('link', { name: 'Douleur', exact: true })).toBeVisible();
     await expect(accueilPage.traitements).toHaveCount(0);
     await expect(accueilPage.semaine).toHaveCount(0);
+    await expect(accueilPage.acne).toHaveCount(0);
+  });
+
+  test('pendant un épisode d\'acné, la photo de suivi s\'ajoute depuis l\'accueil', async ({ accueilPage, serveur, page }) => {
+    simulerAccueil(serveur, { acne: { debut: '2026-08-30', jours: 17, dernierePhoto: '2026-09-07' } });
+    simulerAcne(serveur, [{ debut: '2026-08-30' }]);
+    simulerSymptomes(serveur);
+    await accueilPage.ouvrir();
+
+    await expect(accueilPage.acne).toContainText('Acné en cours');
+    await expect(accueilPage.acne).toContainText('Depuis le 30 août · 17 jours');
+    await expect(accueilPage.acne).toContainText('Dernière photo il y a 8 jours');
+    await accueilPage.acne.getByRole('link', { name: 'Ajouter une photo' }).click();
+
+    await expect(page).toHaveURL(/\/acne$/);
+    await expect(page.getByRole('dialog').getByRole('heading', { name: 'Noter mon acné' })).toBeVisible();
   });
 
   test('résume la journée : règles, bilan fait, semaine', async ({ accueilPage, serveur }) => {

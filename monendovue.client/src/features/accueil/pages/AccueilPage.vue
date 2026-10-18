@@ -29,6 +29,7 @@
 
     <template v-else-if="aujourdhui">
       <CarteBilanDuJour :bilan="aujourdhui.bilan"/>
+      <CarteAcneEnCours v-if="aujourdhui.acne" :acne="aujourdhui.acne" :aujourdhui="cleDuJour"/>
       <TuilesAjout/>
       <CarteTraitementsDuJour v-if="aujourdhui.prisesPrevues.length || aujourdhui.auBesoin.length"
                               :prises="aujourdhui.prisesPrevues" :au-besoin="aujourdhui.auBesoin"
@@ -50,6 +51,7 @@ import { materialSymbols } from '@/shared/config/materialSymbols';
 import type { PrisePrevue } from '@/features/medicament/types/traitements';
 import { heureAffichee } from '@/features/medicament/utils/prises';
 import { premiersPasActifs, terminerPremiersPas } from '@/features/auth/utils/parcours';
+import CarteAcneEnCours from '../components/CarteAcneEnCours.vue';
 import CarteBilanDuJour from '../components/CarteBilanDuJour.vue';
 import CarteDemarrage from '../components/CarteDemarrage.vue';
 import CarteTraitementsDuJour from '../components/CarteTraitementsDuJour.vue';
@@ -67,6 +69,7 @@ function masquerPremiersPas() {
 }
 const { aujourdhui, prochainRendezVous, chargement, erreur, priseEnCours, phrases, charger, prendre } = useAujourdhui();
 
+const cleDuJour = format(new Date(), 'yyyy-MM-dd');
 const jour = format(new Date(), 'EEEE d MMMM', { locale: fr });
 const date = jour.charAt(0).toUpperCase() + jour.slice(1);
 
