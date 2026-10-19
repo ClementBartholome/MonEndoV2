@@ -154,6 +154,13 @@ public class SessionsService(AppDbContext context, TokenService tokenService, Ti
         context.SessionsAppareil.RemoveRange(await context.SessionsAppareil
             .Where(s => s.UserId == userId && (empreinte == null || (s.JetonHache != empreinte && s.JetonPrecedentHache != empreinte)))
             .ToListAsync(ct));
+        // Une session ouverte avant les sessions par appareil (jeton unique sur le compte) est fermée elle aussi.
+        var user = await context.Users.FirstOrDefaultAsync(u => u.Id == userId, ct);
+        if (user is not null && !string.IsNullOrEmpty(user.RefreshToken))
+        {
+            user.RefreshToken = string.Empty;
+            user.RefreshTokenExpiryTime = null;
+        }
         await context.SaveChangesAsync(ct);
     }
 

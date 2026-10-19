@@ -39,6 +39,18 @@ public static class ModelesEmail
         $"Le lien est valable {ValiditeReinitialisation} et ne sert qu'une fois. Si tu n'es pas à l'origine de cette demande, ignore ce message : ton mot de passe reste inchangé.");
 
     /// <summary>
+    /// Nouvelle inscription avec une adresse dont le compte n'est pas encore activé : la personne choisit son mot de passe (lien de
+    /// réinitialisation), ce qui active le compte. Le mot de passe déjà posé, peut-être par quelqu'un d'autre, n'est pas repris.
+    /// </summary>
+    public static MessageEmail CompteEnAttente(string a, string lien) => Composer(
+        a,
+        "Active ton compte MonEndo",
+        "Un compte MonEndo attend d'être activé avec cette adresse. Pour l'activer, choisis ton mot de passe avec le lien ci-dessous.",
+        "Choisir mon mot de passe",
+        lien,
+        $"Le lien est valable {ValiditeReinitialisation} et ne sert qu'une fois. Si tu n'es pas à l'origine de cette demande, ignore ce message : le compte ne sera pas activé.");
+
+    /// <summary>
     /// Réponse à une inscription avec une adresse déjà utilisée : l'écran répond toujours la même chose (pas d'énumération),
     /// c'est ce message qui prévient la personne réelle.
     /// </summary>

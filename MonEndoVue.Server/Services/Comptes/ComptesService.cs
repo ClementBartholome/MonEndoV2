@@ -90,12 +90,18 @@ public class ComptesService(
                 if (existant is null) return ResultatCompte.Acceptee;
                 if (!existant.EmailConfirmed)
                 {
-                    // Compte jamais confirmé, peut-être créé par quelqu'un d'autre avec cette adresse : le dernier mot de passe choisi le
-                    // remplace (l'empreinte de sécurité change, les anciens liens de confirmation ne valent plus) ; seule la personne qui
-                    // reçoit les e-mails pourra l'activer.
-                    await userManager.RemovePasswordAsync(existant);
-                    await userManager.AddPasswordAsync(existant, inscription.Password);
-                    if (PeutEnvoyer(email)) emails.Planifier(await MessageConfirmationAsync(existant));
+                    // Compte jamais confirmé, peut-être créé par quelqu'un d'autre avec cette adresse : son mot de passe n'est pas
+                    // remplacé (la personne qui reçoit les e-mails activerait sinon un compte dont un tiers connaît le mot de passe).
+                    // Elle reçoit un lien pour choisir le sien : l'utiliser active le compte et écarte tout autre mot de passe.
+                    // Le consentement vient d'être redonné : il est enregistré, ce qui repart pour le délai avant suppression d'un
+                    // compte non confirmé (le lien envoyé ne doit pas expirer avec un compte supprimé entre-temps).
+                    PolitiqueConfidentialite.Enregistrer(existant, horloge.GetUtcNow());
+                    await userManager.UpdateAsync(existant);
+                    if (PeutEnvoyer(email))
+                    {
+                        var jeton = await userManager.GeneratePasswordResetTokenAsync(existant);
+                        emails.Planifier(ModelesEmail.CompteEnAttente(email, ModelesEmail.LienReinitialisation(AdresseApplication, email, jeton)));
+                    }
                 }
                 else if (PeutEnvoyer(email))
                 {
@@ -118,8 +124,8 @@ public class ComptesService(
     {
         var user = await userManager.FindByEmailAsync(email.Trim());
         if (user is null) return ResultatCompte.Invalide(MessageLienInvalide);
-        if (user.EmailConfirmed) return ResultatCompte.Acceptee;
 
+        // Le jeton est vérifié même si l'adresse est déjà confirmée : la réponse ne doit rien dire de l'existence d'un compte.
         var confirmation = await userManager.ConfirmEmailAsync(user, jeton);
         if (!confirmation.Succeeded) return ResultatCompte.Invalide(MessageLienInvalide);
 

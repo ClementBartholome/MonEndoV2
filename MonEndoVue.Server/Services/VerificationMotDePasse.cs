@@ -22,7 +22,12 @@ public static class VerificationMotDePasse
     public static async Task<IssueVerificationMotDePasse> VerifierAsync(
         this UserManager<ApplicationUser> userManager, ApplicationUser user, string motDePasse)
     {
-        if (await userManager.IsLockedOutAsync(user)) return IssueVerificationMotDePasse.Verrouille;
+        if (await userManager.IsLockedOutAsync(user))
+        {
+            // Même coût qu'une vérification ordinaire : le temps de réponse ne distingue pas un compte verrouillé.
+            userManager.PasswordHasher.VerifyHashedPassword(user, user.PasswordHash ?? string.Empty, motDePasse);
+            return IssueVerificationMotDePasse.Verrouille;
+        }
 
         if (await userManager.CheckPasswordAsync(user, motDePasse))
         {

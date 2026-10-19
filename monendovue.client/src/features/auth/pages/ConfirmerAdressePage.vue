@@ -1,6 +1,12 @@
 <template>
   <PageCompte :titre="titre" :icone="etat === 'confirmee' ? 'verified' : 'mark_email_unread'">
-    <p v-if="etat === 'en-cours'" class="m-0 text-left text-corps text-texte-2" role="status" aria-busy="true">Vérification du lien…</p>
+    <template v-if="etat === 'a-confirmer'">
+      <p class="m-0 text-left text-corps leading-normal text-texte">Touche le bouton pour activer ton compte {{ lien?.email }}.</p>
+      <button type="button" class="inline-flex min-h-[54px] items-center justify-center rounded-[16px] bg-button text-base font-semibold text-texte"
+              @click="confirmer">Confirmer mon adresse</button>
+    </template>
+
+    <p v-else-if="etat === 'en-cours'" class="m-0 text-left text-corps text-texte-2" role="status" aria-busy="true">Vérification du lien…</p>
 
     <template v-else-if="etat === 'confirmee'">
       <p class="m-0 text-left text-corps leading-normal text-texte">Ton compte est activé. Tu peux maintenant te connecter.</p>
@@ -24,7 +30,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue';
+import { computed, ref } from 'vue';
 import MessageCompte from '../components/MessageCompte.vue';
 import PageCompte from '../components/PageCompte.vue';
 import { comptesService } from '../services/comptesService';
@@ -32,15 +38,17 @@ import { lireLienDuFragment } from '../utils/lienEmail';
 
 /** Lien de confirmation reçu par e-mail : l'adresse et le jeton sont lus dans le fragment, puis envoyés au serveur. */
 const lien = lireLienDuFragment();
-const etat = ref<'en-cours' | 'confirmee' | 'erreur'>(lien ? 'en-cours' : 'erreur');
+// La confirmation attend un geste : un antivirus de messagerie qui ouvre le lien tout seul ne doit rien activer.
+const etat = ref<'a-confirmer' | 'en-cours' | 'confirmee' | 'erreur'>(lien ? 'a-confirmer' : 'erreur');
 const messageErreur = ref("Ce lien est incomplet. Ouvre-le directement depuis l'e-mail reçu.");
 const renvoiEnCours = ref(false);
 const messageRenvoi = ref<string | null>(null);
 
-const titre = computed(() => ({ 'en-cours': 'Confirmation de ton adresse', confirmee: 'Adresse confirmée', erreur: 'Confirmation impossible' })[etat.value]);
+const titre = computed(() => ({ 'a-confirmer': 'Confirmation de ton adresse', 'en-cours': 'Confirmation de ton adresse', confirmee: 'Adresse confirmée', erreur: 'Confirmation impossible' })[etat.value]);
 
-onMounted(async () => {
+async function confirmer() {
   if (!lien) return;
+  etat.value = 'en-cours';
   const resultat = await comptesService.confirmerAdresse(lien.email, lien.jeton);
   if (resultat.ok) {
     etat.value = 'confirmee';
@@ -48,7 +56,7 @@ onMounted(async () => {
     messageErreur.value = resultat.message;
     etat.value = 'erreur';
   }
-});
+}
 
 async function renvoyer() {
   if (!lien || renvoiEnCours.value) return;
