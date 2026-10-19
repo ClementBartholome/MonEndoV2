@@ -7,6 +7,7 @@ import type { CodeEmotion } from '@/features/bilan-quotidien/types/bilan-quotidi
 import { libelleCourt } from '@/features/douleurs/utils/douleurs';
 import { resumeFrequence } from '@/features/medicament/utils/prises';
 import type { BilanDuJour, OptionsPdf, SyntheseFlux, SyntheseRendezVous } from '../types/synthese';
+import { coupDOeil, friseDeLaSynthese } from './coupDOeil';
 
 /**
  * PDF « Préparer un rendez-vous » : une première page de synthèse (questions, règles, douleurs par type, traitements,
@@ -53,28 +54,6 @@ const jourCourt = (cle: string) => format(parseISO(cle), 'd MMM', { locale: fr }
 const nombre = (valeur: number) => valeur.toLocaleString('fr-FR', { maximumFractionDigits: 1 });
 const pluriel = (n: number, mot: string) => `${n} ${mot}${n > 1 ? 's' : ''}`;
 
-/** Un jour de la frise du PDF : douleur la plus forte notée (bilan ou entrée de douleur), null si rien ; règles. */
-export interface JourFrisePdf {
-    jour: string;
-    douleur: number | null;
-    regles: boolean;
-}
-
-/** Frise de la période, jour par jour, calculée depuis la synthèse (même règle que la frise de l'application). */
-export function friseDeLaSynthese(synthese: Pick<SyntheseRendezVous, 'du' | 'au' | 'regles' | 'douleurs' | 'bilans'>): JourFrisePdf[] {
-    const douleurs = new Map<string, number>();
-    const noter = (jour: string, intensite: number) => douleurs.set(jour, Math.max(douleurs.get(jour) ?? 0, intensite));
-    synthese.bilans.jours.forEach((bilan) => noter(bilan.jour, bilan.douleur));
-    synthese.douleurs.entrees.forEach((entree) => noter(entree.jour, entree.intensite));
-    const regles = new Set(synthese.regles.jours);
-    const jours: JourFrisePdf[] = [];
-    for (let date = parseISO(synthese.du); format(date, 'yyyy-MM-dd') <= synthese.au; date = addDays(date, 1)) {
-        const jour = format(date, 'yyyy-MM-dd');
-        jours.push({ jour, douleur: douleurs.get(jour) ?? null, regles: regles.has(jour) });
-    }
-    return jours;
-}
-
 /** « Du 15 juin au 15 septembre 2026 » */
 export function libellePeriode(du: string, au: string): string {
     const debut = du.slice(0, 4) === au.slice(0, 4) ? format(parseISO(du), 'd MMMM', { locale: fr }) : jourLong(du);
@@ -107,6 +86,7 @@ class Redaction {
         const { rubriques } = this.options;
         this.entete();
         this.questions();
+        this.enUnCoupDOeil();
         if (rubriques.douleurs) this.frise();
         if (rubriques.cycle) this.regles();
         if (rubriques.douleurs) this.douleurs();
@@ -148,6 +128,55 @@ class Redaction {
         this.doc.setFillColor(...SURFACE_2).roundedRect(MARGE, this.y, this.largeur() - 2 * MARGE, hauteur, 2, 2, 'F');
         this.doc.setTextColor(...TEXTE).text(lignes, MARGE + 4, this.y + 6.5);
         this.y += hauteur + 6;
+    }
+
+    /**
+     * « En un coup d'œil » : les chiffres clés en cases, chacun avec ce sur quoi il porte. Seules les rubriques cochées y
+     * figurent (une rubrique décochée ne réapparaît pas ici) ; rien si aucune case n'a lieu d'être.
+     */
+    private enUnCoupDOeil(): void {
+        const { rubriques } = this.options;
+        const c = coupDOeil(this.synthese);
+        const cases: { nombre: string; sur: string | null; libelle: string }[] = [];
+        if (rubriques.douleurs) {
+            cases.push({ nombre: String(c.joursDouleur), sur: String(c.jours), libelle: 'jours avec une douleur notée' });
+            const pendant = rubriques.cycle && c.joursForts > 0 ? ` (${c.fortsPendantRegles} pendant les règles)` : '';
+            cases.push({ nombre: String(c.joursForts), sur: String(c.jours), libelle: `jours à 6/10 ou plus${pendant}` });
+        }
+        if (rubriques.cycle) {
+            const cycle = c.cycleMoyen === null ? '' : `, cycle de ${c.cycleMoyen} j en moyenne`;
+            cases.push({ nombre: String(c.joursRegles), sur: null, libelle: `jours de règles${cycle}` });
+        }
+        if (rubriques.bilans && c.journeesNotees > 0) {
+            const absences = c.absences > 0 ? `, dont ${pluriel(c.absences, 'absence')}` : '';
+            cases.push({ nombre: String(c.journeesLimitees), sur: String(c.journeesNotees), libelle: `journées limitées${absences}` });
+        }
+        if (rubriques.traitements && c.prisesPrevues > 0) {
+            cases.push({ nombre: String(c.prisesFaites), sur: String(c.prisesPrevues), libelle: 'prises faites des traitements prévus' });
+        }
+        if (cases.length === 0) return;
+
+        // « œ » n'existe pas dans la police intégrée au PDF (voir textePdf).
+        this.titre('En un coup d\'oeil');
+        const hauteur = 24;
+        this.placePour(hauteur + 8);
+        const { doc } = this;
+        const largeur = (this.largeur() - 2 * MARGE) / cases.length;
+        cases.forEach((cellule, index) => {
+            const x = MARGE + index * largeur;
+            doc.setDrawColor(...TRAIT).setLineWidth(0.3).rect(x, this.y, largeur, hauteur, 'S');
+            doc.setFont('helvetica', 'bold').setFontSize(16).setTextColor(...TEXTE).text(cellule.nombre, x + 3, this.y + 8);
+            if (cellule.sur) {
+                const decalage = doc.getTextWidth(cellule.nombre);
+                doc.setFont('helvetica', 'normal').setFontSize(9.5).setTextColor(...TEXTE_2).text(` / ${cellule.sur}`, x + 3 + decalage, this.y + 8);
+            }
+            const lignes: string[] = doc.setFont('helvetica', 'normal').setFontSize(8.5).setTextColor(...TEXTE_2)
+                .splitTextToSize(textePdf(cellule.libelle), largeur - 6);
+            doc.text(lignes.slice(0, 3), x + 3, this.y + 13.5);
+        });
+        this.y += hauteur + 5;
+        this.note('Chaque nombre est rapporté aux jours de la période, aux journées renseignées ou aux prises prévues.');
+        this.y += 1;
     }
 
     /**

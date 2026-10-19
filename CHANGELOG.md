@@ -37,6 +37,9 @@ versions en [SemVer](https://semver.org/lang/fr/) (voir la section Déploiement 
 - **La frise** : sur l'accueil, un trait par jour de la semaine, plus foncé quand la douleur était plus forte, avec un ruban sous les jours de
   règles ; la page Cycle montre la même frise sur 30 jours, et la synthèse pour ton rendez-vous l'imprime sur toute la période (avec la
   rubrique Douleurs ; le ruban des règles seulement avec la rubrique Cycle). Elle décrit, elle n'interprète pas.
+- **Préparer un rendez-vous** : un aperçu « En un coup d'œil » montre, avant de créer le PDF, la frise de la période et les chiffres clés (jours
+  avec douleur, jours à 6/10 ou plus, jours de règles, journées limitées). Le PDF commence par ces chiffres, chacun avec ce sur quoi il porte
+  (« 37 / 92 jours »), pour les rubriques cochées. Les rubriques se choisissent avec des interrupteurs.
 - Connexion : « Bon retour », au lieu de « Content de te revoir ».
 - **L'acné a sa propre page**, accessible depuis le menu « Plus » (et un raccourci sous l'onglet Symptômes du cycle). La page Cycle garde
   les onglets Règles et Symptômes. Les anciens liens et la notification de la photo de suivi mènent à la nouvelle page.

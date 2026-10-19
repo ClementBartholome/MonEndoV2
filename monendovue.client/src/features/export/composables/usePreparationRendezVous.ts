@@ -1,9 +1,9 @@
-import { computed, ref, watch } from 'vue';
+import { computed, onBeforeUnmount, ref, watch } from 'vue';
 import { addDays, addMonths, differenceInCalendarDays, format, parseISO } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import apiService from '@/shared/services/apiService';
 import { enregistrerQuestions, lireQuestions } from '../services/questionsRendezVous';
-import type { Rubrique } from '../types/synthese';
+import type { Rubrique, SyntheseRendezVous } from '../types/synthese';
 import { creerPdf, libellePeriode, nomDuFichier } from '../utils/pdfRendezVous';
 
 export type ChoixPeriode = '1mois' | '3mois' | 'autre' | 'depuis';
@@ -37,6 +37,9 @@ function libelleRendezVous(iso: string): string | null {
     const jour = date.getDate() === 1 ? '1er' : String(date.getDate());
     return `${jour} ${format(date, 'MMMM', { locale: fr })} à ${format(date, "H'\u00a0h\u00a0'mm")}`;
 }
+
+/** Délai avant de recharger l'aperçu après un changement de période (une date tapée chiffre par chiffre). */
+const DELAI_APERCU = 300;
 
 /** Période la plus longue acceptée par le serveur (`SyntheseRendezVousService.JoursMaximum`). */
 const JOURS_MAXIMUM = 366;
@@ -92,6 +95,49 @@ export function usePreparationRendezVous() {
     const questions = ref(lireQuestions());
     watch(questions, enregistrerQuestions);
 
+    // Aperçu « En un coup d'œil » : la synthèse de la période choisie, rechargée quand elle change. Seule la dernière
+    // demande compte (deux changements rapides ne laissent pas la réponse la plus lente l'emporter).
+    const apercu = ref<SyntheseRendezVous | null>(null);
+    const chargementApercu = ref(false);
+    const erreurApercu = ref(false);
+    let derniereDemande = 0;
+    let minuterie: ReturnType<typeof setTimeout> | undefined;
+
+    async function chargerApercu() {
+        const numero = ++derniereDemande;
+        if (erreurPeriode.value) {
+            // Période invalide : rien à montrer (l'aperçu d'une autre période induirait en erreur).
+            apercu.value = null;
+            chargementApercu.value = false;
+            erreurApercu.value = false;
+            return;
+        }
+        const { du: debut, au: fin } = periode.value;
+        chargementApercu.value = true;
+        erreurApercu.value = false;
+        try {
+            const synthese = await apiService.getSyntheseRendezVous(debut, fin);
+            if (numero === derniereDemande) apercu.value = synthese;
+        } catch {
+            if (numero === derniereDemande) {
+                apercu.value = null;
+                erreurApercu.value = true;
+            }
+        } finally {
+            if (numero === derniereDemande) chargementApercu.value = false;
+        }
+    }
+
+    watch(periode, () => {
+        clearTimeout(minuterie);
+        minuterie = setTimeout(chargerApercu, DELAI_APERCU);
+    }, { deep: true });
+    void chargerApercu();
+    onBeforeUnmount(() => clearTimeout(minuterie));
+
+    /** L'aperçu affiché porte sur la période demandée : le PDF le reprend au lieu de redemander la synthèse. */
+    const apercuAJour = () => apercu.value !== null && apercu.value.du === periode.value.du && apercu.value.au === periode.value.au;
+
     const creation = ref(false);
     const erreur = ref(false);
 
@@ -103,7 +149,15 @@ export function usePreparationRendezVous() {
         creation.value = true;
         erreur.value = false;
         try {
-            const synthese = await apiService.getSyntheseRendezVous(periode.value.du, periode.value.au);
+            // Création juste après un changement de période : l'aperçu en attente est annulé et reprend ce qui vient d'être reçu.
+            clearTimeout(minuterie);
+            const synthese = apercuAJour() ? apercu.value! : await apiService.getSyntheseRendezVous(periode.value.du, periode.value.au);
+            if (!apercuAJour()) {
+                derniereDemande++;
+                apercu.value = synthese;
+                chargementApercu.value = false;
+                erreurApercu.value = false;
+            }
             const doc = await creerPdf(synthese, { rubriques: rubriques.value, questions: questions.value, creeLe: new Date() });
             doc.save(nomDuFichier(synthese));
             return true;
@@ -115,5 +169,8 @@ export function usePreparationRendezVous() {
         }
     }
 
-    return { aujourdhui, choix, options, rendezVous, du, au, libelle, erreurPeriode, rubriques, aucuneRubrique, questions, creation, erreur, peutCreer, creer };
+    return {
+        aujourdhui, choix, options, rendezVous, du, au, libelle, erreurPeriode, rubriques, aucuneRubrique, questions, creation, erreur, peutCreer, creer,
+        apercu, chargementApercu, erreurApercu,
+    };
 }

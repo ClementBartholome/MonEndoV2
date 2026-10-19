@@ -1,4 +1,5 @@
 import { test, expect } from './fixtures';
+import { simulerSynthese } from './mocks/synthese';
 
 test.describe("S'informer sur l'endométriose", () => {
   test('la rubrique se trouve dans la navigation et ouvre la page', async ({ navigationPage, page }) => {
@@ -39,7 +40,8 @@ test.describe("S'informer sur l'endométriose", () => {
     await expect(lien).toContainText('en anglais');
   });
 
-  test('rappelle que MonEndo ne remplace pas un soignant et mène à la préparation du rendez-vous', async ({ page }) => {
+  test('rappelle que MonEndo ne remplace pas un soignant et mène à la préparation du rendez-vous', async ({ page, serveur }) => {
+    simulerSynthese(serveur);
     await page.goto('/s-informer');
 
     await expect(page.getByText('ne pose pas de diagnostic et ne remplace pas un soignant')).toBeVisible();

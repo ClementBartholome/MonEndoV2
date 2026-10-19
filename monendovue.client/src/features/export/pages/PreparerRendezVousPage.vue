@@ -5,15 +5,17 @@
         <h1 class="m-0 text-titre-page font-medium leading-tight tracking-normal text-texte">Préparer un rendez-vous</h1>
       </div>
       <p class="m-0 text-left text-sm leading-normal text-texte-2">
-        Une synthèse claire à montrer ou à envoyer à ton médecin : ce que tu as noté, jour par jour, sans interprétation.
+        Une synthèse claire à montrer ou à envoyer à ton médecin : ce que tu as noté, sans interprétation.
       </p>
     </header>
 
-    <form class="flex flex-col gap-[18px]" @submit.prevent="creerLePdf">
+    <!-- Pas de <form> : les interrupteurs des rubriques y ajouteraient un champ caché sans libellé. -->
+    <div class="flex flex-col gap-[18px]">
       <p v-if="rendezVous" class="m-0 flex items-center gap-2.5 rounded-carte bg-teinte-neutre-fond p-3 text-left text-sm font-medium text-teinte-neutre">
         <i class="material-symbols-outlined" aria-hidden="true">event</i>Pour ton rendez-vous du {{ rendezVous }}
       </p>
       <ChoixPeriode v-model:choix="choix" v-model:du="du" v-model:au="au" :aujourdhui="aujourdhui" :libelle="libelle" :erreur="erreurPeriode" :options="options"/>
+      <ApercuSynthese :synthese="apercu" :chargement="chargementApercu" :erreur="erreurApercu"/>
       <ChoixRubriques v-model="rubriques" :aucune="aucuneRubrique"/>
 
       <div class="flex flex-col gap-2">
@@ -33,23 +35,27 @@
         Le PDF n'a pas pu être créé. Vérifie ta connexion puis réessaie.
       </p>
 
-      <button type="submit" :disabled="!peutCreer"
+      <button type="button" :disabled="!peutCreer" @click="creerLePdf"
               class="inline-flex min-h-[52px] items-center justify-center gap-2 rounded-controle bg-button text-base font-semibold text-texte disabled:opacity-60">
         <i class="material-symbols-outlined" aria-hidden="true">download</i>{{ creation ? 'Création du PDF…' : 'Créer le PDF' }}
       </button>
-    </form>
+    </div>
   </main>
 </template>
 
 <script setup lang="ts">
 import { useToast } from '@/shared/components/ui/toast';
+import ApercuSynthese from '../components/ApercuSynthese.vue';
 import ChoixPeriode from '../components/ChoixPeriode.vue';
 import ChoixRubriques from '../components/ChoixRubriques.vue';
 import { usePreparationRendezVous } from '../composables/usePreparationRendezVous';
 import { QUESTIONS_MAX } from '../services/questionsRendezVous';
 
 const { toast } = useToast();
-const { aujourdhui, choix, options, rendezVous, du, au, libelle, erreurPeriode, rubriques, aucuneRubrique, questions, creation, erreur, peutCreer, creer } = usePreparationRendezVous();
+const {
+  aujourdhui, choix, options, rendezVous, du, au, libelle, erreurPeriode, rubriques, aucuneRubrique, questions, creation, erreur, peutCreer, creer,
+  apercu, chargementApercu, erreurApercu,
+} = usePreparationRendezVous();
 
 async function creerLePdf() {
   if (await creer()) toast({ title: 'PDF créé', description: 'Il est dans tes téléchargements.', variant: 'custom' });

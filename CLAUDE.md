@@ -112,7 +112,7 @@ dotnet ef migrations add NomEnPascalCase --project MonEndoVue.Server
 - **Frise** (`FriseService`, `GET Frise?au=&jours=`, 62 jours au plus, carnet de la session) : pour chaque jour, la douleur la plus forte notée
   (douleur moyenne du bilan ou entrée de douleur, null si rien) et les règles. Accueil (7 jours, dans `Accueil/aujourdhui`), onglet Règles de
   `/cycle` (30 jours) et PDF de rendez-vous (toute la période, calculée côté client depuis la synthèse : `friseDeLaSynthese`, seulement si la
-  rubrique Douleurs est cochée, ruban des règles seulement avec la rubrique Cycle). Purement descriptive, sans moyenne ni prédiction. Composant `shared/components/Frise.vue`.
+  rubrique Douleurs est cochée, ruban des règles seulement avec la rubrique Cycle). Purement descriptive, sans moyenne ni prédiction. Composant `shared/components/FriseDesJours.vue`.
 - Page « Une suggestion ? Un bug ? » `/suggestions` (`features/retours/`, entrée « Suggestion ou bug » du menu « Plus ») : de
   simples liens `mailto:` vers l'adresse de l'éditeur (`features/legal/config/editeur.ts`), objet et corps préremplis
   avec la page d'origine, la version et l'appareil ; aucun formulaire, rien stocké côté serveur. Les e-mails reçus sont

@@ -12,7 +12,7 @@
       </span>
     </div>
     <div aria-hidden="true" class="grid h-1.5" :style="{ gridTemplateColumns: `repeat(${jours.length}, minmax(0, 1fr))` }">
-      <span v-for="serie in seriesDeRegles" :key="serie.debut" class="mx-1 rounded-full bg-teinte-regles"
+      <span v-for="serie in seriesDeRegles" :key="serie.debut" class="rounded-full bg-teinte-regles" :class="jours.length > 45 ? '' : 'mx-1'"
             :style="{ gridColumn: `${serie.debut + 1} / ${serie.fin + 2}` }"></span>
     </div>
     <div v-if="!numeros && jours.length" aria-hidden="true" class="flex justify-between text-legende text-texte-2">
@@ -36,7 +36,13 @@ import type { JourFrise } from '@/shared/types/frise';
  */
 const props = defineProps<{ jours: JourFrise[]; numeros?: boolean; aujourdhui?: string }>();
 
-const largeurTrait = computed(() => (props.jours.length > 14 ? 'w-1.5' : 'w-2.5'));
+/** Le trait s'affine avec le nombre de jours : jusqu'à remplir sa colonne au-delà de trois mois (synthèse d'un an). */
+const largeurTrait = computed(() => {
+  const n = props.jours.length;
+  if (n > 90) return 'w-full';
+  if (n > 45) return 'w-[3px]';
+  return n > 14 ? 'w-1.5' : 'w-2.5';
+});
 const hauteurTrait = computed(() => (props.jours.length > 14 ? 'h-9' : 'h-11'));
 
 /** Classes complètes (lisibles par Tailwind) de l'échelle d'intensité 0 à 10. */
