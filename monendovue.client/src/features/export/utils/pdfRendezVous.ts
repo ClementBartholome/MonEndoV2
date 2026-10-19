@@ -7,7 +7,7 @@ import type { CodeEmotion } from '@/features/bilan-quotidien/types/bilan-quotidi
 import { libelleCourt } from '@/features/douleurs/utils/douleurs';
 import { resumeFrequence } from '@/features/medicament/utils/prises';
 import type { BilanDuJour, OptionsPdf, SyntheseFlux, SyntheseRendezVous } from '../types/synthese';
-import { coupDOeil } from './coupDOeil';
+import { coupDOeil, friseDeLaSynthese } from './coupDOeil';
 
 /**
  * PDF « Préparer un rendez-vous » : une première page de synthèse (questions, règles, douleurs par type, traitements,
@@ -53,28 +53,6 @@ const jourLong = (cle: string) => format(parseISO(cle), 'd MMMM yyyy', { locale:
 const jourCourt = (cle: string) => format(parseISO(cle), 'd MMM', { locale: fr });
 const nombre = (valeur: number) => valeur.toLocaleString('fr-FR', { maximumFractionDigits: 1 });
 const pluriel = (n: number, mot: string) => `${n} ${mot}${n > 1 ? 's' : ''}`;
-
-/** Un jour de la frise du PDF : douleur la plus forte notée (bilan ou entrée de douleur), null si rien ; règles. */
-export interface JourFrisePdf {
-    jour: string;
-    douleur: number | null;
-    regles: boolean;
-}
-
-/** Frise de la période, jour par jour, calculée depuis la synthèse (même règle que la frise de l'application). */
-export function friseDeLaSynthese(synthese: Pick<SyntheseRendezVous, 'du' | 'au' | 'regles' | 'douleurs' | 'bilans'>): JourFrisePdf[] {
-    const douleurs = new Map<string, number>();
-    const noter = (jour: string, intensite: number) => douleurs.set(jour, Math.max(douleurs.get(jour) ?? 0, intensite));
-    synthese.bilans.jours.forEach((bilan) => noter(bilan.jour, bilan.douleur));
-    synthese.douleurs.entrees.forEach((entree) => noter(entree.jour, entree.intensite));
-    const regles = new Set(synthese.regles.jours);
-    const jours: JourFrisePdf[] = [];
-    for (let date = parseISO(synthese.du); format(date, 'yyyy-MM-dd') <= synthese.au; date = addDays(date, 1)) {
-        const jour = format(date, 'yyyy-MM-dd');
-        jours.push({ jour, douleur: douleurs.get(jour) ?? null, regles: regles.has(jour) });
-    }
-    return jours;
-}
 
 /** « Du 15 juin au 15 septembre 2026 » */
 export function libellePeriode(du: string, au: string): string {

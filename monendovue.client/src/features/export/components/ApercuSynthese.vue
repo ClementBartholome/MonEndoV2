@@ -44,8 +44,7 @@ import { computed } from 'vue';
 import FriseDesJours from '@/shared/components/FriseDesJours.vue';
 import { Skeleton } from '@/shared/components/ui/skeleton';
 import type { SyntheseRendezVous } from '../types/synthese';
-import { coupDOeil } from '../utils/coupDOeil';
-import { friseDeLaSynthese } from '../utils/pdfRendezVous';
+import { coupDOeil, friseDeLaSynthese } from '../utils/coupDOeil';
 
 /** Aperçu de la synthèse de la période choisie : frise et chiffres clés, avant de créer le PDF. */
 const props = defineProps<{ synthese: SyntheseRendezVous | null; chargement: boolean; erreur: boolean }>();

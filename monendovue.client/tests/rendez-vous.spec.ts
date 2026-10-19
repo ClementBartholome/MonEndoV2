@@ -1,5 +1,5 @@
 import { expect, test } from './fixtures';
-import { simulerSynthese } from './mocks/synthese';
+import { simulerSynthese, syntheseRealiste } from './mocks/synthese';
 
 // Aujourd'hui (MAINTENANT) : mardi 15 septembre 2026.
 test.describe('Préparer un rendez-vous', () => {
@@ -78,6 +78,42 @@ test.describe('Préparer un rendez-vous', () => {
     await rendezVousPage.choixPeriode('1 mois').click();
     await expect(apercu.getByRole('listitem')).toHaveCount(31);
     await expect(apercu).toContainText('/ 31');
+  });
+
+  test('les chiffres de douleur comptent aussi la douleur des bilans', async ({ rendezVousPage, serveur }) => {
+    // Aucune entrée de douleur : seulement des bilans (7/10 pendant les règles, 6/10, 2/10, et 0/10 qui ne compte pas).
+    simulerSynthese(serveur, (du, au) => {
+      const synthese = syntheseRealiste(du, au);
+      const modele = synthese.bilans.jours[0];
+      synthese.douleurs = { ...synthese.douleurs, jours: 0, joursDouleurForte: 0, joursDouleurFortePendantRegles: 0, parType: [], entrees: [] };
+      synthese.regles = { ...synthese.regles, jours: ['2026-09-01'] };
+      synthese.bilans.jours = [
+        { ...modele, jour: '2026-09-01', douleur: 7 },
+        { ...modele, jour: '2026-09-05', douleur: 6 },
+        { ...modele, jour: '2026-09-08', douleur: 2 },
+        { ...modele, jour: '2026-09-10', douleur: 0 },
+      ];
+      return synthese;
+    });
+    await rendezVousPage.ouvrir();
+
+    const apercu = rendezVousPage.page.getByRole('region', { name: 'En un coup d\'œil' });
+    await expect(apercu.getByRole('definition').nth(0)).toHaveText('3 / 92');
+    await expect(apercu.getByRole('definition').nth(1)).toHaveText('2');
+    await expect(apercu).toContainText('jours à 6/10 ou plus, dont 1 pendant les règles');
+  });
+
+  test('une période invalide retire l\'aperçu', async ({ rendezVousPage, serveur }) => {
+    simulerSynthese(serveur);
+    await rendezVousPage.ouvrir();
+    const apercu = rendezVousPage.page.getByRole('region', { name: 'En un coup d\'œil' });
+    await expect(apercu.getByRole('listitem')).toHaveCount(92);
+
+    await rendezVousPage.choixPeriode('Autre').click();
+    await rendezVousPage.periode.getByLabel('Du').fill('2025-06-01');
+
+    await expect(apercu.getByRole('listitem')).toHaveCount(0);
+    await expect(apercu.getByRole('definition')).toHaveCount(0);
   });
 
   test('l\'aperçu indisponible n\'empêche pas de créer le PDF', async ({ rendezVousPage, serveur }) => {

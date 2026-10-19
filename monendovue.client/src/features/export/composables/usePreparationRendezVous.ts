@@ -104,8 +104,14 @@ export function usePreparationRendezVous() {
     let minuterie: ReturnType<typeof setTimeout> | undefined;
 
     async function chargerApercu() {
-        if (erreurPeriode.value) return;
         const numero = ++derniereDemande;
+        if (erreurPeriode.value) {
+            // Période invalide : rien à montrer (l'aperçu d'une autre période induirait en erreur).
+            apercu.value = null;
+            chargementApercu.value = false;
+            erreurApercu.value = false;
+            return;
+        }
         const { du: debut, au: fin } = periode.value;
         chargementApercu.value = true;
         erreurApercu.value = false;
