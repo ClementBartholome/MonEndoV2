@@ -9,7 +9,8 @@
       </p>
     </header>
 
-    <form class="flex flex-col gap-[18px]" @submit.prevent="creerLePdf">
+    <!-- Pas de <form> : les interrupteurs des rubriques y ajouteraient un champ caché sans libellé. -->
+    <div class="flex flex-col gap-[18px]">
       <p v-if="rendezVous" class="m-0 flex items-center gap-2.5 rounded-carte bg-teinte-neutre-fond p-3 text-left text-sm font-medium text-teinte-neutre">
         <i class="material-symbols-outlined" aria-hidden="true">event</i>Pour ton rendez-vous du {{ rendezVous }}
       </p>
@@ -34,11 +35,11 @@
         Le PDF n'a pas pu être créé. Vérifie ta connexion puis réessaie.
       </p>
 
-      <button type="submit" :disabled="!peutCreer"
+      <button type="button" :disabled="!peutCreer" @click="creerLePdf"
               class="inline-flex min-h-[52px] items-center justify-center gap-2 rounded-controle bg-button text-base font-semibold text-texte disabled:opacity-60">
         <i class="material-symbols-outlined" aria-hidden="true">download</i>{{ creation ? 'Création du PDF…' : 'Créer le PDF' }}
       </button>
-    </form>
+    </div>
   </main>
 </template>
 
