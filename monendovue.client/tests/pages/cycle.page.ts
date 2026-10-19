@@ -1,6 +1,6 @@
 import type { Locator, Page } from '@playwright/test';
 
-/** Page « Cycle » (/cycle) : onglets Règles, Symptômes et Acné ; saisie d'un symptôme dans le panneau du bas. */
+/** Page « Cycle » (/cycle) : onglets Règles et Symptômes (l'acné a sa page, /acne) ; saisie d'un symptôme dans le panneau du bas. */
 export class CyclePage {
   readonly page: Page;
 
@@ -12,19 +12,23 @@ export class CyclePage {
 
   readonly mesCycles: Locator;
 
+  /** Flux et caillots du jour choisi (titre = le jour, « Mardi 15 septembre »). */
+  readonly detailDuJour: Locator;
+
   constructor(page: Page) {
     this.page = page;
     this.panneau = page.getByRole('dialog');
     this.cycleEnCours = page.getByRole('region', { name: /^(Règles|Jour|Pas de règles)/ });
     this.calendrier = page.getByRole('region', { name: /\d{4}$/ });
     this.mesCycles = page.getByRole('region', { name: 'Mes cycles' });
+    this.detailDuJour = page.getByRole('region', { name: /^(Lundi|Mardi|Mercredi|Jeudi|Vendredi|Samedi|Dimanche) \d/ });
   }
 
   async ouvrir(requete = '') {
     await this.page.goto(`/cycle${requete}`);
   }
 
-  onglet(nom: 'Règles' | 'Symptômes' | 'Acné') {
+  onglet(nom: 'Règles' | 'Symptômes') {
     return this.page.getByRole('tab', { name: nom });
   }
 

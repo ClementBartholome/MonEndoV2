@@ -1,7 +1,7 @@
 <template>
   <main class="mx-auto flex w-full max-w-xl flex-col gap-3.5 px-5 pb-28 pt-24 lg:pt-10">
     <header class="flex flex-col gap-2">
-      <h1 class="m-0 text-titre-2 font-semibold tracking-normal text-texte">{{ date }}</h1>
+      <h1 class="m-0 text-titre-2 font-medium tracking-normal text-texte">{{ date }}</h1>
       <div v-if="aujourdhui" class="flex flex-wrap gap-2">
         <span v-if="aujourdhui.cycle.enRegles"
               class="inline-flex items-center gap-1.5 text-sm font-medium text-teinte-regles">
@@ -28,13 +28,14 @@
     </section>
 
     <template v-else-if="aujourdhui">
+      <CarteSemaine :phrases="phrases" :frise="aujourdhui.frise" :aujourdhui="cleDuJour"/>
       <CarteBilanDuJour :bilan="aujourdhui.bilan"/>
+      <CarteAcneEnCours v-if="aujourdhui.acne" :acne="aujourdhui.acne" :aujourdhui="cleDuJour"/>
       <TuilesAjout/>
       <CarteTraitementsDuJour v-if="aujourdhui.prisesPrevues.length || aujourdhui.auBesoin.length"
                               :prises="aujourdhui.prisesPrevues" :au-besoin="aujourdhui.auBesoin"
                               :prise-en-cours="priseEnCours" @prendre="noterPrise"/>
       <CarteRendezVous v-if="prochainRendezVous" :evenement="prochainRendezVous"/>
-      <CarteSemaine v-if="phrases.length" :phrases="phrases"/>
     </template>
   </main>
 </template>
@@ -50,6 +51,7 @@ import { materialSymbols } from '@/shared/config/materialSymbols';
 import type { PrisePrevue } from '@/features/medicament/types/traitements';
 import { heureAffichee } from '@/features/medicament/utils/prises';
 import { premiersPasActifs, terminerPremiersPas } from '@/features/auth/utils/parcours';
+import CarteAcneEnCours from '../components/CarteAcneEnCours.vue';
 import CarteBilanDuJour from '../components/CarteBilanDuJour.vue';
 import CarteDemarrage from '../components/CarteDemarrage.vue';
 import CarteTraitementsDuJour from '../components/CarteTraitementsDuJour.vue';
@@ -67,6 +69,7 @@ function masquerPremiersPas() {
 }
 const { aujourdhui, prochainRendezVous, chargement, erreur, priseEnCours, phrases, charger, prendre } = useAujourdhui();
 
+const cleDuJour = format(new Date(), 'yyyy-MM-dd');
 const jour = format(new Date(), 'EEEE d MMMM', { locale: fr });
 const date = jour.charAt(0).toUpperCase() + jour.slice(1);
 

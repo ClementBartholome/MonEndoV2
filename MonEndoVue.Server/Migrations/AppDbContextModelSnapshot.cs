@@ -286,6 +286,15 @@ namespace MonEndoVue.Server.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<string>("AbondanceSaignementsHorsRegles")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool?>("AbsenceTravail")
+                        .HasColumnType("bit");
+
+                    b.Property<bool?>("ActiviteAnnulee")
+                        .HasColumnType("bit");
+
                     b.Property<bool?>("Ballonnements")
                         .HasColumnType("bit");
 
@@ -301,8 +310,23 @@ namespace MonEndoVue.Server.Migrations
                     b.Property<DateTime>("Date")
                         .HasColumnType("datetime2");
 
+                    b.Property<bool?>("DifficulteVider")
+                        .HasColumnType("bit");
+
                     b.Property<int>("DouleurMoyenne")
                         .HasColumnType("int");
+
+                    b.Property<string>("DouleurRapport")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool?>("DouleurSelle")
+                        .HasColumnType("bit");
+
+                    b.Property<bool?>("DouleurUriner")
+                        .HasColumnType("bit");
+
+                    b.Property<bool?>("EnviesUrinaires")
+                        .HasColumnType("bit");
 
                     b.Property<int?>("Fatigue")
                         .HasColumnType("int");
@@ -322,14 +346,41 @@ namespace MonEndoVue.Server.Migrations
                     b.Property<string>("IntensiteCrampes")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("IntensiteDouleurSelle")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("IntensiteDouleurUriner")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<bool>("Lactose")
                         .HasColumnType("bit");
+
+                    b.Property<string>("LimitationJournee")
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Mood")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<bool?>("Nausees")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Nuit")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<int?>("Pas")
                         .HasColumnType("int");
+
+                    b.Property<bool?>("ReveilsDouleur")
+                        .HasColumnType("bit");
+
+                    b.Property<bool?>("SaignementsHorsRegles")
+                        .HasColumnType("bit");
+
+                    b.Property<bool?>("SangSelles")
+                        .HasColumnType("bit");
+
+                    b.Property<bool?>("SangUrines")
+                        .HasColumnType("bit");
 
                     b.Property<bool?>("Selles")
                         .HasColumnType("bit");
@@ -368,6 +419,44 @@ namespace MonEndoVue.Server.Migrations
                         .IsUnique();
 
                     b.ToTable("CarnetSantes");
+                });
+
+            modelBuilder.Entity("MonEndoVue.Server.Models.CodeInvitation", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("CodeHache")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.Property<DateTime>("CreeLe")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("ExpireLe")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Libelle")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<int>("Usages")
+                        .IsConcurrencyToken()
+                        .HasColumnType("int");
+
+                    b.Property<int>("UsagesMax")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CodeHache")
+                        .IsUnique();
+
+                    b.ToTable("CodesInvitation", (string)null);
                 });
 
             modelBuilder.Entity("MonEndoVue.Server.Models.DonneesActivitePhysique", b =>
@@ -585,11 +674,18 @@ namespace MonEndoVue.Server.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<bool?>("Caillots")
+                        .HasColumnType("bit");
+
                     b.Property<int>("CarnetSanteId")
                         .HasColumnType("int");
 
                     b.Property<DateTime>("Date")
                         .HasColumnType("datetime2");
+
+                    b.Property<string>("Flux")
+                        .HasMaxLength(10)
+                        .HasColumnType("nvarchar(10)");
 
                     b.HasKey("Id");
 
@@ -717,6 +813,52 @@ namespace MonEndoVue.Server.Migrations
                         .IsUnique();
 
                     b.ToTable("Rappels");
+                });
+
+            modelBuilder.Entity("MonEndoVue.Server.Models.SessionAppareil", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreeLe")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("DerniereUtilisationLe")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("ExpireLe")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("JetonHache")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.Property<string>("JetonPrecedentHache")
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.Property<DateTime?>("RotationLe")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("JetonHache")
+                        .IsUnique();
+
+                    b.HasIndex("JetonPrecedentHache");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("SessionsAppareil", (string)null);
                 });
 
             modelBuilder.Entity("MonEndoVue.Server.Models.SymptomeCycle", b =>
@@ -1001,6 +1143,17 @@ namespace MonEndoVue.Server.Migrations
                         .IsRequired();
 
                     b.Navigation("CarnetSante");
+                });
+
+            modelBuilder.Entity("MonEndoVue.Server.Models.SessionAppareil", b =>
+                {
+                    b.HasOne("MonEndoVue.Server.Models.ApplicationUser", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("MonEndoVue.Server.Models.SymptomeCycle", b =>

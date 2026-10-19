@@ -10,6 +10,10 @@ using MonEndoVue.Server.Controllers;
 using MonEndoVue.Server.Data;
 using MonEndoVue.Server.Models;
 using MonEndoVue.Server.Services;
+using MonEndoVue.Server.Services.Comptes;
+using MonEndoVue.Server.Services.Email;
+using Microsoft.Extensions.Options;
+using MonEndoVue.Server.Services.Sessions;
 
 namespace MonEndoVue.Server.Tests.Support;
 
@@ -30,12 +34,15 @@ public sealed class IdentityDeTest : IDisposable
     public AppDbContext Context { get; }
     public UserManager<ApplicationUser> UserManager { get; }
 
+    /// <summary>E-mails de compte « envoyés » (file remplacée).</summary>
+    public FauxFileEmails Emails { get; } = new();
+
     public IdentityDeTest()
     {
         var configuration = new ConfigurationBuilder()
             .AddInMemoryCollection(new Dictionary<string, string?>
             {
-                ["Jwt:Key"] = "cle-de-test-uniquement-pour-les-tests-unitaires",
+                [CleSignatureJwt.Reglage] = "cle-de-test-uniquement-pour-les-tests-unitaires",
             })
             .Build();
 
@@ -49,9 +56,12 @@ public sealed class IdentityDeTest : IDisposable
             .AddCookie(IdentityConstants.ApplicationScheme)
             .AddCookie(IdentityConstants.ExternalScheme)
             .AddCookie(IdentityConstants.TwoFactorUserIdScheme);
+        services.AddDataProtection();
         services.AddIdentityCore<ApplicationUser>(OptionsIdentite.Appliquer)
             .AddSignInManager()
-            .AddEntityFrameworkStores<AppDbContext>();
+            .AddEntityFrameworkStores<AppDbContext>()
+            .AddDefaultTokenProviders()
+            .AjouterFournisseursDeJetons();
         services.AddMemoryCache();
 
         _provider = services.BuildServiceProvider();
@@ -59,6 +69,30 @@ public sealed class IdentityDeTest : IDisposable
         Context = _scope.ServiceProvider.GetRequiredService<AppDbContext>();
         UserManager = _scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
     }
+
+    /// <summary>Service des comptes branché sur la même base, la fausse file d'e-mails et une adresse d'application de test.</summary>
+    public ComptesService Comptes(IMemoryCache? cache = null)
+    {
+        var sp = _scope.ServiceProvider;
+        return new ComptesService(
+            UserManager,
+            new CarnetSanteService(Context, sp.GetRequiredService<IMemoryCache>()),
+            new SessionsService(Context, new TokenService(sp.GetRequiredService<IConfiguration>()), new HorlogeFixe(Maintenant)),
+            Emails,
+            Options.Create(new EmailOptions { AdresseApplication = AdresseApplication }),
+            Invitations(),
+            Options.Create(new InscriptionsOptions { SurInvitation = SurInvitation }),
+            cache ?? sp.GetRequiredService<IMemoryCache>(),
+            new HorlogeFixe(Maintenant),
+            NullLogger<ComptesService>.Instance);
+    }
+
+    public const string AdresseApplication = "https://monendoapp.test";
+
+    /// <summary>Inscriptions sur invitation : désactivé par défaut dans les tests (activé par ceux qui le vérifient).</summary>
+    public bool SurInvitation { get; set; }
+
+    public InvitationsService Invitations() => new(Context, new HorlogeFixe(Maintenant), NullLogger<InvitationsService>.Instance);
 
     public AccountController CreerController(string? userId = null)
     {
@@ -80,6 +114,8 @@ public sealed class IdentityDeTest : IDisposable
             carnetSanteService,
             new TokenService(sp.GetRequiredService<IConfiguration>()),
             new HorlogeFixe(Maintenant),
+            new SessionsService(Context, new TokenService(sp.GetRequiredService<IConfiguration>()), new HorlogeFixe(Maintenant)),
+            Comptes(),
             NullLogger<AccountController>.Instance)
         {
             ControllerContext = new ControllerContext { HttpContext = httpContext },

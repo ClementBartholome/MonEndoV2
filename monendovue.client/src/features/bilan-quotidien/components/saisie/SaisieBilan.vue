@@ -7,8 +7,12 @@ import EchellePastilles from '@/features/bilan-quotidien/components/saisie/Echel
 import EmotionsChoix from '@/features/bilan-quotidien/components/saisie/EmotionsChoix.vue';
 import BlocRepliable from '@/features/bilan-quotidien/components/saisie/BlocRepliable.vue';
 import BlocCorps from '@/features/bilan-quotidien/components/saisie/BlocCorps.vue';
+import QuestionsBilan from '@/features/bilan-quotidien/components/saisie/QuestionsBilan.vue';
 import { corpsDe, resumeCorps, useSaisieBilan } from '@/features/bilan-quotidien/composables/useSaisieBilan';
 import { useConfirmationSortie } from '@/features/bilan-quotidien/composables/useConfirmationSortie';
+import { useCategoriesBilan } from '@/features/bilan-quotidien/composables/useCategoriesBilan';
+import { categoriesDuBilan, type CategorieBilan } from '@/features/bilan-quotidien/config/categories';
+import { groupesDeQuestions, nombreDeReponses, resumeDesReponses } from '@/features/bilan-quotidien/config/questions';
 import { DOULEUR_MAX, ECHELLE_MAX, reperesEchelles } from '@/features/bilan-quotidien/config/saisie';
 import { anciennesHumeurs, COMMENTAIRE_MAX } from '@/features/bilan-quotidien/config/emotions';
 import type { BilanQuotidien } from '@/features/bilan-quotidien/types/bilan-quotidien';
@@ -37,9 +41,20 @@ const saisie = useSaisieBilan({
   bilanVeille: toRef(props, 'bilanVeille'),
   onEnregistre: (bilan) => emit('enregistre', bilan),
 });
-const { formulaire, manquants, transitComplet, estEnregistrable, estModifie, enregistrement, veilleDisponible } = saisie;
+const { formulaire, manquants, transitComplet, categorieIncomplete, estEnregistrable, estModifie, enregistrement, veilleDisponible } = saisie;
 
 const confirmation = useConfirmationSortie(estModifie);
+
+// Catégories facultatives affichées (réglage de l'appareil) : masquer n'efface aucune réponse déjà enregistrée.
+const { estActive } = useCategoriesBilan();
+
+/** Catégories décrites par des questions (urinaire, saignements, nuit et journée, rapports), dans l'ordre d'affichage. */
+const categoriesAQuestions = categoriesDuBilan.flatMap((categorie) => {
+  const groupe = groupesDeQuestions[categorie.id];
+  return groupe ? [{ ...categorie, groupe }] : [];
+});
+/** Un bloc s'ouvre d'office en modification quand il contient déjà une réponse. */
+const ouverts = ref(Object.fromEntries(categoriesAQuestions.map((c) => [c.id, nombreDeReponses(c.groupe.questions, formulaire.value) > 0])) as Record<CategorieBilan, boolean>);
 
 const corpsOuvert = ref(saisie.corpsInitialRenseigne);
 const notesOuvertes = ref(formulaire.value.commentaire !== '');
@@ -63,7 +78,8 @@ const aide = computed(() => {
     const libelles = { douleur: 'douleur', emotions: 'une émotion' };
     return `À renseigner : ${manquants.value.map((m) => libelles[m]).join(', ')}`;
   }
-  return transitComplet.value ? null : 'Transit : choisis une intensité';
+  if (!transitComplet.value) return 'Transit : choisis une intensité';
+  return categorieIncomplete.value ? `${categorieIncomplete.value.recap} : choisis une intensité` : null;
 });
 
 const reprendreHier = () => {
@@ -127,18 +143,27 @@ const annuler = () => confirmation.demanderSiNecessaire(() => emit('annule'));
         />
       </div>
 
-      <div v-if="veilleDisponible" class="flex flex-wrap items-center gap-2">
+      <div v-if="veilleDisponible && estActive('corps')" class="flex flex-wrap items-center gap-2">
         <button type="button" class="inline-flex min-h-11 items-center justify-center gap-2 rounded-controle border-[1.5px] border-contour px-3.5 text-sm font-medium text-texte" @click="reprendreHier">
           <i class="material-symbols-outlined text-lg" aria-hidden="true">content_copy</i>Comme hier
         </button>
         <span class="text-xs text-texte-2">Reprend le transit, l'alimentation, les pas et l'hydratation de la veille.</span>
       </div>
 
-      <BlocRepliable v-model:ouvert="corpsOuvert" titre="Corps" icone="accessibility_new" :resume="resumeCorps(corps)">
+      <BlocRepliable v-if="estActive('corps')" v-model:ouvert="corpsOuvert" titre="Corps" icone="accessibility_new" :resume="resumeCorps(corps)">
         <BlocCorps v-model="corps"/>
       </BlocRepliable>
 
+      <template v-for="categorie in categoriesAQuestions" :key="categorie.id">
+        <BlocRepliable v-if="estActive(categorie.id)" v-model:ouvert="ouverts[categorie.id]" :titre="categorie.titre" :icone="categorie.icone"
+                       :resume="resumeDesReponses(categorie.groupe.questions, formulaire)">
+          <p v-if="categorie.groupe.intro" class="m-0 text-xs italic text-texte-2">{{ categorie.groupe.intro }}</p>
+          <QuestionsBilan v-model="formulaire" :questions="categorie.groupe.questions"/>
+        </BlocRepliable>
+      </template>
+
       <BlocRepliable
+          v-if="estActive('notes')"
           v-model:ouvert="notesOuvertes"
           titre="Notes"
           icone="edit_note"

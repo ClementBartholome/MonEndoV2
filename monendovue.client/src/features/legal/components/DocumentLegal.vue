@@ -1,19 +1,20 @@
 <template>
-  <article class="document-legal mx-auto w-full max-w-3xl px-5 pb-40 pt-24 lg:pb-12 lg:pt-10">
+  <!-- main : la zone principale de la page, pour qu'un lecteur d'écran puisse y sauter (règles landmark d'axe). -->
+  <main class="document-legal mx-auto w-full max-w-3xl px-5 pb-40 pt-24 lg:pb-12 lg:pt-10">
     <router-link :to="retour.lien" class="inline-flex min-h-11 items-center gap-1 text-sm font-medium !text-lien no-underline">
       <i class="material-symbols-outlined text-base" aria-hidden="true">arrow_back</i>
       <span class="underline">{{ retour.libelle }}</span>
     </router-link>
 
     <header class="mt-6 mb-8">
-      <h1 class="m-0 text-titre-page font-semibold tracking-normal text-texte">{{ titre }}</h1>
+      <h1 class="m-0 text-titre-page font-medium tracking-normal text-texte">{{ titre }}</h1>
       <p class="m-0 mt-2 text-sm text-texte-3">Dernière mise à jour : {{ MISE_A_JOUR_DOCUMENTS_LEGAUX }}</p>
     </header>
 
     <div class="contenu flex flex-col gap-8 rounded-carte bg-surface p-5 leading-relaxed text-texte-2 shadow-elevation md:p-8">
       <slot/>
     </div>
-  </article>
+  </main>
 </template>
 
 <script setup lang="ts">

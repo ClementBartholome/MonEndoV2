@@ -35,7 +35,7 @@ const menuOuvert = ref(false);
 
 /** « Plus » est mis en avant sur les pages qu'il regroupe. */
 const plusActif = computed(() => menuOuvert.value
-    || [...navigationSecondaire, navigationCompte].some((entree) => estActive(entree, route.path)));
+    || [...navigationSecondaire.flatMap((groupe) => groupe.entrees), navigationCompte].some((entree) => estActive(entree, route.path)));
 </script>
 
 <style scoped>

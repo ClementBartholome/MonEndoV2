@@ -19,12 +19,16 @@ using MonEndoVue.Server.Services.WebPush;
 using MonEndoVue.Server.Services.WebPush.Rappels;
 using Quartz;
 using MonEndoVue.Server.Services.Accueil;
+using MonEndoVue.Server.Services.Frise;
 using MonEndoVue.Server.Services.Consentement;
 using MonEndoVue.Server.Services.Export;
 using MonEndoVue.Server.Services.Photos;
+using MonEndoVue.Server.Services.Sessions;
 using MonEndoVue.Server.Services.SuppressionCompte;
 using MonEndoVue.Server.Services.Activite;
 using MonEndoVue.Server.Services.Cycle;
+using MonEndoVue.Server.Services.Email;
+using MonEndoVue.Server.Services.Comptes;
 using MonEndoVue.Server.Services.Traitements;
 using Serilog;
 using Serilog.Events;
@@ -73,6 +77,13 @@ namespace MonEndoVue.Server
             builder.Services.AddScoped<HistoriqueBilansService>();
             // Notifications Web Push (clés VAPID dans la section WebPush ; sans elles, envoi désactivé)
             builder.Services.Configure<WebPushOptions>(builder.Configuration.GetSection(WebPushOptions.Section));
+            // Relais SMTP des e-mails de compte (section Email ; sans elle, l'envoi est désactivé)
+            builder.Services.Configure<EmailOptions>(builder.Configuration.GetSection(EmailOptions.Section));
+            builder.Services.AddSingleton<IEnvoiEmail, EnvoiEmailSmtp>();
+            // Les e-mails de compte partent en arrière-plan : la réponse ne trahit pas l'existence d'un compte par sa durée.
+            builder.Services.AddSingleton<FileEmails>();
+            builder.Services.AddSingleton<IFileEmails>(sp => sp.GetRequiredService<FileEmails>());
+            builder.Services.AddHostedService(sp => sp.GetRequiredService<FileEmails>());
             builder.Services.AddHttpClient<IEnvoiPush, WebPushService>();
             builder.Services.AddSingleton(TimeProvider.System);
             builder.Services.AddScoped<NotificationsPushService>();
@@ -80,6 +91,7 @@ namespace MonEndoVue.Server
             // Un rappel = une règle (ajouter un type : nouvelle implémentation de IRegleRappel)
             builder.Services.AddScoped<IRegleRappel, RappelBilanQuotidien>();
             builder.Services.AddScoped<IRegleRappel, RappelSuiviAcne>();
+            builder.Services.AddScoped<IRegleRappel, RappelRendezVous>();
 
             // Agenda Google en lecture : clé API côté serveur, calendrier associé à une utilisatrice par la configuration
             builder.Services.Configure<AgendaOptions>(builder.Configuration.GetSection(AgendaOptions.Section));
@@ -93,10 +105,12 @@ namespace MonEndoVue.Server
             {
                 options.AddPolicy("CorsPolicy", policyBuilder =>
                 {
-                    policyBuilder.WithOrigins("https://localhost:7206/", "https://localhost:5173",
-                            "http://localhost:5173",
-                            "https://monendoapp.fr",
-                            "https://localhost:5175")
+                    // Les origines locales (Vite) ne sont autorisées qu'en développement : en production, avec des cookies
+                    // transmis (credentials), seule l'origine publique de l'application compte.
+                    string[] origines = builder.Environment.IsDevelopment()
+                        ? ["https://localhost:7206", "https://localhost:5173", "http://localhost:5173", "https://localhost:5175"]
+                        : ["https://monendoapp.fr"];
+                    policyBuilder.WithOrigins(origines)
                         .AllowAnyMethod()
                         .AllowAnyHeader()
                         .WithExposedHeaders("Access-Control-Allow-Origin")
@@ -106,7 +120,8 @@ namespace MonEndoVue.Server
 
             builder.Services
                 .AddDefaultIdentity<ApplicationUser>(OptionsIdentite.Appliquer)
-                .AddEntityFrameworkStores<AppDbContext>();
+                .AddEntityFrameworkStores<AppDbContext>()
+                .AjouterFournisseursDeJetons();
 
             var azureBlobOptions = new AzureBlobStorageOptions
             {
@@ -128,10 +143,15 @@ namespace MonEndoVue.Server
             builder.Services.AddScoped<SuppressionCompteService>();
             builder.Services.AddScoped<ComptesInactifsService>();
             builder.Services.AddScoped<AccueilService>();
+            builder.Services.AddScoped<FriseService>();
             builder.Services.AddScoped<TraitementsService>();
             builder.Services.AddScoped<HistoriqueTraitementsService>();
             builder.Services.AddScoped<CycleService>();
             builder.Services.AddScoped<AcneService>();
+            builder.Services.AddScoped<SessionsService>();
+            builder.Services.AddScoped<ComptesService>();
+            builder.Services.AddScoped<InvitationsService>();
+            builder.Services.Configure<InscriptionsOptions>(builder.Configuration.GetSection(InscriptionsOptions.Section));
             builder.Services.AddScoped<ActiviteService>();
             builder.Services.AddScoped<SyntheseRendezVousService>();
 
@@ -182,7 +202,6 @@ namespace MonEndoVue.Server
                     var validIssuer = builder.Configuration["Authentication:Schemes:Bearer:ValidIssuer"];
                     var validAudiences = builder.Configuration
                         .GetSection("Authentication:Schemes:Bearer:ValidAudiences").Get<string[]>();
-                    var secret = builder.Configuration["Authentication:Schemes:Bearer:Secret"];
 
                     var hasIssuer = !string.IsNullOrWhiteSpace(validIssuer);
                     var hasAudiences = validAudiences is { Length: > 0 };
@@ -196,7 +215,7 @@ namespace MonEndoVue.Server
                         ClockSkew = TimeSpan.FromMinutes(1),
                         ValidIssuer = validIssuer,
                         ValidAudiences = validAudiences,
-                        IssuerSigningKey = new SymmetricSecurityKey(Encoding.ASCII.GetBytes(secret))
+                        IssuerSigningKey = new SymmetricSecurityKey(CleSignatureJwt.Lire(builder.Configuration))
                     };
 
                     options.Events = new JwtBearerEvents
@@ -204,15 +223,10 @@ namespace MonEndoVue.Server
                         OnAuthenticationFailed = context =>
                         {
                             var logger = context.HttpContext.RequestServices.GetRequiredService<ILogger<Program>>();
-                            logger.LogError(context.Exception, "Authentication failed.");
+                            // Un jeton expiré ou absent est un cas courant (la session se renouvelle) : pas d'erreur ni de pile.
+                            logger.LogWarning("Authentication failed: {Raison}", context.Exception.GetType().Name);
                             return Task.CompletedTask;
                         },
-                        OnTokenValidated = context =>
-                        {
-                            var logger = context.HttpContext.RequestServices.GetRequiredService<ILogger<Program>>();
-                            logger.LogInformation("Token validated.");
-                            return Task.CompletedTask;
-                        }
                     };
                 });
 
@@ -272,6 +286,25 @@ namespace MonEndoVue.Server
             builder.Services.AddSingleton<IConfiguration>(builder.Configuration);
 
             var app = builder.Build();
+
+            if (builder.Configuration[CleSignatureJwt.Reglage]?.Length < CleSignatureJwt.LongueurRecommandee)
+            {
+                app.Logger.LogWarning("La clé de signature des jetons est courte (moins de {Longueur} caractères) : la régénérer", CleSignatureJwt.LongueurRecommandee);
+            }
+
+            // Commande d'administration, lancée dans le conteneur (jamais par l'API) :
+            //   dotnet MonEndoVue.Server.dll creer-code-invitation [usages] [jours] [libellé]
+            if (args.Length > 0 && args[0] == "creer-code-invitation")
+            {
+                await CommandeCodeInvitation.ExecuterAsync(app.Services, args[1..]);
+                return;
+            }
+
+            var erreurEmail = app.Services.GetRequiredService<IOptions<EmailOptions>>().Value.Erreur();
+            if (erreurEmail is not null)
+            {
+                app.Logger.LogWarning("E-mails de compte désactivés : {Raison}", erreurEmail);
+            }
 
             var erreurWebPush = app.Services.GetRequiredService<IOptions<WebPushOptions>>().Value.Erreur();
             if (erreurWebPush is not null)

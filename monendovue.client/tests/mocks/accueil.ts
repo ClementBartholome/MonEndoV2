@@ -9,6 +9,9 @@ export const ACCUEIL_VIDE: Aujourdhui = {
   prisesPrevues: [],
   auBesoin: [],
   semaine: { joursAvecDouleur: 0, joursAvecDouleurPendantRegles: 0, fatigueMoyenne: null, fatigueMoyennePrecedente: null },
+  acne: null,
+  // Sept jours sans rien de noté (du 9 au 15 septembre 2026, jour des tests).
+  frise: Array.from({ length: 7 }, (_, i) => ({ jour: `2026-09-${String(9 + i).padStart(2, '0')}`, douleur: null, regles: false })),
 };
 
 /**

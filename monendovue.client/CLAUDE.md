@@ -50,12 +50,12 @@ lecture seule (liste par jour, `SelecteurMois`, suppression en deux temps), plus
    `useMonthData({ fetchFunction, transformData })` + `useCrudOperations(entries)` + `useDialogForm`, formulaire
    vee-validate avec `toTypedSchema(z.object(...))` et messages d'erreur en français, `GenericCardList` en mobile
    (`md:hidden`) et `Datatable` en desktop (`hidden md:block`), `SectionKpiHeader`, `EmptyStateAction`, `Skeleton` pendant le chargement.
-2. **Fonctionnalité riche** — modèle : la chaîne acné de `features/cycle/`.
-   - `types/acne-tab.ts` : contrat `XxxModel` (état en lecture seule) + `XxxActions` (signatures des actions).
-   - `composables/useAcneTracking.ts` : `useXxx(options)` qui gère état, appels API, toasts et renvoie
-     `{ model: computed<XxxModel>, actions: XxxActions }` ; options par callbacks (`onChanged`, `onRequest…`).
-   - `components/AcneTabSection.vue` : conteneur qui instancie le composable et relie callbacks ↔ emits.
-   - `components/AcneTabContent.vue` : présentation pure, deux props (`model`, `actions`), aucun état ni appel API.
+2. **Fonctionnalité riche** — modèle : la page Acné de `features/cycle/`.
+   - `types/acne.ts` : miroir des ViewModels C# (`Acne`, `EpisodeAcne`…).
+   - `composables/useAcne.ts` : état (données, chargement, erreur), appels API et calculs dérivés ; chaque écriture recharge.
+   - `pages/AcnePage.vue` : orchestre (composables, panneaux de saisie, toasts, lien profond `?ajouter`).
+   - `components/CarteEpisodeAcne.vue`, `SuiviPhotosAcne.vue`, `ListeEpisodesAcne.vue` : présentation par props et emits,
+     sans appel API ; les saisies reçoivent leurs actions en prop (`ActionsEpisodeAcne`).
 
 ## SOLID côté client
 - **Responsabilité unique** :
@@ -99,15 +99,28 @@ lecture seule (liste par jour, `SelecteurMois`, suppression en deux temps), plus
 ## Style et UX
 - **Mobile d'abord** : styles de base = mobile, `md:` = desktop ; ajustements ≤ 425px via `@media (max-width: 425px)`
   dans le `<style scoped>` ou la classe `.hide-xsm`. Tester à 375px.
-- **Tokens de design** (`src/assets/tokens.css`, palette validée en 1.3.0, contrastes WCAG AA vérifiés) exposés à Tailwind :
+- **Identité « Carnet de bord »** (1.5.0, revue de design du 2026-10-18, maquettes : canevas « MonEndo — Carnet de bord ») : l'app
+  est un carnet qu'on apporte chez le médecin. Papier chaud (`fond` #f7efe8), encre (`texte` #2b2226), **une seule police
+  d'interface partout** (Lexend, posée sur `body` : boutons et champs compris), **Literata** pour les titres de page (`h1`, graisse
+  moyenne `font-medium`) et les chiffres saisis ou comptés (classe `chiffre` : « 4/10 », « 31 j »). Pas de tuile d'icône devant
+  un titre de page ; les blocs en lecture seule sont des **sections à filets** (`border-y border-trait`, titre `text-legende
+  uppercase tracking-wider text-texte-2`) plutôt que des cartes ou des cases dans des cartes : la carte reste pour ce qu'on touche.
+  Le logo reste l'image historique (`images/MonEndo_transparent.png`, décision de l'utilisatrice du 2026-10-18 : un mot-symbole
+  a été essayé puis refusé). Signature : la **frise** (`shared/components/FriseDesJours.vue`,
+  un trait par jour teinté par `--intensite-N`, trait `trait` si rien n'est noté, ruban `teinte-regles` sous les jours de règles ;
+  données `GET Frise` ou `frise` de l'accueil). Pas d'emoji : une émotion porte une pastille de tonalité (`pastilleTonalite`).
+  Atkinson Hyperlegible, proposée par la revue, a été écartée : son zéro est toujours barré (« 2Ø26 »).
+- **Tokens de design** (`src/assets/tokens.css`, palette de la 1.3.0 revue en 1.5.0, contrastes WCAG AA vérifiés) exposés à Tailwind :
   `bg-fond`, `bg-surface`, `bg-surface-2`, `border-trait`, `text-texte` / `-2` / `-3`, `text-lien`, `border-contour` (champs,
   3:1), `text-danger`, `text-etat-fait`, `rounded-controle` / `carte` / `panneau`, `shadow-elevation` (la seule ombre). **Aucune couleur en dur ni
   couleur Tailwind brute** (`blue-100`, `gray-300`…) dans le code nouveau ou modifié. Les anciens noms (`--headline`,
   `--button`, `.text-headline`, `Button variant="custom"`) et les variables shadcn pointent vers ces tokens.
   - Une **rubrique = une teinte**, partout (tuile + icône) : `bg-teinte-<r>-fond` + `text-teinte-<r>` avec <r> = `bilan`,
     `douleur`, `regles`, `symptome`, `traitement`, `neutre`. Les types d'une rubrique se distinguent par icône et libellé.
-  - Le rose poudré `--couleur-accent` (`bg-button`, `#f2b3c2`) est un **fond** avec texte foncé (8.2:1) ; jamais de texte blanc
-    dessus ni de texte rose. L'ancien `#ff8ba7`, trop saturé, tranchait avec le reste.
+  - Le rose soutenu `--couleur-accent` (`bg-button`, `#e07a95`, choisi en 1.5.0) est un **fond** avec texte encre (5.4:1) ;
+    jamais de texte blanc dessus ni de texte rose. L'ancien rose poudré `#f2b3c2` faisait paraître les boutons désactivés ;
+    un prune `#6e2c47` a été essayé puis refusé (« moins chaleureux »). Le rose poudré sert désormais au choix sélectionné.
+  - Liens : prune `--couleur-lien` (#6e2c47). Le rouge `teinte-regles` (#a3324f) est réservé aux règles.
   - **Formes et états** (décision du 2026-09-28, l'utilisateur trouvait les arrondis et les états incohérents) :
     - un rayon par rôle, jamais de valeur en crochets : `rounded-controle` (12 px : boutons, bouton flottant, champs,
       choix, onglets, tuiles d'icône), `rounded-carte` (16 px : cartes, listes), `rounded-t-panneau` (24 px : panneau du bas).
@@ -117,7 +130,8 @@ lecture seule (liste par jour, `SelecteurMois`, suppression en deux temps), plus
       pleine (`icone-pleine`), sans fond, sans bordure (`EtatPrise` comme modèle). Le ✓ `check_circle` est réservé à « fait »,
       en `text-etat-fait` ; « ignorée » en `text-texte-3` ;
     - une action se nomme par un verbe, sans icône de validation : « Je l'ai pris », pas « ✓ Pris » ;
-    - un choix sélectionné dans un formulaire (type, moment, fréquence) = fond `bg-texte` et texte `text-fond`, partout ;
+    - un choix sélectionné dans un formulaire (type, moment, fréquence, émotion, note) = classe `choix-actif` (fond rosé
+      `--couleur-selection`, contour prune, texte encre ; `Button variant="selected"` l'applique), partout ; plus de fond foncé ;
       non sélectionné = `border-contour bg-surface` (jamais `border-trait`, invisible à 1,3:1 : `trait` sépare, il ne
       délimite pas un contrôle) ; un champ de saisie = `border-contour bg-champ` ;
     - une bascule de vue (onglets, semaine / mois, écart de comparaison) = segment `bg-surface-2 p-1`, élément choisi
@@ -144,8 +158,11 @@ lecture seule (liste par jour, `SelecteurMois`, suppression en deux temps), plus
     **sous-page** qui n'a pas d'entrée dans la navigation (`/medicaments/:id`) garde un lien de retour vers sa page mère.
   - **Une mesure garde une couleur de donnée sur tous les écrans** : la douleur est sur l'échelle rose `--intensite-N`
     (calendrier, graphiques, pastilles) ; la teinte orange `teinte-douleur` ne sert qu'à l'identité de la rubrique (tuile
-    d'icône). Les émotions sont en violet (`--emotion-N`, `teinte-symptome`). Dans « Tendances », les tuiles de moyennes sont
-    neutres (`bg-surface-2`) et seule l'icône porte la teinte de l'indicateur.
+    d'icône). Les émotions sont en violet (`--emotion-N`, `teinte-symptome`). Dans « Tendances », les moyennes sont des lignes
+    de carnet (libellé, chiffre en Literata, évolution) et seule l'icône porte la teinte de l'indicateur.
+  - **Accessibilité vérifiée par les tests** (`tests/accessibilite.spec.ts`, axe-core, WCAG 2.2 AA et bonnes pratiques) :
+    une nouvelle page ou un nouveau panneau s'ajoute à sa liste. Une carte posée sous le titre de page porte un h2
+    (`CardTitle`), jamais un h3 qui saute un niveau ; toute page a sa zone `<main>`.
   - Le focus clavier est visible partout par une règle globale `:focus-visible` (`index.css`) : ne pas mettre
     `focus:outline-none` sur un élément focalisable sans donner un autre indicateur. L'en-tête (logo, compte) est
     posé sur la page en `pointer-events-none` : la première carte peut passer dessous sans perdre ses clics.
@@ -158,9 +175,10 @@ lecture seule (liste par jour, `SelecteurMois`, suppression en deux temps), plus
   - `Card` (shadcn) n'a ni survol ni curseur : une carte n'est pas cliquable. `CardHeader` est un `div`, le titre est
     porté par `CardTitle` seul.
   - Les pages pas encore refaites (Cycle, Activité, Export…) gardent des couleurs brutes : les migrer quand on les touche.
-- Polices servies par l'app (`src/assets/polices.css`, paquets `@fontsource`), **jamais Google Fonts** (IP envoyée à Google, RGPD) :
-  Poppins 400/400 italique/500/600/700 en latin ; une graisse ou un axe d'icône en plus s'ajoute dans ce fichier.
-- Icônes Material Symbols (`<i class="material-symbols-outlined">nom</i>`, axe FILL seul, graisse 400) ; les correspondances type → icône vont dans
+- Polices servies par l'app (`src/assets/polices.css`, paquets `@fontsource-variable`), **jamais Google Fonts** (IP envoyée à Google, RGPD) :
+  Lexend et Literata variables, sous-ensemble latin ; un axe d'icône en plus s'ajoute dans ce fichier.
+- Icônes Material Symbols **arrondies** (`<i class="material-symbols-outlined">nom</i>` : la classe garde son nom historique, la
+  police est `Material Symbols Rounded`, axe FILL seul, graisse 400) ; les correspondances type → icône vont dans
   `shared/config/materialSymbols.ts`.
 - Textes 100 % en français, dates via `useDateTimeFormat` (`fr-FR`).
 - **Jour calendaire envoyé à l'API** : jamais un `Date` à minuit (sérialisé en UTC, il glisse au jour précédent et le
@@ -228,8 +246,11 @@ lecture seule (liste par jour, `SelecteurMois`, suppression en deux temps), plus
   `components/NotificationSettings.vue` ; le worker `public/push-sw.js` ne fait qu'afficher les notifications (aucun cache).
 - Rappels : une carte `ReglageRappelCard.vue` par type renvoyé par `GET Notifications/rappels` ; libellés dans
   `config/rappels.ts` (un type sans entrée n'est pas affiché). Jours : 0 = dimanche, comme `DayOfWeek` côté serveur.
-- Une notification ouvre `data.url` : une page à onglets doit accepter un lien profond (`/cycle?onglet=acne|symptomes|cycles`,
-  lu dans `CyclePage.vue` au montage).
+- Une notification ouvre `data.url` : une page à onglets doit accepter un lien profond (`/cycle?onglet=symptomes|cycles`,
+  lu dans `CyclePage.vue` au montage). Une adresse déjà envoyée dans des notifications ne disparaît pas : la rediriger dans le
+  routeur (ex. `/cycle?onglet=acne` → `/acne`, `beforeEnter`).
+- Navigation : `shared/config/navigation.ts` est la seule liste ; le menu « Plus » et la barre latérale lisent les mêmes
+  **groupes titrés** (`navigationSecondaire` : Mes suivis, Mes rendez-vous, Aide). Une nouvelle rubrique s'ajoute à son groupe.
 - La clé publique VAPID vient de l'API (`GET Notifications/cle-publique`), jamais d'une variable `VITE_*`.
 - **iOS** : push disponible seulement dans l'app ouverte depuis l'écran d'accueil (iOS 16.4+), sinon afficher le guide
   d'installation. `Notification.requestPermission()` doit être le **premier `await`** d'un gestionnaire de clic (geste utilisateur),

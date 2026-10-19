@@ -18,6 +18,25 @@ Les secrets ne sont **jamais** dans ce dossier (dépôt public). Ils restent sur
 - `~/app/config/sauvegarde.env` et `~/app/config/sauvegarde.cle` : jeton SAS et clé de chiffrement des sauvegardes ;
 - `~/app/config/appsettings.Production.json`, `~/app/keys/`, `~/app/ssl/`.
 
+## E-mails de compte (relais SMTP)
+Confirmation d'adresse, mot de passe oublié : envoyés par un relais SMTP (Brevo par défaut, tout relais avec STARTTLS convient), sans serveur de
+messagerie sur le VPS. Activés par sept valeurs dans `~/app/config/app.env` (`Email__Hote`, `__Port`, `__Utilisateur`, `__MotDePasse`,
+`__Expediteur`, `__NomExpediteur`, `__AdresseApplication`). Sans elles, les inscriptions sont refusées proprement et l'avertissement
+« E-mails de compte désactivés : <raison> » figure dans les journaux au démarrage.
+Le script `configurer-smtp.sh` les demande à l'invite (clé SMTP masquée, seules les longueurs sont affichées, rien n'est écrit sans confirmation) :
+`curl -fsSL https://raw.githubusercontent.com/ClementBartholome/MonEndoV2/main/deploy/configurer-smtp.sh -o ~/app/configurer-smtp.sh && bash ~/app/configurer-smtp.sh`
+(depuis une branche de release non encore livrée, remplacer `main` par le nom de la branche), puis recréer le conteneur `app`.
+Chez le fournisseur (une seule fois) : domaine `monendoapp.fr` ajouté et authentifié (code de vérification, DKIM, DMARC dans les DNS), clé SMTP créée
+(**une clé SMTP, pas une clé d'API**). Vérifier ensuite un envoi réel vers Gmail : en-têtes SPF, DKIM et DMARC à `PASS`.
+
+## Codes d'invitation (ouverture progressive)
+Par défaut (`Inscriptions:SurInvitation`, vrai si absent), une inscription exige un **code d'invitation**. Un code se crée **dans le conteneur**,
+jamais par l'API ; il s'affiche une seule fois (seule son empreinte est enregistrée), avec le lien à partager :
+`docker compose -f docker-compose.prod.yml exec app dotnet MonEndoVue.Server.dll creer-code-invitation 5 30 Bouche-à-oreille`
+(arguments : nombre d'inscriptions permises, jours de validité, `0` = sans limite, libellé facultatif sans donnée personnelle).
+Le lien `https://monendoapp.fr/register#code=XXXX-XXXX-XXXX` préremplit le code. Pour ouvrir les inscriptions à tous : `Inscriptions__SurInvitation=false`
+dans `config/app.env`, puis recréer le conteneur. Suivi des usages : table `CodesInvitation` (libellé, usages, expiration).
+
 ## Liaison de l'agenda Google (OAuth)
 Activée par trois valeurs dans `~/app/config/app.env` (sans elles, la ligne « Agenda Google » n'apparaît pas dans les Paramètres) :
 `GoogleOAuth__ClientId=...`, `GoogleOAuth__ClientSecret=...`, `GoogleOAuth__RedirectUri=https://monendoapp.fr/Agenda/liaison/callback`.

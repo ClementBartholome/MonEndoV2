@@ -4,7 +4,7 @@
     <div class="grid grid-cols-3 gap-2">
       <button v-for="option in options" :key="option.valeur" type="button"
               class="min-h-11 rounded-controle border-[1.5px] px-1 text-sm"
-              :class="choix === option.valeur ? 'border-texte bg-texte font-medium text-fond' : 'border-contour bg-surface text-texte'"
+              :class="choix === option.valeur ? 'choix-actif font-semibold' : 'border-contour bg-surface text-texte'"
               :aria-pressed="choix === option.valeur"
               @click="choix = option.valeur">{{ option.libelle }}</button>
     </div>

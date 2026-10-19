@@ -16,7 +16,7 @@ public sealed class DonneesTraitementNonMedicamenteuxControllerCloisonnementTest
 
     public DonneesTraitementNonMedicamenteuxControllerCloisonnementTests()
     {
-        _controller = new DonneesTraitementNonMedicamenteuxController(_carnet.Context, _carnet.CarnetSanteService)
+        _controller = new DonneesTraitementNonMedicamenteuxController(_carnet.Context, _carnet.CarnetSanteService, TimeProvider.System)
         {
             ControllerContext = CarnetDeTest.ContexteAuthentifie(),
         };

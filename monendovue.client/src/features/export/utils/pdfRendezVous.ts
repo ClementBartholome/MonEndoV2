@@ -6,7 +6,8 @@ import { presentationEmotion } from '@/features/bilan-quotidien/config/emotions'
 import type { CodeEmotion } from '@/features/bilan-quotidien/types/bilan-quotidien';
 import { libelleCourt } from '@/features/douleurs/utils/douleurs';
 import { resumeFrequence } from '@/features/medicament/utils/prises';
-import type { BilanDuJour, OptionsPdf, SyntheseRendezVous } from '../types/synthese';
+import type { BilanDuJour, OptionsPdf, SyntheseFlux, SyntheseRendezVous } from '../types/synthese';
+import { coupDOeil, friseDeLaSynthese } from './coupDOeil';
 
 /**
  * PDF « Préparer un rendez-vous » : une première page de synthèse (questions, règles, douleurs par type, traitements,
@@ -17,10 +18,10 @@ import type { BilanDuJour, OptionsPdf, SyntheseRendezVous } from '../types/synth
 type Rvb = [number, number, number];
 type AutoTable = (doc: jsPDF, options: UserOptions) => void;
 
-const TEXTE: Rvb = [51, 39, 42];
-const TEXTE_2: Rvb = [89, 74, 78];
-const TRAIT: Rvb = [239, 220, 211];
-const SURFACE_2: Rvb = [243, 227, 219];
+const TEXTE: Rvb = [43, 34, 38];
+const TEXTE_2: Rvb = [94, 80, 85];
+const TRAIT: Rvb = [234, 217, 207];
+const SURFACE_2: Rvb = [239, 226, 217];
 const REGLES: Rvb = [163, 50, 79];
 /** Échelle d'intensité de l'application (`--intensite-0` à `--intensite-10`). */
 const INTENSITES: Rvb[] = [
@@ -85,11 +86,14 @@ class Redaction {
         const { rubriques } = this.options;
         this.entete();
         this.questions();
+        this.enUnCoupDOeil();
+        if (rubriques.douleurs) this.frise();
         if (rubriques.cycle) this.regles();
         if (rubriques.douleurs) this.douleurs();
         if (rubriques.cycle) this.symptomes();
         if (rubriques.traitements) this.traitements();
         if (rubriques.bilans) this.bilans();
+        if (rubriques.rapports) this.rapports();
         if (rubriques.activite) this.activite();
         this.joursParMois();
         if (rubriques.bilans) this.notes();
@@ -126,6 +130,110 @@ class Redaction {
         this.y += hauteur + 6;
     }
 
+    /**
+     * « En un coup d'œil » : les chiffres clés en cases, chacun avec ce sur quoi il porte. Seules les rubriques cochées y
+     * figurent (une rubrique décochée ne réapparaît pas ici) ; rien si aucune case n'a lieu d'être.
+     */
+    private enUnCoupDOeil(): void {
+        const { rubriques } = this.options;
+        const c = coupDOeil(this.synthese);
+        const cases: { nombre: string; sur: string | null; libelle: string }[] = [];
+        if (rubriques.douleurs) {
+            cases.push({ nombre: String(c.joursDouleur), sur: String(c.jours), libelle: 'jours avec une douleur notée' });
+            const pendant = rubriques.cycle && c.joursForts > 0 ? ` (${c.fortsPendantRegles} pendant les règles)` : '';
+            cases.push({ nombre: String(c.joursForts), sur: String(c.jours), libelle: `jours à 6/10 ou plus${pendant}` });
+        }
+        if (rubriques.cycle) {
+            const cycle = c.cycleMoyen === null ? '' : `, cycle de ${c.cycleMoyen} j en moyenne`;
+            cases.push({ nombre: String(c.joursRegles), sur: null, libelle: `jours de règles${cycle}` });
+        }
+        if (rubriques.bilans && c.journeesNotees > 0) {
+            const absences = c.absences > 0 ? `, dont ${pluriel(c.absences, 'absence')}` : '';
+            cases.push({ nombre: String(c.journeesLimitees), sur: String(c.journeesNotees), libelle: `journées limitées${absences}` });
+        }
+        if (rubriques.traitements && c.prisesPrevues > 0) {
+            cases.push({ nombre: String(c.prisesFaites), sur: String(c.prisesPrevues), libelle: 'prises faites des traitements prévus' });
+        }
+        if (cases.length === 0) return;
+
+        // « œ » n'existe pas dans la police intégrée au PDF (voir textePdf).
+        this.titre('En un coup d\'oeil');
+        const hauteur = 24;
+        this.placePour(hauteur + 8);
+        const { doc } = this;
+        const largeur = (this.largeur() - 2 * MARGE) / cases.length;
+        cases.forEach((cellule, index) => {
+            const x = MARGE + index * largeur;
+            doc.setDrawColor(...TRAIT).setLineWidth(0.3).rect(x, this.y, largeur, hauteur, 'S');
+            doc.setFont('helvetica', 'bold').setFontSize(16).setTextColor(...TEXTE).text(cellule.nombre, x + 3, this.y + 8);
+            if (cellule.sur) {
+                const decalage = doc.getTextWidth(cellule.nombre);
+                doc.setFont('helvetica', 'normal').setFontSize(9.5).setTextColor(...TEXTE_2).text(` / ${cellule.sur}`, x + 3 + decalage, this.y + 8);
+            }
+            const lignes: string[] = doc.setFont('helvetica', 'normal').setFontSize(8.5).setTextColor(...TEXTE_2)
+                .splitTextToSize(textePdf(cellule.libelle), largeur - 6);
+            doc.text(lignes.slice(0, 3), x + 3, this.y + 13.5);
+        });
+        this.y += hauteur + 5;
+        this.note('Chaque nombre est rapporté aux jours de la période, aux journées renseignées ou aux prises prévues.');
+        this.y += 1;
+    }
+
+    /**
+     * La frise de la période, comme dans l'application : un trait par jour, plus foncé quand la douleur notée était plus
+     * forte, trait clair si rien n'est noté, et un ruban sous les jours de règles (seulement si la rubrique Cycle est
+     * cochée : une rubrique décochée ne réapparaît pas ici).
+     */
+    private frise(): void {
+        const jours = friseDeLaSynthese(this.synthese);
+        if (jours.length === 0) return;
+        const avecRegles = this.options.rubriques.cycle;
+        this.titre('Douleur jour par jour');
+        this.placePour(30);
+        const largeur = this.largeur() - 2 * MARGE;
+        const colonne = largeur / jours.length;
+        const trait = Math.min(Math.max(colonne * 0.6, 0.25), 3);
+        const hauteurTrait = 14;
+        const { doc } = this;
+
+        jours.forEach((jour, index) => {
+            const x = MARGE + index * colonne + (colonne - trait) / 2;
+            doc.setFillColor(...(jour.douleur === null ? TRAIT : INTENSITES[Math.min(10, Math.max(0, jour.douleur))]));
+            doc.rect(x, this.y, trait, hauteurTrait, 'F');
+        });
+
+        let yRuban = this.y + hauteurTrait + 1.2;
+        if (avecRegles) {
+            doc.setFillColor(...REGLES);
+            let debut = -1;
+            jours.forEach((jour, index) => {
+                if (jour.regles && debut < 0) debut = index;
+                const finSerie = jour.regles && (index === jours.length - 1 || !jours[index + 1].regles);
+                if (finSerie) {
+                    doc.rect(MARGE + debut * colonne, yRuban, (index - debut + 1) * colonne, 1.2, 'F');
+                    debut = -1;
+                }
+            });
+            yRuban += 1.2;
+        }
+
+        // Repères de dates : le début de chaque mois (et le premier jour), sans chevauchement.
+        doc.setFont('helvetica', 'normal').setFontSize(8).setTextColor(...TEXTE_2);
+        let dernierX = -Infinity;
+        jours.forEach((jour, index) => {
+            if (index !== 0 && !jour.jour.endsWith('-01')) return;
+            const x = MARGE + index * colonne;
+            if (x - dernierX < 16) return;
+            doc.text(jourCourt(jour.jour), x, yRuban + 4);
+            dernierX = x;
+        });
+        this.y = yRuban + 10;
+        this.note(avecRegles
+            ? 'Plus le trait est foncé, plus la douleur notée ce jour-là était forte (trait clair : rien de noté). Ruban : jours de règles.'
+            : 'Plus le trait est foncé, plus la douleur notée ce jour-là était forte (trait clair : rien de noté).');
+        this.y += 2;
+    }
+
     private regles(): void {
         const { regles } = this.synthese;
         this.titre('Règles');
@@ -138,6 +246,21 @@ class Redaction {
         if (regles.cycleMoyen !== null) {
             const dureeRegles = regles.reglesMoyenne === null ? '' : `, règles de ${regles.reglesMoyenne} jours en moyenne`;
             this.paragraphe(`Cycle de ${regles.cycleMoyen} jours en moyenne${dureeRegles} (cycles commencés sur la période).`);
+        }
+        this.fluxEtCaillots(regles.flux);
+    }
+
+    /** Flux noté (jours par niveau, les niveaux jamais notés sont omis) puis caillots ; rien si rien n'a été précisé. */
+    private fluxEtCaillots(flux: SyntheseFlux): void {
+        const niveaux = [
+            ['traces', flux.traces], ['léger', flux.leger], ['moyen', flux.moyen], ['abondant', flux.abondant],
+        ].filter(([, jours]) => (jours as number) > 0).map(([nom, jours]) => `${nom} ${pluriel(jours as number, 'jour')}`);
+        if (niveaux.length > 0) {
+            const nonPrecise = flux.nonPrecise > 0 ? ` · non précisé ${pluriel(flux.nonPrecise, 'jour')}` : '';
+            this.paragraphe(`Flux noté : ${niveaux.join(' · ')}${nonPrecise}.`);
+        }
+        if (flux.joursAvecCaillots + flux.joursSansCaillots > 0) {
+            this.paragraphe(`Caillots : ${pluriel(flux.joursAvecCaillots, 'jour')} avec, ${pluriel(flux.joursSansCaillots, 'jour')} sans (les autres jours ne sont pas précisés).`);
         }
     }
 
@@ -222,6 +345,66 @@ class Redaction {
         if (bilans.joursBallonnements || bilans.joursCrampes) {
             this.paragraphe(`Transit : ballonnements ${pluriel(bilans.joursBallonnements, 'jour')}, crampes d'estomac ${pluriel(bilans.joursCrampes, 'jour')}.`);
         }
+        this.categoriesDuBilan();
+    }
+
+    /** Catégories facultatives du bilan : chaque ligne donne le nombre de jours renseignés, rien n'est interprété. */
+    private categoriesDuBilan(): void {
+        const { categories } = this.synthese.bilans;
+        const sur = (notes: number) => `sur ${pluriel(notes, 'jour')} renseigné${notes > 1 ? 's' : ''}`;
+
+        const digestif = categories.digestif;
+        if (digestif.joursNotes > 0) {
+            this.paragraphe(
+                `Transit (suite), ${sur(digestif.joursNotes)} : douleur en allant à la selle ${pluriel(digestif.joursDouleurSelle, 'jour')}, ` +
+                `nausées ${pluriel(digestif.joursNausees, 'jour')}, traces de sang dans les selles ${pluriel(digestif.joursSangSelles, 'jour')}.`);
+        }
+
+        const urinaire = categories.urinaire;
+        if (urinaire.joursNotes > 0) {
+            this.paragraphe(
+                `Urinaire, ${sur(urinaire.joursNotes)} : douleur en urinant ${pluriel(urinaire.joursDouleurUriner, 'jour')}, ` +
+                `envies fréquentes ou pressantes ${pluriel(urinaire.joursEnvies, 'jour')}, difficulté à vider la vessie ${pluriel(urinaire.joursDifficulteVider, 'jour')}.`);
+            if (urinaire.joursSangVisible.length > 0) {
+                const jours = urinaire.joursSangVisible.map((j) => `${jourCourt(j.jour)}${j.pendantRegles ? ' (jour de règles)' : ''}`).join(', ');
+                this.paragraphe(`Sang visible dans les urines : ${pluriel(urinaire.joursSangVisible.length, 'jour')} (${jours}).`);
+            }
+        }
+
+        const saignements = categories.saignementsHorsRegles;
+        if (saignements.joursNotes > 0) {
+            const details = saignements.jours > 0
+                ? ` (traces ${saignements.traces}, légers ${saignements.legers}, abondants ${saignements.abondants})` : '';
+            this.paragraphe(`Saignements hors règles, ${sur(saignements.joursNotes)} : ${pluriel(saignements.jours, 'jour')}${details}.`);
+        }
+
+        const nuit = categories.nuitEtJournee;
+        if (nuit.nuitsNotees > 0) {
+            this.paragraphe(
+                `Nuits, ${pluriel(nuit.nuitsNotees, 'nuit')} renseignée${nuit.nuitsNotees > 1 ? 's' : ''} : bonne ${nuit.nuitsBonnes}, moyenne ${nuit.nuitsMoyennes}, ` +
+                `difficile ${nuit.nuitsDifficiles} ; réveils à cause de la douleur : ${pluriel(nuit.nuitsReveilsDouleur, 'nuit')}.`);
+        }
+        if (nuit.journeesNotees > 0) {
+            this.paragraphe(
+                `Journées, ${pluriel(nuit.journeesNotees, 'journée')} renseignée${nuit.journeesNotees > 1 ? 's' : ''} : pas limitées ${nuit.journeesPasLimitees}, ` +
+                `un peu limitées ${nuit.journeesPeuLimitees}, très limitées ${nuit.journeesTresLimitees}.`);
+        }
+        if (nuit.joursAbsence > 0 || nuit.joursActiviteAnnulee > 0) {
+            this.paragraphe(`Absences au travail ou en cours : ${pluriel(nuit.joursAbsence, 'jour')} ; activités annulées ou reportées : ${pluriel(nuit.joursActiviteAnnulee, 'jour')}.`);
+        }
+    }
+
+    /** Rubrique discrète, imprimée seulement si elle est cochée. */
+    private rapports(): void {
+        const { rapports } = this.synthese.bilans.categories;
+        this.titre('Rapports');
+        if (rapports.joursNotes === 0) {
+            this.paragraphe('Aucune réponse notée sur la période.');
+            return;
+        }
+        this.paragraphe(
+            `Douleur pendant ou après un rapport, ${pluriel(rapports.joursNotes, 'jour')} renseigné${rapports.joursNotes > 1 ? 's' : ''} : ` +
+            `oui ${rapports.avecDouleur}, non ${rapports.sansDouleur}, pas de rapport ${rapports.pasDeRapport}.`);
     }
 
     private activite(): void {

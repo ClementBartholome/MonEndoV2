@@ -4,6 +4,8 @@ export interface PresentationRappel {
   titre: string;
   description: string;
   icone: string;
+  /** Page où lever ce qui fait attendre le rappel (affichée avec la raison d'attente envoyée par l'API). */
+  lienEnAttente?: { libelle: string; vers: string };
 }
 
 /** Libellés des rappels proposés par l'API ; ajouter un type de rappel = ajouter une entrée ici (et sa règle côté serveur). */
@@ -17,6 +19,12 @@ export const presentationRappels: Record<TypeRappel, PresentationRappel> = {
     titre: 'Rappel photo du suivi acné',
     description: "Une fois par semaine, seulement si tu n'as pas ajouté de photo d'acné depuis 7 jours.",
     icone: 'photo_camera',
+    lienEnAttente: { libelle: 'Ouvrir la page Acné', vers: '/acne' },
+  },
+  RendezVous: {
+    titre: 'Rappel de rendez-vous',
+    description: "Envoyé la veille, seulement si un rendez-vous est prévu le lendemain dans le calendrier choisi de ton agenda Google. La notification ne dit ni le titre ni le lieu.",
+    icone: 'event',
   },
 };
 

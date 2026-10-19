@@ -3,6 +3,70 @@
 Toutes les évolutions notables de MonEndo. Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/),
 versions en [SemVer](https://semver.org/lang/fr/) (voir la section Déploiement de `CLAUDE.md`).
 
+## [1.5.0] - 2026-10-19
+
+### Ajouté
+- **Confirmation de l'adresse e-mail** : à l'inscription, un lien de confirmation arrive par e-mail ; le compte s'active en l'ouvrant
+  puis en touchant « Confirmer mon adresse » (lien valable 24 heures, renvoi possible). La première connexion qui suit passe par l'étape du rappel du soir, comme avant.
+- **Rappel la veille d'un rendez-vous** (Paramètres › Notifications) : une notification la veille, seulement si un rendez-vous est prévu le
+  lendemain dans le calendrier choisi de ton agenda Google. Elle ne dit ni le titre ni le lieu du rendez-vous.
+- Agenda › **Passés** : tes rendez-vous passés, mois par mois (les plus anciens à la demande). « Refaire le résumé de cette période »
+  recrée le PDF du rendez-vous précédent jusqu'à celui-ci, avec tes notes actuelles.
+- **Inscription sur invitation** : pendant l'ouverture progressive de MonEndo, créer un compte demande un code d'invitation ; le lien
+  partagé préremplit le code.
+- **Mot de passe oublié** : depuis la connexion, un lien par e-mail permet d'en choisir un nouveau (valable 1 heure, une seule fois).
+  Par sécurité, toutes les sessions ouvertes sont alors fermées.
+- Bilan quotidien : de nouvelles catégories **facultatives**, à compléter seulement si tu le souhaites : **urinaire** (douleur en urinant, envies
+  fréquentes ou pressantes, difficulté à vider la vessie, sang visible), **suite du transit** (douleur en allant à la selle, nausées, traces de sang),
+  **saignements hors règles**, **nuit et journée** (nuit, réveils dus à la douleur, journée limitée, absence, activité annulée) et **rapports**
+  (discrète : désactivée tant que tu ne l'actives pas). Un bloc replié n'indique que le nombre de réponses, jamais leur contenu. Ce que tu notes
+  apparaît dans le détail du jour, dans ton export et, avec les comptes de jours, dans la synthèse pour ton rendez-vous (« Rapports » est une
+  rubrique à cocher, décochée par défaut).
+- Paramètres › **Catégories du bilan** : tu choisis ce qui apparaît dans ton bilan quotidien (un interrupteur par catégorie, réglage gardé sur
+  ton appareil). Masquer une catégorie n'efface rien : tes réponses déjà enregistrées restent dans l'historique et dans ton export.
+- Règles : tu peux préciser le **flux** de chaque jour de règles (traces, léger, moyen, abondant) et noter s'il y a eu des **caillots**. C'est
+  facultatif, enregistré dès que tu touches un choix, et le calendrier montre le flux par des points. Ces précisions apparaissent dans ton
+  export de données et dans la synthèse pour ton rendez-vous (nombre de jours par niveau, jamais d'interprétation).
+- Accueil : pendant un épisode d'acné, une carte rappelle depuis quand il dure et la date de ta dernière photo, avec « Ajouter une photo ».
+
+### Modifié
+- **Nouvelle identité visuelle, « carnet de bord »** : une seule police pour toute l'app (Lexend, plus lisible), Literata pour les titres et
+  les chiffres, un papier plus chaud, un bouton principal rose plus franc (les boutons ne paraissent plus désactivés), les choix sélectionnés en
+  rose clair et des icônes plus douces. Moins de cases dans les cartes : les moyennes et le bilan du
+  jour se lisent comme des lignes de carnet. Les émotions n'ont plus d'emoji, seulement une pastille.
+- **La frise** : sur l'accueil, un trait par jour de la semaine, plus foncé quand la douleur était plus forte, avec un ruban sous les jours de
+  règles ; la page Cycle montre la même frise sur 30 jours, et la synthèse pour ton rendez-vous l'imprime sur toute la période (avec la
+  rubrique Douleurs ; le ruban des règles seulement avec la rubrique Cycle). Elle décrit, elle n'interprète pas.
+- **Préparer un rendez-vous** : un aperçu « En un coup d'œil » montre, avant de créer le PDF, la frise de la période et les chiffres clés (jours
+  avec douleur, jours à 6/10 ou plus, jours de règles, journées limitées). Le PDF commence par ces chiffres, chacun avec ce sur quoi il porte
+  (« 37 / 92 jours »), pour les rubriques cochées. Les rubriques se choisissent avec des interrupteurs.
+- Connexion : « Bon retour », au lieu de « Content de te revoir ».
+- **L'acné a sa propre page**, accessible depuis le menu « Plus » (et un raccourci sous l'onglet Symptômes du cycle). La page Cycle garde
+  les onglets Règles et Symptômes. Les anciens liens et la notification de la photo de suivi mènent à la nouvelle page.
+- Le menu « Plus » (et la barre latérale sur ordinateur) est rangé en trois groupes : **Mes suivis**, **Mes rendez-vous** et **Aide**.
+
+### Corrigé
+- Rappel photo de l'acné : il ne part que pendant un épisode en cours. Quand aucun épisode n'est en cours (les anciens jours d'acné
+  regroupés en épisodes ont pu tous être fermés), le réglage le dit désormais, avec un lien vers la page Acné.
+- Accessibilité : les titres de carte de la page Bilan ne sautent plus de niveau, et les pages légales ont leur zone principale
+  (un lecteur d'écran peut y aller directement). Chaque écran est désormais vérifié automatiquement (normes WCAG 2.2 AA).
+- Se connecter sur un appareil ne déconnecte plus les autres : chaque appareil (téléphone, ordinateur…) a sa propre session, qui se
+  renouvelle seule. Si l'application est coupée au moment d'un renouvellement, elle retrouve sa session au lieu de te redemander
+  ton mot de passe.
+
+### Sécurité
+- Les écrans d'inscription et de mot de passe oublié répondent de la même façon qu'une adresse ait un compte ou non : c'est l'e-mail
+  reçu qui renseigne la personne. Les liens envoyés par e-mail ne transmettent jamais leur jeton dans l'adresse demandée au serveur.
+- Les sessions des appareils sont stockées sous forme d'empreinte (plus aucun jeton en clair en base) et un changement de mot de passe
+  déconnecte les autres appareils, pas celui que tu utilises.
+- Changer son mot de passe ou supprimer son compte compte désormais les mots de passe erronés comme à la connexion : après plusieurs
+  essais ratés, la fonction est bloquée quelques minutes, y compris avec le bon mot de passe.
+- Les photos sont reconnues d'après leur contenu réel et non d'après leur nom ou le type annoncé par l'appareil : un fichier qui n'est pas une
+  image (JPEG, PNG, WebP ou HEIC) est refusé.
+- Les dates des prises et des séances de soin doivent être plausibles (ni avant 2000, ni après demain).
+- L'authentification n'accepte plus les adresses locales de développement en production, la clé de signature des sessions est lue à un seul
+  endroit et les échecs d'authentification ordinaires ne sont plus journalisés comme des erreurs.
+
 ## [1.4.0] - 2026-10-03
 
 ### Ajouté

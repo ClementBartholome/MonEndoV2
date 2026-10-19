@@ -3,10 +3,13 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using MonEndoVue.Server.Dto;
 using MonEndoVue.Server.Models;
 using MonEndoVue.Server.Services;
+using MonEndoVue.Server.Services.Comptes;
 using MonEndoVue.Server.Services.Consentement;
+using MonEndoVue.Server.Services.Sessions;
 
 namespace MonEndoVue.Server.Controllers
 {
@@ -18,37 +21,62 @@ namespace MonEndoVue.Server.Controllers
         SignInManager<ApplicationUser> signInManager,
         CarnetSanteService carnetSanteService, TokenService tokenService,
         TimeProvider horloge,
+        SessionsService sessions,
+        ComptesService comptes,
         ILogger<AccountController> logger
         )
         : ControllerBase
     {
         
+        public const string CodeAdresseNonConfirmee = "adresse-non-confirmee";
+        private const string MessageEmailIndisponible = "Ce service est momentanément indisponible. Réessaie un peu plus tard.";
+
+        /// <summary>
+        /// Inscription : le compte est créé <b>non confirmé</b>, sans session ; un lien de confirmation part par e-mail. La réponse
+        /// (202) est la même si l'adresse est déjà inscrite : c'est l'e-mail qui prévient la personne. Erreurs : mot de passe ou
+        /// consentement (400, liste de messages), aucun relais d'e-mails (503).
+        /// </summary>
+        /// <summary>Ce que l'écran d'inscription doit demander : un code d'invitation tant que l'ouverture est progressive.</summary>
+        [HttpGet("inscription")]
+        public IActionResult Inscription([FromServices] IOptions<InscriptionsOptions> options) =>
+            Ok(new { SurInvitation = options.Value.SurInvitation });
+
         [HttpPost("register")]
         [EnableRateLimiting("auth")]
-        public async Task<IActionResult> Register([FromBody] InscriptionDto identifiants)
+        public async Task<IActionResult> Register([FromBody] InscriptionDto identifiants, CancellationToken ct) =>
+            Reponse(await comptes.InscrireAsync(identifiants, ct), () => Accepted(new { ConfirmationRequise = true }), listeDErreurs: true);
+
+        /// <summary>Confirme l'adresse avec le jeton du lien (lu dans le fragment par la page) ; sans ouvrir de session.</summary>
+        [HttpPost("confirmer-adresse")]
+        [EnableRateLimiting("auth")]
+        public async Task<IActionResult> ConfirmerAdresse([FromBody] ConfirmationAdresseDto confirmation) =>
+            Reponse(await comptes.ConfirmerAdresseAsync(confirmation.Email, confirmation.Jeton), NoContent);
+
+        /// <summary>Renvoie le lien de confirmation (202 quelle que soit l'adresse).</summary>
+        [HttpPost("renvoyer-confirmation")]
+        [EnableRateLimiting("auth")]
+        public async Task<IActionResult> RenvoyerConfirmation([FromBody] AdresseDto adresse) =>
+            Reponse(await comptes.RenvoyerConfirmationAsync(adresse.Email), Accepted);
+
+        /// <summary>Mot de passe oublié : un lien part si un compte existe (202 dans tous les cas).</summary>
+        [HttpPost("mot-de-passe-oublie")]
+        [EnableRateLimiting("auth")]
+        public async Task<IActionResult> MotDePasseOublie([FromBody] AdresseDto adresse) =>
+            Reponse(await comptes.DemanderReinitialisationAsync(adresse.Email), Accepted);
+
+        /// <summary>Nouveau mot de passe depuis le lien ; ferme toutes les sessions du compte.</summary>
+        [HttpPost("reinitialiser-mot-de-passe")]
+        [EnableRateLimiting("auth")]
+        public async Task<IActionResult> ReinitialiserMotDePasse([FromBody] ReinitialisationMotDePasseDto demande, CancellationToken ct) =>
+            Reponse(await comptes.ReinitialiserAsync(demande, ct), NoContent);
+
+        private IActionResult Reponse(ResultatCompte resultat, Func<IActionResult> succes, bool listeDErreurs = false) => resultat.Issue switch
         {
-            // Consentement explicite obligatoire (RGPD, art. 9.2.a) : même format d'erreur que les erreurs d'Identity.
-            if (!identifiants.ConsentementDonneesSante)
-            {
-                return BadRequest(new[] { "Ton accord pour l'utilisation de tes données de santé est nécessaire pour créer un compte." });
-            }
-
-            var user = new ApplicationUser { UserName = identifiants.Email, Email = identifiants.Email, EmailConfirmed = true };
-            PolitiqueConfidentialite.Enregistrer(user, horloge.GetUtcNow());
-            var result = await userManager.CreateAsync(user, identifiants.Password);
-
-            if (!result.Succeeded)
-            {
-                var translatedErrors = TranslateErrors(result.Errors);
-                return BadRequest(translatedErrors);
-            }
-            await carnetSanteService.CreateCarnetSante(user.Id);
-
-            var (_, _, tokenExpiry) = await OuvrirSessionAsync(user);
-
-            var carnetSante = await carnetSanteService.GetCarnetSanteByUserId(user.Id);
-            return Ok(new { TokenExpiry = tokenExpiry, user.UserName, CarnetSanteId = carnetSante.Id, ConsentementAJour = PolitiqueConfidentialite.EstAJour(user) });
-        }
+            IssueCompte.Acceptee => succes(),
+            IssueCompte.EmailIndisponible => StatusCode(StatusCodes.Status503ServiceUnavailable, new { message = MessageEmailIndisponible }),
+            // L'inscription garde son ancien format (liste de messages) ; les autres opérations renvoient { message, erreurs }.
+            _ => listeDErreurs ? BadRequest(resultat.Erreurs) : BadRequest(new { message = resultat.Erreurs.FirstOrDefault(), erreurs = resultat.Erreurs }),
+        };
 
         [HttpPost("login")]
         [EnableRateLimiting("auth")]
@@ -56,17 +84,12 @@ namespace MonEndoVue.Server.Controllers
         {
             try
             {
-                var user = await userManager.FindByEmailAsync(identifiants.Email);
-                if (user == null)
-                {
-                    return Unauthorized();
-                }
+                // Adresse inconnue, compte verrouillé ou mot de passe erroné : même réponse, pour ne pas révéler qu'un compte existe.
+                var (issue, user) = await comptes.VerifierConnexionAsync(identifiants.Email, identifiants.Password);
+                if (issue == IssueConnexion.AdresseNonConfirmee) return StatusCode(StatusCodes.Status403Forbidden, new { code = CodeAdresseNonConfirmee });
+                if (issue != IssueConnexion.Acceptee || user is null) return Unauthorized();
 
-                // Compte verrouillé ou mot de passe erroné : même réponse, pour ne pas révéler qu'un compte existe.
-                var result = await signInManager.CheckPasswordSignInAsync(user, identifiants.Password, lockoutOnFailure: true);
-                if (!result.Succeeded) return Unauthorized();
-
-                var (_, _, tokenExpiry) = await OuvrirSessionAsync(user);
+                var tokenExpiry = await OuvrirSessionAsync(user);
 
                 var carnetSante = await carnetSanteService.GetCarnetSanteByUserId(user.Id);
                 return Ok(new { TokenExpiry = tokenExpiry, user.UserName, CarnetSanteId = carnetSante.Id, ConsentementAJour = PolitiqueConfidentialite.EstAJour(user) });
@@ -88,21 +111,22 @@ namespace MonEndoVue.Server.Controllers
                 return BadRequest("Refresh token is not provided");
             }
 
-            var user = await userManager.Users.SingleOrDefaultAsync(u => u.RefreshToken == refreshToken);
-            if (user == null)
-            {
-                logger.LogWarning("Invalid refresh token");
-                return BadRequest("Invalid refresh token");
-            }
-
-            // Un compte sans expiration (jeton jamais émis) ne peut pas ouvrir de session par ce chemin.
-            if (user.RefreshTokenExpiryTime is not { } expiration || expiration <= DateTime.Now)
+            // Seule la session de cet appareil est renouvelée : se connecter ailleurs ne la ferme pas.
+            var renouvellement = await sessions.RenouvelerAsync(refreshToken);
+            if (renouvellement.Issue == IssueRenouvellement.Expiree)
             {
                 logger.LogWarning("Expired refresh token");
                 return BadRequest("Expired refresh token");
             }
 
-            var (_, _, tokenExpiry) = await OuvrirSessionAsync(user);
+            var user = renouvellement.UserId is null ? null : await userManager.FindByIdAsync(renouvellement.UserId);
+            if (user == null || renouvellement.Session is not { } session)
+            {
+                logger.LogWarning("Invalid refresh token");
+                return BadRequest("Invalid refresh token");
+            }
+
+            var tokenExpiry = await PoserSessionAsync(user, session);
 
             logger.LogInformation("Refresh token successfully generated for user: {UserId}", user.Id);
             return Ok(new { TokenExpiry = tokenExpiry });
@@ -114,12 +138,9 @@ namespace MonEndoVue.Server.Controllers
             await signInManager.SignOutAsync();
 
             // Le jeton de renouvellement meurt avec la session : un cookie recopié ne rouvrirait rien.
-            if (Request.Cookies["refreshToken"] is { Length: > 0 } cookie
-                && await userManager.Users.SingleOrDefaultAsync(u => u.RefreshToken == cookie) is { } utilisatrice)
+            if (Request.Cookies["refreshToken"] is { Length: > 0 } cookie)
             {
-                utilisatrice.RefreshToken = string.Empty;
-                utilisatrice.RefreshTokenExpiryTime = null;
-                await userManager.UpdateAsync(utilisatrice);
+                await sessions.RevoquerAsync(cookie);
             }
             
             // Efface les cookies actuels (Path=/)
@@ -145,7 +166,11 @@ namespace MonEndoVue.Server.Controllers
             if (user == null) return Unauthorized();
 
             PolitiqueConfidentialite.Enregistrer(user, horloge.GetUtcNow());
-            var (_, _, tokenExpiry) = await OuvrirSessionAsync(user);
+            // Un nouveau jeton d'accès (il porte la version acceptée) sur la session de cet appareil, sans en ouvrir une autre.
+            var courante = Request.Cookies["refreshToken"] is { Length: > 0 } cookie ? await sessions.RenouvelerAsync(cookie) : null;
+            var tokenExpiry = courante is { Issue: IssueRenouvellement.Renouvelee, UserId: not null, Session: { } existante } && courante.UserId == user.Id
+                ? await PoserSessionAsync(user, existante)
+                : await PoserSessionAsync(user, await sessions.OuvrirAsync(user.Id));
 
             logger.LogInformation("Consentement aux données de santé enregistré pour {UserId}", user.Id);
             return Ok(new { TokenExpiry = tokenExpiry, ConsentementAJour = true });
@@ -162,38 +187,52 @@ namespace MonEndoVue.Server.Controllers
                 return BadRequest();
             }
 
+            // Les échecs comptent comme à la connexion : une session volée ne peut pas deviner le mot de passe actuel.
+            switch (await userManager.VerifierAsync(user, changement.CurrentPassword))
+            {
+                case IssueVerificationMotDePasse.Verrouille:
+                    return StatusCode(StatusCodes.Status429TooManyRequests, new { message = VerificationMotDePasse.MessageTropDeTentatives });
+                case IssueVerificationMotDePasse.Incorrect:
+                    return BadRequest(new[] { MessagesIdentite.Traduire(new IdentityError { Code = "PasswordMismatch" }) });
+            }
+
             var result = await userManager.ChangePasswordAsync(user, changement.CurrentPassword, changement.NewPassword);
             if (result.Succeeded)
             {
+                // Une session volée ne survit pas au changement de mot de passe : seuls les autres appareils sont déconnectés.
+                await sessions.RevoquerAutresAsync(user.Id, Request.Cookies["refreshToken"]);
                 return Ok();
             }
             
-            var errors = TranslateErrors(result.Errors);
+            var errors = MessagesIdentite.Traduire(result.Errors);
             
             return BadRequest(errors);
         }
         
+        /// <summary>Ouvre la session d’un nouvel appareil (connexion, inscription).</summary>
+        private async Task<DateTime> OuvrirSessionAsync(ApplicationUser user) =>
+            await PoserSessionAsync(user, await sessions.OuvrirAsync(user.Id));
+
         /// <summary>
-        /// Émet un jeton d'accès (30 min) et un refresh token (2 jours), enregistre ce dernier sur l'utilisatrice et les pose
-        /// en cookies HttpOnly (Path=/, SameSite=Strict).
+        /// Émet un jeton d'accès (30 min) et pose avec le jeton de renouvellement de l'appareil (2 jours glissants) en cookies
+        /// HttpOnly (Path=/, SameSite=Strict). Le jeton de renouvellement n'est jamais écrit sur l'utilisatrice : seule son empreinte
+        /// est en base (<see cref="SessionsService"/>).
         /// </summary>
-        private async Task<(string accessToken, string refreshToken, DateTime tokenExpiry)> OuvrirSessionAsync(ApplicationUser user)
+        private async Task<DateTime> PoserSessionAsync(ApplicationUser user, JetonSession session)
         {
             var (accessToken, tokenExpiry) = tokenService.GenerateAccessToken(user);
-            var refreshToken = tokenService.GenerateRefreshToken();
 
-            user.RefreshToken = refreshToken;
-            user.RefreshTokenExpiryTime = DateTime.Now.AddDays(2);
-            user.DerniereActiviteLe = horloge.GetUtcNow().UtcDateTime;
+            var maintenant = horloge.GetUtcNow();
+            user.DerniereActiviteLe = maintenant.UtcDateTime;
             await userManager.UpdateAsync(user);
 
-            Response.Cookies.Append("accessToken", accessToken, CookieSession(DateTime.Now.AddMinutes(30)));
-            Response.Cookies.Append("refreshToken", refreshToken, CookieSession(DateTime.Now.AddDays(2)));
+            Response.Cookies.Append("accessToken", accessToken, CookieSession(maintenant.AddMinutes(30)));
+            Response.Cookies.Append("refreshToken", session.Jeton, CookieSession(new DateTimeOffset(DateTime.SpecifyKind(session.Expiration, DateTimeKind.Utc))));
 
-            return (accessToken, refreshToken, tokenExpiry);
+            return tokenExpiry;
         }
 
-        private static CookieOptions CookieSession(DateTime expiration) => new()
+        private static CookieOptions CookieSession(DateTimeOffset expiration) => new()
         {
             HttpOnly = true,
             Secure = true,
@@ -201,27 +240,5 @@ namespace MonEndoVue.Server.Controllers
             Path = "/",
             Expires = expiration
         };
-
-        private static string TranslateError(IdentityError error)
-        {
-            return error.Code switch
-            {
-                "PasswordTooShort" => "Le mot de passe doit contenir au moins huit caractères.",
-                "PasswordRequiresNonAlphanumeric" => "Le mot de passe doit contenir au moins un caractère spécial.",
-                "PasswordRequiresDigit" => "Le mot de passe doit contenir au moins un chiffre.",
-                "PasswordRequiresLower" => "Le mot de passe doit contenir au moins une lettre minuscule.",
-                "PasswordRequiresUpper" => "Le mot de passe doit contenir au moins une lettre majuscule.",
-                "DuplicateUserName" => "Ce nom d'utilisateur est déjà pris.",
-                "InvalidEmail" => "L'adresse e-mail est invalide.",
-                "DuplicateEmail" => "Cette adresse e-mail est déjà utilisée.",
-                "PasswordMismatch" => "Le mot de passe actuel est incorrect.",
-                _ => error.Description
-            };
-        }
-
-        private IEnumerable<string> TranslateErrors(IEnumerable<IdentityError> errors)
-        {
-            return errors.Select(TranslateError);
-        }
     }
 }

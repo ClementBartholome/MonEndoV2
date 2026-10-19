@@ -13,6 +13,7 @@ public static class ResultatOperationExtensions
             StatutOperation.Invalide => controller.BadRequest(new { message }),
             StatutOperation.NonAuthentifie => controller.Unauthorized(),
             StatutOperation.Interdit => controller.Forbid(),
+            StatutOperation.TropDeTentatives => controller.StatusCode(StatusCodes.Status429TooManyRequests, new { message }),
             StatutOperation.Indisponible => controller.StatusCode(StatusCodes.Status503ServiceUnavailable, new { message }),
             _ => controller.NotFound(),
         };

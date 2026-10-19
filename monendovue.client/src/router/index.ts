@@ -13,10 +13,15 @@ import BilanQuotidienPage from "@/features/bilan-quotidien/pages/BilanQuotidienP
 import ParametresPage from "@/features/parametres/pages/ParametresPage.vue";
 import RegisterPage from "@/features/auth/pages/RegisterPage.vue";
 import CyclePage from "@/features/cycle/pages/CyclePage.vue";
+import AcnePage from "@/features/cycle/pages/AcnePage.vue";
 import PolitiqueConfidentialitePage from "@/features/legal/pages/PolitiqueConfidentialitePage.vue";
 import MentionsLegalesPage from "@/features/legal/pages/MentionsLegalesPage.vue";
 import RetoursPage from '@/features/retours/pages/RetoursPage.vue'
 import InformerPage from '@/features/informer/pages/InformerPage.vue'
+import InscriptionEnvoyeePage from '@/features/auth/pages/InscriptionEnvoyeePage.vue'
+import ConfirmerAdressePage from '@/features/auth/pages/ConfirmerAdressePage.vue'
+import MotDePasseOubliePage from '@/features/auth/pages/MotDePasseOubliePage.vue'
+import ReinitialiserMotDePassePage from '@/features/auth/pages/ReinitialiserMotDePassePage.vue'
 import BienvenuePage from '@/features/auth/pages/BienvenuePage.vue'
 import RappelBienvenuePage from '@/features/onboarding/pages/RappelBienvenuePage.vue'
 import {dejaVenue} from '@/features/auth/utils/parcours'
@@ -92,7 +97,42 @@ const router = createRouter({
         {
             path: '/cycle',
             name: 'cycle',
-            component: CyclePage
+            component: CyclePage,
+            // Ancien onglet Acné (notifications déjà reçues, favoris) : la page Acné a pris sa place.
+            beforeEnter: (to) => to.query.onglet === 'acne'
+                ? { path: '/acne', query: to.query.ajouter !== undefined ? { ajouter: null } : {}, replace: true }
+                : true
+        },
+        {
+            path: '/acne',
+            name: 'acne',
+            component: AcnePage
+        },
+        // Comptes sans session : lien de confirmation envoyé, confirmation, mot de passe oublié. Le jeton des liens reçus par
+        // e-mail est dans le fragment (#), jamais dans l'URL envoyée au serveur.
+        {
+            path: '/inscription/envoyee',
+            name: 'inscription-envoyee',
+            component: InscriptionEnvoyeePage,
+            meta: {public: true}
+        },
+        {
+            path: '/confirmer-adresse',
+            name: 'confirmer-adresse',
+            component: ConfirmerAdressePage,
+            meta: {public: true}
+        },
+        {
+            path: '/mot-de-passe-oublie',
+            name: 'mot-de-passe-oublie',
+            component: MotDePasseOubliePage,
+            meta: {public: true}
+        },
+        {
+            path: '/reinitialiser-mot-de-passe',
+            name: 'reinitialiser-mot-de-passe',
+            component: ReinitialiserMotDePassePage,
+            meta: {public: true}
         },
         {
             path: '/bienvenue',

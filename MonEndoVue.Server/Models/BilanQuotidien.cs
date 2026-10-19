@@ -33,5 +33,39 @@
         public bool? Ballonnements { get; set; }
         // Légère, Modérée ou Forte, uniquement si Ballonnements == true.
         public string? IntensiteBallonnements { get; set; }
+
+        // Catégories facultatives ajoutées en 1.5.0 : null = non renseigné (jamais « non » ni 0 par défaut).
+        // Transit (suite)
+        public bool? DouleurSelle { get; set; }
+        // Légère, Modérée ou Forte, uniquement si DouleurSelle == true.
+        public string? IntensiteDouleurSelle { get; set; }
+        public bool? Nausees { get; set; }
+        public bool? SangSelles { get; set; }
+
+        // Urinaire
+        public bool? DouleurUriner { get; set; }
+        // Légère, Modérée ou Forte, uniquement si DouleurUriner == true.
+        public string? IntensiteDouleurUriner { get; set; }
+        // Envies d'uriner fréquentes ou pressantes.
+        public bool? EnviesUrinaires { get; set; }
+        public bool? DifficulteVider { get; set; }
+        public bool? SangUrines { get; set; }
+
+        // Saignements hors règles (les jours de règles se notent dans l'onglet Règles)
+        public bool? SaignementsHorsRegles { get; set; }
+        // Traces, Legers ou Abondants, uniquement si SaignementsHorsRegles == true ; facultatif.
+        public string? AbondanceSaignementsHorsRegles { get; set; }
+
+        // Nuit et journée
+        // Bonne, Moyenne ou Difficile.
+        public string? Nuit { get; set; }
+        public bool? ReveilsDouleur { get; set; }
+        // PasLimitee, PeuLimitee ou TresLimitee.
+        public string? LimitationJournee { get; set; }
+        public bool? AbsenceTravail { get; set; }
+        public bool? ActiviteAnnulee { get; set; }
+
+        // Rapports (catégorie discrète, désactivée par défaut côté client) : Oui, Non ou PasDeRapport.
+        public string? DouleurRapport { get; set; }
     }
 }

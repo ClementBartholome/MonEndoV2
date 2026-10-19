@@ -52,7 +52,10 @@ export function syntheseRealiste(du: string, au: string): SyntheseRendezVous {
 
   return {
     du, au,
-    regles: { jours: regles, debuts, cycleMoyen: debuts.length >= 3 ? 29 : null, reglesMoyenne: debuts.length >= 3 ? 5 : null },
+    regles: {
+      jours: regles, debuts, cycleMoyen: debuts.length >= 3 ? 29 : null, reglesMoyenne: debuts.length >= 3 ? 5 : null,
+      flux: { traces: 0, leger: 0, moyen: 0, abondant: 0, nonPrecise: regles.length, joursAvecCaillots: 0, joursSansCaillots: 0 },
+    },
     douleurs: {
       jours: new Set(douleurs.map((d) => d.jour)).size,
       joursDouleurForte: joursForts.size,
@@ -87,6 +90,16 @@ export function syntheseRealiste(du: string, au: string): SyntheseRendezVous {
       joursCrampes: bilans.filter((b) => b.crampes).length,
       emotions: [{ emotion: 'Calme', jours: 31 }, { emotion: 'Anxiete', jours: 18 }, { emotion: 'Decouragement', jours: 9 }],
       jours: bilans,
+      categories: {
+        digestif: { joursNotes: 0, joursDouleurSelle: 0, joursNausees: 0, joursSangSelles: 0 },
+        urinaire: { joursNotes: 0, joursDouleurUriner: 0, joursEnvies: 0, joursDifficulteVider: 0, joursSangVisible: [] },
+        saignementsHorsRegles: { joursNotes: 0, jours: 0, traces: 0, legers: 0, abondants: 0 },
+        nuitEtJournee: {
+          nuitsNotees: 0, nuitsBonnes: 0, nuitsMoyennes: 0, nuitsDifficiles: 0, nuitsReveilsDouleur: 0,
+          journeesNotees: 0, journeesPasLimitees: 0, journeesPeuLimitees: 0, journeesTresLimitees: 0, joursAbsence: 0, joursActiviteAnnulee: 0,
+        },
+        rapports: { joursNotes: 0, avecDouleur: 0, sansDouleur: 0, pasDeRapport: 0 },
+      },
     },
     activite: {
       seances: activites.length,

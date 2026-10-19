@@ -1,5 +1,5 @@
 ﻿import { defineStore } from 'pinia';
-import authService from '@/features/auth/services/authService';
+import authService, { ADRESSE_NON_CONFIRMEE } from '@/features/auth/services/authService';
 import type { User } from '@/features/auth/types/user';
 import { effacerQuestions } from '@/features/export/services/questionsRendezVous';
 import { marquerDejaVenue } from '@/features/auth/utils/parcours';
@@ -12,6 +12,7 @@ export const useAuthStore = defineStore({
     actions: {
         async login(email: string, password: string) {
             const response = await authService.login(email, password);
+            if (response === ADRESSE_NON_CONFIRMEE) return response;
             if (response) {
                 this.user = {
                     email: response.userName,
@@ -23,23 +24,9 @@ export const useAuthStore = defineStore({
             }
             return response;
         },
-        async register(email: string, password: string, consentementDonneesSante: boolean) {
-            try {
-                const response = await authService.register(email, password, consentementDonneesSante);
-                if (response) {
-                    this.user = {
-                        email: response.userName,
-                        carnetSanteId: response.carnetSanteId,
-                        tokenExpiry: response.tokenExpiry,
-                        consentementAJour: response.consentementAJour,
-                    };
-                    this.setAuth(this.user);
-                    return response;
-                }
-            } catch (error: any) {
-                console.error(error);
-                throw error;
-            }
+        /** Crée le compte : aucune session n'est ouverte, l'adresse doit d'abord être confirmée par le lien reçu par e-mail. */
+        async register(email: string, password: string, consentementDonneesSante: boolean, codeInvitation: string | null = null) {
+            return authService.register(email, password, consentementDonneesSante, codeInvitation);
         },
         async logout() {
             await authService.logout();

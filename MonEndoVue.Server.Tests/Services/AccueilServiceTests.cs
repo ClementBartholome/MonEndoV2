@@ -3,6 +3,7 @@ using MonEndoVue.Server.Controllers;
 using MonEndoVue.Server.Models;
 using MonEndoVue.Server.Services;
 using MonEndoVue.Server.Services.Accueil;
+using MonEndoVue.Server.Services.Frise;
 using MonEndoVue.Server.Services.Traitements;
 using MonEndoVue.Server.Tests.Support;
 using MonEndoVue.Server.ViewModels;
@@ -62,6 +63,57 @@ public sealed class AccueilServiceTests : IDisposable
         Assert.Equal(2, aujourdhui.Semaine.JoursAvecDouleurPendantRegles);
         Assert.Equal(2, aujourdhui.Semaine.FatigueMoyenne);
         Assert.Equal(4, aujourdhui.Semaine.FatigueMoyennePrecedente);
+        // Frise des 7 jours : J-3 lombaire (3), J-1 pelvienne (6, en règles), J0 bilan (4, en règles).
+        Assert.Equal(7, aujourdhui.Frise.Count);
+        Assert.Equal([null, null, null, 3, null, 6, 4], aujourdhui.Frise.Select(j => j.Douleur));
+        Assert.Equal([false, false, false, false, false, true, true], aujourdhui.Frise.Select(j => j.Regles));
+    }
+
+    [Fact]
+    public async Task GetAujourdhui_EpisodeDAcneEnCours_DureeEtDernierePhoto()
+    {
+        var ctx = _carnet.Context;
+        const int c = CarnetDeTest.CarnetSanteId;
+        ctx.EpisodesAcne.AddRange(
+            new EpisodeAcne { CarnetSanteId = c, Debut = Jour.AddDays(-60), Fin = Jour.AddDays(-40) },
+            new EpisodeAcne { CarnetSanteId = c, Debut = Jour.AddDays(-16) },
+            new EpisodeAcne { CarnetSanteId = CarnetDeTest.AutreCarnetSanteId, Debut = Jour.AddDays(-2) });
+        ctx.SymptomesCycles.AddRange(
+            new SymptomeCycle { CarnetSanteId = c, TypeSymptome = "Acné", Intensite = 3, Date = A(-8), PhotoUrl = "photo-1" },
+            // Sans photo, autre symptôme, autre carnet : ignorés.
+            new SymptomeCycle { CarnetSanteId = c, TypeSymptome = "Acné", Intensite = 3, Date = A(-2), PhotoUrl = null },
+            new SymptomeCycle { CarnetSanteId = c, TypeSymptome = "Nausée", Intensite = 3, Date = A(-1), PhotoUrl = "photo-2" },
+            new SymptomeCycle { CarnetSanteId = CarnetDeTest.AutreCarnetSanteId, TypeSymptome = "Acné", Intensite = 3, Date = A(-1), PhotoUrl = "photo-3" });
+        await ctx.SaveChangesAsync();
+
+        var acne = (await Obtenir()).Acne!;
+
+        Assert.Equal("2026-09-12", acne.Debut);
+        Assert.Equal(17, acne.Jours);
+        Assert.Equal("2026-09-20", acne.DernierePhoto);
+    }
+
+    [Fact]
+    public async Task GetAujourdhui_EpisodeDAcneTermineOuDUnAutreCarnet_RienSurLAccueil()
+    {
+        _carnet.Context.EpisodesAcne.AddRange(
+            new EpisodeAcne { CarnetSanteId = CarnetDeTest.CarnetSanteId, Debut = Jour.AddDays(-30), Fin = Jour.AddDays(-3) },
+            new EpisodeAcne { CarnetSanteId = CarnetDeTest.AutreCarnetSanteId, Debut = Jour.AddDays(-5) });
+        await _carnet.Context.SaveChangesAsync();
+
+        Assert.Null((await Obtenir()).Acne);
+    }
+
+    [Fact]
+    public async Task GetAujourdhui_EpisodeSansPhoto_DernierePhotoVide()
+    {
+        _carnet.Context.EpisodesAcne.Add(new EpisodeAcne { CarnetSanteId = CarnetDeTest.CarnetSanteId, Debut = Jour });
+        await _carnet.Context.SaveChangesAsync();
+
+        var acne = (await Obtenir()).Acne!;
+
+        Assert.Equal(1, acne.Jours);
+        Assert.Null(acne.DernierePhoto);
     }
 
     [Fact]
@@ -76,6 +128,7 @@ public sealed class AccueilServiceTests : IDisposable
         Assert.Null(aujourdhui.Cycle.JourDuCycle);
         Assert.Equal(0, aujourdhui.Semaine.JoursAvecDouleur);
         Assert.Null(aujourdhui.Semaine.FatigueMoyenne);
+        Assert.Null(aujourdhui.Acne);
     }
 
     [Fact]
@@ -124,7 +177,8 @@ public sealed class AccueilServiceTests : IDisposable
     }
 
     private AccueilService Service() => new(_carnet.Context, new HorlogeFixe(Maintenant),
-        new TraitementsService(_carnet.Context, _carnet.CarnetSanteService, new HorlogeFixe(Maintenant)));
+        new TraitementsService(_carnet.Context, _carnet.CarnetSanteService, new HorlogeFixe(Maintenant)),
+        new FriseService(_carnet.Context, new HorlogeFixe(Maintenant)));
 
     private async Task<AujourdhuiViewModel> Obtenir()
     {

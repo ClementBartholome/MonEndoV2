@@ -33,7 +33,7 @@ function style(niveau: number) {
 
 function classes(niveau: number): string {
   if (valeur.value !== niveau) return 'border-contour bg-surface text-texte-2';
-  return props.couleurs ? 'font-semibold' : 'border-texte bg-texte font-semibold text-fond';
+  return props.couleurs ? 'font-semibold' : 'choix-actif font-semibold';
 }
 </script>
 
@@ -57,7 +57,7 @@ function classes(niveau: number): string {
           v-for="niveau in niveaux"
           :key="niveau"
           type="button"
-          class="relative min-h-11 overflow-hidden rounded-controle border-[1.5px] text-corps"
+          class="chiffre relative min-h-11 overflow-hidden rounded-controle border-[1.5px] text-lg"
           :class="classes(niveau)"
           :style="style(niveau)"
           :aria-pressed="valeur === niveau"

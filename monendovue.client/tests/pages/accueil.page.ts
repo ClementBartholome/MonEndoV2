@@ -10,11 +10,14 @@ export class AccueilPage {
 
   readonly semaine: Locator;
 
+  readonly acne: Locator;
+
   constructor(page: Page) {
     this.page = page;
     this.bilan = page.getByRole('region', { name: /^Bilan du jour/ });
     this.traitements = page.getByRole('region', { name: 'Traitements du jour' });
     this.semaine = page.getByRole('region', { name: 'Ta semaine' });
+    this.acne = page.getByRole('region', { name: /^Depuis le/ });
   }
 
   async ouvrir() {

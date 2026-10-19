@@ -12,7 +12,7 @@ namespace MonEndoVue.Server.Controllers
     [Route("[controller]")]
     [ApiController]
     [Authorize]
-    public class DonneesTraitementNonMedicamenteuxController(AppDbContext context, CarnetSanteService carnetSanteService)
+    public class DonneesTraitementNonMedicamenteuxController(AppDbContext context, CarnetSanteService carnetSanteService, TimeProvider horloge)
         : ControllerBase
     {
         // GET: DonneesTraitementNonMedicamenteux/5
@@ -75,6 +75,11 @@ namespace MonEndoVue.Server.Controllers
             var securityCheck = await this.ValidateCarnetAccess(carnetSanteService, existing.CarnetSanteId);
             if (securityCheck != null) return securityCheck;
 
+            if (!DateSaisieValidator.EstValide(donnees.Date, horloge.GetUtcNow()))
+            {
+                return BadRequest(new { message = DateSaisieValidator.Message });
+            }
+
             if (!await MedicamentAppartientAuCarnet(donnees.MedicamentId, existing.CarnetSanteId))
             {
                 return BadRequest(new { message = "Traitement introuvable." });
@@ -97,6 +102,11 @@ namespace MonEndoVue.Server.Controllers
         {
             var securityCheck = await this.ValidateCarnetAccess(carnetSanteService, dto.CarnetSanteId);
             if (securityCheck != null) return securityCheck;
+
+            if (!DateSaisieValidator.EstValide(dto.Date, horloge.GetUtcNow()))
+            {
+                return BadRequest(new { message = DateSaisieValidator.Message });
+            }
 
             if (!await MedicamentAppartientAuCarnet(dto.MedicamentId, dto.CarnetSanteId))
             {

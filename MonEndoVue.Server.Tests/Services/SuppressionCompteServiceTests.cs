@@ -63,6 +63,23 @@ public sealed class SuppressionCompteServiceTests : IDisposable
     }
 
     [Fact]
+    public async Task SupprimerAsync_SupprimeLesSessionsDesAppareils_SansToucherCellesDUneAutre()
+    {
+        var (user, _) = await CreerCompteRempli("a-supprimer@local", Photo);
+        var (autre, _) = await CreerCompteRempli("autre-sessions@local", PhotoAutre);
+        _identity.Context.SessionsAppareil.AddRange(
+            new SessionAppareil { UserId = user.Id, JetonHache = "a", ExpireLe = DateTime.UtcNow.AddDays(1) },
+            new SessionAppareil { UserId = user.Id, JetonHache = "b", ExpireLe = DateTime.UtcNow.AddDays(1) },
+            new SessionAppareil { UserId = autre.Id, JetonHache = "c", ExpireLe = DateTime.UtcNow.AddDays(1) });
+        await _identity.Context.SaveChangesAsync();
+
+        var resultat = await Service().SupprimerAsync(user.Id, IdentityDeTest.MotDePasseValide, CancellationToken.None);
+
+        Assert.Equal(StatutOperation.Succes, resultat.Statut);
+        Assert.Equal(["c"], await _identity.Context.SessionsAppareil.Select(s => s.JetonHache).ToListAsync());
+    }
+
+    [Fact]
     public async Task SupprimerAsync_MauvaisMotDePasse_NeSupprimeRien()
     {
         var (user, carnetId) = await CreerCompteRempli("a-supprimer@local", Photo);
@@ -70,6 +87,22 @@ public sealed class SuppressionCompteServiceTests : IDisposable
         var resultat = await Service().SupprimerAsync(user.Id, IdentityDeTest.MotDePasseValide + "-erreur", CancellationToken.None);
 
         Assert.Equal(StatutOperation.Invalide, resultat.Statut);
+        Assert.True(await _identity.Context.CarnetSantes.AnyAsync(c => c.Id == carnetId));
+        Assert.Contains(Photo, _photos.Contenus.Keys);
+    }
+
+    [Fact]
+    public async Task SupprimerAsync_TropDeMotsDePasseErrones_VerrouilleEtNeSupprimeRien()
+    {
+        var (user, carnetId) = await CreerCompteRempli("a-supprimer@local", Photo);
+        for (var i = 0; i < OptionsIdentite.EchecsAvantVerrouillage; i++)
+        {
+            await Service().SupprimerAsync(user.Id, IdentityDeTest.MotDePasseValide + "-erreur", CancellationToken.None);
+        }
+
+        var resultat = await Service().SupprimerAsync(user.Id, IdentityDeTest.MotDePasseValide, CancellationToken.None);
+
+        Assert.Equal(StatutOperation.TropDeTentatives, resultat.Statut);
         Assert.True(await _identity.Context.CarnetSantes.AnyAsync(c => c.Id == carnetId));
         Assert.Contains(Photo, _photos.Contenus.Keys);
     }

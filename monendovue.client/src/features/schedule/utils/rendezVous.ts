@@ -66,3 +66,32 @@ export function grouperParJour(evenements: EvenementAgenda[], maintenant: Date):
 /** Vrai pour un événement à heure fixe qui n'a pas encore commencé : seul cas où « Préparer ce rendez-vous » a un sens. */
 export const estAVenir = (evenement: EvenementAgenda, maintenant: Date): boolean =>
     !evenement.journeeEntiere && debutDe(evenement) > maintenant;
+
+/** Vrai pour un rendez-vous à heure fixe déjà commencé : « Refaire le résumé de cette période » lui est proposé. */
+export const estPasse = (evenement: EvenementAgenda, maintenant: Date): boolean =>
+    !evenement.journeeEntiere && debutDe(evenement) <= maintenant;
+
+export interface GroupeMois {
+    /** AAAA-MM. */
+    cle: string;
+    /** « Septembre 2026 ». */
+    titre: string;
+    evenements: EvenementAgenda[];
+}
+
+/** Rendez-vous passés regroupés par mois, du plus récent au plus ancien (dans chaque mois aussi). */
+export function grouperParMois(evenements: EvenementAgenda[]): GroupeMois[] {
+    const tries = [...evenements].sort((a, b) => debutDe(b).getTime() - debutDe(a).getTime());
+    const groupes: GroupeMois[] = [];
+    for (const evenement of tries) {
+        const cle = format(debutDe(evenement), 'yyyy-MM');
+        let groupe = groupes.find((g) => g.cle === cle);
+        if (!groupe) {
+            const titre = format(debutDe(evenement), 'MMMM yyyy', { locale: fr });
+            groupe = { cle, titre: titre.charAt(0).toUpperCase() + titre.slice(1), evenements: [] };
+            groupes.push(groupe);
+        }
+        groupe.evenements.push(evenement);
+    }
+    return groupes;
+}

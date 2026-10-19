@@ -17,7 +17,8 @@ test.describe('Onboarding', () => {
       await expect(page).toHaveURL(/\/login$/);
     });
 
-    test('« Créer mon compte » mène à l\'inscription', async ({ page }) => {
+    test('« Créer mon compte » mène à l\'inscription', async ({ page, serveur }) => {
+      simulerConsentement(serveur);
       await page.goto('/bienvenue');
 
       await page.getByRole('link', { name: 'Créer mon compte' }).click();
@@ -76,8 +77,7 @@ test.describe('Onboarding', () => {
       expect(serveur.appelsVers('POST', /^Account\/register$/)).toHaveLength(0);
     });
 
-    test('adresse déjà utilisée : message doux et lien pour se connecter', async ({ page, serveur }) => {
-      serveur.on('POST', /^Account\/register$/, () => ({ status: 400, body: { $values: ['Cette adresse e-mail est déjà utilisée.'] } }));
+    test('compte créé : il reste à confirmer l\'adresse, sans session ni adresse dans l\'URL', async ({ page, serveur }) => {
       await page.goto('/register');
       await page.locator('input[name="email"]').fill('prenom@exemple.fr');
       await page.locator('input[name="password"]').fill('MotDePasse1!');
@@ -85,9 +85,14 @@ test.describe('Onboarding', () => {
 
       await page.getByRole('button', { name: 'Créer mon compte' }).click();
 
-      await expect(page.getByText(/Impossible de créer un compte avec cette adresse/)).toBeVisible();
-      await page.getByRole('alert').getByRole('link', { name: 'Se connecter' }).click();
-      await expect(page).toHaveURL(/\/login$/);
+      await expect(page).toHaveURL(/\/inscription\/envoyee$/);
+      await expect(page.getByRole('heading', { level: 1, name: 'Vérifie ta boîte mail' })).toBeVisible();
+      await expect(page.getByText('prenom@exemple.fr')).toBeVisible();
+      expect(await page.evaluate(() => localStorage.getItem('user'))).toBeNull();
+
+      await page.getByRole('button', { name: 'Renvoyer le lien' }).click();
+      await expect(page.getByRole('status')).toContainText('un nouveau lien vient de partir');
+      expect(serveur.appelsVers('POST', /^Account\/renvoyer-confirmation$/).at(-1)!.corps).toEqual({ email: 'prenom@exemple.fr' });
     });
 
     test('pas de connexion : la saisie est conservée et un message le dit', async ({ page, serveur }) => {
@@ -112,12 +117,22 @@ test.describe('Onboarding', () => {
   });
 
   test.describe('après l\'inscription', () => {
+    /** Inscription, lien de confirmation ouvert, puis première connexion sur le même appareil. */
     async function sInscrire(page: import('@playwright/test').Page) {
       await page.goto('/register');
       await page.locator('input[name="email"]').fill('prenom@exemple.fr');
       await page.locator('input[name="password"]').fill('MotDePasse1!');
       await page.getByRole('checkbox', { name: /J'accepte que MonEndo enregistre/ }).check();
       await page.getByRole('button', { name: 'Créer mon compte' }).click();
+      await expect(page).toHaveURL(/\/inscription\/envoyee$/);
+
+      await page.goto('/confirmer-adresse#email=prenom%40exemple.fr&jeton=jeton-de-test');
+      await page.getByRole('button', { name: 'Confirmer mon adresse' }).click();
+      await expect(page.getByRole('heading', { level: 1, name: 'Adresse confirmée' })).toBeVisible();
+      await page.getByRole('link', { name: 'Me connecter' }).click();
+      await expect(page.locator('input[name="email"]')).toHaveValue('prenom@exemple.fr');
+      await page.locator('input[name="password"]').fill('MotDePasse1!');
+      await page.getByRole('button', { name: 'Connexion' }).click();
     }
 
     test("un appareil sans notification passe l'étape rappel et arrive sur l'accueil avec « Pour bien démarrer »", async ({ page, serveur }) => {

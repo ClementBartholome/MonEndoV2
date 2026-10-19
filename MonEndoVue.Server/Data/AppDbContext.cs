@@ -20,6 +20,8 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : IdentityDbCo
     public DbSet<Rappel> Rappels { get; set; }
     public DbSet<LiaisonAgenda> LiaisonsAgenda { get; set; }
     public DbSet<EpisodeAcne> EpisodesAcne { get; set; }
+    public DbSet<SessionAppareil> SessionsAppareil { get; set; }
+    public DbSet<CodeInvitation> CodesInvitation { get; set; }
     
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -66,6 +68,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : IdentityDbCo
         });
         modelBuilder.Entity<Medicament>().Property(m => m.Frequence).HasConversion<string>().HasMaxLength(20)
             .HasDefaultValue(FrequencePrise.AuBesoin).HasSentinel((FrequencePrise)(-1));
+        modelBuilder.Entity<JourRegle>().Property(j => j.Flux).HasConversion<string>().HasMaxLength(10);
         modelBuilder.Entity<DonneesMedicament>().Property(p => p.Statut).HasConversion<string>().HasMaxLength(10)
             .HasDefaultValue(StatutPrise.Pris).HasSentinel((StatutPrise)(-1));
 
@@ -158,6 +161,28 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : IdentityDbCo
                 .HasForeignKey(l => l.CarnetSanteId)
                 .OnDelete(DeleteBehavior.Cascade);
             entity.Property(l => l.CalendrierId).HasMaxLength(1024);
+        });
+
+        // Sessions par appareil : supprimées avec le compte ; empreinte unique, vérifiée à l'écriture (renouvellements simultanés)
+        modelBuilder.Entity<SessionAppareil>(entity =>
+        {
+            entity.ToTable("SessionsAppareil");
+            entity.HasIndex(s => s.JetonHache).IsUnique();
+            entity.HasIndex(s => s.JetonPrecedentHache);
+            entity.HasIndex(s => s.UserId);
+            entity.Property(s => s.JetonHache).IsConcurrencyToken();
+            entity.HasOne(s => s.User)
+                .WithMany()
+                .HasForeignKey(s => s.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // Codes d'invitation : seule l'empreinte est stockée ; le décompte des usages est un jeton de concurrence.
+        modelBuilder.Entity<CodeInvitation>(entity =>
+        {
+            entity.ToTable("CodesInvitation");
+            entity.HasIndex(c => c.CodeHache).IsUnique();
+            entity.Property(c => c.Usages).IsConcurrencyToken();
         });
 
         modelBuilder.Entity<EpisodeAcne>(entity =>

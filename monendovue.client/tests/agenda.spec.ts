@@ -1,5 +1,6 @@
 import { test, expect } from './fixtures';
-import { ECHO, GYNECO, KINE, PRECEDENT, simulerLiaisonAgenda, simulerRendezVous } from './mocks/agenda';
+import { simulerSynthese } from './mocks/synthese';
+import { ALGOLOGUE, CONGES, ECHO, ECHO_PASSEE, GYNECO, KINE, MEDECIN, PRECEDENT, simulerLiaisonAgenda, simulerRendezVous } from './mocks/agenda';
 
 test.describe('Agenda', () => {
   test('la rubrique se trouve dans la navigation', async ({ navigationPage, serveur, page }) => {
@@ -17,7 +18,7 @@ test.describe('Agenda', () => {
 
     await page.goto('/agenda');
 
-    await expect(page.getByRole('button', { name: 'Liste' })).toHaveAttribute('aria-pressed', 'true');
+    await expect(page.getByRole('button', { name: 'À venir' })).toHaveAttribute('aria-pressed', 'true');
     // textContent : le style met ces titres en capitales, que innerText restituerait.
     const titres = await page.getByRole('heading', { level: 2 }).evaluateAll((titres) => titres.map((titre) => titre.textContent));
     expect(titres).toEqual(['Demain · mercredi 16 septembre', 'Cette semaine', 'Plus tard']);
@@ -56,6 +57,7 @@ test.describe('Agenda', () => {
 
   test('« Préparer ce rendez-vous » ouvre l\'export depuis le rendez-vous précédent, sans rien mettre dans l\'adresse', async ({ serveur, page }) => {
     simulerRendezVous(serveur, [GYNECO], { precedent: PRECEDENT });
+    simulerSynthese(serveur);
     await page.goto('/agenda');
 
     await page.getByRole('button', { name: /Consultation gynécologie/ }).click();
@@ -71,6 +73,7 @@ test.describe('Agenda', () => {
 
   test('sans rendez-vous précédent, l\'export garde sa période habituelle', async ({ serveur, page }) => {
     simulerRendezVous(serveur, [GYNECO]);
+    simulerSynthese(serveur);
     await page.goto('/agenda');
 
     await page.getByRole('button', { name: 'Préparer ce rendez-vous' }).click();
@@ -99,7 +102,7 @@ test.describe('Agenda', () => {
     await expect(page.getByRole('region', { name: 'Mardi 6 octobre' })).toContainText('Consultation gynécologie');
   });
 
-  test('un rendez-vous passé s\'ouvre sans « Préparer »', async ({ serveur, page }) => {
+  test('un rendez-vous passé s\'ouvre sans « Préparer », avec « Refaire le résumé »', async ({ serveur, page }) => {
     simulerRendezVous(serveur, [PRECEDENT]);
     await page.goto('/agenda');
     await page.getByRole('button', { name: 'Mois' }).click();
@@ -111,6 +114,70 @@ test.describe('Agenda', () => {
     const panneau = page.getByRole('dialog', { name: 'Consultation précédente' });
     await expect(panneau).toBeVisible();
     await expect(panneau.getByRole('button', { name: 'Préparer ce rendez-vous' })).toHaveCount(0);
+    await expect(panneau.getByRole('button', { name: 'Refaire le résumé de cette période' })).toBeVisible();
+  });
+
+  test.describe('rendez-vous passés', () => {
+    test('regroupés par mois, du plus récent au plus ancien ; les plus anciens à la demande', async ({ serveur, page }) => {
+      simulerRendezVous(serveur, [KINE, ECHO_PASSEE, MEDECIN, CONGES, ALGOLOGUE]);
+      await page.goto('/agenda');
+
+      await page.getByRole('button', { name: 'Passés' }).click();
+
+      await expect(page.getByRole('button', { name: 'Passés' })).toHaveAttribute('aria-pressed', 'true');
+      const titres = page.getByRole('heading', { level: 2 });
+      await expect(titres).toHaveText(['Septembre 2026', 'Août 2026']);
+      const septembre = page.getByRole('region', { name: 'Septembre 2026' });
+      await expect(septembre).toContainText('Échographie de contrôle');
+      await expect(septembre).not.toContainText('Kinésithérapie');
+      // Un événement sur la journée entière (congés) est listé, sans résumé à refaire.
+      await expect(page.getByRole('region', { name: 'Août 2026' })).toContainText('Congés');
+      await expect(page.getByRole('button', { name: /^Refaire le résumé de cette période/ })).toHaveCount(2);
+      await expect(page.getByText('Consultation douleur')).toHaveCount(0);
+
+      await page.getByRole('button', { name: 'Voir les rendez-vous plus anciens' }).click();
+      await expect(titres).toHaveText(['Septembre 2026', 'Août 2026', 'Juillet 2026']);
+      await expect(page.getByRole('region', { name: 'Juillet 2026' })).toContainText('Consultation douleur');
+    });
+
+    test('« Refaire le résumé » ouvre l\'export du rendez-vous précédent jusqu\'au jour du rendez-vous', async ({ serveur, page }) => {
+      simulerRendezVous(serveur, [ECHO_PASSEE], { precedent: PRECEDENT });
+      simulerSynthese(serveur);
+      await page.goto('/agenda');
+      await page.getByRole('button', { name: 'Passés' }).click();
+
+      await page.getByRole('button', { name: /^Refaire le résumé de cette période, rendez-vous du jeu\. 3 sept/ }).click();
+
+      await expect(page).toHaveURL(/\/export$/);
+      expect(serveur.appelsVers('GET', /^Agenda\/precedent$/)[0].parametres.get('avant')).toBe(ECHO_PASSEE.debut);
+      await expect(page.getByText('Pour ton rendez-vous du 3 septembre à 9 h 00')).toBeVisible();
+      await expect(page.getByRole('button', { name: 'Depuis le dernier RDV' })).toHaveAttribute('aria-pressed', 'true');
+      await expect(page.getByText(/^Du 12 juin au 3 septembre/)).toBeVisible();
+    });
+
+    test('sans rendez-vous précédent, les trois mois qui précèdent le rendez-vous', async ({ serveur, page }) => {
+      simulerRendezVous(serveur, [ECHO_PASSEE]);
+      simulerSynthese(serveur);
+      await page.goto('/agenda');
+      await page.getByRole('button', { name: 'Passés' }).click();
+
+      await page.getByRole('button', { name: /^Refaire le résumé de cette période/ }).click();
+
+      await expect(page.getByRole('button', { name: '3 mois' })).toHaveAttribute('aria-pressed', 'true');
+      await expect(page.getByText(/^Du 4 juin au 3 septembre/)).toBeVisible();
+    });
+
+    test('aucun rendez-vous passé, puis une panne : chaque cas est dit', async ({ serveur, page }) => {
+      simulerRendezVous(serveur, [KINE]);
+      await page.goto('/agenda');
+
+      await page.getByRole('button', { name: 'Passés' }).click();
+      await expect(page.getByText('Aucun rendez-vous passé sur cette période')).toBeVisible();
+
+      serveur.on('GET', /^Agenda\/evenements$/, () => ({ status: 503 }));
+      await page.getByRole('button', { name: 'Voir les rendez-vous plus anciens' }).click();
+      await expect(page.getByRole('alert')).toContainText('Les rendez-vous passés n\'ont pas pu être chargés');
+    });
   });
 
   test.describe('états', () => {

@@ -1,7 +1,7 @@
 <template>
   <main class="mx-auto flex w-full max-w-xl flex-col gap-5 px-5 pb-40 pt-24 lg:pb-12 lg:pt-10">
     <header class="flex items-center justify-between gap-3">
-      <h1 class="m-0 text-left text-titre-page font-semibold tracking-normal text-texte">Agenda</h1>
+      <h1 class="m-0 text-left text-titre-page font-medium tracking-normal text-texte">Agenda</h1>
       <button v-if="etat === 'pret'" type="button" aria-label="Actualiser" class="-mr-2 flex h-11 w-11 items-center justify-center rounded-full text-texte hover:bg-surface-2" @click="actualiser">
         <i class="material-symbols-outlined" aria-hidden="true">refresh</i>
       </button>
@@ -14,10 +14,11 @@
     </div>
 
     <template v-else-if="etat === 'pret'">
-      <div role="group" aria-label="Vue" class="grid grid-cols-2 gap-2">
+      <!-- Bascule de vue = segment, comme Semaine / Mois du bilan (CLAUDE.md client, « Formes et états »). -->
+      <div role="group" aria-label="Vue" class="grid grid-cols-3 gap-1 rounded-controle bg-surface-2 p-1">
         <button v-for="option in VUES" :key="option.valeur" type="button" :aria-pressed="vue === option.valeur"
-                class="min-h-11 rounded-controle border-[1.5px] text-sm"
-                :class="vue === option.valeur ? 'border-texte bg-texte font-semibold text-fond' : 'border-contour bg-surface font-medium text-texte'"
+                class="min-h-11 rounded-controle text-sm"
+                :class="vue === option.valeur ? 'bg-surface font-semibold text-texte shadow-elevation' : 'text-texte-2'"
                 @click="changerVue(option.valeur)">{{ option.libelle }}</button>
       </div>
 
@@ -47,6 +48,39 @@
                 @click="voirPlusLoin">{{ chargementSuite ? 'Chargement…' : 'Voir plus loin' }}</button>
       </template>
 
+      <template v-else-if="vue === 'passes'">
+        <div v-if="chargementPasses && passes.length === 0" class="flex flex-col gap-3" aria-busy="true" aria-label="Chargement des rendez-vous passés">
+          <Skeleton class="h-24 w-full rounded-carte"/>
+          <Skeleton class="h-24 w-full rounded-carte"/>
+        </div>
+        <p v-else-if="groupesPasses.length === 0 && !erreurPasses" class="m-0 text-left text-sm text-texte-2">
+          Aucun rendez-vous passé sur cette période dans ton calendrier.
+        </p>
+        <section v-for="groupe in groupesPasses" :key="groupe.cle" class="flex flex-col gap-2" :aria-labelledby="`mois-${groupe.cle}`">
+          <h2 :id="`mois-${groupe.cle}`" class="m-0 text-left text-legende font-semibold uppercase tracking-wider text-texte-3">{{ groupe.titre }}</h2>
+          <ul class="m-0 flex list-none flex-col divide-y divide-trait overflow-hidden rounded-carte bg-surface p-0 shadow-elevation">
+            <li v-for="evenement in groupe.evenements" :key="evenement.id" class="flex flex-col">
+              <LigneRendezVous :evenement="evenement" :avec-jour="true" :avec-mois="true" @ouvrir="selection = evenement"/>
+              <div v-if="estPasse(evenement, maintenant)" class="px-4 pb-3.5">
+                <button type="button" :disabled="preparationEnCours" :aria-label="`Refaire le résumé de cette période, rendez-vous du ${jourCourt(evenement, true)}`"
+                        class="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-controle border-[1.5px] border-contour bg-surface px-3.5 text-sm font-medium text-texte disabled:opacity-60"
+                        @click="preparer(evenement)">
+                  <i class="material-symbols-outlined text-xl" aria-hidden="true">picture_as_pdf</i>Refaire le résumé de cette période
+                </button>
+              </div>
+            </li>
+          </ul>
+        </section>
+
+        <p v-if="erreurPasses" role="alert" class="m-0 text-left text-sm text-danger">Les rendez-vous passés n'ont pas pu être chargés. Touche « Actualiser » ou réessaie dans un instant.</p>
+        <button v-if="peutVoirPlusAnciens" type="button" :disabled="chargementPasses"
+                class="min-h-12 rounded-controle border-[1.5px] border-contour bg-surface px-4 text-sm font-medium text-texte disabled:opacity-60"
+                @click="voirPlusAnciens">{{ chargementPasses ? 'Chargement…' : 'Voir les rendez-vous plus anciens' }}</button>
+        <p class="m-0 text-left text-legende text-texte-2">
+          Le résumé est recréé avec tes notes actuelles, pour la période entre le rendez-vous précédent et celui-ci.
+        </p>
+      </template>
+
       <template v-else>
         <CalendrierMois :mois="moisAffiche" :evenements="evenementsMois" :jour-choisi="jourChoisi" :aujourdhui="maintenant"
                         @mois="changerMois" @choisir="choisirJour"/>
@@ -66,6 +100,7 @@
     <EtatAgenda v-else :type="typeEtat" @reessayer="charger"/>
 
     <FeuilleRendezVous v-model:open="feuilleOuverte" :evenement="selection" :a-venir="selection ? estAVenir(selection, maintenant) : false"
+                       :passe="selection ? estPasse(selection, maintenant) : false"
                        :preparation-en-cours="preparationEnCours" @preparer="selection && preparer(selection)"/>
   </main>
 </template>
@@ -78,21 +113,24 @@ import EtatAgenda, { type TypeEtat } from '../components/EtatAgenda.vue';
 import FeuilleRendezVous from '../components/FeuilleRendezVous.vue';
 import LigneRendezVous from '../components/LigneRendezVous.vue';
 import { useAgenda, type VueAgenda } from '../composables/useAgenda';
-import { dansNJours, estAVenir, grouperParJour, jourComplet } from '../utils/rendezVous';
+import { dansNJours, estAVenir, estPasse, grouperParJour, grouperParMois, jourComplet, jourCourt } from '../utils/rendezVous';
 
 const maintenant = new Date();
 const {
   etat, statut, vue, evenements, chargementSuite, erreurSuite, prochain, peutVoirPlusLoin,
+  passes, chargementPasses, erreurPasses, peutVoirPlusAnciens, voirPlusAnciens,
   moisAffiche, evenementsMois, chargementMois, erreurMois, jourChoisi, evenementsDuJour, selection, preparationEnCours,
   charger, voirPlusLoin, changerVue, changerMois, choisirJour, actualiser, preparer,
 } = useAgenda({ maintenant: () => maintenant });
 
 const VUES: { valeur: VueAgenda; libelle: string }[] = [
-  { valeur: 'liste', libelle: 'Liste' },
+  { valeur: 'liste', libelle: 'À venir' },
+  { valeur: 'passes', libelle: 'Passés' },
   { valeur: 'mois', libelle: 'Mois' },
 ];
 
 const groupes = computed(() => grouperParJour(evenements.value, maintenant));
+const groupesPasses = computed(() => grouperParMois(passes.value));
 
 const titreJour = computed(() => {
   const jour = jourComplet(jourChoisi.value);

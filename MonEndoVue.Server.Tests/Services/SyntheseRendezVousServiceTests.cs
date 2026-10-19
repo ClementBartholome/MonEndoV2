@@ -65,6 +65,27 @@ public sealed class SyntheseRendezVousServiceTests : IDisposable
     }
 
     [Fact]
+    public async Task Regles_FluxEtCaillots_ComptesParJourSurLaPeriodeSeulement()
+    {
+        _carnet.Context.JourRegles.AddRange(
+            new JourRegle { CarnetSanteId = CarnetDeTest.CarnetSanteId, Date = new DateTime(2026, 9, 8), Flux = FluxRegles.Traces, Caillots = false },
+            new JourRegle { CarnetSanteId = CarnetDeTest.CarnetSanteId, Date = new DateTime(2026, 9, 9), Flux = FluxRegles.Abondant, Caillots = true },
+            new JourRegle { CarnetSanteId = CarnetDeTest.CarnetSanteId, Date = new DateTime(2026, 9, 10), Flux = FluxRegles.Abondant },
+            new JourRegle { CarnetSanteId = CarnetDeTest.CarnetSanteId, Date = new DateTime(2026, 9, 11) },
+            // Hors période, ou d'un autre carnet : jamais comptés.
+            new JourRegle { CarnetSanteId = CarnetDeTest.CarnetSanteId, Date = new DateTime(2026, 8, 20), Flux = FluxRegles.Moyen, Caillots = true },
+            new JourRegle { CarnetSanteId = CarnetDeTest.AutreCarnetSanteId, Date = new DateTime(2026, 9, 9), Flux = FluxRegles.Leger, Caillots = true });
+        await _carnet.Context.SaveChangesAsync();
+
+        var flux = (await Synthese()).Regles.Flux;
+
+        Assert.Equal((1, 0, 0, 2), (flux.Traces, flux.Leger, flux.Moyen, flux.Abondant));
+        // Un jour sans flux précisé n'est ni « léger » ni rien d'autre : il est compté à part.
+        Assert.Equal(1, flux.NonPrecise);
+        Assert.Equal((1, 1), (flux.JoursAvecCaillots, flux.JoursSansCaillots));
+    }
+
+    [Fact]
     public async Task Traitements_PrisesPrevuesFaitesIgnoreesEtSeances()
     {
         var quotidien = new Medicament
@@ -107,6 +128,45 @@ public sealed class SyntheseRendezVousServiceTests : IDisposable
         Assert.Equal((10, 2, 1), (dienogest.Prevues, dienogest.Faites, dienogest.Ignorees));
         Assert.Equal(["2026-09-21", "2026-09-22"], dienogest.Jours);
         Assert.Equal((0, 1), (traitements[1].Prevues, traitements[1].Faites));
+    }
+
+    [Fact]
+    public async Task Bilans_CategoriesFacultatives_ComptesDeJoursAvecLeNombreDeJoursRenseignes()
+    {
+        Regles(new DateTime(2026, 9, 3));
+        _carnet.Context.BilansQuotidiens.AddRange(
+            new BilanQuotidien
+            {
+                CarnetSanteId = CarnetDeTest.CarnetSanteId, Date = new DateTime(2026, 9, 1), DouleurMoyenne = 4,
+                DouleurUriner = true, IntensiteDouleurUriner = "Légère", EnviesUrinaires = false, SangUrines = false,
+                SaignementsHorsRegles = true, AbondanceSaignementsHorsRegles = "Traces",
+                Nuit = "Difficile", ReveilsDouleur = true, LimitationJournee = "TresLimitee", AbsenceTravail = true, ActiviteAnnulee = false,
+                DouleurSelle = true, IntensiteDouleurSelle = "Forte", Nausees = false,
+                DouleurRapport = "Oui",
+            },
+            new BilanQuotidien
+            {
+                CarnetSanteId = CarnetDeTest.CarnetSanteId, Date = new DateTime(2026, 9, 3), DouleurMoyenne = 6,
+                SangUrines = true, DifficulteVider = true, SaignementsHorsRegles = false,
+                Nuit = "Bonne", LimitationJournee = "PasLimitee", DouleurRapport = "PasDeRapport",
+            },
+            // Aucune catégorie renseignée : ne compte dans aucun dénominateur.
+            new BilanQuotidien { CarnetSanteId = CarnetDeTest.CarnetSanteId, Date = new DateTime(2026, 9, 4), DouleurMoyenne = 2 },
+            // Un autre carnet ne compte jamais.
+            new BilanQuotidien { CarnetSanteId = CarnetDeTest.AutreCarnetSanteId, Date = new DateTime(2026, 9, 1), DouleurMoyenne = 9, SangUrines = true, Nuit = "Difficile" });
+        await _carnet.Context.SaveChangesAsync();
+
+        var c = (await Synthese()).Bilans.Categories;
+
+        Assert.Equal((2, 1, 1, 0), (c.Urinaire.JoursNotes, c.Urinaire.JoursDouleurUriner, c.Urinaire.JoursDifficulteVider, c.Urinaire.JoursEnvies));
+        // Le sang visible est un fait daté, avec le jour de règles quand c'en est un.
+        var sang = Assert.Single(c.Urinaire.JoursSangVisible);
+        Assert.Equal(("2026-09-03", true), (sang.Jour, sang.PendantRegles));
+        Assert.Equal((2, 1, 1), (c.SaignementsHorsRegles.JoursNotes, c.SaignementsHorsRegles.Jours, c.SaignementsHorsRegles.Traces));
+        Assert.Equal((2, 1, 0, 1, 1), (c.NuitEtJournee.NuitsNotees, c.NuitEtJournee.NuitsBonnes, c.NuitEtJournee.NuitsMoyennes, c.NuitEtJournee.NuitsDifficiles, c.NuitEtJournee.NuitsReveilsDouleur));
+        Assert.Equal((2, 1, 1, 1), (c.NuitEtJournee.JourneesNotees, c.NuitEtJournee.JourneesPasLimitees, c.NuitEtJournee.JourneesTresLimitees, c.NuitEtJournee.JoursAbsence));
+        Assert.Equal((1, 1, 0), (c.Digestif.JoursNotes, c.Digestif.JoursDouleurSelle, c.Digestif.JoursNausees));
+        Assert.Equal((2, 1, 0, 1), (c.Rapports.JoursNotes, c.Rapports.AvecDouleur, c.Rapports.SansDouleur, c.Rapports.PasDeRapport));
     }
 
     [Fact]

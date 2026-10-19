@@ -123,7 +123,9 @@ public class ExportDonneesService(
                 .Select(d => new { d.Date, type = d.TypeDouleur, d.Intensite, d.Commentaire })
                 .ToListAsync(ct),
             joursDeRegles = await context.JourRegles.AsNoTracking().Where(j => j.CarnetSanteId == carnetId)
-                .OrderBy(j => j.Date).Select(j => j.Date).ToListAsync(ct),
+                .OrderBy(j => j.Date)
+                .Select(j => new { j.Date, flux = j.Flux == null ? null : j.Flux.ToString(), j.Caillots })
+                .ToListAsync(ct),
             episodesAcne = await context.EpisodesAcne.AsNoTracking().Where(e => e.CarnetSanteId == carnetId)
                 .OrderBy(e => e.Debut).Select(e => new { debut = e.Debut, fin = e.Fin }).ToListAsync(ct),
             symptomesDuCycle = symptomes.Select(s => new
@@ -183,6 +185,11 @@ public class ExportDonneesService(
                     b.IntensiteCrampes,
                     b.Ballonnements,
                     b.IntensiteBallonnements,
+                    b.DouleurSelle, b.IntensiteDouleurSelle, b.Nausees, b.SangSelles,
+                    b.DouleurUriner, b.IntensiteDouleurUriner, b.EnviesUrinaires, b.DifficulteVider, b.SangUrines,
+                    b.SaignementsHorsRegles, b.AbondanceSaignementsHorsRegles,
+                    b.Nuit, b.ReveilsDouleur, b.LimitationJournee, b.AbsenceTravail, b.ActiviteAnnulee,
+                    b.DouleurRapport,
                     notes = b.Commentaire,
                 }),
             rappels = await context.Rappels.AsNoTracking().Where(r => r.CarnetSanteId == carnetId)

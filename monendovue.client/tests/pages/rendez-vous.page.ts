@@ -26,7 +26,7 @@ export class RendezVousPage {
   }
 
   rubrique(titre: string) {
-    return this.rubriques.getByRole('checkbox', { name: new RegExp(`^${titre}`) });
+    return this.rubriques.getByRole('switch', { name: new RegExp(`^${titre}`) });
   }
 
   /** Crée le PDF et renvoie le téléchargement déclenché. */

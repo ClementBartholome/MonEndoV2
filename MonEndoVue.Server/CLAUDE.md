@@ -11,6 +11,11 @@ Complète le [CLAUDE.md racine](../CLAUDE.md). S'applique à tout le code de `Mo
 - `Data/AppDbContext.cs` : DbSets + relations en Fluent API. `Migrations/` : migrations EF (SQL Server uniquement).
 - `Jobs/` (Quartz : `RappelBilanJob` toutes les 15 min, `SuppressionComptesInactifsJob` chaque nuit à 3 h 30) et `Services/WebPush/` (envoi Web Push derrière `IEnvoiPush`,
   logique des endpoints dans `NotificationsService`, boucle d'envoi des rappels dans `NotificationsPushService`).
+- **E-mails de compte** (`Services/Email/`) : `IEnvoiEmail` (une abstraction parce que l'envoi sort du processus : `FauxEnvoiEmail` en test),
+  `EnvoiEmailSmtp` (MailKit, STARTTLS, relais interchangeable par configuration, section `Email`), `ModelesEmail` (messages sans donnée de santé).
+  Une implémentation **ne journalise jamais** l'adresse, l'objet ni le contenu, ni `ex.Message`. Les liens envoyés portent le jeton dans le **fragment**
+  (`#email=…&jeton=…`), jamais en query string : le fragment n'atteint ni le serveur, ni les journaux nginx, ni le `Referer` ; la page le lit et le poste
+  en corps JSON. Sans configuration valide, `Disponible` est faux : refuser l'opération qui en dépend plutôt que la perdre.
 - **Ajouter un type de rappel** : une valeur de `TypeRappel`, une classe `IRegleRappel` dans `Services/WebPush/Rappels/`
   (calendrier par défaut, message avec l'URL à ouvrir, « suivi déjà fait ? »), son `AddScoped<IRegleRappel, …>` dans
   `Program.cs` et ses tests ; côté client, une entrée dans `features/parametres/config/rappels.ts`. Rien d'autre à toucher.
@@ -52,6 +57,22 @@ Complète le [CLAUDE.md racine](../CLAUDE.md). S'applique à tout le code de `Mo
     lit par `IStockagePhotos`, vérifie le carnet en base et déduit le type de l'extension ; les view models exposent ce chemin
     (`AcneService.CheminPhoto`), jamais `PhotoUrl`. Le conteneur Azure doit rester **privé** (réglage à vérifier sur le portail) ;
     la CSP n'autorise plus aucun domaine de stockage pour les images.
+  - **Sessions par appareil** (`SessionsService`, table `SessionsAppareil`) : une ligne par appareil, le jeton de renouvellement n'est stocké
+    que **haché** (SHA-256). Un renouvellement fait tourner le jeton de **cet** appareil seulement ; l'ancien reste accepté
+    `ToleranceReponsePerdue` (6 h) si la réponse s'est perdue (iOS coupe l'app). `JetonHache` est un jeton de concurrence : deux renouvellements
+    simultanés réessaient une fois. Logout = cet appareil ; changement de mot de passe = les **autres** appareils ; suppression du compte = toutes.
+    `ApplicationUser.RefreshToken` / `RefreshTokenExpiryTime` ne servent plus qu'à convertir les sessions ouvertes avant la 1.5.0 (colonnes à
+    supprimer en 1.6.0). Le contrôleur ne génère jamais lui-même de jeton de renouvellement : toujours `sessions.OuvrirAsync` / `RenouvelerAsync`.
+  - **Photos** : le format se reconnaît par le **contenu** (`SignaturePhoto`, `ValidationPhoto` dans `Services/Photos/`), jamais par le nom ou le MIME
+    du client ; l'extension du blob et le type servi en découlent. Un nouvel endroit qui reçoit une image passe par `ValidationPhoto.Valider`.
+  - **Action sensible d'une session ouverte** (changement de mot de passe, suppression du compte) : vérifier le mot de passe avec
+    `userManager.VerifierAsync` (`VerificationMotDePasse`), qui compte les échecs et verrouille comme la connexion (429 `TropDeTentatives`),
+    jamais `CheckPasswordAsync` seul.
+  - **Catégories facultatives du bilan** (transit complété, urinaire, saignements hors règles, nuit et journée, rapports) : colonnes nullables de
+    `BilanQuotidien`, validées par `BilanCategoriesValidator` (intensité seulement si le symptôme est présent, choix limités à leurs valeurs) et
+    copiées par `BilanCategories.Copier` à la modification ; ajouter un champ = modèle, validateur, `Copier`, `BilanQuotidienViewModel`, export,
+    synthèse et type TS dans le même commit. Les comptes de la synthèse (`SyntheseCategoriesViewModel`) donnent toujours le nombre de jours renseignés.
+  - Dates saisies d'une prise ou d'une séance : `DateSaisieValidator` (2000 à demain UTC) ; bilans : `BilanDateValidator`.
   - Limites de débit (`PolitiquesDebit`) : une fenêtre **par utilisatrice** (ou par adresse pour un anonyme, lue dans
     `X-Forwarded-For` de nginx), jamais une fenêtre commune à toute l'application.
   - `AzureBlobStorageService` : lecture et suppression par URL passent par `IStockagePhotos` (`Services/Photos/`,
@@ -163,7 +184,7 @@ modifiables, jamais `Entry(dto).State = Modified`, jamais de changement de `Carn
   un `[EnableRateLimiting(PolitiquesDebit.Auth)]` sur une action est donc réellement appliqué. À mettre sur tout endpoint
   d'authentification ou d'envoi coûteux. Vérifier en local par une rafale de requêtes (429 attendu au-delà de la limite).
 - Identifiants et mots de passe dans le **corps** des requêtes, jamais en query string.
-- Uploads photo : réutiliser `IsPhotoValid`/`ResolveFileExtension` (`SymptomesCycleController`) et `AzureBlobStorageService`
+- Uploads photo : réutiliser `ValidationPhoto.Valider` (`Services/Photos/`) et `AzureBlobStorageService`
   (chemin `symptomes/{carnetSanteId}/{guid}{ext}`). Ne jamais supprimer un blob à partir d'une URL fournie par le client.
 - `/health` est anonyme et hors rate limit (sonde du déploiement) : ne pas y exposer d'information.
 
@@ -194,7 +215,7 @@ modifiables, jamais `Entry(dto).State = Modified`, jamais de changement de `Carn
 Chargée depuis `appsettings.{Environment}.json` (**obligatoire**, non versionné), variables d'environnement puis user-secrets.
 Clés attendues (noms seulement) : `ConnectionStrings:DefaultConnection`, `AzureBlobStorage:ConnectionString`,
 `AzureBlobStorage:ContainerName` (ou variables `AZURE_STORAGE_CONNECTION_STRING`/`AZURE_CONTAINER_NAME`),
-`Authentication:Schemes:Bearer:{Secret,ValidIssuer,ValidAudiences}`, `Jwt:Key`, `RootUser:{UserName,Email,Password}` (compte créé au démarrage en **développement** seulement),
+`Authentication:Schemes:Bearer:{Secret,ValidIssuer,ValidAudiences}` (le `Secret` signe **et** valide les jetons ; `Jwt:Key` n'est plus lu), `RootUser:{UserName,Email,Password}` (compte créé au démarrage en **développement** seulement),
 `WebPush:{Subject,PublicKey,PrivateKey}` (clés VAPID ; absentes ou invalides — sujet sans `mailto:`/`https:`, clés ≠ 87/43 caractères — = notifications désactivées
  avec un avertissement au démarrage, sans bloquer ni faire échouer les routes ;
  en dev via `dotnet user-secrets`), `GoogleOAuth:{ClientId,ClientSecret,RedirectUri}` (client OAuth « application Web » de la console Google Cloud ; `RedirectUri` = `https://<domaine>/Agenda/liaison/callback`, enregistrée à l'identique chez Google ; absents = liaison désactivée, 503), et, le temps de la transition, `Agenda:CleApi` (clé API Google Calendar) et `Agenda:Calendriers:<id de l'utilisatrice>` (la liaison OAuth prime ; sans liaison ni entrée, pas d'agenda : 404). En production, dans `config/app.env` sous la forme `Agenda__CleApi=…`, `GoogleOAuth__ClientSecret=…` et `Agenda__Calendriers__<id>=…`. Ne jamais lire ni afficher les valeurs.

@@ -28,12 +28,17 @@ export const transitVide = (): TransitBilan => ({
   intensiteCrampes: null,
   ballonnements: null,
   intensiteBallonnements: null,
+  douleurSelle: null,
+  intensiteDouleurSelle: null,
+  nausees: null,
+  sangSelles: null,
 });
 
 /** Mêmes règles que BilanTransitValidator côté serveur : une intensité est requise dès qu'un symptôme est présent. */
 export const estTransitComplet = (transit: TransitBilan): boolean =>
   (transit.crampesEstomac !== true || transit.intensiteCrampes !== null) &&
-  (transit.ballonnements !== true || transit.intensiteBallonnements !== null);
+  (transit.ballonnements !== true || transit.intensiteBallonnements !== null) &&
+  (transit.douleurSelle !== true || transit.intensiteDouleurSelle !== null);
 
 export const libelleBristol = (type: number | null | undefined): string | null => {
   const entree = echelleBristol.find((b) => b.type === type);

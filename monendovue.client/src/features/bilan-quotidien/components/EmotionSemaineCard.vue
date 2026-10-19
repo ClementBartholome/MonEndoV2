@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/card';
-import { presentationEmotion } from '@/features/bilan-quotidien/config/emotions';
+import { pastilleTonalite, presentationEmotion } from '@/features/bilan-quotidien/config/emotions';
 import { emotionDeLaSemaine } from '@/features/bilan-quotidien/utils/humeur';
 import type { BilanQuotidien } from '@/features/bilan-quotidien/types/bilan-quotidien';
 import type { ModePeriode } from '@/features/bilan-quotidien/types/historique';
@@ -22,7 +22,7 @@ const semaine = computed(() => emotionDeLaSemaine(props.bilans));
     </CardHeader>
     <CardContent class="px-4 pb-4 md:px-6 md:pb-6 text-left">
       <div v-if="semaine" class="flex items-center gap-4">
-        <span class="text-5xl" aria-hidden="true">{{ semaine.emoji }}</span>
+        <i class="material-symbols-outlined rounded-carte bg-teinte-symptome-fond p-3 text-[2.5rem] text-teinte-symptome" aria-hidden="true">{{ semaine.icone }}</i>
         <div class="flex flex-col gap-2 min-w-0">
           <p class="text-base font-semibold text-texte">{{ semaine.libelle }}</p>
           <ul v-if="semaine.principales.length" class="flex flex-wrap gap-2" aria-label="Émotions les plus fréquentes">
@@ -31,7 +31,7 @@ const semaine = computed(() => emotionDeLaSemaine(props.bilans));
                 :key="code"
                 class="inline-flex items-center gap-1 rounded-controle bg-surface-2 px-2 py-1 text-xs text-texte"
             >
-              <span aria-hidden="true">{{ presentationEmotion[code].emoji }}</span>{{ presentationEmotion[code].libelle }}
+              <span class="h-2 w-2 shrink-0 rounded-full" :class="pastilleTonalite[presentationEmotion[code].tonalite]" aria-hidden="true"></span>{{ presentationEmotion[code].libelle }}
             </li>
           </ul>
           <p class="text-sm text-texte-3">

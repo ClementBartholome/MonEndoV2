@@ -51,14 +51,21 @@ dotnet ef migrations add NomEnPascalCase --project MonEndoVue.Server
   Chaque entité porte un `CarnetSanteId` : c'est la clé du cloisonnement.
 - **`DonneesDouleur`** (type, intensité 0-10, date, commentaire) — page `/douleurs`.
 - **`SymptomeCycle`** (type, intensité, date, commentaire, photo optionnelle) dont l'**acné** avec suivi photo ;
-  **`JourRegle`** (jours de règles) — page `/cycle`, onglets Règles (`?onglet=cycles`), Symptômes et Acné.
+  **`JourRegle`** (jours de règles) — page `/cycle`, onglets Règles (`?onglet=cycles`) et Symptômes ; l'acné a sa page `/acne`
+  (menu « Plus », groupe « Mes suivis », raccourci sous l'onglet Symptômes ; l'ancien `/cycle?onglet=acne` y est redirigé par le routeur).
   Règles via `CycleController` (carnet de la session) : `GET Cycle?jour=&mois=` (jours du mois, cycle en cours,
   6 derniers cycles et moyenne dès deux cycles) et `PUT`/`DELETE Cycle/regles/{jour}` (un jour à la fois, jamais à venir).
+  Chaque jour de règles porte deux détails **facultatifs** (null = non précisé, jamais compté comme un niveau ni comme « non ») : le **flux**
+  (`FluxRegles` : Traces, Léger, Moyen, Abondant, stocké en texte) et les **caillots** (oui / non), via `PUT Cycle/regles/{jour}/details`
+  (un jour déjà noté ; les deux champs remplacent les précédents) ; `GET Cycle` renvoie `detailsJours` pour le mois. Ils apparaissent dans le
+  calendrier (points), l'export des données et la synthèse du PDF (jours par niveau, caillots oui / non). Rubriques et sources :
+  `.claude/skills/endometriose/sources.md` ; maquettes de la 1.5.0 dans le plan privé.
   Règles = jours notés consécutifs, un oubli d'un jour toléré ; un écart de plus de 60 jours n'est ni listé ni compté
   (`HistoriqueCycles`, même seuils que `CycleDuJour`). **Aucune prédiction** de prochaines règles.
   Acné : **`EpisodeAcne`** (début, fin vide = en cours ; un seul en cours, sans chevauchement) via `AcneController`
   (`GET Acne?jour=`, `POST/PUT/DELETE Acne/episodes`, `POST Acne/episodes/{id}/fin`) : rien à noter chaque jour
   tant qu'il dure. Le point de suivi hebdomadaire (photo, intensité) reste un `SymptomeCycle` « Acné » avec photo.
+  Pendant un épisode en cours, l'accueil affiche une carte (durée, dernière photo, « Ajouter une photo » → `/acne?ajouter`).
   Les anciens jours d'acné (une entrée par jour) ont été regroupés en épisodes par la migration `AjouteEpisodesAcne`
   et sont conservés tels quels.
 - **`Medicament`** (traitement, `TypeTraitement` médicamenteux ou non, en cours ou passé, avec une **fréquence** à la
@@ -86,15 +93,26 @@ dotnet ef migrations add NomEnPascalCase --project MonEndoVue.Server
   La page s'ouvre sur l'historique ; la saisie du jour ne s'ouvre d'office qu'avec `?ajouter` (accueil, rappel).
   Saisie en un écran (`components/saisie/`) : douleur et émotions obligatoires, stress, fatigue, pas et hydratation
   **nullables** (null = non renseigné, jamais compté pour 0) ; **un seul bilan par jour** et aucun jour futur (409 / 400).
+  Les **catégories facultatives** (Corps, Notes, puis Urinaire, Saignements hors règles, Nuit et journée, Rapports) s'affichent selon un réglage de
+  l'appareil (`Paramètres › Catégories du bilan`, `localStorage`, `features/bilan-quotidien/config/categories.ts`) : masquer une catégorie ne supprime
+  aucune réponse (historique, export et PDF la gardent). Douleur, émotions, fatigue et stress sont toujours présents.
+  Les questions de ces catégories (libellés, choix, suite d'intensité) sont décrites dans `config/questions.ts` et affichées par `QuestionsBilan` ;
+  chaque champ est **nullable** côté serveur (`BilanQuotidien`, `BilanCategoriesValidator`). Résumé d'un bloc replié = nombre de réponses, jamais
+  leur contenu ; **« Rapports » est discrète** (désactivée par défaut, rubrique du PDF décochée par défaut). Rubriques et sources :
+  `.claude/skills/endometriose/sources.md`.
   Les bilans antérieurs gardent leur ancienne humeur `Mood` (`Heureuse`/`Neutre`/`Triste`) : tout calcul d'humeur passe
   par `features/bilan-quotidien/utils/humeur.ts`, qui prend en compte les deux.
 - Accueil `/` « Aujourd'hui » (`GET Accueil/aujourdhui?jour=AAAA-MM-JJ`, jour local envoyé par le client, carnet de la
-  session : cycle déduit des jours de règles sans prédiction, bilan du jour, prises prévues ce jour-là (heure et réponse) et
-  traitements au besoin, faits descriptifs des 7 derniers jours ; prise notée en un geste par `POST Traitements/{id}/prises`), agenda `/agenda` (Google Calendar en lecture via le serveur : l'utilisatrice lie son compte Google depuis `/parametres` (OAuth, `Agenda/liaison`, portées `calendar.events.readonly` et `calendar.calendarlist.readonly`), puis choisit **le calendrier lu**, le seul (idéalement un calendrier de rendez-vous médicaux) ; sans liaison, repli temporaire sur l'entrée de configuration `Agenda` ; sans calendrier choisi, rien n'est lu). Page `/agenda` (`features/schedule/`) : **liste par jour** (vue par défaut) et vue Mois, détail dans un panneau ; « Préparer ce rendez-vous » ouvre `/export` avec, dans l'**état de la navigation** (`history.state`, jamais dans l'adresse), la date du rendez-vous et celle du précédent (`GET Agenda/precedent?avant=`) : période « depuis le dernier RDV » jusqu'à aujourd'hui (l'export ne dépasse pas aujourd'hui), « Préparer un rendez-vous » `/export` : PDF créé dans le navigateur (jsPDF, chargé à la demande) depuis
+  session : cycle déduit des jours de règles sans prédiction, bilan du jour, épisode d'acné en cours (durée, jour de la dernière photo), prises prévues ce jour-là (heure et réponse) et
+  traitements au besoin, faits descriptifs des 7 derniers jours et **frise** de ces 7 jours ; prise notée en un geste par `POST Traitements/{id}/prises`), agenda `/agenda` (Google Calendar en lecture via le serveur : l'utilisatrice lie son compte Google depuis `/parametres` (OAuth, `Agenda/liaison`, portées `calendar.events.readonly` et `calendar.calendarlist.readonly`), puis choisit **le calendrier lu**, le seul (idéalement un calendrier de rendez-vous médicaux) ; sans liaison, repli temporaire sur l'entrée de configuration `Agenda` ; sans calendrier choisi, rien n'est lu). Page `/agenda` (`features/schedule/`) : **liste par jour** des rendez-vous à venir (vue par défaut), vue **Passés** (par mois, du plus récent, fenêtres de 60 jours lues à la demande, six au plus) et vue Mois, détail dans un panneau ; « Refaire le résumé de cette période » (rendez-vous passé à heure fixe) ouvre `/export` comme « Préparer », avec en plus `jusquau` (jour du rendez-vous) : la période finit ce jour-là au lieu d'aujourd'hui ; « Préparer ce rendez-vous » ouvre `/export` avec, dans l'**état de la navigation** (`history.state`, jamais dans l'adresse), la date du rendez-vous et celle du précédent (`GET Agenda/precedent?avant=`) : période « depuis le dernier RDV » jusqu'à aujourd'hui (l'export ne dépasse pas aujourd'hui), « Préparer un rendez-vous » `/export` : PDF créé dans le navigateur (jsPDF, chargé à la demande) depuis
   `GET Synthese?du=&au=` (`SyntheseRendezVousService`, carnet de la session, un an au plus : comptes et moyennes par
   rubrique, prises des traitements, règles, détail jour par jour, **sans interprétation**). Période 1 mois / 3 mois /
   libre, rubriques au choix, « Mes questions » (texte libre gardé sur l'appareil, jamais envoyé, en première page).
   `CarnetSanteController` et ses vues (carnet par id, dernières entrées, export du mois) ont été retirés : plus aucun appel client.
+- **Frise** (`FriseService`, `GET Frise?au=&jours=`, 62 jours au plus, carnet de la session) : pour chaque jour, la douleur la plus forte notée
+  (douleur moyenne du bilan ou entrée de douleur, null si rien) et les règles. Accueil (7 jours, dans `Accueil/aujourdhui`), onglet Règles de
+  `/cycle` (30 jours) et PDF de rendez-vous (toute la période, calculée côté client depuis la synthèse : `friseDeLaSynthese`, seulement si la
+  rubrique Douleurs est cochée, ruban des règles seulement avec la rubrique Cycle). Purement descriptive, sans moyenne ni prédiction. Composant `shared/components/FriseDesJours.vue`.
 - Page « Une suggestion ? Un bug ? » `/suggestions` (`features/retours/`, entrée « Suggestion ou bug » du menu « Plus ») : de
   simples liens `mailto:` vers l'adresse de l'éditeur (`features/legal/config/editeur.ts`), objet et corps préremplis
   avec la page d'origine, la version et l'appareil ; aucun formulaire, rien stocké côté serveur. Les e-mails reçus sont
@@ -111,6 +129,15 @@ dotnet ef migrations add NomEnPascalCase --project MonEndoVue.Server
   seule si l'appareil ne reçoit pas de notification, explique l'installation sur iPhone hors écran d'accueil, expose le refus de permission), puis l'accueil avec la
   carte « Pour bien démarrer » (drapeau local `monendo-premiers-pas`, aucune progression ni tâche à finir). Rien n'est stocké côté serveur pour ce parcours ; il ne
   concerne que les inscriptions (jamais les comptes existants).
+- **Comptes** (`AccountController` → `ComptesService`) : l'inscription crée un compte **non confirmé, sans session** (202) et envoie un lien de
+  confirmation ; la connexion répond 403 `adresse-non-confirmee` **seulement si le mot de passe est bon** ; mot de passe oublié (lien 1 h, une fois,
+  ferme toutes les sessions). **Aucune énumération** : même réponse et même délai qu'une adresse soit inscrite ou non (e-mails envoyés en arrière-plan
+  par `IFileEmails`, relais SMTP Brevo, voir `deploy/README.md`). Les liens portent le jeton dans le **fragment** ; pages publiques `/inscription/envoyee`,
+  `/confirmer-adresse`, `/mot-de-passe-oublie`, `/reinitialiser-mot-de-passe` (le fragment est lu puis retiré de la barre d'adresse). Compte jamais
+  confirmé : supprimé après 7 jours (job de nuit). Le drapeau local `monendo-accueil-a-faire` fait passer la première connexion par `/bienvenue/rappel`.
+  **Inscription sur invitation** par défaut (`Inscriptions:SurInvitation`) : code de 12 caractères, empreinte seule en base (`CodesInvitation`, usages
+  et expiration), créé par `creer-code-invitation` dans le conteneur (voir `deploy/README.md`), partagé par `/register#code=…` (fragment) ;
+  `GET Account/inscription` dit à l'écran s'il faut un code. Un usage n'est compté que si le compte est réellement créé.
 - Pages publiques (sans compte, `meta: { public: true }` dans le routeur) : connexion, inscription, politique de
   confidentialité `/confidentialite` et mentions légales `/mentions-legales` (`features/legal/`). **Consentement explicite**
   aux données de santé (`ApplicationUser.ConsentementDonneesSanteLe`, version de la politique acceptée) : case à l'inscription,
@@ -120,7 +147,9 @@ dotnet ef migrations add NomEnPascalCase --project MonEndoVue.Server
 - Notifications **Web Push standard** envoyées par le serveur (clés VAPID, sans service tiers) : chaque appareil s'abonne
   depuis `/parametres` ; rappels réglables (job Quartz toutes les 15 min), chacun omis si le suivi est déjà fait :
   bilan quotidien (bilan du jour pas encore rempli, ouvre `/bilan-quotidien?ajouter`) et photo de suivi de l'acné hebdomadaire
-  (**seulement pendant un épisode d'acné en cours**, si aucune photo depuis 7 jours ; ouvre `/cycle?onglet=acne`). Sur iOS (16.4+), uniquement dans l'app ajoutée à l'écran d'accueil.
+  (**seulement pendant un épisode d'acné en cours**, si aucune photo depuis 7 jours ; ouvre `/acne`), et **veille d'un rendez-vous**
+  (`RappelRendezVous`, 19 h par défaut : seulement si le calendrier choisi de l'agenda Google lié contient un rendez-vous à heure fixe le lendemain local ;
+  omis sans agenda, sans calendrier ou si Google ne répond pas ; notification sans titre ni lieu, ouvre `/agenda`). Sur iOS (16.4+), uniquement dans l'app ajoutée à l'écran d'accueil.
   Entités : **`AbonnementPush`** (un par appareil, endpoint unique, rattaché au carnet) et **`Rappel`** (un par carnet et
   par type : actif, heure locale, jour de la semaine si hebdomadaire, fuseau IANA, date du dernier envoi). L'ancienne table
   `PreferencesRappel` est supprimée depuis la 1.2.0.

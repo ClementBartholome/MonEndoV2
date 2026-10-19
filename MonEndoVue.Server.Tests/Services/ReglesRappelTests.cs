@@ -31,7 +31,69 @@ public sealed class ReglesRappelTests : IDisposable
         _carnet.Context.SaveChanges();
     }
 
-    private Task<bool> AcneSuivie() => new RappelSuiviAcne(_carnet.Context)
+    /// <summary>Rappel de rendez-vous évalué le 26 septembre (Paris) : la veille, Google répond avec les événements donnés.</summary>
+    private async Task<(bool Omis, FauxGoogleCalendar Google)> RendezVous(Func<HttpRequestMessage, HttpResponseMessage> google, string userId = CarnetDeTest.UserId)
+    {
+        var faux = new FauxGoogleCalendar(google);
+        var regle = new RappelRendezVous(_carnet.Context, AgendaDeTest.Service(faux, AgendaDeTest.Options(userId: userId)));
+        return (await regle.SuiviDejaFaitAsync(CarnetDeTest.CarnetSanteId, Aujourdhui, Paris, CancellationToken.None), faux);
+    }
+
+    [Fact]
+    public async Task RendezVous_UnRendezVousDemain_RappelEnvoye()
+    {
+        var (omis, google) = await RendezVous(_ => AgendaDeTest.Reponse(AgendaDeTest.Evenement("1", "Gynécologue", "2026-09-27T14:30:00+02:00")));
+
+        Assert.False(omis);
+        // La journée demandée est le lendemain local (27 septembre à Paris), exprimée en UTC.
+        var url = Uri.UnescapeDataString(google.Requetes.Single().RequestUri!.ToString());
+        Assert.Contains("timeMin=2026-09-26T22:00:00", url);
+        Assert.Contains("timeMax=2026-09-27T22:00:00", url);
+    }
+
+    [Fact]
+    public async Task RendezVous_SeulementUnEvenementSurLaJourneeEntiere_RappelOmis()
+    {
+        var (omis, _) = await RendezVous(_ => AgendaDeTest.Reponse(AgendaDeTest.Evenement("1", "Congés", "2026-09-27", journeeEntiere: true)));
+
+        Assert.True(omis);
+    }
+
+    [Fact]
+    public async Task RendezVous_AucunRendezVous_RappelOmis()
+    {
+        var (omis, _) = await RendezVous(_ => AgendaDeTest.Reponse(""));
+
+        Assert.True(omis);
+    }
+
+    [Fact]
+    public async Task RendezVous_GoogleIndisponible_RappelOmisPlutotQueFaux()
+    {
+        var (omis, _) = await RendezVous(_ => new HttpResponseMessage(System.Net.HttpStatusCode.ServiceUnavailable));
+
+        Assert.True(omis);
+    }
+
+    [Fact]
+    public async Task RendezVous_SansAgendaPourLeCompte_RappelOmisSansAppelerGoogle()
+    {
+        var (omis, google) = await RendezVous(_ => AgendaDeTest.Reponse(AgendaDeTest.Evenement("1", "RDV", "2026-09-27T09:00:00+02:00")), userId: "une-autre");
+
+        Assert.True(omis);
+        Assert.Empty(google.Requetes);
+    }
+
+    [Fact]
+    public void RendezVous_LaNotificationNeCiteNiTitreNiLieu()
+    {
+        var message = new RappelRendezVous(_carnet.Context, AgendaDeTest.Service(new FauxGoogleCalendar(_ => AgendaDeTest.Reponse("")))).Message;
+
+        Assert.Equal("Demain, un rendez-vous. Ton résumé peut t'aider à le préparer.", message.Texte);
+        Assert.Equal("/agenda", message.Url);
+    }
+
+    private Task<bool> AcneSuivie() =>new RappelSuiviAcne(_carnet.Context)
         .SuiviDejaFaitAsync(CarnetDeTest.CarnetSanteId, Aujourdhui, Paris, CancellationToken.None);
 
     [Fact]
@@ -109,7 +171,7 @@ public sealed class ReglesRappelTests : IDisposable
 
         Assert.Equal((TypeRappel.BilanQuotidien, false, new TimeOnly(21, 0), (DayOfWeek?)null, "/bilan-quotidien?ajouter"),
             (bilan.Type, bilan.EstHebdomadaire, bilan.HeureParDefaut, bilan.JourParDefaut, bilan.Message.Url));
-        Assert.Equal((TypeRappel.SuiviAcne, true, new TimeOnly(20, 0), (DayOfWeek?)DayOfWeek.Sunday, "/cycle?onglet=acne"),
+        Assert.Equal((TypeRappel.SuiviAcne, true, new TimeOnly(20, 0), (DayOfWeek?)DayOfWeek.Sunday, "/acne"),
             (acne.Type, acne.EstHebdomadaire, acne.HeureParDefaut, acne.JourParDefaut, acne.Message.Url));
     }
 

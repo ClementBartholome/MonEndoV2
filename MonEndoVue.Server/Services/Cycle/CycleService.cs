@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using MonEndoVue.Server.Data;
+using MonEndoVue.Server.Dto;
 using MonEndoVue.Server.Models;
 using MonEndoVue.Server.Services.Accueil;
 using MonEndoVue.Server.ViewModels;
@@ -27,13 +28,11 @@ public class CycleService(AppDbContext context, CarnetSanteService carnetSanteSe
         if (!EstAujourdhui(jour)) return ResultatOperation<CycleViewModel>.Echec(StatutOperation.Invalide, "Le jour demandé doit être aujourd'hui.");
 
         // L'historique entier est court (quelques jours par mois) : une seule lecture sert au mois, au cycle et aux cycles.
-        var jours = (await context.JourRegles
-                .Where(j => j.CarnetSanteId == carnetId)
-                .Select(j => j.Date)
-                .ToListAsync(ct))
-            .Select(DateOnly.FromDateTime)
-            .Distinct()
-            .ToList();
+        var notes = await context.JourRegles.AsNoTracking()
+            .Where(j => j.CarnetSanteId == carnetId)
+            .Select(j => new { j.Date, j.Flux, j.Caillots })
+            .ToListAsync(ct);
+        var jours = notes.Select(j => DateOnly.FromDateTime(j.Date)).Distinct().ToList();
 
         var tous = HistoriqueCycles.Cycles(HistoriqueCycles.Regrouper(jours), int.MaxValue);
         var cycles = tous.Take(Math.Clamp(nombreCycles, 1, CyclesMaximum)).ToList();
@@ -47,6 +46,17 @@ public class CycleService(AppDbContext context, CarnetSanteService carnetSanteSe
                 .Where(j => j.Year == mois.Year && j.Month == mois.Month)
                 .Order()
                 .Select(Texte)
+                .ToList(),
+            DetailsJours = notes
+                .Where(j => (j.Flux is not null || j.Caillots is not null) && j.Date.Year == mois.Year && j.Date.Month == mois.Month)
+                .GroupBy(j => DateOnly.FromDateTime(j.Date))
+                .OrderBy(g => g.Key)
+                .Select(g => new DetailJourReglesViewModel
+                {
+                    Jour = Texte(g.Key),
+                    Flux = g.Select(j => j.Flux).FirstOrDefault(f => f is not null),
+                    Caillots = g.Select(j => j.Caillots).FirstOrDefault(c => c is not null),
+                })
                 .ToList(),
             EnCours = enCours.JourDuCycle is { } jourDuCycle
                 ? new CycleEnCoursViewModel
@@ -108,6 +118,29 @@ public class CycleService(AppDbContext context, CarnetSanteService carnetSanteSe
             await context.SaveChangesAsync(ct);
             carnetSanteService.InvalidateCache(carnetId);
         }
+        return ResultatOperation.Succes();
+    }
+
+    /// <summary>
+    /// Précise le flux et les caillots d'un jour de règles <b>déjà noté</b> ; les deux champs remplacent les précédents
+    /// (nul = non précisé). Un jour non noté est introuvable : les détails n'existent qu'avec leur jour.
+    /// </summary>
+    public async Task<ResultatOperation> EnregistrerDetailsAsync(string userId, DateOnly jour, DetailsJourReglesDto details, CancellationToken ct)
+    {
+        if (await CarnetDeAsync(userId, ct) is not { } carnetId) return ResultatOperation.Echec(StatutOperation.NonAuthentifie);
+        if (details.Flux is { } flux && !Enum.IsDefined(flux)) return ResultatOperation.Echec(StatutOperation.Invalide, "Flux inconnu.");
+
+        var (debut, fin) = Bornes(jour);
+        var notes = await context.JourRegles.Where(j => j.CarnetSanteId == carnetId && j.Date >= debut && j.Date < fin).ToListAsync(ct);
+        if (notes.Count == 0) return ResultatOperation.Echec(StatutOperation.Introuvable);
+
+        foreach (var note in notes)
+        {
+            note.Flux = details.Flux;
+            note.Caillots = details.Caillots;
+        }
+        await context.SaveChangesAsync(ct);
+        carnetSanteService.InvalidateCache(carnetId);
         return ResultatOperation.Succes();
     }
 

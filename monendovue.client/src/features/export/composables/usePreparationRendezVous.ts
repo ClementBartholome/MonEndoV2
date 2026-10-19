@@ -1,17 +1,21 @@
-import { computed, ref, watch } from 'vue';
+import { computed, onBeforeUnmount, ref, watch } from 'vue';
 import { addDays, addMonths, differenceInCalendarDays, format, parseISO } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import apiService from '@/shared/services/apiService';
 import { enregistrerQuestions, lireQuestions } from '../services/questionsRendezVous';
-import type { Rubrique } from '../types/synthese';
+import type { Rubrique, SyntheseRendezVous } from '../types/synthese';
 import { creerPdf, libellePeriode, nomDuFichier } from '../utils/pdfRendezVous';
 
 export type ChoixPeriode = '1mois' | '3mois' | 'autre' | 'depuis';
 
-/** Ce que la page Agenda transmet dans l'état de la navigation (jamais dans l'adresse) : le rendez-vous préparé et le précédent. */
+/**
+ * Ce que la page Agenda transmet dans l'état de la navigation (jamais dans l'adresse) : le rendez-vous préparé, le précédent et,
+ * pour un rendez-vous passé dont on refait le résumé, son jour (fin de la période).
+ */
 interface EtatNavigation {
     rdv?: unknown;
     depuis?: unknown;
+    jusquau?: unknown;
 }
 
 const OPTIONS_HABITUELLES: { valeur: ChoixPeriode; libelle: string }[] = [
@@ -34,6 +38,9 @@ function libelleRendezVous(iso: string): string | null {
     return `${jour} ${format(date, 'MMMM', { locale: fr })} à ${format(date, "H'\u00a0h\u00a0'mm")}`;
 }
 
+/** Délai avant de recharger l'aperçu après un changement de période (une date tapée chiffre par chiffre). */
+const DELAI_APERCU = 300;
+
 /** Période la plus longue acceptée par le serveur (`SyntheseRendezVousService.JoursMaximum`). */
 const JOURS_MAXIMUM = 366;
 
@@ -42,12 +49,14 @@ const cle = (date: Date) => format(date, 'yyyy-MM-dd');
 /** Préparation du PDF d'un rendez-vous : période, rubriques à inclure, questions, puis création du document. */
 export function usePreparationRendezVous() {
     const aujourdhui = cle(new Date());
-    const ilYA = (mois: number) => cle(addDays(addMonths(parseISO(aujourdhui), -mois), 1));
 
-    // Arrivée depuis « Préparer ce rendez-vous » de l'agenda : rendez-vous visé et début de la période (rendez-vous précédent).
+    // Arrivée depuis l'agenda (« Préparer ce rendez-vous », « Refaire le résumé ») : rendez-vous visé, début de la période
+    // (rendez-vous précédent) et, pour un rendez-vous passé, sa date comme fin de période.
     const venu = (window.history.state ?? {}) as EtatNavigation;
     const rendezVous = typeof venu.rdv === 'string' ? libelleRendezVous(venu.rdv) : null;
-    const debutDepuis = typeof venu.depuis === 'string' && venu.depuis <= aujourdhui ? venu.depuis : null;
+    const fin = typeof venu.jusquau === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(venu.jusquau) && venu.jusquau <= aujourdhui ? venu.jusquau : aujourdhui;
+    const ilYA = (mois: number) => cle(addDays(addMonths(parseISO(fin), -mois), 1));
+    const debutDepuis = typeof venu.depuis === 'string' && venu.depuis <= fin ? venu.depuis : null;
     // Une période ne dépasse pas un an : un rendez-vous plus ancien est ramené à il y a un an.
     const depuis = debutDepuis && debutDepuis > ilYA(12) ? debutDepuis : (debutDepuis ? ilYA(12) : null);
     const options = depuis ? OPTIONS_DEPUIS_LE_DERNIER : OPTIONS_HABITUELLES;
@@ -55,12 +64,12 @@ export function usePreparationRendezVous() {
     const choix = ref<ChoixPeriode>(depuis ? 'depuis' : '3mois');
     /** Bornes de la période « Autre » (AAAA-MM-JJ). */
     const du = ref(ilYA(6));
-    const au = ref(aujourdhui);
+    const au = ref(fin);
 
     const periode = computed(() => {
-        if (choix.value === '1mois') return { du: ilYA(1), au: aujourdhui };
-        if (choix.value === '3mois') return { du: ilYA(3), au: aujourdhui };
-        if (choix.value === 'depuis' && depuis) return { du: depuis, au: aujourdhui };
+        if (choix.value === '1mois') return { du: ilYA(1), au: fin };
+        if (choix.value === '3mois') return { du: ilYA(3), au: fin };
+        if (choix.value === 'depuis' && depuis) return { du: depuis, au: fin };
         return { du: du.value, au: au.value };
     });
 
@@ -78,11 +87,56 @@ export function usePreparationRendezVous() {
 
     const rubriques = ref<Record<Rubrique, boolean>>({
         douleurs: true, cycle: true, traitements: true, bilans: true, activite: false, transit: false,
+        // Discrète : jamais imprimée sans que la personne la coche.
+        rapports: false,
     });
     const aucuneRubrique = computed(() => !Object.values(rubriques.value).some(Boolean));
 
     const questions = ref(lireQuestions());
     watch(questions, enregistrerQuestions);
+
+    // Aperçu « En un coup d'œil » : la synthèse de la période choisie, rechargée quand elle change. Seule la dernière
+    // demande compte (deux changements rapides ne laissent pas la réponse la plus lente l'emporter).
+    const apercu = ref<SyntheseRendezVous | null>(null);
+    const chargementApercu = ref(false);
+    const erreurApercu = ref(false);
+    let derniereDemande = 0;
+    let minuterie: ReturnType<typeof setTimeout> | undefined;
+
+    async function chargerApercu() {
+        const numero = ++derniereDemande;
+        if (erreurPeriode.value) {
+            // Période invalide : rien à montrer (l'aperçu d'une autre période induirait en erreur).
+            apercu.value = null;
+            chargementApercu.value = false;
+            erreurApercu.value = false;
+            return;
+        }
+        const { du: debut, au: fin } = periode.value;
+        chargementApercu.value = true;
+        erreurApercu.value = false;
+        try {
+            const synthese = await apiService.getSyntheseRendezVous(debut, fin);
+            if (numero === derniereDemande) apercu.value = synthese;
+        } catch {
+            if (numero === derniereDemande) {
+                apercu.value = null;
+                erreurApercu.value = true;
+            }
+        } finally {
+            if (numero === derniereDemande) chargementApercu.value = false;
+        }
+    }
+
+    watch(periode, () => {
+        clearTimeout(minuterie);
+        minuterie = setTimeout(chargerApercu, DELAI_APERCU);
+    }, { deep: true });
+    void chargerApercu();
+    onBeforeUnmount(() => clearTimeout(minuterie));
+
+    /** L'aperçu affiché porte sur la période demandée : le PDF le reprend au lieu de redemander la synthèse. */
+    const apercuAJour = () => apercu.value !== null && apercu.value.du === periode.value.du && apercu.value.au === periode.value.au;
 
     const creation = ref(false);
     const erreur = ref(false);
@@ -95,7 +149,15 @@ export function usePreparationRendezVous() {
         creation.value = true;
         erreur.value = false;
         try {
-            const synthese = await apiService.getSyntheseRendezVous(periode.value.du, periode.value.au);
+            // Création juste après un changement de période : l'aperçu en attente est annulé et reprend ce qui vient d'être reçu.
+            clearTimeout(minuterie);
+            const synthese = apercuAJour() ? apercu.value! : await apiService.getSyntheseRendezVous(periode.value.du, periode.value.au);
+            if (!apercuAJour()) {
+                derniereDemande++;
+                apercu.value = synthese;
+                chargementApercu.value = false;
+                erreurApercu.value = false;
+            }
             const doc = await creerPdf(synthese, { rubriques: rubriques.value, questions: questions.value, creeLe: new Date() });
             doc.save(nomDuFichier(synthese));
             return true;
@@ -107,5 +169,8 @@ export function usePreparationRendezVous() {
         }
     }
 
-    return { aujourdhui, choix, options, rendezVous, du, au, libelle, erreurPeriode, rubriques, aucuneRubrique, questions, creation, erreur, peutCreer, creer };
+    return {
+        aujourdhui, choix, options, rendezVous, du, au, libelle, erreurPeriode, rubriques, aucuneRubrique, questions, creation, erreur, peutCreer, creer,
+        apercu, chargementApercu, erreurApercu,
+    };
 }

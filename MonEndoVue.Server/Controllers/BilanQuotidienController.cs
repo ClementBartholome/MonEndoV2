@@ -91,6 +91,7 @@ namespace MonEndoVue.Server.Controllers
             existing.IntensiteCrampes = bilanQuotidien.IntensiteCrampes;
             existing.Ballonnements = bilanQuotidien.Ballonnements;
             existing.IntensiteBallonnements = bilanQuotidien.IntensiteBallonnements;
+            BilanCategories.Copier(bilanQuotidien, existing);
 
             await context.SaveChangesAsync();
             carnetSanteService.InvalidateCache(existing.CarnetSanteId);
@@ -129,6 +130,7 @@ namespace MonEndoVue.Server.Controllers
         {
             var erreur = BilanHumeurValidator.Valider(bilan).Erreur
                 ?? BilanTransitValidator.Valider(bilan).Erreur
+                ?? BilanCategoriesValidator.Valider(bilan).Erreur
                 ?? BilanMesuresValidator.Valider(bilan).Erreur
                 ?? BilanDateValidator.Valider(bilan.Date, horloge.GetUtcNow()).Erreur;
             return erreur == null ? null : BadRequest(new { message = erreur });

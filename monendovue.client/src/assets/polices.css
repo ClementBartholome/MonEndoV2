@@ -1,28 +1,44 @@
 /*
  * Polices servies par l'application elle-même (aucune requête vers Google Fonts : l'adresse IP de l'utilisatrice
- * ne sort pas du site). Seuls les graisses et le sous-ensemble latin utilisés sont embarqués.
- */
-@import '@fontsource/poppins/latin-400.css';
-@import '@fontsource/poppins/latin-400-italic.css';
-@import '@fontsource/poppins/latin-500.css';
-@import '@fontsource/poppins/latin-600.css';
-@import '@fontsource/poppins/latin-700.css';
-
-/*
- * Icônes : variante avec le seul axe FILL (icône pleine pour l'onglet actif), graisse fixe.
- * font-display: block évite d'afficher le nom de l'icône en texte pendant le chargement.
+ * ne sort pas du site). Seul le sous-ensemble latin est embarqué, en polices variables (toutes les graisses dans un fichier).
+ *
+ * Identité « Carnet de bord » (1.5.0) :
+ * - Lexend pour toute l'interface : dessinée pour la fluidité de lecture, ronde et chaleureuse, au zéro simple
+ *   (Atkinson Hyperlegible, essayée d'abord, barre ses zéros : « 2Ø26 ») ;
+ * - Literata pour les titres de page et les chiffres saisis (« 4/10 », « 31 j ») : l'écriture du carnet.
  */
 @font-face {
-    font-family: 'Material Symbols Outlined';
+    font-family: 'Lexend';
+    font-style: normal;
+    font-weight: 100 900;
+    font-display: swap;
+    src: url('@fontsource-variable/lexend/files/lexend-latin-wght-normal.woff2') format('woff2-variations');
+}
+
+@font-face {
+    font-family: 'Literata';
+    font-style: normal;
+    font-weight: 200 900;
+    font-display: swap;
+    src: url('@fontsource-variable/literata/files/literata-latin-wght-normal.woff2') format('woff2-variations');
+}
+
+/*
+ * Icônes : Material Symbols arrondies (plus douces que la variante « outlined »), avec le seul axe FILL (icône pleine
+ * pour l'onglet actif), graisse fixe. La classe garde son nom historique (material-symbols-outlined) pour ne pas
+ * toucher aux 80 fichiers qui l'emploient. font-display: block évite d'afficher le nom de l'icône pendant le chargement.
+ */
+@font-face {
+    font-family: 'Material Symbols Rounded';
     font-style: normal;
     font-weight: 400;
     font-display: block;
-    src: url('@fontsource-variable/material-symbols-outlined/files/material-symbols-outlined-latin-fill-normal.woff2') format('woff2');
+    src: url('@fontsource-variable/material-symbols-rounded/files/material-symbols-rounded-latin-fill-normal.woff2') format('woff2');
 }
 
 .material-symbols-outlined {
     /* Police générique de secours exigée par Sonar (S4649) : sans la police, le nom de l'icône s'affiche en texte. */
-    font-family: 'Material Symbols Outlined', sans-serif;
+    font-family: 'Material Symbols Rounded', sans-serif;
     font-weight: normal;
     font-style: normal;
     font-size: 24px;

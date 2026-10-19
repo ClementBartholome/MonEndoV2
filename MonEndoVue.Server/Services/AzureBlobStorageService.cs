@@ -42,7 +42,7 @@ public class AzureBlobStorageService : IStockagePhotos
         await using var stream = file.OpenReadStream();
         var headers = new BlobHttpHeaders
         {
-            ContentType = ResolveContentType(file)
+            ContentType = ResolveContentType(fileName)
         };
 
         await blobClient.UploadAsync(stream, new BlobUploadOptions
@@ -53,23 +53,9 @@ public class AzureBlobStorageService : IStockagePhotos
         return blobClient.Uri.ToString();
     }
 
-    private static string ResolveContentType(IFormFile file)
-    {
-        if (!string.IsNullOrWhiteSpace(file.ContentType))
-        {
-            return file.ContentType;
-        }
-
-        return Path.GetExtension(file.FileName).ToLowerInvariant() switch
-        {
-            ".jpg" or ".jpeg" => "image/jpeg",
-            ".png" => "image/png",
-            ".webp" => "image/webp",
-            ".heic" => "image/heic",
-            ".heif" => "image/heif",
-            _ => "application/octet-stream"
-        };
-    }
+    /// <summary>Le type vient de l'extension du nom stocké, elle-même déduite du contenu : jamais de l'en-tête du client.</summary>
+    private static string ResolveContentType(string fileName) =>
+        SignaturePhoto.TypeMime(Path.GetExtension(fileName).ToLowerInvariant());
 
     public string GetBlobNameFromUrl(string url)
     {

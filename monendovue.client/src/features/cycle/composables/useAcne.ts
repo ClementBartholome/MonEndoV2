@@ -4,7 +4,7 @@ import apiService from '@/shared/services/apiService';
 import type { Acne, EpisodeAcneSaisie } from '../types/acne';
 import { photosAComparer, type EcartComparaison } from '../utils/acne';
 
-/** Onglet Acné : épisode en cours, épisodes passés, suivis photo et comparaison avant / après. */
+/** Page Acné : épisode en cours, épisodes passés, suivis photo et comparaison avant / après. */
 export function useAcne({ maintenant = () => new Date() }: { maintenant?: () => Date } = {}) {
     const donnees = ref<Acne | null>(null);
     const chargement = ref(true);

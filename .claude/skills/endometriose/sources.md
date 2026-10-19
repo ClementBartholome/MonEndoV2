@@ -27,7 +27,25 @@ Consultées le 2026-09-27. Date de la page ou de publication entre parenthèses 
 - [Exploration of Reproductive Health Apps' Data Privacy Policies](https://pmc.ncbi.nlm.nih.gov/articles/PMC11923453/), JMIR, 2025.
 - Avis App Store FR de [Luna for Health](https://apps.apple.com/fr/app/luna-for-health-endom%C3%A9triose/id1585942826) (synthèse, 2026-09).
 
+## Rubriques de suivi proposées en 1.5.0 (consultées le 2026-10-04)
+Chaque nouvelle question du bilan, du calendrier des règles ou du PDF s'appuie sur ces pages ; synthèse en une ligne, sans recopie.
+- HUG — [Consignes pour le carnet de suivi](https://www.hug.ch/gynecologie/consignes-pour-carnet-suivi) : carnet quotidien d'un centre hospitalier, avec des rubriques pour la douleur pelvienne
+  (intensité 0-10), le digestif (douleur à la défécation, constipation, nausées, diarrhée), l'urinaire (douleur en urinant, envies pressantes avec ou sans fuites, envies très fréquentes,
+  difficulté à vider la vessie), d'autres douleurs, l'humeur, les ballonnements, la fatigue, les saignements (traces seulement, léger, normal, abondant, avec un repère en nombre de protections
+  par jour) et les médicaments. Origine des rubriques « douleur à la selle », « nausées », « difficulté à vider la vessie », « traces » de flux et du repère de protections.
+- Ameli — [Symptômes, diagnostic et évolution](https://www.ameli.fr/assure/sante/themes/endometriose/symptomes-diagnostic-evolution) : sang dans les urines en cas d'atteinte de la vessie, traces de sang
+  dans les selles en cas d'atteinte du rectum, douleurs pendant les rapports, fatigue chronique ; conseille de noter nature, intensité et calendrier des douleurs, leur lien avec le cycle et leur
+  impact sur les activités quotidiennes et professionnelles. Origine des rubriques « sang visible dans les urines », « traces de sang dans les selles », « rapports » et « retentissement ».
+- Santé.fr — [Symptômes de l'endométriose](https://www.sante.fr/endometriose/symptomes) : douleurs de règles, douleurs pendant les rapports, difficultés à uriner, troubles digestifs et urinaires,
+  fatigue, règles abondantes.
+- Le Quotidien du médecin — [Endométriose : une composante urologique pas si rare](https://gynecologie-obstetrique.lequotidiendumedecin.fr/actu-medicale/congres/endometriose-une-composante-urologique-pas-si-rare)
+  (presse professionnelle) : symptômes urinaires d'une atteinte de la vessie (envies fréquentes ou pressantes, brûlures, vidange difficile, parfois du sang) ; les signes se renforcent souvent pendant les règles.
+- HAS / CNGOF (déjà citée plus haut) : signes évocateurs et localisateurs (douleur à la défécation ou à la miction qui augmente pendant les règles), évaluation de la douleur et de son impact sur la qualité de vie.
+
+**Sans source officielle trouvée à ce jour** (à faire valider par un soignant avant livraison) : la question « Des caillots ? » (relevée seulement dans la presse grand public et des sites de pharmacie), les
+questions sur le sommeil (« Comment était ta nuit ? », « Des réveils à cause de la douleur ? ») et la graduation « pas limitée / un peu limitée / très limitée » de la journée.
+
 ## Limites connues
 - Pas encore d'analyse systématique des avis Google Play / App Store des autres apps francophones.
 - Enquête EndoVie : chiffres repris de la page EndoFrance, le rapport Ipsos n'a pas pu être lu intégralement.
-- Aucune relecture par un professionnel de santé à ce stade.
+- Aucune relecture par un professionnel de santé à ce stade (relecture des libellés de la 1.5.0 prévue avant livraison).

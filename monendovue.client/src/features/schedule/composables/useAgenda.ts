@@ -3,9 +3,9 @@ import { addDays, endOfMonth, endOfWeek, format, isSameDay, startOfDay, startOfM
 import { useRouter } from 'vue-router';
 import apiService from '@/shared/services/apiService';
 import type { EvenementAgenda, StatutLiaisonAgenda } from '../types/agenda';
-import { debutDe, estAVenir } from '../utils/rendezVous';
+import { debutDe, estAVenir, estPasse } from '../utils/rendezVous';
 
-export type VueAgenda = 'liste' | 'mois';
+export type VueAgenda = 'liste' | 'passes' | 'mois';
 
 /** Ce que la page montre : chargement, un état particulier (agenda à lier, calendrier à choisir, panne), ou les rendez-vous. */
 export type EtatAgenda = 'chargement' | 'non-lie' | 'sans-calendrier' | 'indisponible' | 'pret';
@@ -16,13 +16,15 @@ export type EtatAgenda = 'chargement' | 'non-lie' | 'sans-calendrier' | 'indispo
  */
 const JOURS_PAR_FENETRE = 60;
 const FENETRES_MAXIMUM = 4;
+/** Rendez-vous passés : six fenêtres de 60 jours, soit à peu près l'année que couvre au plus un résumé. */
+const FENETRES_PASSEES_MAXIMUM = 6;
 
 interface Options {
     /** Heure locale (injectée pour les tests). */
     maintenant?: () => Date;
 }
 
-/** Page Agenda : statut de la liaison, rendez-vous à venir (liste), mois affiché, rendez-vous ouvert et préparation du PDF. */
+/** Page Agenda : statut de la liaison, rendez-vous à venir (liste), passés, mois affiché, rendez-vous ouvert et préparation du PDF. */
 export function useAgenda({ maintenant = () => new Date() }: Options = {}) {
     const router = useRouter();
 
@@ -34,6 +36,11 @@ export function useAgenda({ maintenant = () => new Date() }: Options = {}) {
     const fenetres = ref(0);
     const chargementSuite = ref(false);
     const erreurSuite = ref(false);
+
+    const passes = ref<EvenementAgenda[]>([]);
+    const fenetresPassees = ref(0);
+    const chargementPasses = ref(false);
+    const erreurPasses = ref(false);
 
     const moisAffiche = ref(startOfMonth(maintenant()));
     const evenementsMois = ref<EvenementAgenda[]>([]);
@@ -60,6 +67,38 @@ export function useAgenda({ maintenant = () => new Date() }: Options = {}) {
         const debut = addDays(startOfDay(maintenant()), indice * JOURS_PAR_FENETRE);
         return apiService.getEvenementsAgenda(debut, addDays(debut, JOURS_PAR_FENETRE));
     }
+
+    /** Fenêtre de 60 jours qui finit à la fin d'aujourd'hui, puis les précédentes ; seuls les rendez-vous commencés sont gardés. */
+    async function lireFenetrePassee(indice: number): Promise<EvenementAgenda[]> {
+        const fin = addDays(startOfDay(maintenant()), 1 - indice * JOURS_PAR_FENETRE);
+        const lus = (await apiService.getEvenementsAgenda(addDays(fin, -JOURS_PAR_FENETRE), fin)) ?? [];
+        // Une journée entière est passée la veille au plus tard ; un rendez-vous à heure fixe, dès qu'il a commencé.
+        return lus.filter((evenement) => (evenement.journeeEntiere
+            ? debutDe(evenement) < startOfDay(maintenant())
+            : estPasse(evenement, maintenant())));
+    }
+
+    /** Rendez-vous passés : la première fenêtre à l'ouverture de la vue, puis une de plus à chaque « plus anciens ». */
+    async function chargerPasses(depuisLeDebut: boolean) {
+        if (chargementPasses.value) return;
+        if (!depuisLeDebut && fenetresPassees.value >= FENETRES_PASSEES_MAXIMUM) return;
+        chargementPasses.value = true;
+        erreurPasses.value = false;
+        const indice = depuisLeDebut ? 0 : fenetresPassees.value;
+        try {
+            const lus = await lireFenetrePassee(indice);
+            const deja = depuisLeDebut ? [] : passes.value;
+            const dejaLus = new Set(deja.map((evenement) => evenement.id));
+            passes.value = [...deja, ...lus.filter((evenement) => !dejaLus.has(evenement.id))];
+            fenetresPassees.value = indice + 1;
+        } catch {
+            erreurPasses.value = true;
+        } finally {
+            chargementPasses.value = false;
+        }
+    }
+
+    const voirPlusAnciens = () => chargerPasses(false);
 
     async function charger() {
         etat.value = 'chargement';
@@ -133,6 +172,7 @@ export function useAgenda({ maintenant = () => new Date() }: Options = {}) {
     async function changerVue(nouvelle: VueAgenda) {
         vue.value = nouvelle;
         if (nouvelle === 'mois') await chargerMois();
+        if (nouvelle === 'passes' && fenetresPassees.value === 0) await chargerPasses(true);
     }
 
     async function changerMois(decalage: number) {
@@ -146,13 +186,16 @@ export function useAgenda({ maintenant = () => new Date() }: Options = {}) {
     }
 
     async function actualiser() {
-        await (vue.value === 'mois' ? chargerMois() : charger());
+        if (vue.value === 'mois') await chargerMois();
+        else if (vue.value === 'passes') await chargerPasses(true);
+        else await charger();
     }
 
     /**
      * Ouvre l'export réglé pour ce rendez-vous. Le rendez-vous précédent donne le début de la période ; s'il est introuvable
-     * (ou si l'agenda ne répond pas), l'export s'ouvre sur sa période habituelle. Rien de ce rendez-vous ne passe par l'adresse :
-     * les dates voyagent dans l'état de la navigation.
+     * (ou si l'agenda ne répond pas), l'export s'ouvre sur sa période habituelle. Pour un rendez-vous passé, la période finit
+     * le jour du rendez-vous (`jusquau`) : le résumé est refait avec les notes actuelles. Rien de ce rendez-vous ne passe par
+     * l'adresse : les dates voyagent dans l'état de la navigation.
      */
     async function preparer(evenement: EvenementAgenda) {
         if (preparationEnCours.value) return;
@@ -166,7 +209,8 @@ export function useAgenda({ maintenant = () => new Date() }: Options = {}) {
         }
         try {
             selection.value = null;
-            await router.push({ path: '/export', state: { rdv: evenement.debut, depuis } });
+            const jusquau = estPasse(evenement, maintenant()) ? format(debutDe(evenement), 'yyyy-MM-dd') : null;
+            await router.push({ path: '/export', state: { rdv: evenement.debut, depuis, jusquau } });
         } finally {
             preparationEnCours.value = false;
         }
@@ -174,6 +218,8 @@ export function useAgenda({ maintenant = () => new Date() }: Options = {}) {
 
     return {
         etat, statut, vue, evenements, fenetres, chargementSuite, erreurSuite, prochain,
+        passes, chargementPasses, erreurPasses, voirPlusAnciens,
+        peutVoirPlusAnciens: computed(() => fenetresPassees.value < FENETRES_PASSEES_MAXIMUM),
         moisAffiche, evenementsMois, chargementMois, erreurMois, jourChoisi, evenementsDuJour,
         selection, preparationEnCours,
         charger, voirPlusLoin, changerVue, changerMois, choisirJour, actualiser, preparer,

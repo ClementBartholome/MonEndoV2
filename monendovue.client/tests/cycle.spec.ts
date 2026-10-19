@@ -1,8 +1,8 @@
 import { test, expect } from './fixtures';
-import { champs, simulerAcne, simulerRegles, simulerSymptomes } from './mocks/cycle';
+import { champs, simulerRegles, simulerSymptomes } from './mocks/cycle';
 
 test.describe('Cycle · règles', () => {
-  test('affiche le cycle en cours, le mois et l\'historique', async ({ cyclePage, serveur }) => {
+  test('affiche le cycle en cours, le mois et l\'historique', async ({ cyclePage, serveur, page }) => {
     simulerRegles(serveur, ['2026-09-14', '2026-09-15'], {
       enCours: { debut: '2026-09-14', jourDuCycle: 2, jourDeRegles: 2 },
       cycles: [
@@ -20,6 +20,11 @@ test.describe('Cycle · règles', () => {
     await expect(cyclePage.jour('Lundi 14 septembre')).toHaveAttribute('aria-pressed', 'true');
     await expect(cyclePage.jour('Mardi 15 septembre')).toHaveAccessibleName('Mardi 15 septembre, aujourd\'hui, règles');
     await expect(cyclePage.jour('Mercredi 16 septembre')).toBeDisabled();
+    // Frise des 30 derniers jours : du 17 août au 15 septembre, règles les deux derniers jours.
+    const frise = page.getByRole('region', { name: 'Les 30 derniers jours' }).getByRole('listitem');
+    await expect(frise).toHaveCount(30);
+    await expect(frise.first()).toHaveText('lundi 17 août : rien de noté');
+    await expect(frise.last()).toHaveText('mardi 15 septembre : rien de noté, règles');
     await expect(cyclePage.mesCycles).toContainText('Cycle30 j');
     await expect(cyclePage.mesCycles).toContainText('Règles5 j');
     await expect(cyclePage.mesCycles).toContainText('Écart27–31 j');
@@ -84,6 +89,74 @@ test.describe('Cycle · règles', () => {
     expect(serveur.appelsVers('GET', /^Cycle$/).at(-1)!.parametres.get('mois')).toBe('2025-03-01');
   });
 
+  test('précise le flux et les caillots d\'un jour noté, enregistrés dès le geste', async ({ cyclePage, serveur }) => {
+    const details = new Map();
+    simulerRegles(serveur, ['2026-09-14', '2026-09-15'], {}, details);
+    await cyclePage.ouvrir();
+
+    // Le dernier jour noté est proposé d'office ; rien n'est précisé par défaut.
+    await expect(cyclePage.detailDuJour).toContainText('Mardi 15 septembre');
+    await expect(cyclePage.detailDuJour.getByRole('button', { name: 'Moyen' })).toHaveAttribute('aria-pressed', 'false');
+
+    await cyclePage.detailDuJour.getByRole('button', { name: 'Moyen' }).click();
+    await expect(cyclePage.detailDuJour.getByRole('button', { name: 'Moyen' })).toHaveAttribute('aria-pressed', 'true');
+    await expect(cyclePage.jour('Mardi 15 septembre')).toHaveAccessibleName('Mardi 15 septembre, aujourd\'hui, règles, flux moyen');
+    expect(serveur.appelsVers('PUT', /^Cycle\/regles\/2026-09-15\/details$/).at(-1)!.corps).toEqual({ flux: 'Moyen', caillots: null });
+
+    await cyclePage.detailDuJour.getByRole('button', { name: 'Oui' }).click();
+    expect(serveur.appelsVers('PUT', /^Cycle\/regles\/2026-09-15\/details$/).at(-1)!.corps).toEqual({ flux: 'Moyen', caillots: true });
+
+    // Re-toucher un choix le retire : le flux revient à « non précisé », les caillots restent.
+    await cyclePage.detailDuJour.getByRole('button', { name: 'Moyen' }).click();
+    expect(serveur.appelsVers('PUT', /^Cycle\/regles\/2026-09-15\/details$/).at(-1)!.corps).toEqual({ flux: null, caillots: true });
+    await expect(cyclePage.jour('Mardi 15 septembre')).toHaveAccessibleName('Mardi 15 septembre, aujourd\'hui, règles');
+  });
+
+  test('plusieurs jours notés : on choisit celui dont on précise le flux', async ({ cyclePage, serveur }) => {
+    const details = new Map([['2026-09-14', { flux: 'Abondant' as const, caillots: false }]]);
+    simulerRegles(serveur, ['2026-09-14', '2026-09-15'], {}, details);
+    await cyclePage.ouvrir();
+    await expect(cyclePage.jour('Lundi 14 septembre')).toHaveAccessibleName('Lundi 14 septembre, règles, flux abondant');
+
+    await cyclePage.detailDuJour.getByRole('button', { name: 'lundi 14 septembre' }).click();
+
+    await expect(cyclePage.detailDuJour).toContainText('Lundi 14 septembre');
+    await expect(cyclePage.detailDuJour.getByRole('button', { name: 'Abondant' })).toHaveAttribute('aria-pressed', 'true');
+    await expect(cyclePage.detailDuJour.getByRole('button', { name: 'Non' })).toHaveAttribute('aria-pressed', 'true');
+  });
+
+  test('un nouveau jour noté devient le jour à préciser ; sans jour noté, la carte disparaît', async ({ cyclePage, serveur }) => {
+    simulerRegles(serveur);
+    await cyclePage.ouvrir();
+    await expect(cyclePage.detailDuJour).toHaveCount(0);
+
+    await cyclePage.jour('Jeudi 10 septembre').click();
+    await expect(cyclePage.detailDuJour).toContainText('Jeudi 10 septembre');
+
+    await cyclePage.jour('Jeudi 10 septembre').click();
+    await expect(cyclePage.detailDuJour).toHaveCount(0);
+  });
+
+  test('les séries de choix sont nommées pour un lecteur d\'écran', async ({ cyclePage, serveur, page }) => {
+    simulerRegles(serveur, ['2026-09-15']);
+    await cyclePage.ouvrir();
+
+    await expect(cyclePage.detailDuJour.getByRole('group', { name: 'Quel flux ?' })).toBeVisible();
+    await expect(cyclePage.detailDuJour.getByRole('group', { name: 'Des caillots ?' })).toBeVisible();
+    await expect(page.getByText('Repère du carnet de suivi des HUG')).toBeVisible();
+  });
+
+  test('un échec d\'enregistrement du flux remet le choix dans son état', async ({ cyclePage, serveur, page }) => {
+    simulerRegles(serveur, ['2026-09-15']);
+    serveur.on('PUT', /^Cycle\/regles\/[\d-]+\/details$/, () => ({ status: 500 }));
+    await cyclePage.ouvrir();
+
+    await cyclePage.detailDuJour.getByRole('button', { name: 'Léger' }).click();
+
+    await expect(page.getByText('Le jour n\'a pas pu être enregistré. Réessaie dans un instant.').first()).toBeVisible();
+    await expect(cyclePage.detailDuJour.getByRole('button', { name: 'Léger' })).toHaveAttribute('aria-pressed', 'false');
+  });
+
   test('un échec d\'enregistrement remet le jour dans son état', async ({ cyclePage, serveur, page }) => {
     simulerRegles(serveur);
     serveur.on('PUT', /^Cycle\/regles\//, () => ({ status: 500 }));
@@ -112,6 +185,9 @@ test.describe('Cycle · symptômes', () => {
     await expect(page.getByRole('heading', { name: 'Mardi 15 septembre' })).toBeVisible();
     await expect(cyclePage.entree('Fatigue.*14 h 10 · après le déjeuner')).toBeVisible();
     await expect(cyclePage.entree('Acné')).toHaveCount(0);
+    // L'acné a sa page : seul un raccourci y mène, et l'onglet n'existe plus.
+    await expect(page.getByRole('link', { name: /Suivi de l'acné/ })).toBeVisible();
+    await expect(page.getByRole('tab')).toHaveCount(2);
   });
 
   test('note un symptôme maintenant, à l\'heure locale', async ({ cyclePage, serveur, page }) => {
@@ -154,68 +230,5 @@ test.describe('Cycle · symptômes', () => {
     await cyclePage.ouvrir('?onglet=symptomes&ajouter');
 
     await expect(cyclePage.panneau.getByRole('heading', { name: 'Noter un symptôme' })).toBeVisible();
-  });
-});
-
-test.describe('Cycle · acné', () => {
-  const photo = (id: number, date: string) => ({
-    id, date, intensite: 4, commentaire: null,
-    // Chemin de l'API, comme le serveur : la photo est servie par Acne/photos/{id}, jamais par le stockage.
-    photoUrl: `Acne/photos/${id}`,
-  });
-
-  test('épisode en cours, point de la semaine, avant / après et historique', async ({ cyclePage, serveur, page }) => {
-    simulerAcne(serveur, [{ debut: '2026-06-03', fin: '2026-07-20' }, { debut: '2026-08-02' }],
-      [photo(3, '2026-09-10T20:00:00'), photo(2, '2026-06-12T20:00:00'), photo(1, '2026-05-01T20:00:00')]);
-    await cyclePage.ouvrir('?onglet=acne');
-
-    await expect(cyclePage.onglet('Acné')).toHaveAttribute('aria-selected', 'true');
-    const episode = page.getByRole('region', { name: 'En ce moment' });
-    await expect(episode).toContainText('Depuis le 2 août · 45 jours');
-    await expect(page.getByRole('region', { name: 'Point de la semaine' })).toContainText('Dernière photo il y a 5 jours');
-    // Trois mois avant le 10 septembre : la photo du 12 juin, la plus proche.
-    await expect(page.getByRole('img', { name: 'Photo du 12 juin 2026' })).toBeVisible();
-    await page.getByRole('radio', { name: '6 mois' }).click();
-    await expect(page.getByRole('img', { name: 'Photo du 1 mai 2026' })).toBeVisible();
-    await expect(page.getByRole('region', { name: 'Épisodes' })).toContainText('3 juin → 20 juillet');
-  });
-
-  test('« Ça s\'est calmé » termine l\'épisode, « L\'acné revient » en ouvre un autre', async ({ cyclePage, serveur, page }) => {
-    const episodes = simulerAcne(serveur, [{ debut: '2026-08-02' }]);
-    await cyclePage.ouvrir('?onglet=acne');
-
-    await page.getByRole('button', { name: 'Ça s\'est calmé' }).click();
-    await expect(cyclePage.panneau.getByLabel('Dernier jour')).toHaveValue('2026-09-15');
-    await cyclePage.panneau.getByRole('button', { name: 'Enregistrer' }).click();
-    await expect(page.getByRole('region', { name: 'Pas en ce moment' })).toContainText('Dernier épisode terminé le 15 septembre');
-    expect(episodes[0].fin).toBe('2026-09-15');
-
-    await page.getByRole('button', { name: 'L\'acné revient' }).click();
-    await cyclePage.panneau.getByRole('button', { name: 'Enregistrer' }).click();
-    await expect(page.getByRole('region', { name: 'En ce moment' })).toBeVisible();
-    expect(serveur.appelsVers('POST', /^Acne\/episodes$/)[0].corps).toEqual({ debut: '2026-09-15', fin: null });
-  });
-
-  test('un refus du serveur s\'affiche dans la saisie', async ({ cyclePage, serveur, page }) => {
-    simulerAcne(serveur, [{ debut: '2026-08-02', fin: '2026-08-20' }]);
-    serveur.on('PUT', /^Acne\/episodes\/\d+$/, () => ({ status: 400, body: { message: 'Ces dates chevauchent un autre épisode.' } }));
-    await cyclePage.ouvrir('?onglet=acne');
-
-    await page.getByRole('region', { name: 'Épisodes' }).getByRole('button', { name: /2 août/ }).click();
-    await cyclePage.panneau.getByRole('button', { name: 'Enregistrer' }).click();
-
-    await expect(cyclePage.panneau.getByRole('alert')).toHaveText('Ces dates chevauchent un autre épisode.');
-  });
-
-  test('ajouter une photo ouvre la saisie de l\'acné, avec photo et sans type', async ({ cyclePage, serveur, page }) => {
-    simulerAcne(serveur);
-    await cyclePage.ouvrir('?onglet=acne');
-
-    await expect(page.getByRole('region', { name: 'Point de la semaine' })).toContainText('Aucune photo pour l\'instant');
-    await page.getByRole('button', { name: 'Ajouter une photo' }).click();
-
-    await expect(cyclePage.panneau.getByRole('heading', { name: 'Noter mon acné' })).toBeVisible();
-    await expect(cyclePage.panneau.getByRole('button', { name: 'Fatigue' })).toHaveCount(0);
-    await expect(cyclePage.panneau.getByText('Galerie')).toBeVisible();
   });
 });

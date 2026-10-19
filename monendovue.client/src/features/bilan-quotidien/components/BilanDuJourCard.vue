@@ -4,6 +4,7 @@ import { computed } from 'vue';
 import { Button } from '@/shared/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/card';
 import HumeurResume from '@/features/bilan-quotidien/components/HumeurResume.vue';
+import CategoriesRecap from '@/features/bilan-quotidien/components/CategoriesRecap.vue';
 import TransitRecap from '@/features/bilan-quotidien/components/TransitRecap.vue';
 import { consommationsAlimentaires } from '@/features/bilan-quotidien/config/saisie';
 import { stressDuBilan } from '@/features/bilan-quotidien/utils/mesures';
@@ -83,6 +84,8 @@ const consommations = computed(() => consommationsAlimentaires.filter((c) => pro
         </div>
 
         <TransitRecap :bilan="bilan"/>
+
+        <CategoriesRecap :bilan="bilan"/>
 
         <div v-if="bilan.commentaire" class="rounded-controle bg-fond p-3">
           <p class="text-xs text-texte-3 flex items-center gap-1 mb-1">
