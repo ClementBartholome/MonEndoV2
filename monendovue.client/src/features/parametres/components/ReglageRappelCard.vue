@@ -70,5 +70,15 @@ const onJour = (event: Event) => {
     </template>
 
     <p class="m-0 text-left text-legende text-texte-3">{{ presentation.description }}</p>
+    <!-- Ce qui empêche le rappel de partir (raison donnée par l'API), pour ne pas attendre une notification qui ne viendra pas. -->
+    <div v-if="rappel.enAttente" class="flex items-start gap-2 text-left text-sm text-texte">
+      <i class="material-symbols-outlined mt-px text-lg text-texte-2" aria-hidden="true">info</i>
+      <p class="m-0 flex flex-col">
+        <span>{{ rappel.enAttente }}</span>
+        <router-link v-if="presentation.lienEnAttente" :to="presentation.lienEnAttente.vers" class="inline-flex min-h-11 items-center self-start font-medium !text-lien">
+          {{ presentation.lienEnAttente.libelle }}
+        </router-link>
+      </p>
+    </div>
   </div>
 </template>
