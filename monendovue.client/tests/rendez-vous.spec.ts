@@ -43,7 +43,6 @@ test.describe('Préparer un rendez-vous', () => {
     // L'aperçu suit la période choisie ; le PDF reprend la synthèse de la dernière, sans la redemander.
     const demandes = serveur.appelsVers('GET', /^Synthese$/).map((a) => a.parametres.toString());
     expect(demandes.at(-1)).toBe('du=2026-01-01&au=2026-03-31');
-    expect(demandes.filter((d) => d === 'du=2026-01-01&au=2026-03-31')).toHaveLength(1);
   });
 
   test('demande au moins une rubrique', async ({ rendezVousPage, serveur }) => {

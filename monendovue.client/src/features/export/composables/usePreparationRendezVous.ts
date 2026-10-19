@@ -143,7 +143,15 @@ export function usePreparationRendezVous() {
         creation.value = true;
         erreur.value = false;
         try {
+            // Création juste après un changement de période : l'aperçu en attente est annulé et reprend ce qui vient d'être reçu.
+            clearTimeout(minuterie);
             const synthese = apercuAJour() ? apercu.value! : await apiService.getSyntheseRendezVous(periode.value.du, periode.value.au);
+            if (!apercuAJour()) {
+                derniereDemande++;
+                apercu.value = synthese;
+                chargementApercu.value = false;
+                erreurApercu.value = false;
+            }
             const doc = await creerPdf(synthese, { rubriques: rubriques.value, questions: questions.value, creeLe: new Date() });
             doc.save(nomDuFichier(synthese));
             return true;
