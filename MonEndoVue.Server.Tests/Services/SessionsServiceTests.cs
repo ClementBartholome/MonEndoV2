@@ -173,6 +173,19 @@ public sealed class SessionsServiceTests : IDisposable
     }
 
     [Fact]
+    public async Task RevoquerAutres_FermeAussiUneSessionOuverteAvantLaMiseAJour()
+    {
+        var user = await _identity.CreerUtilisatrice("ancienne-session@local");
+        user.RefreshToken = "ancien-jeton-en-clair";
+        user.RefreshTokenExpiryTime = _horloge.GetUtcNow().UtcDateTime.AddHours(5);
+        await _identity.UserManager.UpdateAsync(user);
+
+        await Service().RevoquerAutresAsync(user.Id, jetonCourant: null);
+
+        Assert.Equal(IssueRenouvellement.Inconnue, (await Service().RenouvelerAsync("ancien-jeton-en-clair")).Issue);
+    }
+
+    [Fact]
     public async Task Ouvrir_AuDelaDuNombreMaxDAppareils_RetireLePlusAncien()
     {
         var user = await _identity.CreerUtilisatrice("beaucoup@local");

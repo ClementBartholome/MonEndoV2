@@ -93,6 +93,10 @@ public class ComptesService(
                     // Compte jamais confirmé, peut-être créé par quelqu'un d'autre avec cette adresse : son mot de passe n'est pas
                     // remplacé (la personne qui reçoit les e-mails activerait sinon un compte dont un tiers connaît le mot de passe).
                     // Elle reçoit un lien pour choisir le sien : l'utiliser active le compte et écarte tout autre mot de passe.
+                    // Le consentement vient d'être redonné : il est enregistré, ce qui repart pour le délai avant suppression d'un
+                    // compte non confirmé (le lien envoyé ne doit pas expirer avec un compte supprimé entre-temps).
+                    PolitiqueConfidentialite.Enregistrer(existant, horloge.GetUtcNow());
+                    await userManager.UpdateAsync(existant);
                     if (PeutEnvoyer(email))
                     {
                         var jeton = await userManager.GeneratePasswordResetTokenAsync(existant);
