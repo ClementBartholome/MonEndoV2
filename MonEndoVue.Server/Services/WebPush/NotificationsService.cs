@@ -82,10 +82,15 @@ public class NotificationsService(
             .Where(r => r.CarnetSanteId == carnetSanteId)
             .ToDictionaryAsync(r => r.Type, cancellationToken);
 
-        var rappels = regles.Select(regle => existants.TryGetValue(regle.Type, out var rappel)
+        var rappels = new List<RappelDto>();
+        foreach (var regle in regles)
+        {
+            var dto = existants.TryGetValue(regle.Type, out var rappel)
                 ? VersDto(regle, rappel.Actif, rappel.Heure, rappel.JourSemaine, rappel.FuseauHoraire)
-                : VersDto(regle, false, regle.HeureParDefaut, regle.JourParDefaut, FuseauParDefaut))
-            .ToList();
+                : VersDto(regle, false, regle.HeureParDefaut, regle.JourParDefaut, FuseauParDefaut);
+            dto.EnAttente = await regle.EnAttenteAsync(carnetSanteId.Value, cancellationToken);
+            rappels.Add(dto);
+        }
         return ResultatOperation<List<RappelDto>>.Succes(rappels);
     }
 

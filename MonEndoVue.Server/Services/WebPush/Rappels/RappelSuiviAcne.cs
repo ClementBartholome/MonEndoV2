@@ -20,6 +20,12 @@ public class RappelSuiviAcne(AppDbContext context) : IRegleRappel
     public MessagePush Message { get; } =
         new("MonEndo", "C'est le moment de la photo de suivi de ton acné.", "/acne");
 
+    /// <summary>Sans épisode en cours (ils se ferment aussi d'eux-mêmes à la reprise des anciens jours d'acné), rien ne part.</summary>
+    public async Task<string?> EnAttenteAsync(int carnetSanteId, CancellationToken cancellationToken) =>
+        await context.EpisodesAcne.AnyAsync(e => e.CarnetSanteId == carnetSanteId && e.Fin == null, cancellationToken)
+            ? null
+            : "Aucun épisode d'acné en cours : le rappel partira dès que tu en noteras un.";
+
     public async Task<bool> SuiviDejaFaitAsync(int carnetSanteId, DateOnly jourLocal, TimeZoneInfo fuseau, CancellationToken cancellationToken)
     {
         // Pas d'épisode en cours : rien à suivre, donc aucun rappel (la photo de la semaine accompagne un épisode).
