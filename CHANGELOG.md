@@ -43,6 +43,8 @@ versions en [SemVer](https://semver.org/lang/fr/) (voir la section Déploiement 
 - Le menu « Plus » (et la barre latérale sur ordinateur) est rangé en trois groupes : **Mes suivis**, **Mes rendez-vous** et **Aide**.
 
 ### Corrigé
+- Rappel photo de l'acné : il ne part que pendant un épisode en cours. Quand aucun épisode n'est en cours (les anciens jours d'acné
+  regroupés en épisodes ont pu tous être fermés), le réglage le dit désormais, avec un lien vers la page Acné.
 - Accessibilité : les titres de carte de la page Bilan ne sautent plus de niveau, et les pages légales ont leur zone principale
   (un lecteur d'écran peut y aller directement). Chaque écran est désormais vérifié automatiquement (normes WCAG 2.2 AA).
 - Se connecter sur un appareil ne déconnecte plus les autres : chaque appareil (téléphone, ordinateur…) a sa propre session, qui se

@@ -18,6 +18,8 @@ export interface Rappel {
     heure: string;
     jourSemaine: number | null;
     fuseauHoraire: string;
+    /** Ce qui empêche le rappel de partir pour l'instant (ex. aucun épisode d'acné en cours) ; null si rien. */
+    enAttente: string | null;
 }
 
 export type ReglageRappel = Pick<Rappel, 'actif' | 'heure' | 'jourSemaine' | 'fuseauHoraire'>;

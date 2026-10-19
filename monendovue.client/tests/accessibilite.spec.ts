@@ -23,8 +23,13 @@ import { simulerConsentement } from './mocks/consentement';
 // WCAG 2.2 AA (taille des cibles tactiles comprise) et bonnes pratiques d'axe (ordre des titres, zones de la page).
 const NORMES = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa', 'best-practice'];
 
+// Animations réduites (réglage d'accessibilité du téléphone, respecté par l'app) : le fondu d'ouverture des pages ferait
+// lire à axe des couleurs à mi-transparence, donc des contrastes faux.
+test.use({ contextOptions: { reducedMotion: 'reduce' } });
+
 async function verifier(page: Page, ecran: string) {
   // Les animations d'ouverture (panneaux, toasts) font lire des couleurs à mi-transition : on attend qu'elles finissent.
+  await page.waitForFunction(() => Array.from(document.querySelectorAll('main, [role=dialog]')).every((el) => getComputedStyle(el).opacity === '1'));
   await page.waitForTimeout(400);
   const { violations } = await new AxeBuilder({ page }).withTags(NORMES).analyze();
   const lisibles = violations.map((v) => ({
