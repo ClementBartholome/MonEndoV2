@@ -160,6 +160,9 @@ lecture seule (liste par jour, `SelecteurMois`, suppression en deux temps), plus
     (calendrier, graphiques, pastilles) ; la teinte orange `teinte-douleur` ne sert qu'à l'identité de la rubrique (tuile
     d'icône). Les émotions sont en violet (`--emotion-N`, `teinte-symptome`). Dans « Tendances », les moyennes sont des lignes
     de carnet (libellé, chiffre en Literata, évolution) et seule l'icône porte la teinte de l'indicateur.
+  - **Accessibilité vérifiée par les tests** (`tests/accessibilite.spec.ts`, axe-core, WCAG 2.2 AA et bonnes pratiques) :
+    une nouvelle page ou un nouveau panneau s'ajoute à sa liste. Une carte posée sous le titre de page porte un h2
+    (`CardTitle`), jamais un h3 qui saute un niveau ; toute page a sa zone `<main>`.
   - Le focus clavier est visible partout par une règle globale `:focus-visible` (`index.css`) : ne pas mettre
     `focus:outline-none` sur un élément focalisable sans donner un autre indicateur. L'en-tête (logo, compte) est
     posé sur la page en `pointer-events-none` : la première carte peut passer dessous sans perdre ses clics.

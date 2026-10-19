@@ -1,6 +1,8 @@
 // Jeu de données de démonstration proche du réel pour les tests manuels en local (jamais en production).
-// Génère le SQL d'environ douze mois de suivi pour un carnet de la base de dev : règles, bilans complets (avec oublis),
-// douleurs, symptômes, épisodes d'acné, activités, traitements et prises. Données génériques, rien de personnel.
+// Génère le SQL d'environ douze mois de suivi pour un carnet de la base de dev : règles (flux et caillots), bilans complets
+// (avec oublis, et les catégories facultatives de la 1.5.0 remplies une partie des jours), douleurs, symptômes, épisodes
+// d'acné, activités, traitements et prises. Données génériques, rien de personnel. Pas de photo d'acné : elles demandent
+// de vrais fichiers dans le stockage.
 // Ajoute sans rien effacer : un jour qui a déjà un bilan ou un jour de règles est laissé tel quel.
 //
 //   node tools/donnees-demo/generer.mjs --carnet 1 [--mois 12] [--jusqua 2026-09-29] > demo.sql
@@ -42,6 +44,8 @@ const texte = (s) => (s === null ? 'NULL' : `N'${s.replace(/'/g, "''")}'`);
 const nombre = (n) => (n === null ? 'NULL' : String(n));
 const bit = (b) => (b === null ? 'NULL' : b ? '1' : '0');
 
+const peutEtre = (probabilite, valeur) => (hasard() < probabilite ? valeur : null);
+
 const sql = ['SET NOCOUNT ON;', 'SET XACT_ABORT ON;', 'BEGIN TRANSACTION;', 'DECLARE @id int;'];
 
 // --- Règles : cycles de 26 à 32 jours, règles de 4 à 6 jours ---
@@ -52,7 +56,10 @@ for (let d = ajouter(debut, entre(0, 10)); d <= fin; d = ajouter(d, entre(26, 32
     const jour = ajouter(d, i);
     if (jour > fin) break;
     jourDeRegles.set(jourSql(jour), i);
-    sql.push(`IF NOT EXISTS (SELECT 1 FROM JourRegles WHERE CarnetSanteId = ${carnet} AND CAST(Date AS date) = '${jourSql(jour)}') INSERT INTO JourRegles (CarnetSanteId, Date) VALUES (${carnet}, '${jourSql(jour)}');`);
+    // Flux plus abondant les premiers jours ; un jour sur sept environ n'est pas précisé. Caillots surtout les jours abondants.
+    const flux = hasard() < 0.15 ? null : i === 0 ? parmi(['Moyen', 'Abondant']) : i === 1 ? 'Abondant' : i === 2 ? 'Moyen' : parmi(['Leger', 'Traces']);
+    const caillots = flux === null ? null : flux === 'Abondant' ? hasard() < 0.4 : peutEtre(0.6, false);
+    sql.push(`IF NOT EXISTS (SELECT 1 FROM JourRegles WHERE CarnetSanteId = ${carnet} AND CAST(Date AS date) = '${jourSql(jour)}') INSERT INTO JourRegles (CarnetSanteId, Date, Flux, Caillots) VALUES (${carnet}, '${jourSql(jour)}', ${texte(flux)}, ${bit(caillots)});`);
   }
 }
 const joursAvantRegles = (d) => {
@@ -113,8 +120,26 @@ for (let jour = new Date(debut); jour <= fin; jour = ajouter(jour, 1)) {
     const transit = hasard() < 0.45;
     const crampes = transit && hasard() < 0.25;
     const ballonnements = transit && hasard() < 0.35;
+    // Catégories facultatives (1.5.0) : chacune remplie une partie des jours seulement, null sinon (jamais compté pour 0).
+    const enRegles = regles !== undefined;
+    const intensite = () => parmi(['Légère', 'Modérée', 'Forte']);
+    const douleurSelle = transit && hasard() < 0.5 ? hasard() < (enRegles ? 0.5 : 0.15) : null;
+    const urinaire = hasard() < 0.3;
+    const douleurUriner = urinaire ? hasard() < (enRegles ? 0.35 : 0.1) : null;
+    const saignements = avant || (regles === undefined && hasard() < 0.05) ? hasard() < 0.5 : null;
+    const nuitJournee = hasard() < 0.6;
+    const nuit = nuitJournee ? (douleurJour >= 6 ? parmi(['Moyenne', 'Difficile', 'Difficile']) : parmi(['Bonne', 'Bonne', 'Moyenne'])) : null;
+    const limitation = nuitJournee ? (douleurJour >= 7 ? 'TresLimitee' : douleurJour >= 4 ? 'PeuLimitee' : 'PasLimitee') : null;
+    const categories = [
+      bit(douleurSelle), texte(douleurSelle ? intensite() : null), bit(transit ? hasard() < 0.12 : null), bit(transit ? peutEtre(0.7, false) : null),
+      bit(douleurUriner), texte(douleurUriner ? intensite() : null), bit(urinaire ? hasard() < 0.2 : null), bit(urinaire ? hasard() < 0.08 : null), bit(urinaire ? false : null),
+      bit(saignements), texte(saignements ? parmi(['Traces', 'Traces', 'Legers']) : null),
+      texte(nuit), bit(nuitJournee ? douleurJour >= 6 && hasard() < 0.5 : null), texte(limitation),
+      bit(nuitJournee ? limitation === 'TresLimitee' && hasard() < 0.3 : null), bit(nuitJournee ? limitation !== 'PasLimitee' && hasard() < 0.25 : null),
+      texte(hasard() < 0.06 ? parmi(['Oui', 'Non', 'PasDeRapport']) : null),
+    ].join(', ');
     sql.push(`IF NOT EXISTS (SELECT 1 FROM BilansQuotidiens WHERE CarnetSanteId = ${carnet} AND CAST(Date AS date) = '${cle}') BEGIN`);
-    sql.push(`INSERT INTO BilansQuotidiens (CarnetSanteId, Date, Mood, StressPro, StressPerso, Fatigue, Pas, Hydratation, Gluten, Lactose, Grignotage, Commentaire, DouleurMoyenne, Ballonnements, CrampesEstomac, IntensiteBallonnements, IntensiteCrampes, Selles, TypeBristol) VALUES (${carnet}, ${dateSql(jour, 21, entre(0, 50))}, NULL, ${nombre(hasard() < 0.2 ? null : entre(0, 4))}, ${nombre(hasard() < 0.2 ? null : entre(0, 3))}, ${nombre(hasard() < 0.08 ? null : Math.min(5, Math.round(1 + douleurJour / 3 + hasard() * 1.5)))}, ${nombre(hasard() < 0.15 ? null : entre(2500, 11000))}, ${nombre(hasard() < 0.15 ? null : Math.round((0.8 + hasard() * 1.4) * 10) / 10)}, ${bit(hasard() < 0.3)}, ${bit(hasard() < 0.25)}, ${bit(hasard() < 0.35)}, ${texte(hasard() < 0.12 ? parmi(NOTES) : null)}, ${douleurJour}, ${bit(transit ? ballonnements : null)}, ${bit(transit ? crampes : null)}, ${texte(ballonnements ? parmi(['Légère', 'Modérée', 'Forte']) : null)}, ${texte(crampes ? parmi(['Légère', 'Modérée', 'Forte']) : null)}, ${bit(transit ? hasard() < 0.85 : null)}, ${nombre(transit ? entre(2, 6) : null)});`);
+    sql.push(`INSERT INTO BilansQuotidiens (CarnetSanteId, Date, Mood, StressPro, StressPerso, Fatigue, Pas, Hydratation, Gluten, Lactose, Grignotage, Commentaire, DouleurMoyenne, Ballonnements, CrampesEstomac, IntensiteBallonnements, IntensiteCrampes, Selles, TypeBristol, DouleurSelle, IntensiteDouleurSelle, Nausees, SangSelles, DouleurUriner, IntensiteDouleurUriner, EnviesUrinaires, DifficulteVider, SangUrines, SaignementsHorsRegles, AbondanceSaignementsHorsRegles, Nuit, ReveilsDouleur, LimitationJournee, AbsenceTravail, ActiviteAnnulee, DouleurRapport) VALUES (${carnet}, ${dateSql(jour, 21, entre(0, 50))}, NULL, ${nombre(hasard() < 0.2 ? null : entre(0, 4))}, ${nombre(hasard() < 0.2 ? null : entre(0, 3))}, ${nombre(hasard() < 0.08 ? null : Math.min(5, Math.round(1 + douleurJour / 3 + hasard() * 1.5)))}, ${nombre(hasard() < 0.15 ? null : entre(2500, 11000))}, ${nombre(hasard() < 0.15 ? null : Math.round((0.8 + hasard() * 1.4) * 10) / 10)}, ${bit(hasard() < 0.3)}, ${bit(hasard() < 0.25)}, ${bit(hasard() < 0.35)}, ${texte(hasard() < 0.12 ? parmi(NOTES) : null)}, ${douleurJour}, ${bit(transit ? ballonnements : null)}, ${bit(transit ? crampes : null)}, ${texte(ballonnements ? parmi(['Légère', 'Modérée', 'Forte']) : null)}, ${texte(crampes ? parmi(['Légère', 'Modérée', 'Forte']) : null)}, ${bit(transit ? hasard() < 0.85 : null)}, ${nombre(transit ? entre(2, 6) : null)}, ${categories});`);
     sql.push('SET @id = SCOPE_IDENTITY();');
     for (const emotion of emotions) sql.push(`INSERT INTO EmotionsBilan (Emotion, BilanQuotidienId) VALUES (N'${emotion}', @id);`);
     sql.push('END');
