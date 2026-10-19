@@ -127,6 +127,7 @@ test.describe('Onboarding', () => {
       await expect(page).toHaveURL(/\/inscription\/envoyee$/);
 
       await page.goto('/confirmer-adresse#email=prenom%40exemple.fr&jeton=jeton-de-test');
+      await page.getByRole('button', { name: 'Confirmer mon adresse' }).click();
       await expect(page.getByRole('heading', { level: 1, name: 'Adresse confirmée' })).toBeVisible();
       await page.getByRole('link', { name: 'Me connecter' }).click();
       await expect(page.locator('input[name="email"]')).toHaveValue('prenom@exemple.fr');

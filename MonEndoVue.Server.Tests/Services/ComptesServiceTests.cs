@@ -238,20 +238,41 @@ public sealed class ComptesServiceTests : IDisposable
     }
 
     [Fact]
-    public async Task PreDetournement_NouvelleInscriptionSurUnCompteNonConfirme_RemplaceLeMotDePasseEtInvalideLesAnciensLiens()
+    public async Task PreDetournement_NouvelleInscriptionSurUnCompteNonConfirme_EnvoieUnLienPourChoisirSonMotDePasse()
     {
         await _identity.Comptes().InscrireAsync(Inscription("victime@local", "MotDePasseIntrus1!"), CancellationToken.None);
-        var (email, ancienJeton) = FauxEnvoiEmail.LireLien(_identity.Emails.Pour("victime@local")[0]);
+        _identity.Emails.Planifies.Clear();
 
-        var reinscription = await _identity.Comptes().InscrireAsync(Inscription("victime@local", "MotDePasseVictime2!"), CancellationToken.None);
+        // Plus d'une minute plus tard (nouveau cache : le délai entre deux e-mails est écoulé).
+        var reinscription = await _identity.Comptes(new Microsoft.Extensions.Caching.Memory.MemoryCache(new Microsoft.Extensions.Caching.Memory.MemoryCacheOptions()))
+            .InscrireAsync(Inscription("victime@local", "MotDePasseVictime2!"), CancellationToken.None);
 
+        // Même réponse qu'une inscription ; le mot de passe déjà posé n'est pas remplacé par celui de la nouvelle demande.
         Assert.Equal(IssueCompte.Acceptee, reinscription.Issue);
         Assert.Equal(1, await _identity.Context.Users.CountAsync(u => u.Email == "victime@local"));
-        // Le lien envoyé à la première inscription ne vaut plus (l'empreinte de sécurité a changé avec le mot de passe).
-        Assert.Equal(IssueCompte.Invalide, (await _identity.Comptes().ConfirmerAdresseAsync(email, ancienJeton)).Issue);
         var user = (await _identity.UserManager.FindByEmailAsync("victime@local"))!;
-        Assert.False(await _identity.UserManager.CheckPasswordAsync(user, "MotDePasseIntrus1!"));
-        Assert.True(await _identity.UserManager.CheckPasswordAsync(user, "MotDePasseVictime2!"));
+        Assert.False(await _identity.UserManager.CheckPasswordAsync(user, "MotDePasseVictime2!"));
+
+        // La personne qui reçoit les e-mails choisit son mot de passe : le compte est activé avec lui, et seulement lui.
+        var message = Assert.Single(_identity.Emails.Pour("victime@local"));
+        Assert.Contains("/reinitialiser-mot-de-passe#", message.Texte);
+        var (email, jeton) = FauxEnvoiEmail.LireLien(message);
+        await _identity.Comptes().ReinitialiserAsync(
+            new ReinitialisationMotDePasseDto { Email = email, Jeton = jeton, NouveauMotDePasse = "MotDePasseVictime3!" }, CancellationToken.None);
+        Assert.Equal(IssueConnexion.Refusee, (await _identity.Comptes().VerifierConnexionAsync("victime@local", "MotDePasseIntrus1!")).Issue);
+        Assert.Equal(IssueConnexion.Acceptee, (await _identity.Comptes().VerifierConnexionAsync("victime@local", "MotDePasseVictime3!")).Issue);
+    }
+
+    [Fact]
+    public async Task Confirmer_AdresseDejaConfirmee_ExigeQuandMemeUnJetonValable()
+    {
+        await Inscrite("deja@local");
+        var (email, jeton) = FauxEnvoiEmail.LireLien(_identity.Emails.Pour("deja@local")[0]);
+        Assert.Equal(IssueCompte.Acceptee, (await _identity.Comptes().ConfirmerAdresseAsync(email, jeton)).Issue);
+
+        // Un jeton inventé est refusé comme pour une adresse inconnue ; le lien reçu, rouvert, reste accepté.
+        Assert.Equal(IssueCompte.Invalide, (await _identity.Comptes().ConfirmerAdresseAsync(email, "jeton-invente")).Issue);
+        Assert.Equal(IssueCompte.Acceptee, (await _identity.Comptes().ConfirmerAdresseAsync(email, jeton)).Issue);
     }
 
     public void Dispose() => _identity.Dispose();

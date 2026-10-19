@@ -13,8 +13,12 @@ test.describe('Comptes sans session', () => {
   });
 
   test.describe('confirmation de l\'adresse', () => {
-    test('le jeton du lien est posté dans le corps, puis retiré de la barre d\'adresse', async ({ page, serveur }) => {
+    test('le jeton du lien est posté dans le corps au geste de la personne, puis retiré de la barre d\'adresse', async ({ page, serveur }) => {
       await page.goto(LIEN_CONFIRMATION);
+      // Rien n'est envoyé à l'ouverture (un antivirus de messagerie qui ouvre le lien ne confirme rien).
+      await expect(page.getByRole('button', { name: 'Confirmer mon adresse' })).toBeVisible();
+      expect(serveur.appelsVers('POST', /^Account\/confirmer-adresse$/)).toHaveLength(0);
+      await page.getByRole('button', { name: 'Confirmer mon adresse' }).click();
 
       await expect(page.getByRole('heading', { level: 1, name: 'Adresse confirmée' })).toBeVisible();
       expect(serveur.appelsVers('POST', /^Account\/confirmer-adresse$/).at(-1)!.corps).toEqual({ email: 'prenom@exemple.fr', jeton: 'jeton+de/test' });
@@ -25,6 +29,7 @@ test.describe('Comptes sans session', () => {
     test('un lien périmé le dit et propose un nouveau lien', async ({ page, serveur }) => {
       serveur.on('POST', /^Account\/confirmer-adresse$/, () => ({ status: 400, body: { message: "Ce lien n'est plus valable. Demande un nouveau lien." } }));
       await page.goto(LIEN_CONFIRMATION);
+      await page.getByRole('button', { name: 'Confirmer mon adresse' }).click();
 
       await expect(page.getByRole('alert')).toContainText("Ce lien n'est plus valable");
       await page.getByRole('button', { name: 'Recevoir un nouveau lien' }).click();
