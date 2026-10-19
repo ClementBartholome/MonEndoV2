@@ -3,11 +3,11 @@
 Toutes les évolutions notables de MonEndo. Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/),
 versions en [SemVer](https://semver.org/lang/fr/) (voir la section Déploiement de `CLAUDE.md`).
 
-## [1.5.0] - non publiée
+## [1.5.0] - 2026-10-19
 
 ### Ajouté
 - **Confirmation de l'adresse e-mail** : à l'inscription, un lien de confirmation arrive par e-mail ; le compte s'active en l'ouvrant
-  (lien valable 24 heures, renvoi possible). La première connexion qui suit passe par l'étape du rappel du soir, comme avant.
+  puis en touchant « Confirmer mon adresse » (lien valable 24 heures, renvoi possible). La première connexion qui suit passe par l'étape du rappel du soir, comme avant.
 - **Rappel la veille d'un rendez-vous** (Paramètres › Notifications) : une notification la veille, seulement si un rendez-vous est prévu le
   lendemain dans le calendrier choisi de ton agenda Google. Elle ne dit ni le titre ni le lieu du rendez-vous.
 - Agenda › **Passés** : tes rendez-vous passés, mois par mois (les plus anciens à la demande). « Refaire le résumé de cette période »
