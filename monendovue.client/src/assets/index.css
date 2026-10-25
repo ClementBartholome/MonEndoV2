@@ -383,11 +383,11 @@ ul {
     line-height: inherit;
 }
 
-/* Navigation : composants de shared/components/navigation/. Au-delà de 1023px, la barre latérale fixe de 200px
-   (NavigationLaterale.vue) : le contenu lui laisse sa place au lieu de passer dessous. */
+/* Navigation : composants de shared/components/navigation/. Au-delà de 1023px, la barre latérale fixe de 12.5rem
+   (NavigationLaterale.vue, en rem pour grandir avec son texte) : le contenu lui laisse sa place au lieu de passer dessous. */
 @media (min-width: 1024px) {
     #app:has(> header > .navigation-laterale) {
-        padding-left: 200px;
+        padding-left: 12.5rem;
     }
 }
 

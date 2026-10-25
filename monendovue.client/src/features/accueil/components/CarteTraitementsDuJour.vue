@@ -11,7 +11,7 @@
 
     <div v-for="prise in prises" :key="`${prise.traitementId}-${prise.heurePrevue}`"
          class="flex min-h-[62px] items-center gap-3 border-t border-trait py-2">
-      <span class="w-[52px] shrink-0 text-legende font-semibold text-texte-2">{{ heureAffichee(prise.heurePrevue) }}</span>
+      <span class="min-w-[3.25rem] shrink-0 whitespace-nowrap text-legende font-semibold text-texte-2">{{ heureAffichee(prise.heurePrevue) }}</span>
       <div class="flex min-w-0 grow flex-col">
         <span class="text-corps font-medium text-texte">{{ prise.nom }}</span>
         <span v-if="prise.dose" class="truncate text-legende text-texte-3">{{ prise.dose }}</span>

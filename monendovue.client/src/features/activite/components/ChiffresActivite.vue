@@ -13,7 +13,7 @@
         <template v-if="chiffres.effetRenseigne">{{ chiffres.soulagee }}<span class="text-sm font-medium text-texte-3">/{{ chiffres.effetRenseigne }}</span></template>
         <template v-else>—</template>
       </span>
-      <span class="text-xs leading-snug text-texte-3">douleur soulagée après</span>
+      <span class="text-xs leading-snug text-texte-3">ont soulagé la douleur</span>
     </div>
   </section>
 </template>

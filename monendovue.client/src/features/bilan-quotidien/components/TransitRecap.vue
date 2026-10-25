@@ -27,7 +27,7 @@ const lignes = computed(() => {
 </script>
 
 <template>
-  <div class="mb-3 rounded-controle bg-fond p-3">
+  <div class="mb-3 border-t border-trait pt-3">
     <p class="mb-2 flex items-center gap-1 text-xs text-texte-3">
       <i class="material-symbols-outlined text-2xl leading-6">gastroenterology</i>
       Transit

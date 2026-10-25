@@ -23,8 +23,8 @@
         </span>
       </button>
     </div>
-    <p class="m-0 mt-1 flex items-center gap-1.5 text-xs text-texte-2">
-      <span aria-hidden="true" class="h-3 w-3 shrink-0 rounded-full bg-teinte-regles"></span>Règles · touche un jour pour l'ajouter ou le retirer. Flux noté : ○ traces, ● léger, ●● moyen, ●●● abondant.
+    <p class="m-0 mt-1 flex items-start gap-1.5 text-left text-xs text-texte-2">
+      <span aria-hidden="true" class="mt-0.5 h-3 w-3 shrink-0 rounded-full bg-teinte-regles"></span>Règles · touche un jour pour l'ajouter ou le retirer. Flux noté : ○ traces, ● léger, ●● moyen, ●●● abondant.
     </p>
   </section>
 </template>
