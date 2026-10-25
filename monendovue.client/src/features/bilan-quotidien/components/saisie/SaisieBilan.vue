@@ -238,10 +238,10 @@ const annuler = () => confirmation.demanderSiNecessaire(() => emit('annule'));
   box-shadow: 0 -4px 8px -6px rgb(51 39 42 / 0.15);
 }
 
-/* Sous 1024px, la navigation est fixée en bas de l'écran (BarreNavigation.vue, 4.25rem) : la barre se pose au-dessus. */
+/* Sous 1024px, la navigation est fixée en bas de l'écran (BarreNavigation.vue, --hauteur-barre-navigation) : la barre se pose au-dessus. */
 @media (max-width: 1023px) {
   .barre-enregistrement {
-    bottom: 4.25rem;
+    bottom: var(--hauteur-barre-navigation);
   }
 }
 </style>

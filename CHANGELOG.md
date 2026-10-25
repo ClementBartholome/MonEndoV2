@@ -9,7 +9,13 @@ versions en [SemVer](https://semver.org/lang/fr/) (voir la section Déploiement 
 - Accueil : quand ton agenda Google n'est pas lié, une proposition discrète en bas de page explique ce qu'il apporte (prochain rendez-vous,
   rappel la veille, résumé depuis le rendez-vous précédent) et mène directement au réglage. « Plus tard » la retire pour 30 jours.
 
+### Modifié
+- Page Douleurs : la frise du mois (un trait par jour, plus foncé quand la douleur était plus forte, ruban sous les règles) remplace le
+  graphique en barres, comme sur l'accueil et la page Cycle.
+
 ### Corrigé
+- iPhone : la barre de navigation, les boutons flottants et les panneaux du bas s'écartent de la barre d'accueil de l'écran (marges de
+  sécurité), au lieu de passer dessous.
 - Finitions : la barre latérale de l'ordinateur grandit avec son texte (« Préparer un rendez-vous » tenait sur trois lignes),
   l'heure d'une prise ne se coupe plus, la ligne d'un soin n'est plus écrasée, et le détail d'un jour du bilan se lit comme des lignes
   de carnet au lieu de cases colorées. Les messages de confirmation repartent par où ils sont arrivés.

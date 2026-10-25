@@ -1,6 +1,7 @@
 import { format, getDaysInMonth } from 'date-fns';
 import { cleJour } from '@/shared/utils/jours';
 import type { DonneesDouleur } from '../types/donnees-douleur';
+import type { JourFrise } from '@/shared/types/frise';
 
 /** Types de douleur proposés (valeurs enregistrées) et leur libellé court à l'écran. */
 export const TYPES_DOULEUR: { valeur: string; libelle: string }[] = [
@@ -72,23 +73,16 @@ export function douleursParType(entrees: DonneesDouleur[]): DouleurParType[] {
         .sort((a, b) => b.jours - a.jours || b.max - a.max);
 }
 
-export interface JourDuGraphique {
-    jour: number;
-    /** Intensité la plus forte notée ce jour (0 = rien noté). */
-    intensiteMax: number;
-    regles: boolean;
-}
-
-/** Un élément par jour du mois : intensité la plus forte notée et jours de règles. */
-export function joursDuMois(mois: Date, entrees: DonneesDouleur[], joursDeRegles: string[]): JourDuGraphique[] {
+/** Frise du mois, un jour par trait : douleur la plus forte notée (null si rien) et jours de règles. */
+export function friseDuMois(mois: Date, entrees: DonneesDouleur[], joursDeRegles: string[]): JourFrise[] {
     const reglesDuMois = new Set(joursDeRegles);
     return Array.from({ length: getDaysInMonth(mois) }, (_, index) => {
-        const cle = format(new Date(mois.getFullYear(), mois.getMonth(), index + 1), 'yyyy-MM-dd');
-        const duJour = entrees.filter((e) => cleJour(e.date) === cle);
+        const jour = format(new Date(mois.getFullYear(), mois.getMonth(), index + 1), 'yyyy-MM-dd');
+        const duJour = entrees.filter((e) => cleJour(e.date) === jour);
         return {
-            jour: index + 1,
-            intensiteMax: duJour.reduce((max, e) => Math.max(max, e.intensite), 0),
-            regles: reglesDuMois.has(cle),
+            jour,
+            douleur: duJour.length ? Math.max(...duJour.map((e) => e.intensite)) : null,
+            regles: reglesDuMois.has(jour),
         };
     });
 }
