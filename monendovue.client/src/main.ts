@@ -7,6 +7,10 @@ import { createPinia } from 'pinia';
 import App from './App.vue'
 import router from './router'
 import ApiService from "@/shared/services/apiService";
+import { rechargerApresMiseAJour } from "@/shared/utils/rechargementApresMiseAJour";
+
+// Une nouvelle version a été déployée pendant que l'app était ouverte : on passe à elle au lieu d'échouer.
+rechargerApresMiseAJour();
 
 const pinia = createPinia();
 
