@@ -3,7 +3,7 @@
 Toutes les évolutions notables de MonEndo. Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/),
 versions en [SemVer](https://semver.org/lang/fr/) (voir la section Déploiement de `CLAUDE.md`).
 
-## [1.7.0] - non publiée
+## [1.7.0] - 2026-10-25
 
 ### Ajouté
 - Accueil : quand ton agenda Google n'est pas lié, une proposition discrète en bas de page explique ce qu'il apporte (prochain rendez-vous,
