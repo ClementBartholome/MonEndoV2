@@ -21,8 +21,8 @@ test.describe('Bilan quotidien — modification et jours passés', () => {
 
     await bilanPage.boutonModifier.click();
     await expect(bilanPage.titreSaisie).toHaveText("Modifier le bilan d'aujourd'hui");
-    await expect(bilanPage.pastille('Douleur', 3)).toHaveAttribute('aria-pressed', 'true');
-    await bilanPage.choisirNiveau('Douleur', 7);
+    await expect(bilanPage.pastille('Douleur de la journée', 3)).toHaveAttribute('aria-pressed', 'true');
+    await bilanPage.choisirNiveau('Douleur de la journée', 7);
     await bilanPage.enregistrer();
 
     await expect(page.getByText('Bilan mis à jour', { exact: true })).toBeVisible();
