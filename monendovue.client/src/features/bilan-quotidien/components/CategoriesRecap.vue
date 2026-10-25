@@ -23,7 +23,7 @@ const blocs = computed(() =>
 </script>
 
 <template>
-  <div v-for="bloc in blocs" :key="bloc.id" class="mb-3 rounded-controle bg-fond p-3">
+  <div v-for="bloc in blocs" :key="bloc.id" class="mb-3 border-t border-trait pt-3">
     <p class="mb-2 flex items-center gap-1 text-xs text-texte-3">
       <i class="material-symbols-outlined text-2xl leading-6" aria-hidden="true">{{ bloc.icone }}</i>
       {{ bloc.titre }}
