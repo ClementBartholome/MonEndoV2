@@ -97,12 +97,14 @@ dotnet ef migrations add NomEnPascalCase --project MonEndoVue.Server
   La page s'ouvre sur l'historique ; la saisie du jour ne s'ouvre d'office qu'avec `?ajouter` (accueil, rappel).
   Saisie en un écran (`components/saisie/`) : douleur et émotions obligatoires, stress, fatigue, pas et hydratation
   **nullables** (null = non renseigné, jamais compté pour 0) ; **un seul bilan par jour** et aucun jour futur (409 / 400).
-  Les **catégories facultatives** (Corps, Notes, puis Urinaire, Saignements hors règles, Nuit et journée, Rapports) s'affichent selon un réglage de
+  Les **catégories facultatives** (Corps, Notes, puis Urinaire, Saignements hors règles, Nuit et journée) s'affichent selon un réglage de
   l'appareil (`Paramètres › Catégories du bilan`, `localStorage`, `features/bilan-quotidien/config/categories.ts`) : masquer une catégorie ne supprime
   aucune réponse (historique, export et PDF la gardent). Douleur, émotions, fatigue et stress sont toujours présents.
   Les questions de ces catégories (libellés, choix, suite d'intensité) sont décrites dans `config/questions.ts` et affichées par `QuestionsBilan` ;
   chaque champ est **nullable** côté serveur (`BilanQuotidien`, `BilanCategoriesValidator`). Résumé d'un bloc replié = nombre de réponses, jamais
-  leur contenu ; **« Rapports » est discrète** (désactivée par défaut, rubrique du PDF décochée par défaut). Rubriques et sources :
+  leur contenu. L'ancienne catégorie **« Rapports »** n'est plus proposée depuis la 1.8.0 (le type « Pendant un rapport » de « Où as-tu eu mal ? »
+  la remplace, avec une intensité) : colonne `DouleurRapport` gardée, anciennes réponses dans le détail d'un jour si elle était activée sur
+  l'appareil (`ancienneCategorieRapports`), rubrique du PDF proposée seulement s'il en reste sur la période. Rubriques et sources :
   `.claude/skills/endometriose/sources.md`.
   Les bilans antérieurs gardent leur ancienne humeur `Mood` (`Heureuse`/`Neutre`/`Triste`) : tout calcul d'humeur passe
   par `features/bilan-quotidien/utils/humeur.ts`, qui prend en compte les deux.
@@ -154,7 +156,8 @@ dotnet ef migrations add NomEnPascalCase --project MonEndoVue.Server
   bilan quotidien (bilan du jour pas encore rempli, ouvre `/bilan-quotidien?ajouter`) et photo de suivi de l'acné hebdomadaire
   (**seulement pendant un épisode d'acné en cours**, si aucune photo depuis 7 jours ; ouvre `/acne`), et **veille d'un rendez-vous**
   (`RappelRendezVous`, 19 h par défaut : seulement si le calendrier choisi de l'agenda Google lié contient un rendez-vous à heure fixe le lendemain local ;
-  omis sans agenda, sans calendrier ou si Google ne répond pas ; notification sans titre ni lieu, ouvre `/agenda`). Sur iOS (16.4+), uniquement dans l'app ajoutée à l'écran d'accueil.
+  omis sans agenda, sans calendrier ou si Google ne répond pas ; notification sans titre ni lieu, ouvre `/agenda` ; sans agenda lié ou sans
+  calendrier choisi, le réglage le dit (`EnAttenteAsync`, `AgendaService.RaisonSansAgendaAsync`) avec un lien vers `/parametres?agenda=lier`). Sur iOS (16.4+), uniquement dans l'app ajoutée à l'écran d'accueil.
   Entités : **`AbonnementPush`** (un par appareil, endpoint unique, rattaché au carnet) et **`Rappel`** (un par carnet et
   par type : actif, heure locale, jour de la semaine si hebdomadaire, fuseau IANA, date du dernier envoi). L'ancienne table
   `PreferencesRappel` est supprimée depuis la 1.2.0.

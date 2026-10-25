@@ -86,25 +86,23 @@ test.describe('Bilan quotidien — catégories facultatives', () => {
     expect(bilans[0]).toMatchObject({ nausees: true, douleurSelle: true, intensiteDouleurSelle: 'Légère', sangSelles: null });
   });
 
-  test('« Rapports » est discrète : absente sans activation dans Paramètres', async ({ bilanQuotidienPage: bilanPage, page, serveur }) => {
-    simulerBilans(serveur);
-    await bilanPage.ouvrirSaisie();
-
-    await expect(bilanPage.titreSaisie).toBeVisible();
-    await expect(bloc(page, 'Urinaire')).toBeVisible();
-    await expect(bloc(page, 'Rapports')).toHaveCount(0);
-  });
-
-  test('« Rapports » apparaît quand elle est activée dans Paramètres', async ({ bilanQuotidienPage: bilanPage, page, serveur }) => {
+  test('« Rapports » n\'est plus proposée, même activée auparavant : « Où as-tu eu mal ? » la remplace', async ({ bilanQuotidienPage: bilanPage, page, serveur }) => {
     simulerBilans(serveur);
     await page.addInitScript(() => localStorage.setItem('monendo-categories-bilan', JSON.stringify({ rapports: true })));
     await bilanPage.ouvrirSaisie();
 
-    await expect(bloc(page, 'Rapports')).toBeVisible();
-    await bloc(page, 'Rapports').click();
-    await expect(page.getByText('Catégorie discrète')).toBeVisible();
-    await choix(serie(page, 'Une douleur pendant ou après un rapport ?'), 'Pas de rapport').click();
-    await expect(choix(serie(page, 'Une douleur pendant ou après un rapport ?'), 'Pas de rapport')).toHaveAttribute('aria-pressed', 'true');
+    await expect(bloc(page, 'Urinaire')).toBeVisible();
+    await expect(bloc(page, 'Rapports')).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Pendant un rapport', exact: true })).toBeVisible();
+  });
+
+  test('les anciennes réponses à « Rapports » restent dans le détail d\'un jour quand la catégorie était activée', async ({ bilanQuotidienPage: bilanPage, page, serveur }) => {
+    simulerBilans(serveur, { bilans: [{ jour: '2026-09-15', douleurMoyenne: 3, douleurRapport: 'Oui' }] });
+    await page.addInitScript(() => localStorage.setItem('monendo-categories-bilan', JSON.stringify({ rapports: true })));
+    await bilanPage.ouvrir();
+
+    const detail = page.getByRole('heading', { name: "Aujourd'hui", exact: true }).locator('xpath=ancestor::*[contains(@class,"rounded-carte")][1]');
+    await expect(detail).toContainText(/Douleur pendant ou après un rapport.{0,4}Oui/);
   });
 
   test('en modification, les blocs déjà renseignés s\'ouvrent avec leurs réponses', async ({ bilanQuotidienPage: bilanPage, page, serveur }) => {

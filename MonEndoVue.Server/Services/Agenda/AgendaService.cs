@@ -184,6 +184,18 @@ public class AgendaService(
         return ResultatOperation<IReadOnlyList<EvenementAgendaViewModel>>.Succes([]);
     }
 
+    /// <summary>
+    /// Pourquoi aucun agenda n'est lu pour cette utilisatrice, sans appeler Google ; null s'il y en a un (liaison avec un calendrier choisi,
+    /// ou entrée de configuration). Sert à expliquer un rappel de rendez-vous qui ne peut pas partir.
+    /// </summary>
+    public async Task<RaisonSansAgenda?> RaisonSansAgendaAsync(string userId, CancellationToken cancellationToken)
+    {
+        var statut = await liaison.StatutAsync(userId, cancellationToken);
+        if (statut.Liee) return statut.CalendrierId is null ? RaisonSansAgenda.CalendrierNonChoisi : null;
+        // Liaison Google non configurée sur le serveur : rien à proposer à l'utilisatrice.
+        return options.Value.CalendrierDe(userId) is null && statut.Disponible ? RaisonSansAgenda.NonLie : null;
+    }
+
     /// <summary>La liaison OAuth prime ; sans liaison, l'entrée de configuration (clé API) ; sinon Introuvable.</summary>
     private async Task<ResultatOperation<AccesAgenda>> AccesAsync(string userId, CancellationToken cancellationToken)
     {
@@ -327,4 +339,11 @@ public class AgendaService(
     private sealed record DateGoogle(
         [property: JsonPropertyName("dateTime")] string? DateTime,
         [property: JsonPropertyName("date")] string? Date);
+}
+
+/// <summary>Pourquoi aucun agenda n'est lu (voir <see cref="AgendaService.RaisonSansAgendaAsync"/>).</summary>
+public enum RaisonSansAgenda
+{
+    NonLie,
+    CalendrierNonChoisi,
 }

@@ -16,7 +16,7 @@
       </p>
       <ChoixPeriode v-model:choix="choix" v-model:du="du" v-model:au="au" :aujourdhui="aujourdhui" :libelle="libelle" :erreur="erreurPeriode" :options="options"/>
       <ApercuSynthese :synthese="apercu" :chargement="chargementApercu" :erreur="erreurApercu"/>
-      <ChoixRubriques v-model="rubriques" :aucune="aucuneRubrique"/>
+      <ChoixRubriques v-model="rubriques" :aucune="aucuneRubrique" :avec-rapports="(apercu?.bilans.categories.rapports.joursNotes ?? 0) > 0"/>
 
       <div class="flex flex-col gap-2">
         <label for="questions-rendez-vous" class="flex items-baseline gap-2 text-corps font-semibold text-texte">

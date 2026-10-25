@@ -84,6 +84,37 @@ public sealed class ReglesRappelTests : IDisposable
         Assert.Empty(google.Requetes);
     }
 
+    /// <summary>Raison d'attente du rappel de rendez-vous, sans appel à Google ; liee : une liaison en base (calendrier choisi ou non).</summary>
+    private Task<string?> RendezVousEnAttente(bool liee = false, string? calendrierChoisi = null, bool entreeConfiguration = false, bool googleConfigure = true)
+    {
+        if (liee)
+        {
+            _carnet.Context.LiaisonsAgenda.Add(new LiaisonAgenda { CarnetSanteId = CarnetDeTest.CarnetSanteId, CalendrierId = calendrierChoisi });
+            _carnet.Context.SaveChanges();
+        }
+        var liaison = LiaisonAgendaDeTest.Service(_carnet.Context, LiaisonAgendaDeTest.FauxGoogle(_ => throw new InvalidOperationException()),
+            LiaisonAgendaDeTest.Options(googleConfigure));
+        var agenda = AgendaDeTest.Service(new FauxGoogleCalendar(_ => throw new InvalidOperationException()),
+            AgendaDeTest.Options(userId: entreeConfiguration ? CarnetDeTest.UserId : "autre"), liaison);
+        return new RappelRendezVous(_carnet.Context, agenda).EnAttenteAsync(CarnetDeTest.CarnetSanteId, CancellationToken.None);
+    }
+
+    [Fact]
+    public async Task RendezVous_AgendaNonLie_LeReglageLeDit() =>
+        Assert.Equal("Ton agenda Google n'est pas lié : le rappel partira dès qu'il le sera.", await RendezVousEnAttente());
+
+    [Fact]
+    public async Task RendezVous_LieSansCalendrierChoisi_LeReglageLeDit() =>
+        Assert.Equal("Aucun calendrier choisi dans ton agenda Google : le rappel partira dès que tu en auras choisi un.",
+            await RendezVousEnAttente(liee: true));
+
+    [Theory]
+    [InlineData(true, "rdv@example.com", false, true)]
+    [InlineData(false, null, true, true)]
+    [InlineData(false, null, false, false)]
+    public async Task RendezVous_AgendaLuOuLiaisonImpossible_RienAExpliquer(bool liee, string? calendrier, bool entree, bool googleConfigure) =>
+        Assert.Null(await RendezVousEnAttente(liee, calendrier, entree, googleConfigure));
+
     [Fact]
     public void RendezVous_LaNotificationNeCiteNiTitreNiLieu()
     {

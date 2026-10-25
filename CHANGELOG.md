@@ -3,6 +3,15 @@
 Toutes les évolutions notables de MonEndo. Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/),
 versions en [SemVer](https://semver.org/lang/fr/) (voir la section Déploiement de `CLAUDE.md`).
 
+## [1.8.0] - non publiée
+
+### Modifié
+- Bilan quotidien : la catégorie « Rapports » n'est plus proposée. La douleur pendant un rapport se note dans « Où as-tu eu mal ? », avec
+  son intensité, et rejoint ta page Douleurs comme les autres. Tes réponses déjà données restent dans le détail de leur jour et dans ton
+  export ; la rubrique « Rapports » du PDF n'est proposée que s'il en reste sur la période choisie.
+- « Dyspareunie » s'appelle désormais « Pendant un rapport » dans « Où as-tu eu mal ? » et sur la page Douleurs.
+- Politique de confidentialité mise à jour (25 octobre 2026) : la catégorie « Rapports » n'est plus collectée.
+
 ## [1.7.0] - 2026-10-25
 
 ### Ajouté

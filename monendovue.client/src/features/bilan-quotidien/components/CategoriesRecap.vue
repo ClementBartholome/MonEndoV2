@@ -1,19 +1,19 @@
 <script setup lang="ts">
 import { computed } from 'vue';
-import { categoriesDuBilan } from '@/features/bilan-quotidien/config/categories';
+import { categoriesRecapitulees } from '@/features/bilan-quotidien/config/categories';
 import { groupesDeQuestions, lignesDeRecap } from '@/features/bilan-quotidien/config/questions';
 import { useCategoriesBilan } from '@/features/bilan-quotidien/composables/useCategoriesBilan';
 import type { BilanQuotidien } from '@/features/bilan-quotidien/types/bilan-quotidien';
 
 /**
  * Réponses données aux catégories facultatives (urinaire, saignements, nuit et journée…) : seulement ce qui est renseigné.
- * La catégorie discrète « Rapports » ne s'affiche que si elle est activée dans Paramètres.
+ * L'ancienne catégorie discrète « Rapports » (plus proposée) ne s'affiche que si elle était activée sur cet appareil.
  */
 const props = defineProps<{ bilan: BilanQuotidien }>();
 const { estActive } = useCategoriesBilan();
 
 const blocs = computed(() =>
-  categoriesDuBilan.flatMap((categorie) => {
+  categoriesRecapitulees.flatMap((categorie) => {
     const groupe = groupesDeQuestions[categorie.id];
     if (!groupe || (categorie.id === 'rapports' && !estActive('rapports'))) return [];
     const lignes = lignesDeRecap(groupe.questions, props.bilan);

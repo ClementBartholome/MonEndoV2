@@ -25,6 +25,7 @@ export const presentationRappels: Record<TypeRappel, PresentationRappel> = {
     titre: 'Rappel de rendez-vous',
     description: "Envoyé la veille, seulement si un rendez-vous est prévu le lendemain dans le calendrier choisi de ton agenda Google. La notification ne dit ni le titre ni le lieu.",
     icone: 'event',
+    lienEnAttente: { libelle: 'Régler mon agenda Google', vers: '/parametres?agenda=lier' },
   },
 };
 

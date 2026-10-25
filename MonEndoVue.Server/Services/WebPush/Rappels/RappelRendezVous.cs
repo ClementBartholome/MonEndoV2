@@ -19,6 +19,18 @@ public class RappelRendezVous(AppDbContext context, AgendaService agenda) : IReg
     public MessagePush Message { get; } =
         new("MonEndo", "Demain, un rendez-vous. Ton résumé peut t'aider à le préparer.", "/agenda");
 
+    /// <summary>Sans agenda lié, ou sans calendrier choisi, aucun rendez-vous n'est lu : le réglage le dit au lieu de rester muet.</summary>
+    public async Task<string?> EnAttenteAsync(int carnetSanteId, CancellationToken cancellationToken)
+    {
+        var userId = await context.CarnetSantes.Where(c => c.Id == carnetSanteId).Select(c => c.UserId).SingleOrDefaultAsync(cancellationToken);
+        return await agenda.RaisonSansAgendaAsync(userId ?? string.Empty, cancellationToken) switch
+        {
+            RaisonSansAgenda.NonLie => "Ton agenda Google n'est pas lié : le rappel partira dès qu'il le sera.",
+            RaisonSansAgenda.CalendrierNonChoisi => "Aucun calendrier choisi dans ton agenda Google : le rappel partira dès que tu en auras choisi un.",
+            _ => null,
+        };
+    }
+
     /// <summary>« Rien à rappeler » (rappel omis) tant qu'aucun rendez-vous à heure fixe n'est prévu le lendemain.</summary>
     public async Task<bool> SuiviDejaFaitAsync(int carnetSanteId, DateOnly jourLocal, TimeZoneInfo fuseau, CancellationToken cancellationToken)
     {
