@@ -3,7 +3,7 @@
 Toutes les évolutions notables de MonEndo. Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/),
 versions en [SemVer](https://semver.org/lang/fr/) (voir la section Déploiement de `CLAUDE.md`).
 
-## [1.6.0] - non publiée
+## [1.6.0] - 2026-10-25
 
 ### Ajouté
 - Bilan quotidien : sous la douleur de la journée, « **Où as-tu eu mal ?** » (facultatif). Chaque zone touchée reprend la douleur du jour,
