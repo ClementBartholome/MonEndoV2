@@ -23,7 +23,7 @@ export class DouleursPage {
 
   /** Bouton flottant (mobile), de l'en-tête (desktop) ou de l'état vide : tous ouvrent la même saisie. */
   async ouvrirAjout() {
-    await this.page.getByRole('button', { name: 'Noter une douleur' }).and(this.page.locator(':visible')).first().click();
+    await this.page.getByRole('button', { name: 'Noter une crise' }).and(this.page.locator(':visible')).first().click();
   }
 
   entree(libelle: string) {
