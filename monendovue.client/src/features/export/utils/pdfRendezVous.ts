@@ -93,7 +93,8 @@ class Redaction {
         if (rubriques.cycle) this.symptomes();
         if (rubriques.traitements) this.traitements();
         if (rubriques.bilans) this.bilans();
-        if (rubriques.rapports) this.rapports();
+        // Ancienne catégorie (plus proposée) : imprimée seulement s'il en reste des réponses sur la période.
+        if (rubriques.rapports && this.synthese.bilans.categories.rapports.joursNotes > 0) this.rapports();
         if (rubriques.activite) this.activite();
         this.joursParMois();
         if (rubriques.bilans) this.notes();

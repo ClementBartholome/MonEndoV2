@@ -11,7 +11,8 @@ export const TYPES_DOULEUR: { valeur: string; libelle: string }[] = [
     { valeur: 'Douleur thoracique', libelle: 'Thoracique' },
     { valeur: 'Douleur projetée', libelle: 'Projetée' },
     { valeur: 'Douleur neuropathique', libelle: 'Neuropathique' },
-    { valeur: 'Dyspareunie', libelle: 'Dyspareunie' },
+    // Valeur enregistrée inchangée ; libellé courant plutôt que le terme médical.
+    { valeur: 'Dyspareunie', libelle: 'Pendant un rapport' },
     { valeur: 'Autre', libelle: 'Autre' },
 ];
 
