@@ -25,7 +25,14 @@
 
     <template v-else>
       <ChiffresDuMois :chiffres="chiffres"/>
-      <GraphiqueDouleursMois :jours="graphique"/>
+      <section aria-labelledby="titre-frise-douleurs" class="flex flex-col gap-2.5 border-y border-trait py-3.5 text-left">
+        <div class="flex items-baseline justify-between gap-2">
+          <h2 id="titre-frise-douleurs" class="m-0 text-legende font-semibold uppercase tracking-wider text-texte-2">Jour par jour</h2>
+          <span class="text-legende text-texte-2">Douleur · règles</span>
+        </div>
+        <FriseDesJours :jours="frise"/>
+        <p class="m-0 text-xs text-texte-3">Plus le trait est foncé, plus la douleur était forte ce jour-là.</p>
+      </section>
       <DouleursParType v-if="parType.length" :types="parType"/>
       <ListeDouleurs v-if="groupes.length" :groupes="groupes" @modifier="ouvrirModification"/>
       <EmptyStateAction v-else title="Aucune douleur notée ce mois-ci"
@@ -34,7 +41,7 @@
     </template>
 
     <button type="button"
-            class="fixed bottom-[calc(4.25rem+16px)] right-5 z-30 inline-flex min-h-14 items-center gap-2 rounded-controle bg-button pl-4 pr-5 text-corps font-semibold text-texte shadow-elevation lg:hidden"
+            class="fixed bottom-[calc(var(--hauteur-barre-navigation)+16px)] right-5 z-30 inline-flex min-h-14 items-center gap-2 rounded-controle bg-button pl-4 pr-5 text-corps font-semibold text-texte shadow-elevation lg:hidden"
             @click="ouvrirAjout">
       <i class="material-symbols-outlined" aria-hidden="true">add</i>Noter une crise
     </button>
@@ -54,7 +61,7 @@ import SelecteurMois from '@/shared/components/SelecteurMois.vue';
 import { useAuthStore } from '@/features/auth/store/auth';
 import ChiffresDuMois from '../components/ChiffresDuMois.vue';
 import DouleursParType from '../components/DouleursParType.vue';
-import GraphiqueDouleursMois from '../components/GraphiqueDouleursMois.vue';
+import FriseDesJours from '@/shared/components/FriseDesJours.vue';
 import ListeDouleurs from '../components/ListeDouleurs.vue';
 import SaisieDouleur, { type ActionsSaisieDouleur } from '../components/SaisieDouleur.vue';
 import { useDouleurs } from '../composables/useDouleurs';
@@ -64,7 +71,7 @@ const auth = useAuthStore();
 const route = useRoute();
 const router = useRouter();
 const { toast } = useToast();
-const { mois, chargement, erreur, chiffres, graphique, groupes, parType, charger, allerAuMois, enregistrer, supprimer } =
+const { mois, chargement, erreur, chiffres, frise, groupes, parType, charger, allerAuMois, enregistrer, supprimer } =
     useDouleurs({ carnetSanteId: () => auth.user?.carnetSanteId });
 
 const saisieOuverte = ref(false);

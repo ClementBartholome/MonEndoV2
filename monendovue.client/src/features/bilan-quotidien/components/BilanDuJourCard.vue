@@ -55,44 +55,35 @@ const consommations = computed(() => consommationsAlimentaires.filter((c) => pro
     </CardHeader>
     <CardContent class="px-4 pb-4 md:px-6 md:pb-6">
       <div v-if="bilan" class="text-left">
-        <div class="grid grid-cols-2 md:grid-cols-3 gap-2 mb-3">
-          <HumeurResume :bilan="bilan" class="col-span-2 md:col-span-3"/>
-          <div v-for="tuile in tuiles" :key="tuile.libelle" class="rounded-controle p-3" :class="teinteDe(tuile.cle).fond">
-            <p class="m-0 flex items-center gap-1 text-xs font-medium" :class="teinteDe(tuile.cle).texte">
-              <i class="material-symbols-outlined text-base" aria-hidden="true">{{ tuile.icone }}</i>
-              {{ tuile.libelle }}
-            </p>
-            <p class="text-base font-semibold text-texte mt-1">{{ tuile.valeur }}</p>
-          </div>
-        </div>
+        <HumeurResume :bilan="bilan" class="mb-3"/>
 
-        <div class="rounded-controle bg-fond p-3 mb-3">
-          <p class="text-xs text-texte-3 flex items-center gap-1 mb-2">
-            <i class="material-symbols-outlined text-base" aria-hidden="true">restaurant</i>
-            Alimentation
-          </p>
-          <ul v-if="consommations.length" class="flex flex-wrap gap-2">
-            <li
-                v-for="item in consommations"
-                :key="item.cle"
-                class="inline-flex items-center gap-1 rounded-controle bg-surface px-2 py-1 text-xs text-texte"
-            >
-              <i class="material-symbols-outlined text-sm" aria-hidden="true">{{ item.icone }}</i>{{ item.libelle }}
-            </li>
-          </ul>
-          <p v-else class="m-0 text-sm italic text-texte-3">Aucune consommation signalée</p>
-        </div>
+        <!-- Lignes de carnet (identité « Carnet de bord ») : seule l'icône porte la teinte de la mesure, pas de case colorée. -->
+        <dl class="m-0 mb-3 flex flex-col">
+          <div v-for="tuile in tuiles" :key="tuile.libelle" class="flex min-h-11 items-center gap-2.5 border-b border-trait py-2 last:border-b-0">
+            <dt class="flex grow items-center gap-2 text-corps text-texte-2">
+              <i class="material-symbols-outlined text-lg" :class="teinteDe(tuile.cle).texte" aria-hidden="true">{{ tuile.icone }}</i>{{ tuile.libelle }}
+            </dt>
+            <dd class="chiffre m-0 text-titre-carte text-texte">{{ tuile.valeur }}</dd>
+          </div>
+          <div class="flex min-h-11 items-center gap-2.5 border-t border-trait py-2">
+            <dt class="flex shrink-0 items-center gap-2 text-corps text-texte-2">
+              <i class="material-symbols-outlined text-lg text-texte-3" aria-hidden="true">restaurant</i>Alimentation
+            </dt>
+            <dd class="m-0 grow text-right text-sm" :class="consommations.length ? 'font-medium text-texte' : 'text-texte-3'">
+              {{ consommations.length ? consommations.map((c) => c.libelle).join(', ') : 'Rien de signalé' }}
+            </dd>
+          </div>
+        </dl>
 
         <TransitRecap :bilan="bilan"/>
 
         <CategoriesRecap :bilan="bilan"/>
 
-        <div v-if="bilan.commentaire" class="rounded-controle bg-fond p-3">
-          <p class="text-xs text-texte-3 flex items-center gap-1 mb-1">
-            <i class="material-symbols-outlined text-base" aria-hidden="true">comment</i>
-            Notes
+        <div v-if="bilan.commentaire" class="mt-3 border-t border-trait pt-3">
+          <p class="m-0 mb-1 flex items-center gap-2 text-corps text-texte-2">
+            <i class="material-symbols-outlined text-lg text-texte-3" aria-hidden="true">comment</i>Notes
           </p>
-          <p class="text-sm text-texte-2 whitespace-pre-line break-words">{{ bilan.commentaire }}</p>
+          <p class="m-0 whitespace-pre-line break-words text-sm text-texte">{{ bilan.commentaire }}</p>
         </div>
       </div>
 

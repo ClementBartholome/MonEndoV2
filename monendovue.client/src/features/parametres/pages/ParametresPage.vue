@@ -104,11 +104,16 @@ const detailAgenda = computed(() => {
   return statut.calendrierId ? 'Lié · prochains rendez-vous sur l\'accueil' : 'Lié · choisis un calendrier';
 });
 
-/** Retour de Google : le serveur redirige ici avec `?agenda=lie` ou `?agenda=echec` ; l'indication est lue puis retirée de l'adresse. */
+/**
+ * Retour de Google : le serveur redirige ici avec `?agenda=lie` ou `?agenda=echec` ; `?agenda=lier` vient de la proposition de l'accueil
+ * et ouvre directement le panneau. L'indication est lue puis retirée de l'adresse.
+ */
 onMounted(async () => {
   const retour = route.query.agenda;
   if (retour === 'lie') {
     toast({ title: 'Agenda lié', description: 'Choisis maintenant le calendrier à afficher.', variant: 'custom' });
+    panneau.value = 'agenda';
+  } else if (retour === 'lier') {
     panneau.value = 'agenda';
   } else if (retour === 'echec') {
     toast({ title: 'La liaison n\'a pas abouti', description: 'Tu peux réessayer depuis « Agenda Google ».', variant: 'custom' });

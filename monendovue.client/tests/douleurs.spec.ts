@@ -2,7 +2,7 @@ import { test, expect } from './fixtures';
 import { simulerDouleurs } from './mocks/douleurs';
 
 test.describe('Douleurs', () => {
-  test('affiche le mois : chiffres, graphique et entrées par jour', async ({ douleursPage, serveur, page }) => {
+  test('affiche le mois : chiffres, frise et entrées par jour', async ({ douleursPage, serveur, page }) => {
     simulerDouleurs(serveur, [
       { typeDouleur: 'Douleur pelvienne', intensite: 7, date: '2026-09-15T08:40:00', commentaire: 'réveil difficile' },
       { typeDouleur: 'Douleur lombaire', intensite: 4, date: '2026-09-15T14:05:00' },
@@ -15,7 +15,10 @@ test.describe('Douleurs', () => {
     await expect(douleursPage.moisAffiche).toContainText('Septembre 2026');
     await expect(douleursPage.chiffres).toContainText('2jours avec douleur');
     await expect(douleursPage.chiffres).toContainText('Pelvienne');
-    await expect(page.getByRole('img', { name: /Douleur notée 2 jours ce mois-ci, au plus 7 sur 10/ })).toBeVisible();
+    // La frise du mois, lue jour par jour par les lecteurs d'écran : douleur la plus forte du jour et règles.
+    const frise = page.getByRole('region', { name: 'Jour par jour' });
+    await expect(frise.getByText('mardi 15 septembre : douleur 7 sur 10, règles')).toBeAttached();
+    await expect(frise.getByText('mercredi 16 septembre : rien de noté')).toBeAttached();
     await expect(page.getByRole('heading', { name: 'Mardi 15 septembre' })).toBeVisible();
     await expect(douleursPage.entree('Pelvienne.*8 h 40 · réveil difficile')).toBeVisible();
     // Une zone notée dans le bilan se distingue d'une crise ; bilans et crises sont comptés ensemble par type.

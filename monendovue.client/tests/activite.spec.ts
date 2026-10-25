@@ -13,7 +13,7 @@ test.describe('Activité', () => {
 
     await expect(activitePage.chiffres).toContainText('3séances');
     await expect(activitePage.chiffres).toContainText('2 h 05au total');
-    await expect(activitePage.chiffres).toContainText('1/2douleur soulagée après');
+    await expect(activitePage.chiffres).toContainText('1/2ont soulagé la douleur');
     await expect(page.getByRole('heading', { name: 'Mardi 15 septembre' })).toBeVisible();
     await expect(activitePage.seance('Yoga.*20 min · douce · douleur soulagée')).toBeVisible();
     await expect(activitePage.seance('Marche.*45 min · modérée · douleur inchangée · au parc')).toBeVisible();

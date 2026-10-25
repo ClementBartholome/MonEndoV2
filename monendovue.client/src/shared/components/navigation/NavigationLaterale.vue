@@ -1,6 +1,6 @@
 <template>
   <nav aria-label="Navigation principale"
-       class="navigation-laterale fixed inset-y-0 left-0 z-30 hidden w-[200px] flex-col gap-1 overflow-y-auto border-r border-trait bg-fond px-3 py-4 lg:flex">
+       class="navigation-laterale fixed inset-y-0 left-0 z-30 hidden w-[12.5rem] flex-col gap-1 overflow-y-auto border-r border-trait bg-fond px-3 py-4 lg:flex">
     <router-link to="/" class="mb-4 self-center" aria-label="Accueil MonEndo">
       <img src="@/images/MonEndo_transparent.png" alt="" class="h-24 w-24">
     </router-link>

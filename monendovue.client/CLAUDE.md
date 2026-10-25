@@ -179,8 +179,9 @@ lecture seule (liste par jour, `SelecteurMois`, suppression en deux temps), plus
   (`App.vue`, on change de page des dizaines de fois par jour) ; boutons enfoncés à l'appui (`scale(0.97)`, 140 ms, `index.css`, sauf les
   lignes `w-full`) ; pas de flash au toucher, `touch-action: manipulation`, libellés de bouton non sélectionnables ; survol réservé aux
   appareils qui survolent (`future.hoverOnlyWhenSupported`) ; champs à 16 px au toucher (zoom de Safari iOS). Une animation fréquente reste
-  sous 300 ms, en `ease-out` (jamais `ease-in`), seulement sur `transform` et `opacity`. Marges de sécurité (`viewport-fit=cover`) pas encore
-  posées : à tester sur iPhone.
+  sous 300 ms, en `ease-out` (jamais `ease-in`), seulement sur `transform` et `opacity`. Marges de sécurité de l'iPhone : `viewport-fit=cover`
+  (`index.html`) et `--marge-securite-bas` / `--hauteur-barre-navigation` (`index.css`) ; le navigateur des tests n'a pas d'encoche :
+  `tests/marges-securite.spec.ts` force la marge à 34 px. À confirmer sur un vrai iPhone à chaque changement de ces éléments.
 - Polices servies par l'app (`src/assets/polices.css`, paquets `@fontsource-variable`), **jamais Google Fonts** (IP envoyée à Google, RGPD) :
   Lexend et Literata variables, sous-ensemble latin ; un axe d'icône en plus s'ajoute dans ce fichier.
 - Icônes Material Symbols **arrondies** (`<i class="material-symbols-outlined">nom</i>` : la classe garde son nom historique, la
@@ -199,7 +200,9 @@ lecture seule (liste par jour, `SelecteurMois`, suppression en deux temps), plus
 - Courbes à plusieurs échelles ou avec des bandes de fond (règles) : `GraphiqueLignes.vue` (SVG simple, jours non
   renseignés non tracés) plutôt que `LineChart` (unovis), qui n'a qu'un axe et relie les trous.
 - Élément collé en bas d'écran (`sticky`/`fixed`) : sous 1024px la navigation est fixée en bas (`BarreNavigation.vue`,
-  4.25rem), le décaler d'autant (modèle : barre d'enregistrement de `SaisieBilan.vue`).
+  `var(--hauteur-barre-navigation)` = 4.25rem + la marge de la barre d'accueil de l'iPhone), le décaler d'autant (modèle : barre
+  d'enregistrement de `SaisieBilan.vue`, boutons flottants `bottom-[calc(var(--hauteur-barre-navigation)+16px)]`) ; un panneau du bas
+  ajoute `var(--marge-securite-bas)` à sa marge basse. Jamais `4.25rem` en dur.
 - La taille de police racine grandit en desktop (20px à 1280px) : les largeurs en `rem` (`max-w-3xl`…) y sont plus
   larges que prévu, vérifier en situation.
 - Pastilles, préréglages et chips : grilles à colonnes égales (`grid-cols-n`) plutôt que `flex-wrap`, pour des rangées
@@ -244,6 +247,8 @@ lecture seule (liste par jour, `SelecteurMois`, suppression en deux temps), plus
 - `localStorage` réservé aux préférences non sensibles (`user` sans token, `monendo.wellbeing-goals`).
   **Jamais** de token ni de donnée de santé dans `localStorage`/IndexedDB.
 - Pas de cache hors ligne ni de service worker applicatif (voir les décisions d'architecture du CLAUDE.md racine).
+- **Après un déploiement**, une app restée ouverte réclame des fichiers qui n'existent plus : `shared/utils/rechargementApresMiseAJour.ts`
+  (appelé dans `main.ts`) recharge la page sur `vite:preloadError`, une fois par 10 s au plus et jamais hors connexion.
 - Le bloc daté de `src/main.ts` nettoie les restes des anciens systèmes (mode hors ligne, OneSignal) : à retirer après le 2026-12-31,
   en même temps que `public/sw.js`.
 

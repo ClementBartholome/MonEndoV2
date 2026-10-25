@@ -9,7 +9,7 @@ const nombre = (n: number) => n.toLocaleString('fr-FR');
 </script>
 
 <template>
-  <section aria-labelledby="titre-par-type" class="flex flex-col gap-3 border-y border-trait py-4 text-left">
+  <section aria-labelledby="titre-par-type" class="flex flex-col gap-3 border-b border-trait pb-4 pt-1 text-left">
     <h2 id="titre-par-type" class="m-0 text-legende font-semibold uppercase tracking-wider text-texte-2">Par type</h2>
     <ul class="m-0 flex list-none flex-col gap-3 p-0">
       <li v-for="type in types" :key="type.libelle" class="flex flex-col gap-1.5 text-left">

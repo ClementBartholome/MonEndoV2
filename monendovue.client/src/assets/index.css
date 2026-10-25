@@ -55,6 +55,15 @@
      * Finitions tactiles (skill mobile-native) : pas de flash gris au toucher, pas de texte grossi en paysage, pas d'attente
      * du double toucher, pas de sélection du libellé d'un bouton par un appui long. Le texte saisi ou lu reste sélectionnable.
      */
+    /*
+     * Marges de sécurité (encoche, barre d'accueil de l'iPhone) : la page s'étend jusqu'aux bords (viewport-fit=cover, index.html) et
+     * ce qui est collé en bas s'écarte de la barre d'accueil. Valent 0 sur un écran sans encoche.
+     */
+    :root {
+        --marge-securite-bas: env(safe-area-inset-bottom, 0px);
+        --hauteur-barre-navigation: calc(4.25rem + var(--marge-securite-bas));
+    }
+
     html {
         -webkit-tap-highlight-color: transparent;
         -webkit-text-size-adjust: 100%;
@@ -383,11 +392,11 @@ ul {
     line-height: inherit;
 }
 
-/* Navigation : composants de shared/components/navigation/. Au-delà de 1023px, la barre latérale fixe de 200px
-   (NavigationLaterale.vue) : le contenu lui laisse sa place au lieu de passer dessous. */
+/* Navigation : composants de shared/components/navigation/. Au-delà de 1023px, la barre latérale fixe de 12.5rem
+   (NavigationLaterale.vue, en rem pour grandir avec son texte) : le contenu lui laisse sa place au lieu de passer dessous. */
 @media (min-width: 1024px) {
     #app:has(> header > .navigation-laterale) {
-        padding-left: 200px;
+        padding-left: 12.5rem;
     }
 }
 
