@@ -34,7 +34,7 @@
     </template>
 
     <button type="button"
-            class="fixed bottom-[calc(4.25rem+16px)] right-5 z-30 inline-flex min-h-14 items-center gap-2 rounded-controle bg-button pl-4 pr-5 text-corps font-semibold text-texte shadow-elevation lg:hidden"
+            class="fixed bottom-[calc(var(--hauteur-barre-navigation)+16px)] right-5 z-30 inline-flex min-h-14 items-center gap-2 rounded-controle bg-button pl-4 pr-5 text-corps font-semibold text-texte shadow-elevation lg:hidden"
             @click="ouvrirAjout">
       <i class="material-symbols-outlined" aria-hidden="true">add</i>Noter une crise
     </button>
