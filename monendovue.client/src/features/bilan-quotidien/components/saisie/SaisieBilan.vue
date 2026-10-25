@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, toRef } from 'vue';
+import { computed, onMounted, ref, toRef } from 'vue';
 import { format, isToday } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/shared/components/ui/dialog';
@@ -8,6 +8,9 @@ import EmotionsChoix from '@/features/bilan-quotidien/components/saisie/Emotions
 import BlocRepliable from '@/features/bilan-quotidien/components/saisie/BlocRepliable.vue';
 import BlocCorps from '@/features/bilan-quotidien/components/saisie/BlocCorps.vue';
 import QuestionsBilan from '@/features/bilan-quotidien/components/saisie/QuestionsBilan.vue';
+import ZonesDouleur from '@/features/bilan-quotidien/components/saisie/ZonesDouleur.vue';
+import { useZonesDouleur } from '@/features/bilan-quotidien/composables/useZonesDouleur';
+import { cleJour } from '@/shared/utils/jours';
 import { corpsDe, resumeCorps, useSaisieBilan } from '@/features/bilan-quotidien/composables/useSaisieBilan';
 import { useConfirmationSortie } from '@/features/bilan-quotidien/composables/useConfirmationSortie';
 import { useCategoriesBilan } from '@/features/bilan-quotidien/composables/useCategoriesBilan';
@@ -40,9 +43,20 @@ const saisie = useSaisieBilan({
   bilan: props.bilan,
   bilanVeille: toRef(props, 'bilanVeille'),
   onEnregistre: (bilan) => emit('enregistre', bilan),
+  apresEnregistrement: () => zonesDouleur.enregistrer(),
 });
-const { formulaire, manquants, transitComplet, categorieIncomplete, estEnregistrable, estModifie, enregistrement, veilleDisponible } = saisie;
+const { formulaire, manquants, transitComplet, categorieIncomplete, estEnregistrable, enregistrement, veilleDisponible } = saisie;
 
+// « Où as-tu eu mal ? » : zones du jour, enregistrées comme douleurs après le bilan.
+const zonesDouleur = useZonesDouleur({
+  jour: cleJour(props.bilan?.date ?? props.date),
+  douleurDuJour: computed(() => formulaire.value.douleurMoyenne),
+});
+onMounted(zonesDouleur.charger);
+const { zones, crises, indisponible: zonesIndisponibles } = zonesDouleur;
+const actionsZones = { basculer: zonesDouleur.basculer, ajuster: zonesDouleur.ajuster };
+
+const estModifie = computed(() => saisie.estModifie.value || zonesDouleur.estModifie.value);
 const confirmation = useConfirmationSortie(estModifie);
 
 // Catégories facultatives affichées (réglage de l'appareil) : masquer n'efface aucune réponse déjà enregistrée.
@@ -103,12 +117,15 @@ const annuler = () => confirmation.demanderSiNecessaire(() => emit('annule'));
         <EchellePastilles
             v-model="formulaire.douleurMoyenne"
             couleurs
-            libelle="Douleur"
+            libelle="Douleur de la journée"
             icone="sick"
             :max="DOULEUR_MAX"
             :repere-min="reperesEchelles.douleur.min"
             :repere-max="reperesEchelles.douleur.max"
         />
+
+        <ZonesDouleur v-if="!zonesDouleur.chargement.value" :zones="zones" :crises="crises" :indisponible="zonesIndisponibles"
+                      :min="zonesDouleur.INTENSITE_MIN" :max="zonesDouleur.INTENSITE_MAX" :actions="actionsZones"/>
 
         <div class="flex flex-col gap-2">
           <EmotionsChoix v-model="formulaire.emotions"/>

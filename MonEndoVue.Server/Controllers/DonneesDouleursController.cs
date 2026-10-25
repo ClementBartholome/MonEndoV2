@@ -54,6 +54,9 @@ namespace MonEndoVue.Server.Controllers
             var securityCheck = await this.ValidateCarnetAccess(carnetSanteService, donneesDouleur.CarnetSanteId);
             if (securityCheck != null) return securityCheck;
             
+            // Une douleur notée sur la page Douleurs est une crise : seules les zones du bilan sont marquées (DouleursDuJour).
+            donneesDouleur.Id = 0;
+            donneesDouleur.DepuisBilan = false;
             context.DonneesDouleurs.Add(donneesDouleur);
             await context.SaveChangesAsync();
 

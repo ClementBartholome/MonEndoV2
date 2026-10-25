@@ -62,8 +62,10 @@ Sur ordinateur, la navigation passe dans une barre latérale et les pages gagnen
   Un seul bilan par jour. L'historique se lit par semaine ou par mois (calendrier coloré selon la douleur ou les émotions, détail
   du jour, jours de règles), et l'onglet **Tendances** donne moyennes, évolution par rapport à la période précédente, repères
   personnels atteints et observations factuelles sur la douleur et les règles, sans note ni score.
-- **Douleurs** : type, intensité 0-10, moment et commentaire ; chiffres du mois, graphique de l'intensité la plus forte jour par
-  jour avec les règles en repère, saisie rapide depuis le bas de l'écran.
+- **Douleurs** : la douleur par type, comme les soignants la mesurent. Le bilan du soir demande « Où as-tu eu mal ? » (facultatif,
+  en un geste : chaque zone reprend la douleur du jour, ajustable) ; une crise se note au moment où elle arrive (type, intensité 0-10,
+  moment, commentaire). La page montre les chiffres du mois, le graphique de l'intensité la plus forte jour par jour avec les règles
+  en repère, le détail par type et chaque entrée avec son origine (bilan ou crise).
 - **Cycle** (onglets *Règles* et *Symptômes*) :
   - *Règles* : le cycle en cours, un calendrier où un toucher ajoute ou retire un jour de règles, et l'historique des cycles
     (durée moyenne du cycle et des règles, écart entre le plus court et le plus long, jours de douleur forte), sans prédiction ;

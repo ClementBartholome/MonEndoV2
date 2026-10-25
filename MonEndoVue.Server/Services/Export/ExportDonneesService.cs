@@ -120,7 +120,7 @@ public class ExportDonneesService(
         {
             douleurs = await context.DonneesDouleurs.AsNoTracking().Where(d => d.CarnetSanteId == carnetId)
                 .OrderBy(d => d.Date)
-                .Select(d => new { d.Date, type = d.TypeDouleur, d.Intensite, d.Commentaire })
+                .Select(d => new { d.Date, type = d.TypeDouleur, d.Intensite, d.Commentaire, depuisBilan = d.DepuisBilan })
                 .ToListAsync(ct),
             joursDeRegles = await context.JourRegles.AsNoTracking().Where(j => j.CarnetSanteId == carnetId)
                 .OrderBy(j => j.Date)

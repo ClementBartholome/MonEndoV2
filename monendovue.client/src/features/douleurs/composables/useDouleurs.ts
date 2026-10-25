@@ -5,7 +5,7 @@ import { derniereDemande } from '@/shared/utils/derniereDemande';
 import { enTableau } from '@/shared/utils/json';
 import type { DonneesDouleur, DonneesDouleurModification } from '../types/donnees-douleur';
 import { cleJour, grouperParJour } from '@/shared/utils/jours';
-import { chiffresDuMois, joursDuMois } from '../utils/douleurs';
+import { chiffresDuMois, douleursParType, joursDuMois } from '../utils/douleurs';
 
 interface Options {
     carnetSanteId: () => number | undefined;
@@ -23,6 +23,7 @@ export function useDouleurs({ carnetSanteId, maintenant = () => new Date() }: Op
     const chiffres = computed(() => chiffresDuMois(entrees.value));
     const graphique = computed(() => joursDuMois(mois.value, entrees.value, joursDeRegles.value));
     const groupes = computed(() => grouperParJour(entrees.value));
+    const parType = computed(() => douleursParType(entrees.value));
 
     const nouvelleDemande = derniereDemande();
 
@@ -76,7 +77,7 @@ export function useDouleurs({ carnetSanteId, maintenant = () => new Date() }: Op
     }
 
     return {
-        mois, entrees, chargement, erreur, chiffres, graphique, groupes,
+        mois, entrees, chargement, erreur, chiffres, graphique, groupes, parType,
         charger, allerAuMois, enregistrer, supprimer,
     };
 }

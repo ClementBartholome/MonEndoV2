@@ -18,6 +18,8 @@ export interface UseSaisieBilanOptions {
   /** Bilan de la veille, pour « Comme hier ». */
   bilanVeille: Ref<BilanQuotidien | undefined>;
   onEnregistre: (bilan: BilanQuotidien) => void;
+  /** Enregistrement lié, une fois le bilan enregistré (zones de douleur) ; son échec ne défait pas le bilan. */
+  apresEnregistrement?: () => Promise<void>;
 }
 
 export const corpsDe = (source: Partial<CorpsBilan>): CorpsBilan => ({
@@ -167,6 +169,13 @@ export const useSaisieBilan = (options: UseSaisieBilanOptions) => {
         id = (await apiService.postBilanQuotidien(saisie)).id;
       }
       instantane.value = JSON.stringify(formulaire.value);
+      if (options.apresEnregistrement) {
+        try {
+          await options.apresEnregistrement();
+        } catch {
+          toast({ title: 'Zones de douleur non enregistrées', description: 'Le bilan est enregistré. Rouvre-le pour préciser où tu as eu mal.', variant: 'destructive' });
+        }
+      }
       toast({
         title: estModification ? 'Bilan mis à jour' : 'Bilan enregistré',
         variant: 'custom',

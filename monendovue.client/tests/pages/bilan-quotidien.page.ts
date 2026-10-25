@@ -51,9 +51,9 @@ export class BilanQuotidienPage {
 
   // --- Saisie ---
 
-  /** Pastille d'une échelle : « Douleur » sur 10, « Fatigue », « Stress · vie pro », « Stress · vie perso » sur 5. */
+  /** Pastille d'une échelle : « Douleur de la journée » sur 10, « Fatigue », « Stress · vie pro », « Stress · vie perso » sur 5. */
   pastille(echelle: string, niveau: number) {
-    const max = echelle === 'Douleur' ? 10 : 5;
+    const max = echelle === 'Douleur de la journée' ? 10 : 5;
     return this.page.getByRole('button', { name: `${echelle} ${niveau} sur ${max}`, exact: true });
   }
 
@@ -73,7 +73,7 @@ export class BilanQuotidienPage {
 
   /** Saisie minimale : les deux réponses obligatoires. */
   async remplirEssentiel(douleur: number, ...emotions: string[]) {
-    await this.choisirNiveau('Douleur', douleur);
+    await this.choisirNiveau('Douleur de la journée', douleur);
     await this.choisirEmotions(...emotions);
   }
 

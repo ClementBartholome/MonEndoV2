@@ -4,7 +4,7 @@
       <h1 class="m-0 grow text-titre-page font-medium tracking-normal text-texte">Douleurs</h1>
       <button type="button" class="hidden min-h-11 items-center gap-2 rounded-controle bg-button px-4 font-semibold text-texte lg:inline-flex"
               @click="ouvrirAjout">
-        <i class="material-symbols-outlined" aria-hidden="true">add</i>Noter une douleur
+        <i class="material-symbols-outlined" aria-hidden="true">add</i>Noter une crise
       </button>
     </header>
 
@@ -26,16 +26,17 @@
     <template v-else>
       <ChiffresDuMois :chiffres="chiffres"/>
       <GraphiqueDouleursMois :jours="graphique"/>
+      <DouleursParType v-if="parType.length" :types="parType"/>
       <ListeDouleurs v-if="groupes.length" :groupes="groupes" @modifier="ouvrirModification"/>
       <EmptyStateAction v-else title="Aucune douleur notée ce mois-ci"
-                        description="Note une douleur quand elle survient : le mois se remplira au fil des jours."
-                        action-label="Noter une douleur" @action="ouvrirAjout"/>
+                        description="Précise où tu as eu mal dans ton bilan du soir, ou note une crise au moment où elle arrive."
+                        action-label="Noter une crise" @action="ouvrirAjout"/>
     </template>
 
     <button type="button"
             class="fixed bottom-[calc(4.25rem+16px)] right-5 z-30 inline-flex min-h-14 items-center gap-2 rounded-controle bg-button pl-4 pr-5 text-corps font-semibold text-texte shadow-elevation lg:hidden"
             @click="ouvrirAjout">
-      <i class="material-symbols-outlined" aria-hidden="true">add</i>Noter une douleur
+      <i class="material-symbols-outlined" aria-hidden="true">add</i>Noter une crise
     </button>
 
     <SaisieDouleur v-model:open="saisieOuverte" :entree="entreeModifiee" :actions="actions"/>
@@ -52,6 +53,7 @@ import EmptyStateAction from '@/shared/components/EmptyStateAction.vue';
 import SelecteurMois from '@/shared/components/SelecteurMois.vue';
 import { useAuthStore } from '@/features/auth/store/auth';
 import ChiffresDuMois from '../components/ChiffresDuMois.vue';
+import DouleursParType from '../components/DouleursParType.vue';
 import GraphiqueDouleursMois from '../components/GraphiqueDouleursMois.vue';
 import ListeDouleurs from '../components/ListeDouleurs.vue';
 import SaisieDouleur, { type ActionsSaisieDouleur } from '../components/SaisieDouleur.vue';
@@ -62,7 +64,7 @@ const auth = useAuthStore();
 const route = useRoute();
 const router = useRouter();
 const { toast } = useToast();
-const { mois, chargement, erreur, chiffres, graphique, groupes, charger, allerAuMois, enregistrer, supprimer } =
+const { mois, chargement, erreur, chiffres, graphique, groupes, parType, charger, allerAuMois, enregistrer, supprimer } =
     useDouleurs({ carnetSanteId: () => auth.user?.carnetSanteId });
 
 const saisieOuverte = ref(false);
@@ -71,7 +73,7 @@ const entreeModifiee = ref<DonneesDouleur | null>(null);
 const actions: ActionsSaisieDouleur = {
   enregistrer: async (saisie, id) => {
     await enregistrer(saisie, id);
-    toast({ title: id === null ? 'Douleur notée' : 'Douleur modifiée', variant: 'custom' });
+    toast({ title: id === null ? 'Crise notée' : 'Douleur modifiée', variant: 'custom' });
   },
   supprimer: async (id) => {
     await supprimer(id);
