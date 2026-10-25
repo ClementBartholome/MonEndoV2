@@ -1,7 +1,7 @@
 import { computed, ref } from 'vue';
 import { format } from 'date-fns';
 import apiService from '@/shared/services/apiService';
-import type { EvenementAgenda } from '@/features/schedule/types/agenda';
+import type { EvenementAgenda, StatutLiaisonAgenda } from '@/features/schedule/types/agenda';
 import type { PrisePrevue } from '@/features/medicament/types/traitements';
 import { reponse } from '@/features/medicament/utils/prises';
 import type { Aujourdhui } from '../types/aujourdhui';
@@ -16,6 +16,8 @@ interface Options {
 export function useAujourdhui({ maintenant = () => new Date() }: Options = {}) {
     const aujourdhui = ref<Aujourdhui | null>(null);
     const prochainRendezVous = ref<EvenementAgenda | null>(null);
+    /** Liaison de l'agenda Google, pour proposer de le lier ; null si inconnue (la proposition n'est alors pas affichée). */
+    const statutAgenda = ref<StatutLiaisonAgenda | null>(null);
     const chargement = ref(true);
     const erreur = ref(false);
     /** Clé « traitementId-heure » de la prise en cours d'envoi. */
@@ -27,13 +29,15 @@ export function useAujourdhui({ maintenant = () => new Date() }: Options = {}) {
         chargement.value = true;
         erreur.value = false;
         try {
-            const [donnees, rendezVous] = await Promise.all([
+            const [donnees, rendezVous, statut] = await Promise.all([
                 apiService.getAujourdhui(format(maintenant(), 'yyyy-MM-dd')),
                 // Sans agenda associé (ou agenda indisponible), le bloc n'est simplement pas affiché.
                 apiService.getProchainsRendezVous().catch(() => null),
+                apiService.getStatutLiaisonAgenda().catch(() => null),
             ]);
             aujourdhui.value = donnees;
             prochainRendezVous.value = rendezVous?.[0] ?? null;
+            statutAgenda.value = statut;
         } catch {
             erreur.value = true;
         } finally {
@@ -57,5 +61,5 @@ export function useAujourdhui({ maintenant = () => new Date() }: Options = {}) {
         }
     }
 
-    return { aujourdhui, prochainRendezVous, chargement, erreur, priseEnCours, phrases, charger, prendre };
+    return { aujourdhui, prochainRendezVous, statutAgenda, chargement, erreur, priseEnCours, phrases, charger, prendre };
 }
