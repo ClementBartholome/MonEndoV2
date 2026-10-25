@@ -156,7 +156,8 @@ dotnet ef migrations add NomEnPascalCase --project MonEndoVue.Server
   bilan quotidien (bilan du jour pas encore rempli, ouvre `/bilan-quotidien?ajouter`) et photo de suivi de l'acné hebdomadaire
   (**seulement pendant un épisode d'acné en cours**, si aucune photo depuis 7 jours ; ouvre `/acne`), et **veille d'un rendez-vous**
   (`RappelRendezVous`, 19 h par défaut : seulement si le calendrier choisi de l'agenda Google lié contient un rendez-vous à heure fixe le lendemain local ;
-  omis sans agenda, sans calendrier ou si Google ne répond pas ; notification sans titre ni lieu, ouvre `/agenda`). Sur iOS (16.4+), uniquement dans l'app ajoutée à l'écran d'accueil.
+  omis sans agenda, sans calendrier ou si Google ne répond pas ; notification sans titre ni lieu, ouvre `/agenda` ; sans agenda lié ou sans
+  calendrier choisi, le réglage le dit (`EnAttenteAsync`, `AgendaService.RaisonSansAgendaAsync`) avec un lien vers `/parametres?agenda=lier`). Sur iOS (16.4+), uniquement dans l'app ajoutée à l'écran d'accueil.
   Entités : **`AbonnementPush`** (un par appareil, endpoint unique, rattaché au carnet) et **`Rappel`** (un par carnet et
   par type : actif, heure locale, jour de la semaine si hebdomadaire, fuseau IANA, date du dernier envoi). L'ancienne table
   `PreferencesRappel` est supprimée depuis la 1.2.0.
