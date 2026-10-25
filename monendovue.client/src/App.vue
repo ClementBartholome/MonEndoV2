@@ -22,21 +22,17 @@ onMounted(() => {
 </script>
 
 <style>
+/*
+ * Changement de page : un fondu bref, seulement pour éviter un saut brutal. On change de page des dizaines de fois par jour :
+ * l'ancien fondu (1 s à la sortie puis 1 s à l'entrée) faisait paraître l'application lente.
+ */
 .fade-enter-active,
 .fade-leave-active {
-  transition: opacity 1s ease;
+  transition: opacity 120ms ease-out;
 }
 
 .fade-enter-from,
 .fade-leave-to {
   opacity: 0;
-}
-
-.page-enter-active, .page-leave-active {
-  transition: opacity 0.5s ease, transform 0.5s ease;
-}
-.page-enter-from, .page-leave-to {
-  opacity: 0;
-  transform: translateX(10px);
 }
 </style>
