@@ -244,6 +244,8 @@ lecture seule (liste par jour, `SelecteurMois`, suppression en deux temps), plus
 - `localStorage` réservé aux préférences non sensibles (`user` sans token, `monendo.wellbeing-goals`).
   **Jamais** de token ni de donnée de santé dans `localStorage`/IndexedDB.
 - Pas de cache hors ligne ni de service worker applicatif (voir les décisions d'architecture du CLAUDE.md racine).
+- **Après un déploiement**, une app restée ouverte réclame des fichiers qui n'existent plus : `shared/utils/rechargementApresMiseAJour.ts`
+  (appelé dans `main.ts`) recharge la page sur `vite:preloadError`, une fois par 10 s au plus et jamais hors connexion.
 - Le bloc daté de `src/main.ts` nettoie les restes des anciens systèmes (mode hors ligne, OneSignal) : à retirer après le 2026-12-31,
   en même temps que `public/sw.js`.
 
