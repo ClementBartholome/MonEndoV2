@@ -1,3 +1,4 @@
+using MonEndoVue.Server.Services.Douleurs;
 using Microsoft.AspNetCore.Mvc;
 using MonEndoVue.Server.Controllers;
 using MonEndoVue.Server.Models;
@@ -136,7 +137,7 @@ public sealed class HistoriqueBilansServiceTests : IDisposable
     {
         AjouterBilan(new DateTime(2026, 9, 10, 12, 0, 0));
         AjouterBilan(new DateTime(2026, 9, 11, 12, 0, 0), CarnetDeTest.AutreCarnetSanteId);
-        var controller = new BilanQuotidienController(_carnet.Context, _carnet.CarnetSanteService, TimeProvider.System)
+        var controller = new BilanQuotidienController(_carnet.Context, _carnet.CarnetSanteService, TimeProvider.System, new DouleursDuJourService(_carnet.Context, TimeProvider.System))
         {
             ControllerContext = CarnetDeTest.ContexteAuthentifie(),
         };
@@ -150,7 +151,7 @@ public sealed class HistoriqueBilansServiceTests : IDisposable
     [Fact]
     public async Task Controleur_GetPeriodeInvalide_RetourneBadRequest()
     {
-        var controller = new BilanQuotidienController(_carnet.Context, _carnet.CarnetSanteService, TimeProvider.System)
+        var controller = new BilanQuotidienController(_carnet.Context, _carnet.CarnetSanteService, TimeProvider.System, new DouleursDuJourService(_carnet.Context, TimeProvider.System))
         {
             ControllerContext = CarnetDeTest.ContexteAuthentifie(),
         };

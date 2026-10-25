@@ -34,7 +34,7 @@ test.describe('Bilan quotidien — saisie du jour', () => {
     await expect(page.getByRole('button', { name: /^Corps/ })).toHaveCount(0);
     await expect(bilanPage.boutonCommeHier).toHaveCount(0);
     await expect(page.getByRole('button', { name: /^Notes/ })).toBeVisible();
-    await expect(bilanPage.pastille('Douleur', 4)).toBeVisible();
+    await expect(bilanPage.pastille('Douleur de la journée', 4)).toBeVisible();
     await expect(bilanPage.emotions).toBeVisible();
   });
 
@@ -99,12 +99,12 @@ test.describe('Bilan quotidien — saisie du jour', () => {
     const bilans = simulerBilans(serveur);
     await bilanPage.ouvrirSaisie();
 
-    await bilanPage.choisirNiveau('Douleur', 5);
+    await bilanPage.choisirNiveau('Douleur de la journée', 5);
     await bilanPage.boutonAnnuler.click();
 
     await expect(bilanPage.confirmationSortie).toBeVisible();
     await bilanPage.confirmationSortie.getByRole('button', { name: 'Continuer la saisie' }).click();
-    await expect(bilanPage.pastille('Douleur', 5)).toHaveAttribute('aria-pressed', 'true');
+    await expect(bilanPage.pastille('Douleur de la journée', 5)).toHaveAttribute('aria-pressed', 'true');
 
     await bilanPage.boutonAnnuler.click();
     await bilanPage.confirmationSortie.getByRole('button', { name: 'Quitter sans enregistrer' }).click();

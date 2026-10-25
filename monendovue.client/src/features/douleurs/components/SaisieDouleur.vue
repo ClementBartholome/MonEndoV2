@@ -1,6 +1,9 @@
 <template>
-  <PanneauBas v-model:open="ouvert" :titre="form.enModification.value ? 'Modifier la douleur' : 'Noter une douleur'">
+  <PanneauBas v-model:open="ouvert" :titre="form.enModification.value ? 'Modifier la douleur' : 'Noter une crise'">
     <form class="flex flex-col gap-[18px]" @submit.prevent="valider">
+      <p v-if="!form.enModification.value" class="m-0 text-left text-legende leading-normal text-texte-2">
+        Pour une douleur au moment où elle arrive. Le soir, ton bilan suffit pour le reste de la journée.
+      </p>
       <fieldset class="m-0 border-0 p-0">
         <legend class="mb-2.5 p-0 text-sm font-semibold text-texte">Où as-tu mal ?</legend>
         <div class="grid grid-cols-2 gap-2">

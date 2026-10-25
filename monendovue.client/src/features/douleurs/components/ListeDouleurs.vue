@@ -26,8 +26,10 @@ import { commentaireAffiche, libelleCourt } from '../utils/douleurs';
 defineProps<{ groupes: GroupeDuJour<DonneesDouleur>[] }>();
 const emit = defineEmits<{ modifier: [entree: DonneesDouleur] }>();
 
+/** « Notée dans le bilan » pour une zone du bilan, sinon « Crise à 14 h 20 », suivi du commentaire. */
 function detail(entree: DonneesDouleur): string {
+  const origine = entree.depuisBilan ? 'Notée dans le bilan' : `Crise à ${heure(entree.date)}`;
   const commentaire = commentaireAffiche(entree.commentaire);
-  return commentaire ? `${heure(entree.date)} · ${commentaire}` : heure(entree.date);
+  return commentaire ? `${origine} · ${commentaire}` : origine;
 }
 </script>

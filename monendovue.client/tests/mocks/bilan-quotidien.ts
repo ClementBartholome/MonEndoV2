@@ -5,6 +5,7 @@ import type {
 } from '../../src/features/bilan-quotidien/types/bilan-quotidien';
 import { CARNET_ID } from './session';
 import { liste, type FauxServeur } from './faux-serveur';
+import type { CriseDouleur, ZoneDouleur } from '../../src/features/douleurs/types/douleurs-du-jour';
 
 /** Champs d'un bilan à préciser dans un test : le jour (yyyy-MM-dd) et ce qui compte pour le parcours. */
 export type BilanDeTest = Partial<Omit<BilanQuotidien, 'emotions' | 'date'>> & {
@@ -89,5 +90,24 @@ export function simulerBilans(serveur: FauxServeur, options: { bilans?: BilanDeT
       return { status: 204 };
     });
 
+  simulerDouleursDuJour(serveur);
   return bilans;
+}
+
+/**
+ * Routes simulées de `DouleursDuJourController` : crises du jour (lecture seule) et zones du bilan, par jour.
+ * Formats reproduits : listes C# → `{ $values }`, 204 à l'enregistrement des zones.
+ * Renvoie les zones enregistrées par jour, pour vérifier ce que l'interface a envoyé.
+ */
+export function simulerDouleursDuJour(serveur: FauxServeur, options: { crises?: Record<string, CriseDouleur[]>; zones?: Record<string, ZoneDouleur[]> } = {}) {
+  const zones = new Map<string, ZoneDouleur[]>(Object.entries(options.zones ?? {}));
+  serveur
+    .on('GET', /^DouleursDuJour\/(\d{4}-\d{2}-\d{2})$/, ({ params: [jour] }) => ({
+      body: { zones: liste(zones.get(jour) ?? []), crises: liste(options.crises?.[jour] ?? []) },
+    }))
+    .on('PUT', /^DouleursDuJour\/(\d{4}-\d{2}-\d{2})\/zones$/, ({ params: [jour], corps }) => {
+      zones.set(jour, (corps as { zones: ZoneDouleur[] }).zones);
+      return { status: 204 };
+    });
+  return zones;
 }

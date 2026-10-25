@@ -3,6 +3,22 @@
 Toutes les évolutions notables de MonEndo. Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/),
 versions en [SemVer](https://semver.org/lang/fr/) (voir la section Déploiement de `CLAUDE.md`).
 
+## [1.6.0] - 2026-10-25
+
+### Ajouté
+- Bilan quotidien : sous la douleur de la journée, « **Où as-tu eu mal ?** » (facultatif). Chaque zone touchée reprend la douleur du jour,
+  ajustable, et rejoint ta page Douleurs : le médecin voit ainsi ta douleur par type sans double saisie. Une crise déjà notée ce jour-là
+  est affichée et n'est pas notée une seconde fois.
+- Page Douleurs : le détail **par type** (jours, moyenne, la plus forte) et, pour chaque entrée, son origine (« Notée dans le bilan » ou
+  « Crise à 14 h 20 »).
+
+### Modifié
+- Sur la page Douleurs, « Noter une douleur » devient « **Noter une crise** » : pour une douleur au moment où elle arrive, le bilan du soir
+  suffisant pour le reste de la journée.
+- **Une app plus vive sur téléphone** : le passage d'une page à l'autre est presque instantané (il durait jusqu'à deux secondes), les
+  boutons s'enfoncent légèrement sous le doigt, plus de flash gris au toucher ni de survol qui reste affiché, plus de zoom quand on
+  touche un champ sur iPhone, et le panneau du bas monte comme dans une app installée.
+
 ## [1.5.0] - 2026-10-19
 
 ### Ajouté

@@ -1,3 +1,4 @@
+using MonEndoVue.Server.Services.Douleurs;
 using Microsoft.AspNetCore.Mvc;
 using MonEndoVue.Server.Controllers;
 using MonEndoVue.Server.Models;
@@ -12,7 +13,7 @@ public class BilanQuotidienControllerTransitTests : IDisposable
 
     public BilanQuotidienControllerTransitTests()
     {
-        _controller = new BilanQuotidienController(_carnet.Context, _carnet.CarnetSanteService, TimeProvider.System)
+        _controller = new BilanQuotidienController(_carnet.Context, _carnet.CarnetSanteService, TimeProvider.System, new DouleursDuJourService(_carnet.Context, TimeProvider.System))
         {
             ControllerContext = CarnetDeTest.ContexteAuthentifie(),
         };

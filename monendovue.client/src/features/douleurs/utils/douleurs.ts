@@ -49,6 +49,29 @@ export function chiffresDuMois(entrees: DonneesDouleur[]): ChiffresDuMois {
     };
 }
 
+export interface DouleurParType {
+    libelle: string;
+    /** Jours où ce type a été noté. */
+    jours: number;
+    /** Intensité moyenne, arrondie au dixième. */
+    moyenne: number;
+    max: number;
+}
+
+/** Un élément par type noté (bilans et crises), du plus fréquent au moins fréquent. */
+export function douleursParType(entrees: DonneesDouleur[]): DouleurParType[] {
+    const parType = new Map<string, DonneesDouleur[]>();
+    entrees.forEach((e) => parType.set(e.typeDouleur, [...(parType.get(e.typeDouleur) ?? []), e]));
+    return [...parType.entries()]
+        .map(([type, duType]) => ({
+            libelle: libelleCourt(type),
+            jours: new Set(duType.map((e) => cleJour(e.date))).size,
+            moyenne: Math.round((duType.reduce((total, e) => total + e.intensite, 0) / duType.length) * 10) / 10,
+            max: Math.max(...duType.map((e) => e.intensite)),
+        }))
+        .sort((a, b) => b.jours - a.jours || b.max - a.max);
+}
+
 export interface JourDuGraphique {
     jour: number;
     /** Intensité la plus forte notée ce jour (0 = rien noté). */

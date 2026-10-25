@@ -7,6 +7,7 @@ test.describe('Douleurs', () => {
       { typeDouleur: 'Douleur pelvienne', intensite: 7, date: '2026-09-15T08:40:00', commentaire: 'réveil difficile' },
       { typeDouleur: 'Douleur lombaire', intensite: 4, date: '2026-09-15T14:05:00' },
       { typeDouleur: 'Douleur pelvienne', intensite: 6, date: '2026-09-14T21:15:00', commentaire: 'Pas de commentaire' },
+      { typeDouleur: 'Douleur lombaire', intensite: 5, date: '2026-09-14T12:00:00', depuisBilan: true },
       { typeDouleur: 'Douleur abdominale', intensite: 3, date: '2026-08-30T10:00:00' },
     ], ['2026-09-14', '2026-09-15']);
     await douleursPage.ouvrir();
@@ -17,6 +18,12 @@ test.describe('Douleurs', () => {
     await expect(page.getByRole('img', { name: /Douleur notée 2 jours ce mois-ci, au plus 7 sur 10/ })).toBeVisible();
     await expect(page.getByRole('heading', { name: 'Mardi 15 septembre' })).toBeVisible();
     await expect(douleursPage.entree('Pelvienne.*8 h 40 · réveil difficile')).toBeVisible();
+    // Une zone notée dans le bilan se distingue d'une crise ; bilans et crises sont comptés ensemble par type.
+    await expect(douleursPage.entree('Lombaire.*Notée dans le bilan')).toBeVisible();
+    const parType = page.getByRole('region', { name: 'Par type' });
+    await expect(parType.getByRole('listitem').first()).toContainText('Pelvienne2 jours');
+    await expect(parType).toContainText('Lombaire2 jours');
+    await expect(parType).toContainText('moy. 4,5 · max 5');
     // L'ancien texte de remplacement n'est jamais affiché.
     await expect(page.getByText('Pas de commentaire')).toHaveCount(0);
   });
@@ -33,7 +40,7 @@ test.describe('Douleurs', () => {
     await expect(douleursPage.panneau).toBeHidden();
     await expect(douleursPage.entree('Lombaire.*10 h 00 · après le sport')).toBeVisible();
     expect(douleurs[0]).toMatchObject({ typeDouleur: 'Douleur lombaire', intensite: 6, date: '2026-09-15T10:00:00', commentaire: 'après le sport' });
-    await expect(page.getByText('Douleur notée', { exact: true })).toBeVisible();
+    await expect(page.getByText('Crise notée', { exact: true })).toBeVisible();
   });
 
   test('modifie puis supprime une douleur depuis sa ligne', async ({ douleursPage, serveur }) => {
@@ -69,6 +76,6 @@ test.describe('Douleurs', () => {
     simulerDouleurs(serveur);
     await douleursPage.ouvrir('?ajouter');
 
-    await expect(douleursPage.panneau.getByRole('heading', { name: 'Noter une douleur' })).toBeVisible();
+    await expect(douleursPage.panneau.getByRole('heading', { name: 'Noter une crise' })).toBeVisible();
   });
 });
