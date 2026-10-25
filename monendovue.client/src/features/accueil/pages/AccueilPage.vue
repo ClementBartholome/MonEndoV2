@@ -36,12 +36,13 @@
                               :prises="aujourdhui.prisesPrevues" :au-besoin="aujourdhui.auBesoin"
                               :prise-en-cours="priseEnCours" @prendre="noterPrise"/>
       <CarteRendezVous v-if="prochainRendezVous" :evenement="prochainRendezVous"/>
+      <PropositionAgenda v-else-if="propositionAgenda" :sans-calendrier="statutAgenda?.liee === true" @plus-tard="reporterAgenda"/>
     </template>
   </main>
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { Button } from '@/shared/components/ui/button';
@@ -57,6 +58,8 @@ import CarteDemarrage from '../components/CarteDemarrage.vue';
 import CarteTraitementsDuJour from '../components/CarteTraitementsDuJour.vue';
 import TuilesAjout from '../components/TuilesAjout.vue';
 import CarteRendezVous from '../components/CarteRendezVous.vue';
+import PropositionAgenda from '../components/PropositionAgenda.vue';
+import { propositionAgendaReportee, reporterPropositionAgenda } from '../utils/propositionAgenda';
 import CarteSemaine from '../components/CarteSemaine.vue';
 import { useAujourdhui } from '../composables/useAujourdhui';
 const { toast } = useToast();
@@ -67,9 +70,24 @@ function masquerPremiersPas() {
   terminerPremiersPas();
   premiersPas.value = false;
 }
-const { aujourdhui, prochainRendezVous, chargement, erreur, priseEnCours, phrases, charger, prendre } = useAujourdhui();
+const { aujourdhui, prochainRendezVous, statutAgenda, chargement, erreur, priseEnCours, phrases, charger, prendre } = useAujourdhui();
 
 const cleDuJour = format(new Date(), 'yyyy-MM-dd');
+
+/**
+ * Lier son agenda Google : proposé discrètement en bas de l'accueil quand le service est disponible et que l'agenda n'est pas lié (ou
+ * sans calendrier choisi), sauf le premier jour (« Pour bien démarrer » suffit) et pendant 30 jours après « Plus tard ».
+ */
+const agendaReporte = ref(propositionAgendaReportee(new Date()));
+const propositionAgenda = computed(() => {
+  const statut = statutAgenda.value;
+  return !!statut?.disponible && (!statut.liee || !statut.calendrierId) && !agendaReporte.value && !premiersPas.value;
+});
+function reporterAgenda() {
+  reporterPropositionAgenda(new Date());
+  agendaReporte.value = true;
+  toast({ title: 'C’est noté', description: 'Tu pourras lier ton agenda depuis Plus › Paramètres.', variant: 'custom' });
+}
 const jour = format(new Date(), 'EEEE d MMMM', { locale: fr });
 const date = jour.charAt(0).toUpperCase() + jour.slice(1);
 

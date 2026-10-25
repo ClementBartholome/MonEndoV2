@@ -3,6 +3,16 @@
 Toutes les évolutions notables de MonEndo. Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/),
 versions en [SemVer](https://semver.org/lang/fr/) (voir la section Déploiement de `CLAUDE.md`).
 
+## [1.7.0] - non publiée
+
+### Ajouté
+- Accueil : quand ton agenda Google n'est pas lié, une proposition discrète en bas de page explique ce qu'il apporte (prochain rendez-vous,
+  rappel la veille, résumé depuis le rendez-vous précédent) et mène directement au réglage. « Plus tard » la retire pour 30 jours.
+
+### Corrigé
+- Après une mise à jour de MonEndo, une app restée ouverte se recharge d'elle-même au lieu d'échouer (par exemple « Le PDF n'a pas pu
+  être créé »).
+
 ## [1.6.0] - 2026-10-25
 
 ### Ajouté
