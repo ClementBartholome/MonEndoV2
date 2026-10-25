@@ -175,6 +175,12 @@ lecture seule (liste par jour, `SelecteurMois`, suppression en deux temps), plus
   - `Card` (shadcn) n'a ni survol ni curseur : une carte n'est pas cliquable. `CardHeader` est un `div`, le titre est
     porté par `CardTitle` seul.
   - Les pages pas encore refaites (Cycle, Activité, Export…) gardent des couleurs brutes : les migrer quand on les touche.
+- **Mouvement et toucher** (skills personnels `emil-design-eng` et `mobile-native`, 2026-10-25) : changement de page en fondu de 120 ms
+  (`App.vue`, on change de page des dizaines de fois par jour) ; boutons enfoncés à l'appui (`scale(0.97)`, 140 ms, `index.css`, sauf les
+  lignes `w-full`) ; pas de flash au toucher, `touch-action: manipulation`, libellés de bouton non sélectionnables ; survol réservé aux
+  appareils qui survolent (`future.hoverOnlyWhenSupported`) ; champs à 16 px au toucher (zoom de Safari iOS). Une animation fréquente reste
+  sous 300 ms, en `ease-out` (jamais `ease-in`), seulement sur `transform` et `opacity`. Marges de sécurité (`viewport-fit=cover`) pas encore
+  posées : à tester sur iPhone.
 - Polices servies par l'app (`src/assets/polices.css`, paquets `@fontsource-variable`), **jamais Google Fonts** (IP envoyée à Google, RGPD) :
   Lexend et Literata variables, sous-ensemble latin ; un axe d'icône en plus s'ajoute dans ce fichier.
 - Icônes Material Symbols **arrondies** (`<i class="material-symbols-outlined">nom</i>` : la classe garde son nom historique, la

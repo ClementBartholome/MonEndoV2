@@ -15,6 +15,9 @@ versions en [SemVer](https://semver.org/lang/fr/) (voir la section Déploiement 
 ### Modifié
 - Sur la page Douleurs, « Noter une douleur » devient « **Noter une crise** » : pour une douleur au moment où elle arrive, le bilan du soir
   suffisant pour le reste de la journée.
+- **Une app plus vive sur téléphone** : le passage d'une page à l'autre est presque instantané (il durait jusqu'à deux secondes), les
+  boutons s'enfoncent légèrement sous le doigt, plus de flash gris au toucher ni de survol qui reste affiché, plus de zoom quand on
+  touche un champ sur iPhone, et le panneau du bas monte comme dans une app installée.
 
 ## [1.5.0] - 2026-10-19
 
