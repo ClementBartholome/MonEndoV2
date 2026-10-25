@@ -51,6 +51,46 @@
 }
 
 @layer base {
+    /*
+     * Finitions tactiles (skill mobile-native) : pas de flash gris au toucher, pas de texte grossi en paysage, pas d'attente
+     * du double toucher, pas de sélection du libellé d'un bouton par un appui long. Le texte saisi ou lu reste sélectionnable.
+     */
+    html {
+        -webkit-tap-highlight-color: transparent;
+        -webkit-text-size-adjust: 100%;
+    }
+
+    button, a, [role='button'] {
+        touch-action: manipulation;
+    }
+
+    button, [role='button'] {
+        user-select: none;
+        -webkit-user-select: none;
+    }
+
+    /* Retour immédiat à l'appui (les lignes pleine largeur s'en passent : elles bougeraient trop). */
+    button:not(:disabled):not(.w-full) {
+        transition: transform 140ms cubic-bezier(0.23, 1, 0.32, 1);
+    }
+
+    button:not(:disabled):not(.w-full):active {
+        transform: scale(0.97);
+    }
+
+    /* Safari iOS zoome sur un champ dont le texte fait moins de 16 px, et ne revient pas : on fixe ce minimum au toucher. */
+    @media (pointer: coarse) {
+        input, textarea, select {
+            font-size: max(16px, 1em) !important;
+        }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        button:not(:disabled):not(.w-full):active {
+            transform: none;
+        }
+    }
+
     * {
         @apply border-border;
     }

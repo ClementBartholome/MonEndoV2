@@ -2,6 +2,10 @@ const animate = require("tailwindcss-animate")
 
 /** @type {import('tailwindcss').Config} */
 module.exports = {
+    // Les styles de survol ne s'appliquent qu'aux appareils qui survolent : sans ça, un bouton touché garde son survol.
+    future: {
+        hoverOnlyWhenSupported: true,
+    },
     darkMode: ["class"],
     safelist: ["dark"],
     prefix: "",

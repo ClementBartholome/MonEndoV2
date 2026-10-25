@@ -30,8 +30,9 @@ const ouvert = defineModel<boolean>('open', {required: true});
 </script>
 
 <style scoped>
+/* Courbe de tiroir façon iOS : part vite, se pose en douceur. */
 .panneau[data-state='open'] {
-  animation: monter 0.2s ease-out;
+  animation: monter 0.3s cubic-bezier(0.32, 0.72, 0, 1);
 }
 
 .panneau-voile[data-state='open'] {
