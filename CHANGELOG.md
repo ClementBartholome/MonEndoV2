@@ -5,7 +5,13 @@ versions en [SemVer](https://semver.org/lang/fr/) (voir la section Déploiement 
 
 ## [1.8.0] - non publiée
 
+### Ajouté
+- Paramètres › Notifications : le rappel la veille d'un rendez-vous dit pourquoi il ne part pas quand ton agenda Google n'est pas lié
+  ou qu'aucun calendrier n'est choisi, avec un lien vers le réglage de l'agenda.
+
 ### Modifié
+- Page Bilan plus légère : les onglets Historique / Tendances juste sous le titre, le choix Semaine / Mois à côté du titre, et la
+  couleur des jours (douleur ou émotions) en petit dans le calendrier. Trois rangées de boutons deviennent une seule.
 - Bilan quotidien : la catégorie « Rapports » n'est plus proposée. La douleur pendant un rapport se note dans « Où as-tu eu mal ? », avec
   son intensité, et rejoint ta page Douleurs comme les autres. Tes réponses déjà données restent dans le détail de leur jour et dans ton
   export ; la rubrique « Rapports » du PDF n'est proposée que s'il en reste sur la période choisie.

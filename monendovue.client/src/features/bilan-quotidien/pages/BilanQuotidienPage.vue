@@ -13,6 +13,7 @@ import AnalyseTendances from '@/features/bilan-quotidien/components/AnalyseTenda
 import EmotionSemaineCard from '@/features/bilan-quotidien/components/EmotionSemaineCard.vue';
 import CalendrierBilans from '@/features/bilan-quotidien/components/historique/CalendrierBilans.vue';
 import CourbesBilans from '@/features/bilan-quotidien/components/historique/CourbesBilans.vue';
+import ChoixModePeriode from '@/features/bilan-quotidien/components/historique/ChoixModePeriode.vue';
 import SelecteurPeriode from '@/features/bilan-quotidien/components/historique/SelecteurPeriode.vue';
 import { useHistoriqueBilans } from '@/features/bilan-quotidien/composables/useHistoriqueBilans';
 import { calculerTendances } from '@/features/bilan-quotidien/utils/tendances';
@@ -97,6 +98,7 @@ const tendances = computed(() => calculerTendances(model.value.jours, model.valu
     <!-- Pendant la saisie, le titre de page reste lu (sr-only) : la saisie a son propre titre visible. -->
     <header class="flex items-center gap-3" :class="{ 'sr-only': saisie }">
       <h1 class="m-0 grow text-titre-page font-medium tracking-normal text-texte">Bilan</h1>
+      <ChoixModePeriode v-if="!saisie && !isLoading" :mode="model.periode.mode" @changer="actions.changerMode"/>
     </header>
 
     <div v-if="isLoading" class="flex flex-col gap-3.5" aria-busy="true" aria-label="Chargement des bilans">
@@ -117,29 +119,30 @@ const tendances = computed(() => calculerTendances(model.value.jours, model.valu
     />
 
     <template v-else>
-      <SelecteurPeriode
-          :periode="model.periode"
-          @changer-mode="actions.changerMode"
-          @precedente="actions.precedente"
-          @suivante="actions.suivante"
-          @aujourdhui="actions.revenirAujourdhui"
-          @aller-au-mois="actions.allerAuMois"
-      />
-
-      <section v-if="model.erreur" role="alert" class="flex flex-col items-start gap-3 rounded-carte bg-surface p-5 shadow-elevation">
-        <p class="m-0 text-texte">Les bilans de cette période n'ont pas pu être chargés.</p>
-        <button type="button" class="min-h-11 rounded-controle border-[1.5px] border-contour px-4 text-sm font-medium text-texte"
-                @click="actions.recharger">Réessayer</button>
-      </section>
-
-      <TabsRoot v-else :default-value="ongletInitial" class="flex flex-col gap-3.5" :class="{ 'opacity-60': model.chargement }"
-                :aria-busy="model.chargement">
+      <!-- Les onglets d'abord (ils organisent la page), puis la période ; « Semaine / Mois » est à côté du titre. -->
+      <TabsRoot :default-value="ongletInitial" class="flex flex-col gap-3.5">
         <TabsList aria-label="Vues du bilan" class="grid grid-cols-2 gap-1 rounded-controle bg-surface-2 p-1">
           <TabsTrigger v-for="o in ONGLETS" :key="o.valeur" :value="o.valeur"
                        class="min-h-11 rounded-controle px-2 text-sm leading-tight text-texte-2 data-[state=active]:bg-surface data-[state=active]:font-semibold data-[state=active]:text-texte data-[state=active]:shadow-elevation">
             {{ o.libelle }}
           </TabsTrigger>
         </TabsList>
+
+        <SelecteurPeriode
+            :periode="model.periode"
+            @precedente="actions.precedente"
+            @suivante="actions.suivante"
+            @aujourdhui="actions.revenirAujourdhui"
+            @aller-au-mois="actions.allerAuMois"
+        />
+
+        <section v-if="model.erreur" role="alert" class="flex flex-col items-start gap-3 rounded-carte bg-surface p-5 shadow-elevation">
+          <p class="m-0 text-texte">Les bilans de cette période n'ont pas pu être chargés.</p>
+          <button type="button" class="min-h-11 rounded-controle border-[1.5px] border-contour px-4 text-sm font-medium text-texte"
+                  @click="actions.recharger">Réessayer</button>
+        </section>
+
+        <div v-else class="flex flex-col gap-3.5" :class="{ 'opacity-60': model.chargement }" :aria-busy="model.chargement">
 
         <TabsContent value="historique" class="flex flex-col gap-3.5">
           <section aria-label="Calendrier des bilans" class="rounded-carte bg-surface p-3 shadow-elevation md:p-5">
@@ -172,6 +175,7 @@ const tendances = computed(() => calculerTendances(model.value.jours, model.valu
         <TabsContent value="analyse">
           <AnalyseTendances :tendances="tendances" :mode="model.periode.mode"/>
         </TabsContent>
+        </div>
       </TabsRoot>
     </template>
   </main>

@@ -1,40 +1,20 @@
 <script setup lang="ts">
 import SelecteurMois from '@/shared/components/SelecteurMois.vue';
-import type { ModePeriode, PeriodeHistorique } from '@/features/bilan-quotidien/types/historique';
+import type { PeriodeHistorique } from '@/features/bilan-quotidien/types/historique';
 
 defineProps<{ periode: PeriodeHistorique }>();
 
 const emit = defineEmits<{
-  'changer-mode': [mode: ModePeriode];
   precedente: [];
   suivante: [];
   aujourdhui: [];
   'aller-au-mois': [mois: Date];
 }>();
 
-const modes: { valeur: ModePeriode; libelle: string }[] = [
-  { valeur: 'semaine', libelle: 'Semaine' },
-  { valeur: 'mois', libelle: 'Mois' },
-];
 </script>
 
 <template>
   <div class="flex w-full flex-col gap-3">
-    <!-- Bascule de vue : même segment que les onglets de la page Cycle. -->
-    <div class="grid grid-cols-2 gap-1 rounded-controle bg-surface-2 p-1" role="group" aria-label="Période affichée">
-      <button
-          v-for="mode in modes"
-          :key="mode.valeur"
-          type="button"
-          class="min-h-11 rounded-controle text-sm"
-          :class="periode.mode === mode.valeur ? 'bg-surface font-semibold text-texte shadow-elevation' : 'text-texte-2'"
-          :aria-pressed="periode.mode === mode.valeur"
-          @click="emit('changer-mode', mode.valeur)"
-      >
-        {{ mode.libelle }}
-      </button>
-    </div>
-
     <!-- Au mois : le sélecteur commun (flèches + choix direct d'un mois, pour revenir loin en arrière). -->
     <div v-if="periode.mode === 'mois'" class="-mx-3 flex flex-col items-stretch">
       <SelecteurMois :mois="periode.debut" @changer="emit('aller-au-mois', $event)"/>
