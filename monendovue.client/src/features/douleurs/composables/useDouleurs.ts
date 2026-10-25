@@ -5,7 +5,7 @@ import { derniereDemande } from '@/shared/utils/derniereDemande';
 import { enTableau } from '@/shared/utils/json';
 import type { DonneesDouleur, DonneesDouleurModification } from '../types/donnees-douleur';
 import { cleJour, grouperParJour } from '@/shared/utils/jours';
-import { chiffresDuMois, douleursParType, joursDuMois } from '../utils/douleurs';
+import { chiffresDuMois, douleursParType, friseDuMois } from '../utils/douleurs';
 
 interface Options {
     carnetSanteId: () => number | undefined;
@@ -21,7 +21,7 @@ export function useDouleurs({ carnetSanteId, maintenant = () => new Date() }: Op
     const erreur = ref(false);
 
     const chiffres = computed(() => chiffresDuMois(entrees.value));
-    const graphique = computed(() => joursDuMois(mois.value, entrees.value, joursDeRegles.value));
+    const frise = computed(() => friseDuMois(mois.value, entrees.value, joursDeRegles.value));
     const groupes = computed(() => grouperParJour(entrees.value));
     const parType = computed(() => douleursParType(entrees.value));
 
@@ -38,7 +38,7 @@ export function useDouleurs({ carnetSanteId, maintenant = () => new Date() }: Op
         try {
             const [douleurs, regles] = await Promise.all([
                 apiService.getDonneesDouleursByMonth(carnet, numero, annee),
-                // Les jours de règles ne servent qu'au graphique : leur absence ne bloque pas la page.
+                // Les jours de règles ne servent qu'à la frise : leur absence ne bloque pas la page.
                 apiService.getJoursReglesByMonth(carnet, numero, annee).catch(() => []),
             ]);
             if (!estCourante()) return;
@@ -77,7 +77,7 @@ export function useDouleurs({ carnetSanteId, maintenant = () => new Date() }: Op
     }
 
     return {
-        mois, entrees, chargement, erreur, chiffres, graphique, groupes, parType,
+        mois, entrees, chargement, erreur, chiffres, frise, groupes, parType,
         charger, allerAuMois, enregistrer, supprimer,
     };
 }
