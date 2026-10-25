@@ -46,9 +46,10 @@ const libelleJour = (jour: JourHistorique) => {
 
 <template>
   <div class="w-full flex flex-col gap-3">
-    <div>
-      <p id="calendrier-indicateur" class="sr-only">Couleur des jours selon</p>
-      <div class="grid grid-cols-2 gap-1 rounded-controle bg-surface-2 p-1" role="group" aria-labelledby="calendrier-indicateur">
+    <!-- Bascule compacte, à droite de son libellé : elle ne pèse plus autant que les onglets de la page. -->
+    <div class="flex items-center justify-between gap-3">
+      <p id="calendrier-indicateur" class="m-0 text-legende text-texte-2">Couleur selon</p>
+      <div class="grid shrink-0 grid-cols-2 gap-1 rounded-controle bg-surface-2 p-1" role="group" aria-labelledby="calendrier-indicateur">
         <button
             v-for="(config, cle) in echellesCalendrier"
             :key="cle"
