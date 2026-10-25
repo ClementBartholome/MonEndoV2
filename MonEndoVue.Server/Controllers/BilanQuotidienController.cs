@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using MonEndoVue.Server.Data;
 using MonEndoVue.Server.Models;
 using MonEndoVue.Server.Services;
+using MonEndoVue.Server.Services.Douleurs;
 using MonEndoVue.Server.ViewModels;
 
 namespace MonEndoVue.Server.Controllers
@@ -13,7 +14,7 @@ namespace MonEndoVue.Server.Controllers
     [ApiController]
     [Authorize]
     public class BilanQuotidienController(
-        AppDbContext context, CarnetSanteService carnetSanteService, TimeProvider horloge) : ControllerBase
+        AppDbContext context, CarnetSanteService carnetSanteService, TimeProvider horloge, DouleursDuJourService douleursDuJour) : ControllerBase
     {
         // GET: BilanQuotidien/5
         [HttpGet("{id}")]
@@ -70,6 +71,11 @@ namespace MonEndoVue.Server.Controllers
             {
                 return Conflict(new { message = BilanDejaSaisi });
             }
+
+            // Les zones de douleur notées dans le bilan suivent son jour.
+            if (existing.Date.Date != bilanQuotidien.Date.Date)
+                await douleursDuJour.DeplacerZonesAsync(existing.CarnetSanteId, DateOnly.FromDateTime(existing.Date),
+                    DateOnly.FromDateTime(bilanQuotidien.Date), HttpContext.RequestAborted);
 
             existing.Date = bilanQuotidien.Date;
             existing.Mood = bilanQuotidien.Mood;
@@ -158,6 +164,8 @@ namespace MonEndoVue.Server.Controllers
             var securityCheck = await this.ValidateCarnetAccess(carnetSanteService, bilanQuotidien.CarnetSanteId);
             if (securityCheck != null) return securityCheck;
 
+            // Les zones de douleur notées dans ce bilan partent avec lui ; les crises du jour restent.
+            await douleursDuJour.RetirerZonesAsync(bilanQuotidien.CarnetSanteId, DateOnly.FromDateTime(bilanQuotidien.Date), HttpContext.RequestAborted);
             context.BilansQuotidiens.Remove(bilanQuotidien);
             await context.SaveChangesAsync();
 
