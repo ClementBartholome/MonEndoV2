@@ -9,6 +9,10 @@ versions en [SemVer](https://semver.org/lang/fr/) (voir la section Déploiement 
 - Accueil : quand ton agenda Google n'est pas lié, une proposition discrète en bas de page explique ce qu'il apporte (prochain rendez-vous,
   rappel la veille, résumé depuis le rendez-vous précédent) et mène directement au réglage. « Plus tard » la retire pour 30 jours.
 
+### Modifié
+- Page Douleurs : la frise du mois (un trait par jour, plus foncé quand la douleur était plus forte, ruban sous les règles) remplace le
+  graphique en barres, comme sur l'accueil et la page Cycle.
+
 ### Corrigé
 - Après une mise à jour de MonEndo, une app restée ouverte se recharge d'elle-même au lieu d'échouer (par exemple « Le PDF n'a pas pu
   être créé »).
