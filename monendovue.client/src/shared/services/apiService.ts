@@ -5,6 +5,7 @@ import type { Pinia } from 'pinia';
 import { tokenService } from '@/features/auth/services/tokenService';
 import router from "@/router";
 import type { DonneesDouleurModification } from '@/features/douleurs/types/donnees-douleur';
+import type { DouleursDuJour, ZoneDouleur } from '@/features/douleurs/types/douleurs-du-jour';
 import type { AbonnementPush, Rappel, ReglageRappel, TypeRappel } from '@/features/parametres/types/notifications';
 import type { BilanQuotidien, BilanQuotidienSaisie, EmotionBilan } from '@/features/bilan-quotidien/types/bilan-quotidien';
 import type { HistoriqueBilans } from '@/features/bilan-quotidien/types/historique';
@@ -234,6 +235,18 @@ class ApiService {
 
     async postBilanQuotidien(bilanQuotidien: BilanQuotidienSaisie): Promise<{ id: number }> {
         return this.request('POST', 'BilanQuotidien', bilanQuotidien);
+    }
+
+    /** Zones du bilan et crises du jour (carnet de la session), jour AAAA-MM-JJ. */
+    async getDouleursDuJour(jour: string): Promise<DouleursDuJour> {
+        type Recu = { zones: Liste<ZoneDouleur>; crises: Liste<DouleursDuJour['crises'][number]> };
+        const recu = await this.request<Recu>('GET', `DouleursDuJour/${jour}`);
+        return { zones: enTableau(recu.zones), crises: enTableau(recu.crises) };
+    }
+
+    /** Remplace les zones notées dans le bilan de ce jour (le bilan doit exister). */
+    async putZonesDouleur(jour: string, zones: ZoneDouleur[]): Promise<void> {
+        await this.request('PUT', `DouleursDuJour/${jour}/zones`, { zones });
     }
 
     async putBilanQuotidien(bilanQuotidien: BilanQuotidienSaisie): Promise<void> {

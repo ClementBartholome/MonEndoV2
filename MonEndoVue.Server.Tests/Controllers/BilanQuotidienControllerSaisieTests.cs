@@ -1,3 +1,4 @@
+using MonEndoVue.Server.Services.Douleurs;
 using Microsoft.AspNetCore.Mvc;
 using MonEndoVue.Server.Controllers;
 using MonEndoVue.Server.Models;
@@ -16,7 +17,7 @@ public sealed class BilanQuotidienControllerSaisieTests : IDisposable
 
     public BilanQuotidienControllerSaisieTests()
     {
-        _controller = new BilanQuotidienController(_carnet.Context, _carnet.CarnetSanteService, Maintenant)
+        _controller = new BilanQuotidienController(_carnet.Context, _carnet.CarnetSanteService, Maintenant, new DouleursDuJourService(_carnet.Context, Maintenant))
         {
             ControllerContext = CarnetDeTest.ContexteAuthentifie(),
         };

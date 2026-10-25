@@ -7,6 +7,8 @@ export interface DonneesDouleur {
     /** Date locale sans fuseau : AAAA-MM-JJTHH:mm:ss. */
     date: string;
     commentaire?: string | null;
+    /** Zone notée dans le bilan du jour plutôt que crise notée sur la page Douleurs (absent des anciennes réponses : faux). */
+    depuisBilan?: boolean;
 }
 
 /** Corps de `POST DonneesDouleurs` (avec `carnetSanteId`) et de `PUT DonneesDouleurs/{id}` (`DonneesDouleurDto`). */

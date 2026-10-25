@@ -75,6 +75,7 @@ namespace MonEndoVue.Server
             builder.Services.AddScoped<CarnetSanteService>();
             builder.Services.AddScoped<TokenService>();
             builder.Services.AddScoped<HistoriqueBilansService>();
+            builder.Services.AddScoped<MonEndoVue.Server.Services.Douleurs.DouleursDuJourService>();
             // Notifications Web Push (clés VAPID dans la section WebPush ; sans elles, envoi désactivé)
             builder.Services.Configure<WebPushOptions>(builder.Configuration.GetSection(WebPushOptions.Section));
             // Relais SMTP des e-mails de compte (section Email ; sans elle, l'envoi est désactivé)

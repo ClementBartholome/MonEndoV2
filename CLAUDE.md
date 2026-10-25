@@ -49,7 +49,11 @@ dotnet ef migrations add NomEnPascalCase --project MonEndoVue.Server
 ## Domaine fonctionnel
 - **`CarnetSante`** : un carnet par utilisatrice (1-1 avec `ApplicationUser`), racine de toutes les données.
   Chaque entité porte un `CarnetSanteId` : c'est la clé du cloisonnement.
-- **`DonneesDouleur`** (type, intensité 0-10, date, commentaire) — page `/douleurs`.
+- **`DonneesDouleur`** (type, intensité 0-10, date, commentaire, `DepuisBilan`) — page `/douleurs` (vue par type, « Noter une crise »).
+  Deux origines : une **crise** notée sur la page (heure réelle) ou une **zone du bilan** (« Où as-tu eu mal ? » sous la douleur de la journée,
+  `DepuisBilan = true`, enregistrée à midi du jour) via `DouleursDuJourController` (carnet de la session) : `GET DouleursDuJour/{jour}` (zones et
+  crises du jour) et `PUT DouleursDuJour/{jour}/zones` (remplace les zones, bilan du jour exigé, 8 au plus, intensité 1-10). Le bilan ne touche
+  jamais une crise ; supprimer ou changer de jour un bilan emporte ses zones. Toutes les lectures (PDF, frise, chiffres) comptent les deux origines.
 - **`SymptomeCycle`** (type, intensité, date, commentaire, photo optionnelle) dont l'**acné** avec suivi photo ;
   **`JourRegle`** (jours de règles) — page `/cycle`, onglets Règles (`?onglet=cycles`) et Symptômes ; l'acné a sa page `/acne`
   (menu « Plus », groupe « Mes suivis », raccourci sous l'onglet Symptômes ; l'ancien `/cycle?onglet=acne` y est redirigé par le routeur).

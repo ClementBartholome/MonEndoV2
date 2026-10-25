@@ -516,6 +516,9 @@ namespace MonEndoVue.Server.Migrations
                     b.Property<DateTime>("Date")
                         .HasColumnType("datetime2");
 
+                    b.Property<bool>("DepuisBilan")
+                        .HasColumnType("bit");
+
                     b.Property<int>("Intensite")
                         .HasColumnType("int");
 

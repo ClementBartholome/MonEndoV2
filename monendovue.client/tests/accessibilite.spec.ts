@@ -176,7 +176,7 @@ test.describe('Accessibilité · recadrage et clavier', () => {
 
   test('une saisie s\'ouvre et se ferme au clavier, et le focus revient au bouton', async ({ page }) => {
     await page.goto('/douleurs');
-    const bouton = page.getByRole('button', { name: 'Noter une douleur' }).and(page.locator(':visible')).first();
+    const bouton = page.getByRole('button', { name: 'Noter une crise' }).and(page.locator(':visible')).first();
     await bouton.focus();
     await page.keyboard.press('Enter');
 
