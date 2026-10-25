@@ -1,5 +1,5 @@
 import { ref } from 'vue';
-import { categoriesDuBilan, choixParDefaut, type CategorieBilan, type ChoixCategories } from '../config/categories';
+import { categoriesRecapitulees, choixParDefaut, type CategorieBilan, type ChoixCategories } from '../config/categories';
 
 /** Clé du `localStorage` : un réglage d'affichage propre à l'appareil, rien n'est envoyé au serveur. */
 export const CLE_CATEGORIES_BILAN = 'monendo-categories-bilan';
@@ -10,8 +10,9 @@ function lire(): ChoixCategories {
     const brut = localStorage.getItem(CLE_CATEGORIES_BILAN);
     if (!brut) return choix;
     const lu = JSON.parse(brut) as Partial<Record<string, unknown>>;
-    // Seules les catégories connues et les vrais booléens comptent : une valeur abîmée revient au réglage par défaut.
-    for (const { id } of categoriesDuBilan) {
+    // Seules les catégories connues et les vrais booléens comptent : une valeur abîmée revient au réglage par défaut. L'ancienne
+    // catégorie « Rapports » est lue aussi : elle décide encore de l'affichage de ses anciennes réponses.
+    for (const { id } of categoriesRecapitulees) {
       const valeur = lu[id];
       if (typeof valeur === 'boolean') choix[id] = valeur;
     }

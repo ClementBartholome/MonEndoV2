@@ -29,7 +29,8 @@
         <li><strong>Ce que tu choisis de noter</strong> : douleurs, jours de règles (avec, si tu les précises, le flux et les
           caillots) et symptômes du cycle (dont les photos de suivi de l'acné), traitements et prises, séances d'activité
           physique, transit, bilans quotidiens (émotions, stress, fatigue, pas, hydratation, alimentation, notes, et les
-          catégories facultatives que tu remplis : urinaire, saignements hors règles, nuit et journée, rapports).</li>
+          catégories facultatives que tu remplis : urinaire, saignements hors règles, nuit et journée ; les réponses déjà données à
+          l'ancienne catégorie « rapports », plus proposée, sont conservées comme le reste de tes notes).</li>
         <li><strong>Les rappels</strong>, si tu les actives : l'abonnement aux notifications de ton appareil (une adresse
           technique fournie par ton navigateur), l'heure choisie et ton fuseau horaire.</li>
         <li><strong>Ton agenda Google</strong>, si tu le relies : un jeton d'accès, conservé chiffré, et l'identifiant du calendrier que

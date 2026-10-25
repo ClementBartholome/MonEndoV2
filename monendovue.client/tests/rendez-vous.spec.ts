@@ -134,3 +134,21 @@ test.describe('Préparer un rendez-vous', () => {
     await expect(rendezVousPage.boutonCreer).toBeEnabled();
   });
 });
+
+test.describe('Préparer un rendez-vous — ancienne rubrique « Rapports »', () => {
+  test('proposée seulement quand d\'anciennes réponses existent sur la période', async ({ rendezVousPage, serveur }) => {
+    simulerSynthese(serveur, (du, au) => {
+      const synthese = syntheseRealiste(du, au);
+      if (du === '2026-06-16') synthese.bilans.categories.rapports = { joursNotes: 3, avecDouleur: 1, sansDouleur: 1, pasDeRapport: 1 };
+      return synthese;
+    });
+    await rendezVousPage.ouvrir();
+
+    // Trois mois (par défaut) : d'anciennes réponses, la rubrique est proposée, décochée.
+    await expect(rendezVousPage.rubrique('Rapports')).toBeVisible();
+    await expect(rendezVousPage.rubrique('Rapports')).not.toBeChecked();
+
+    await rendezVousPage.choixPeriode('1 mois').click();
+    await expect(rendezVousPage.rubrique('Rapports')).toHaveCount(0);
+  });
+});

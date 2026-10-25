@@ -2,7 +2,7 @@
   <fieldset class="m-0 border-0 p-0">
     <legend class="mb-2.5 p-0 text-corps font-semibold text-texte">À inclure</legend>
     <div class="flex flex-col rounded-carte bg-surface shadow-elevation">
-      <div v-for="(rubrique, index) in RUBRIQUES" :key="rubrique.cle"
+      <div v-for="(rubrique, index) in rubriquesProposees" :key="rubrique.cle"
            class="flex min-h-16 items-center gap-3 px-4 py-2 text-left" :class="{ 'border-t border-trait': index > 0 }">
         <span :id="`rubrique-${rubrique.cle}`" class="flex min-w-0 grow flex-col">
           <span class="text-corps font-medium text-texte">{{ rubrique.titre }}</span>
@@ -18,12 +18,17 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue';
 import { Switch } from '@/shared/components/ui/switch';
 import type { Rubrique } from '../types/synthese';
 
 /** Rubriques du suivi à faire figurer dans le PDF. */
 const rubriques = defineModel<Record<Rubrique, boolean>>({ required: true });
-defineProps<{ aucune: boolean }>();
+const props = defineProps<{
+  aucune: boolean;
+  /** Des réponses à l'ancienne catégorie « Rapports » existent sur la période : la rubrique est alors proposée. */
+  avecRapports?: boolean;
+}>();
 
 const RUBRIQUES: { cle: Rubrique; titre: string; detail: string }[] = [
   { cle: 'douleurs', titre: 'Douleurs', detail: 'Par type, intensité de 0 à 10' },
@@ -32,6 +37,8 @@ const RUBRIQUES: { cle: Rubrique; titre: string; detail: string }[] = [
   { cle: 'bilans', titre: 'Bilans quotidiens', detail: 'Émotions, fatigue, nuit et journée, notes' },
   { cle: 'activite', titre: 'Activité physique', detail: 'Séances et effet sur la douleur' },
   { cle: 'transit', titre: 'Ancien suivi du transit', detail: 'Avant les bilans quotidiens' },
-  { cle: 'rapports', titre: 'Rapports', detail: 'Douleur pendant ou après un rapport (désactivée par défaut)' },
+  { cle: 'rapports', titre: 'Rapports', detail: 'Anciennes réponses : douleur pendant ou après un rapport' },
 ];
+
+const rubriquesProposees = computed(() => RUBRIQUES.filter((r) => r.cle !== 'rapports' || props.avecRapports));
 </script>
