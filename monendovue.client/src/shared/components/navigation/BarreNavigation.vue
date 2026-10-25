@@ -39,9 +39,13 @@ const plusActif = computed(() => menuOuvert.value
 </script>
 
 <style scoped>
-/* Hauteur fixe : les éléments collés en bas de page se posent au-dessus (SaisieBilan : bottom 4.25rem). */
+/*
+ * Hauteur fixe (4.25rem) plus la marge de la barre d'accueil de l'iPhone : les éléments collés en bas de page se posent au-dessus
+ * avec --hauteur-barre-navigation (index.css).
+ */
 .barre-navigation {
-  height: 4.25rem;
+  height: var(--hauteur-barre-navigation);
+  padding-bottom: var(--marge-securite-bas);
 }
 
 .entree {

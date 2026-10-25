@@ -14,6 +14,8 @@ versions en [SemVer](https://semver.org/lang/fr/) (voir la section Déploiement 
   graphique en barres, comme sur l'accueil et la page Cycle.
 
 ### Corrigé
+- iPhone : la barre de navigation, les boutons flottants et les panneaux du bas s'écartent de la barre d'accueil de l'écran (marges de
+  sécurité), au lieu de passer dessous.
 - Après une mise à jour de MonEndo, une app restée ouverte se recharge d'elle-même au lieu d'échouer (par exemple « Le PDF n'a pas pu
   être créé »).
 
