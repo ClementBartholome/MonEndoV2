@@ -58,7 +58,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useToast } from '@/shared/components/ui/toast';
 import LiensLegaux from '@/features/legal/components/LiensLegaux.vue';
@@ -120,6 +120,13 @@ onMounted(async () => {
   }
   if (retour !== undefined) await router.replace({ query: {} });
   await agenda.charger();
+});
+
+// Lien posé sur la page elle-même (réglage du rappel de rendez-vous) : la page ne se remonte pas, on suit l'adresse.
+watch(() => route.query.agenda, async (retour) => {
+  if (retour !== 'lier') return;
+  panneau.value = 'agenda';
+  await router.replace({ query: {} });
 });
 
 async function deconnecter() {
